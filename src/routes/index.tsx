@@ -918,3 +918,94 @@ function capitalize(s: string) {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+function GuestProgressCard({
+  discoveries,
+  streak,
+  points,
+  onSignUp,
+}: {
+  discoveries: number;
+  streak: number;
+  points: number;
+  onSignUp: () => void;
+}) {
+  const nextMilestone = discoveries < 10 ? 10 : discoveries < 25 ? 25 : discoveries < 50 ? 50 : 100;
+  const pct = Math.min(100, Math.round((discoveries / nextMilestone) * 100));
+  const rewards = [
+    { icon: "🔥", label: "Daily streak", locked: streak < 2 },
+    { icon: "🎁", label: "Login bonus", locked: true },
+    { icon: "⭐", label: "Achievements", locked: true },
+    { icon: "☁️", label: "Cloud sync", locked: true },
+  ];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-3 overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-indigo-500/15 p-4 shadow-[0_0_28px_rgba(139,92,246,0.15)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🧭</span>
+            <h3 className="font-display text-sm font-black uppercase tracking-wider text-white">
+              Guest explorer
+            </h3>
+          </div>
+          <p className="mt-1 text-xs text-white/60">
+            You've discovered{" "}
+            <span className="font-black text-white">{discoveries}</span>{" "}
+            {discoveries === 1 ? "fact" : "facts"} — {nextMilestone - discoveries > 0 ? `${nextMilestone - discoveries} more to your next milestone.` : "milestone unlocked!"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onSignUp}
+          className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-violet-700 shadow-md transition hover:scale-105"
+        >
+          Unlock
+        </button>
+      </div>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="h-full rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-300"
+        />
+      </div>
+
+      <div className="mt-3 grid grid-cols-4 gap-1.5">
+        {rewards.map((r) => (
+          <button
+            key={r.label}
+            type="button"
+            onClick={onSignUp}
+            className={`group flex flex-col items-center gap-1 rounded-2xl border p-2 text-center transition ${
+              r.locked
+                ? "border-white/5 bg-white/[0.03] hover:border-violet-400/30 hover:bg-white/[0.06]"
+                : "border-emerald-400/30 bg-emerald-500/10"
+            }`}
+          >
+            <span className={`text-lg ${r.locked ? "opacity-60 group-hover:opacity-100" : ""}`}>
+              {r.locked ? "🔒" : r.icon}
+            </span>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-white/60">
+              {r.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {(streak > 0 || points > 0) && (
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-white/60">
+          <span>Local progress:</span>
+          {streak > 0 && <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-orange-200">🔥 {streak}d</span>}
+          {points > 0 && <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-amber-200">✨ {points} XP</span>}
+          <span className="ml-auto text-white/40">saved on this device</span>
+        </div>
+      )}
+    </motion.div>
+  );
+}
