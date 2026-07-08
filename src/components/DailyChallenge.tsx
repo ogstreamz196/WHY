@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, Flame, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { CoinIcon } from "@/components/CoinIcon";
-import { newlyReachedMilestone } from "@/components/StreakBadges";
+import { newlyReachedMilestone, type StreakMilestone } from "@/components/StreakBadges";
+import { StreakMilestoneCelebration } from "@/components/StreakMilestoneCelebration";
 
 import { useCallback, useEffect, useState } from "react";
 import { getDailyFact, type Fact } from "@/lib/facts.functions";
