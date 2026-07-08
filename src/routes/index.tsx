@@ -229,7 +229,18 @@ function WhyApp() {
   );
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
-  useEffect(() => { void loadNext(fact?.id); /* eslint-disable-line */ }, [category]);
+  useEffect(() => {
+    void loadNext(fact?.id); /* eslint-disable-line */
+    if (user && category !== "all") {
+      bumpInterest({ data: { category, delta: 1 } }).catch(() => {});
+    }
+  }, [category]);
+
+  // Bump interest for a fact's own category when we discover it (signed-in only)
+  useEffect(() => {
+    if (!user || !fact?.category) return;
+    bumpInterest({ data: { category: fact.category, delta: 1 } }).catch(() => {});
+  }, [fact?.id, fact?.category, user, bumpInterest]);
 
   const reveal = () => {
     if (revealed) return;
@@ -247,10 +258,42 @@ function WhyApp() {
       });
       if (layer) {
         setChain((c) => [...c, layer]);
+        setSavedChainId(null); // dirty
         grantPoints(3);
       }
     } catch (e) { console.warn(e); }
     finally { setChainLoading(false); }
+  };
+
+  const handleSaveChain = async () => {
+    if (!fact || chain.length === 0) return;
+    if (isGuest) {
+      setSignInPrompt({
+        title: "Save this trail",
+        message: "Sign up to keep your Why chains, share them, and pick up where you left off.",
+      });
+      return;
+    }
+    setSavingChain(true);
+    try {
+      const steps = [
+        { question: fact.question, answer: fact.answer },
+        ...chain.map((c) => ({ question: c.question, answer: c.answer ?? null })),
+      ];
+      const res = await saveChainServer({
+        data: {
+          title: fact.question.slice(0, 100),
+          root_fact_id: fact.id,
+          steps,
+        },
+      });
+      setSavedChainId(res.id);
+      grantPoints(5);
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setSavingChain(false);
+    }
   };
 
   const handleShare = async () => {
