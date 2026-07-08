@@ -84,7 +84,7 @@ export const Route = createFileRoute("/")({
       { title: "Why? — A pocket-sized universe of curiosity" },
       { name: "description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
       { property: "og:title", content: "Why? — A pocket-sized universe of curiosity" },
-      { property: "og:description", content: "Tap Next for a new 'Do you know why…' fact." },
+      { property: "og:description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
       { property: "og:type", content: "website" },
     ],
   }),
