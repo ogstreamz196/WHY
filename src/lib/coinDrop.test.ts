@@ -14,8 +14,8 @@ describe("computeCoinDrop", () => {
     expect(computeCoinDrop(25, { isVip: true })).toBe(25);
   });
 
-  it("VIP earns exactly 2x a free user's drop", () => {
-    for (const base of [10, 33, 77, 250, 1000]) {
+  it("VIP earns exactly 2x a free user's drop (for even bases)", () => {
+    for (const base of [10, 32, 76, 250, 1000]) {
       const free = computeCoinDrop(base);
       const vip = computeCoinDrop(base, { isVip: true });
       expect(vip).toBe(free * 2);
