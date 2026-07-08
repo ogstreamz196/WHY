@@ -164,13 +164,13 @@ function ChainsPage() {
             {chains.isLoading && (
               <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-white/60" /></div>
             )}
-            {chains.data && chains.data.length === 0 && (
+            {chains.data && chains.data.items.length === 0 && (
               <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
                 Nothing saved yet. Tap <span className="font-bold text-white">But… Why?</span> on a fact,
                 then <span className="font-bold text-white">Save chain</span> to keep the trail.
               </p>
             )}
-            {(chains.data ?? []).map((chain) => (
+            {(chains.data?.items ?? []).map((chain) => (
               <ChainRow
                 key={chain.id}
                 chain={chain}
