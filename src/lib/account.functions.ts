@@ -376,6 +376,16 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
   return toInsert;
 }
 
+export async function runAchievementCheckForUser(context: AuthContext): Promise<string[]> {
+  const { data: row } = await context.supabase
+    .from("user_stats")
+    .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
+    .eq("user_id", context.userId)
+    .maybeSingle();
+  if (!row) return [];
+  return checkAchievements(context, row as StatsDTO);
+}
+
 
 // -------------------- Guest migration --------------------
 
