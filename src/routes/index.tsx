@@ -646,14 +646,14 @@ function WhyApp() {
               <article className="glass-strong relative overflow-hidden rounded-4xl p-5 shadow-[var(--shadow-card)] sm:p-6">
                 {/* Speech-bubble tag */}
                 <div className="mb-4 flex items-center justify-between">
-                  <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-2">
+                  <div className="glass animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
                     <span aria-hidden className="text-lg">🤔</span>
                     <span className="text-base font-black uppercase tracking-widest text-white/85 sm:text-lg">
                       Do you know why…
                     </span>
                   </div>
                   <span
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-2xl text-lg shadow-lg"
+                    className="animate-bounce-in inline-flex h-9 w-9 items-center justify-center rounded-2xl text-lg shadow-lg"
                     style={{ background: catGradient }}
                     aria-label={fact?.category ?? "category"}
                   >
