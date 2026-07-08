@@ -546,13 +546,20 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
       };
     }
 
-    const prevStreak = existing?.current_streak ?? 0;
-    const nextStreak = existing?.last_login_bonus_day === y ? prevStreak + 1 : 1;
+    // Login-bonus escalation is computed from login-bonus dates only.
+    // Do NOT overwrite `current_streak` — that field belongs to the
+    // daily-challenge streak (see recordDailyChallenge). Otherwise a user
+    // who missed yesterday's bonus but is still on a long challenge streak
+    // would see their streak reset to 1 when they claim today's bonus.
+    const loginStreak = existing?.last_login_bonus_day === y
+      ? (existing?.current_streak ?? 0) + 1
+      : 1;
     const bonus = Math.min(
       LOGIN_BONUS_MAX,
-      LOGIN_BONUS_BASE + (nextStreak - 1) * LOGIN_BONUS_STREAK_STEP,
+      LOGIN_BONUS_BASE + (loginStreak - 1) * LOGIN_BONUS_STREAK_STEP,
     );
-    const longest = Math.max(existing?.longest_streak ?? 0, nextStreak);
+    const currentStreak = existing?.current_streak ?? 0;
+    const longest = Math.max(existing?.longest_streak ?? 0, currentStreak);
 
     const { data: row, error } = await context.supabase
       .from("user_stats")
@@ -560,7 +567,7 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
         {
           user_id: context.userId,
           total_points: (existing?.total_points ?? 0) + bonus,
-          current_streak: nextStreak,
+          current_streak: currentStreak,
           longest_streak: longest,
           facts_seen: existing?.facts_seen ?? 0,
           last_active_day: t,
@@ -578,7 +585,7 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     return {
       claimed: true,
       awarded_points: bonus,
-      streak: nextStreak,
+      streak: currentStreak,
       stats: row as StatsDTO,
       next_available_at: nextAvailable,
     };
