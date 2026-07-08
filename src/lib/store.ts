@@ -136,6 +136,20 @@ export const bumpSeen = () => {
 };
 export const getSeen = () => read<number>(KEY_SEEN, 0);
 
+// ------- Seen fact IDs (dedupe: never show the same fact twice) -------
+const KEY_SEEN_IDS = "why:seenIds";
+const SEEN_IDS_MAX = 5000;
+export const getSeenIds = (): string[] => read<string[]>(KEY_SEEN_IDS, []);
+export function markSeen(id: string): void {
+  if (!id) return;
+  const list = read<string[]>(KEY_SEEN_IDS, []);
+  if (list.includes(id)) return;
+  list.push(id);
+  // Keep a rolling window so localStorage never grows unbounded.
+  write(KEY_SEEN_IDS, list.length > SEEN_IDS_MAX ? list.slice(-SEEN_IDS_MAX) : list);
+}
+export const resetSeenIds = () => write(KEY_SEEN_IDS, []);
+
 // ------- Offline cache (last N facts) -------
 export const cacheFact = (fact: Fact) => {
   const list = read<Fact[]>(KEY_CACHE, []);
