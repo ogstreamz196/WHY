@@ -969,7 +969,21 @@ function WhyApp() {
         title={signInPrompt?.title}
         message={signInPrompt?.message}
       />
-      <WelcomeOverlay open={welcome} name={displayName} onClose={() => setWelcome(false)} />
+      <WelcomeOverlay
+        open={welcome}
+        name={displayName}
+        needsName={!displayName || displayName === user?.email?.split("@")[0]}
+        onClose={() => setWelcome(false)}
+        onSubmitName={async (nickname) => {
+          try {
+            const updated = await updateProfile({ data: { display_name: nickname } });
+            setDisplayName(updated.display_name ?? nickname);
+          } catch (e) {
+            console.warn("nickname save failed", e);
+            throw e;
+          }
+        }}
+      />
       <LevelUpCelebration
         open={!!levelUp}
         level={levelUp?.level ?? 1}
