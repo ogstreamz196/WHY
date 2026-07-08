@@ -39,6 +39,8 @@ import {
   getFavorites,
   getPoints,
   getSeen,
+  getSeenIds,
+  markSeen,
   getStreak,
   isFavorite,
   toggleFavorite,
