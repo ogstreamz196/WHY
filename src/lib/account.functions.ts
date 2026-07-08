@@ -207,7 +207,7 @@ export const listFavorites = createServerFn({ method: "GET" })
 export const toggleFavorite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ fact_id: z.string().uuid() }).parse(input))
-  .handler(async ({ data, context }): Promise<{ favorited: boolean }> => {
+  .handler(async ({ data, context }): Promise<{ favorited: boolean; newlyUnlocked: string[] }> => {
     const { data: existing } = await context.supabase
       .from("favorites")
       .select("id")
@@ -220,14 +220,16 @@ export const toggleFavorite = createServerFn({ method: "POST" })
         .delete()
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
-      return { favorited: false };
+      return { favorited: false, newlyUnlocked: [] };
     }
     const { error } = await context.supabase
       .from("favorites")
       .insert({ user_id: context.userId, fact_id: data.fact_id });
     if (error) throw new Error(error.message);
-    return { favorited: true };
+    const newlyUnlocked = await runAchievementCheckForUser(context);
+    return { favorited: true, newlyUnlocked };
   });
+
 
 // -------------------- Achievements --------------------
 
