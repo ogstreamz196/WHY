@@ -196,10 +196,11 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle(),
     ]);
 
-    const DISCOVERY_POINTS = 1;
+    const DISCOVERY_POINTS_BASE = 1;
+    const awardedPoints = await awardAmountForUser(context, DISCOVERY_POINTS_BASE);
     const patch = {
       user_id: context.userId,
-      total_points: (existing?.total_points ?? 0) + DISCOVERY_POINTS,
+      total_points: (existing?.total_points ?? 0) + awardedPoints,
       current_streak: existing?.current_streak ?? 0,
       longest_streak: existing?.longest_streak ?? 0,
       facts_seen: (existing?.facts_seen ?? 0) + 1,
@@ -213,7 +214,7 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    await awardXp(context, "discovery", DISCOVERY_POINTS, (fact as { category: string | null } | null)?.category ?? null);
+    await awardXp(context, "discovery", awardedPoints, (fact as { category: string | null } | null)?.category ?? null);
     const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
     return { stats: row as StatsDTO, newlyUnlocked };
   });
