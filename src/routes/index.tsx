@@ -87,8 +87,8 @@ function WhyApp() {
     const p = getPoints();
     setPoints(p);
     setLevel(Math.max(1, Math.floor(p / 100) + 1));
-    const s = touchStreak();
-    setStreak(s.streak);
+    setStreak(getStreak());
+
   }, []);
 
   const grantPoints = useCallback((delta: number) => {
