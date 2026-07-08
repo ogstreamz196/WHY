@@ -901,10 +901,20 @@ function WhyApp() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </>
+                  </motion.div>
                 ) : (
-                  <p className="text-center text-white/70">No facts yet. Tap Next!</p>
+                  <motion.p
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-center text-white/70"
+                  >
+                    No facts yet. Tap Next!
+                  </motion.p>
                 )}
+                </AnimatePresence>
 
                 {error && fact && (
                   <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
