@@ -163,15 +163,26 @@ function AuthPage() {
             </motion.div>
           </AnimatePresence>
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={loading}
-            className="mt-5 flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
+          <div className="mt-5 space-y-2">
+            <button
+              type="button"
+              onClick={() => handleOAuth("google")}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOAuth("apple")}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-4 py-3 text-sm font-bold text-white shadow-md transition disabled:opacity-60"
+            >
+              <AppleIcon />
+              Continue with Apple
+            </button>
+          </div>
 
           <div className="my-4 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
             <div className="h-px flex-1 bg-white/10" />
