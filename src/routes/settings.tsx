@@ -288,7 +288,12 @@ function ArenaPreferences() {
   const p = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
   const [saving, setSaving] = useState(false);
 
-  const save = async (patch: Parameters<typeof doUpdate>[0]["data"]) => {
+  const save = async (patch: {
+    age_band?: "under_10" | "10_12" | "teen" | "adult";
+    favorite_category?: string;
+    leaderboard_opt_out?: boolean;
+    hide_from_public?: boolean;
+  }) => {
     setSaving(true);
     try {
       await doUpdate({ data: patch });
