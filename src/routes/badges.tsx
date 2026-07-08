@@ -91,54 +91,24 @@ function BadgesPage() {
           <Stat label="Seen" value={seen} />
         </div>
 
-
-        {/* Milestones */}
-        <section className="mb-4">
-          <h2 className="mb-2 font-display text-lg font-black text-white">Milestones</h2>
-          <div className="space-y-2">
-            {MILESTONES.map((m) => {
-              const current = stats[m.key] ?? 0;
-              const nextIdx = m.steps.findIndex((s) => current < s);
-              const next = nextIdx === -1 ? m.steps[m.steps.length - 1] : m.steps[nextIdx];
-              const prev = nextIdx <= 0 ? 0 : m.steps[nextIdx - 1];
-              const pct = nextIdx === -1 ? 100 : Math.min(100, Math.round(((current - prev) / (next - prev)) * 100));
-              return (
-                <div key={m.key} className="glass rounded-2xl p-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-black text-white">{m.label}</span>
-                    <span className="font-bold text-white/60">
-                      {current.toLocaleString()} / {next.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                      className="h-full rounded-full"
-                      style={{ background: "var(--gradient-primary)" }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
         <p className="mb-3 text-sm text-white/60">
           Unlocked <span className="font-black text-white">{unlocked}</span> of {badges.length}
+          <span className="ml-2 text-white/40">· tap a badge for details</span>
         </p>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {badges.map((b, i) => (
-            <motion.div
+            <motion.button
+              type="button"
+              onClick={() => setSelected(b)}
               key={b.id}
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              whileHover={{ scale: b.unlocked ? 1.05 : 1, rotate: b.unlocked ? [0, -2, 2, 0] : 0 }}
+              whileHover={{ scale: b.unlocked ? 1.05 : 1.02, rotate: b.unlocked ? [0, -2, 2, 0] : 0 }}
+              whileTap={{ scale: 0.96 }}
               transition={{ delay: i * 0.04 }}
-              className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center ${
-                b.unlocked ? "" : "opacity-40 grayscale"
+              className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition ${
+                b.unlocked ? "" : "opacity-50 grayscale hover:opacity-80"
               }`}
             >
               {b.unlocked && (
@@ -161,9 +131,10 @@ function BadgesPage() {
               <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
                 {b.unlocked ? "Unlocked" : "Locked"}
               </p>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
+
       </div>
       <BottomNav />
     </main>
