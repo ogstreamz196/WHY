@@ -55,15 +55,15 @@ function AuthPage() {
       ? "Continue your curiosity journey."
       : "We'll email you a magic link to set a new password.";
 
-  async function handleGoogle() {
+  async function handleOAuth(provider: "google" | "apple") {
     setLoading(true);
     setMessage(null);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: `${window.location.origin}/auth/callback`,
       });
       if (result.error) {
-        setMessage({ type: "error", text: "Google sign-in failed. Please try again." });
+        setMessage({ type: "error", text: `${provider === "apple" ? "Apple" : "Google"} sign-in failed. Please try again.` });
       } else if (!result.redirected) {
         navigate({ to: search.redirect ?? "/" });
       }
@@ -163,15 +163,26 @@ function AuthPage() {
             </motion.div>
           </AnimatePresence>
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={loading}
-            className="mt-5 flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
+          <div className="mt-5 space-y-2">
+            <button
+              type="button"
+              onClick={() => handleOAuth("google")}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOAuth("apple")}
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-4 py-3 text-sm font-bold text-white shadow-md transition disabled:opacity-60"
+            >
+              <AppleIcon />
+              Continue with Apple
+            </button>
+          </div>
 
           <div className="my-4 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
             <div className="h-px flex-1 bg-white/10" />
@@ -313,6 +324,14 @@ function GoogleIcon() {
       <path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2v2.9A11 11 0 0 0 12 23z"/>
       <path fill="#FBBC04" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7H2a11 11 0 0 0 0 10z"/>
       <path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.7L19.4 4A11 11 0 0 0 2 7l3.7 2.9C6.6 7.3 9.1 5.4 12 5.4z"/>
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+      <path d="M16.365 1.43c0 1.14-.42 2.23-1.24 3.03-.88.87-2.06 1.44-3.14 1.35-.13-1.1.42-2.24 1.2-2.98.88-.86 2.28-1.47 3.18-1.4zM20.5 17.36c-.55 1.27-1.22 2.48-2.13 3.4-.79.8-1.79 1.79-3.07 1.79-1.24.02-1.65-.79-3.26-.79s-2.05.78-3.24.81c-1.28.05-2.25-.87-3.05-1.67-2.19-2.19-3.87-6.19-1.61-9.03 1.13-1.4 3.15-2.29 4.98-2.32 1.31-.03 2.55.88 3.36.88.79 0 2.31-1.09 3.9-.93.66.03 2.53.27 3.72 2.02-.09.06-2.23 1.3-2.21 3.87.03 3.08 2.71 4.1 2.61 3.97z"/>
     </svg>
   );
 }

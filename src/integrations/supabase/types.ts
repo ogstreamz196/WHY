@@ -373,6 +373,7 @@ export type Database = {
           facts_seen: number
           last_active_day: string | null
           last_daily_challenge_day: string | null
+          last_login_bonus_day: string | null
           longest_streak: number
           total_points: number
           updated_at: string
@@ -383,6 +384,7 @@ export type Database = {
           facts_seen?: number
           last_active_day?: string | null
           last_daily_challenge_day?: string | null
+          last_login_bonus_day?: string | null
           longest_streak?: number
           total_points?: number
           updated_at?: string
@@ -393,6 +395,7 @@ export type Database = {
           facts_seen?: number
           last_active_day?: string | null
           last_daily_challenge_day?: string | null
+          last_login_bonus_day?: string | null
           longest_streak?: number
           total_points?: number
           updated_at?: string

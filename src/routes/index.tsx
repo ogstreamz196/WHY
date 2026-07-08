@@ -47,6 +47,7 @@ import {
   migrateGuestData,
   recordDiscovery,
   recordDailyChallenge,
+  claimDailyLoginBonus,
   toggleFavorite as toggleFavoriteServer,
 } from "@/lib/account.functions";
 import {
@@ -88,6 +89,7 @@ function WhyApp() {
   const fetchLastChain = useServerFn(resumeLastChain);
   const saveChainServer = useServerFn(saveChain);
   const bumpInterest = useServerFn(bumpCategoryInterest);
+  const claimBonus = useServerFn(claimDailyLoginBonus);
 
   const { user, isGuest } = useCurrentUser();
 
@@ -107,6 +109,8 @@ function WhyApp() {
   const [lastChain, setLastChain] = useState<ChainSummary | null>(null);
   const [savingChain, setSavingChain] = useState(false);
   const [savedChainId, setSavedChainId] = useState<string | null>(null);
+  const [bonusAvailable, setBonusAvailable] = useState(false);
+  const [bonusClaiming, setBonusClaiming] = useState(false);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
@@ -157,6 +161,8 @@ function WhyApp() {
         setStreak(stats.current_streak);
         setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
         setLastChain(last);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        setBonusAvailable(stats.last_login_bonus_day !== todayStr);
       } catch (e) {
         console.warn("account load failed", e);
       }
@@ -178,6 +184,25 @@ function WhyApp() {
       setCelebrate({ points: 50 });
     }
   }, []);
+
+  const handleClaimBonus = useCallback(async () => {
+    if (bonusClaiming || !bonusAvailable) return;
+    setBonusClaiming(true);
+    try {
+      const res = await claimBonus();
+      if (res.claimed) {
+        setPoints(res.stats.total_points);
+        setStreak(res.stats.current_streak);
+        setLevel(Math.max(1, Math.floor(res.stats.total_points / 100) + 1));
+        setCelebrate({ points: res.awarded_points });
+      }
+      setBonusAvailable(false);
+    } catch (e) {
+      console.warn("bonus claim failed", e);
+    } finally {
+      setBonusClaiming(false);
+    }
+  }, [bonusAvailable, bonusClaiming, claimBonus]);
 
   const showFact = useCallback((f: Fact | null) => {
     setFact(f);
@@ -457,6 +482,38 @@ function WhyApp() {
             </span>
             <ArrowRight className="h-4 w-4 text-white/60" />
           </button>
+        )}
+
+        {/* Daily login bonus */}
+        {user && bonusAvailable && (
+          <motion.button
+            type="button"
+            onClick={handleClaimBonus}
+            disabled={bonusClaiming}
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            className="mb-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-300/30 bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-pink-500/15 px-4 py-3 text-left shadow-[0_0_24px_rgba(251,191,36,0.15)] transition disabled:opacity-60"
+          >
+            <span className="flex items-center gap-3">
+              <motion.span
+                animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
+                transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2 }}
+                className="text-2xl"
+              >
+                🎁
+              </motion.span>
+              <span>
+                <span className="block text-sm font-black text-white">Daily login bonus</span>
+                <span className="block text-xs text-white/70">Tap to claim today's curiosity reward</span>
+              </span>
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-black text-amber-200">
+              <CoinIcon className="h-3.5 w-3.5" />
+              claim
+            </span>
+          </motion.button>
         )}
 
         {/* Continue last Why chain */}
