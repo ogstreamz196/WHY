@@ -185,6 +185,25 @@ function WhyApp() {
     }
   }, []);
 
+  const handleClaimBonus = useCallback(async () => {
+    if (bonusClaiming || !bonusAvailable) return;
+    setBonusClaiming(true);
+    try {
+      const res = await claimBonus();
+      if (res.claimed) {
+        setPoints(res.stats.total_points);
+        setStreak(res.stats.current_streak);
+        setLevel(Math.max(1, Math.floor(res.stats.total_points / 100) + 1));
+        setCelebrate({ points: res.awarded_points });
+      }
+      setBonusAvailable(false);
+    } catch (e) {
+      console.warn("bonus claim failed", e);
+    } finally {
+      setBonusClaiming(false);
+    }
+  }, [bonusAvailable, bonusClaiming, claimBonus]);
+
   const showFact = useCallback((f: Fact | null) => {
     setFact(f);
     setRevealed(false);
