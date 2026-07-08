@@ -683,6 +683,17 @@ function WhyApp() {
                                     ? "Diving deeper…"
                                     : "🤔 But… Why?"}
                               </button>
+
+                              {chain.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={handleSaveChain}
+                                  disabled={savingChain || !!savedChainId}
+                                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-3 text-xs font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-60"
+                                >
+                                  {savedChainId ? "✓ Saved to your chains" : savingChain ? "Saving…" : "🧵 Save this chain"}
+                                </button>
+                              )}
                             </div>
                           )}
                         </motion.div>
