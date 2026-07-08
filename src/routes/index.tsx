@@ -895,7 +895,7 @@ function WhyApp() {
             style={{ background: "var(--gradient-primary)" }}
           >
             <span className="relative z-10 inline-flex items-center justify-center gap-3">
-              {loading ? "Loading…" : "Next"}
+              {loading ? "Loading…" : "NEXT FACT"}
               <ArrowRight className="h-6 w-6" />
             </span>
             <span
