@@ -941,7 +941,7 @@ function WhyApp() {
         </div>
       </div>
 
-      <BottomNav />
+      {loading && !fact ? <BottomNavSkeleton /> : <BottomNav />}
       <Celebration
         open={!!celebrate}
         points={celebrate?.points ?? 0}
