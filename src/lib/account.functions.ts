@@ -64,6 +64,10 @@ export const updateMyProfile = createServerFn({ method: "POST" })
           .optional(),
         avatar_id: z.string().max(60).optional(),
         bio: z.string().max(280).optional(),
+        age_band: z.enum(["under_10", "10_12", "teen", "adult"]).optional(),
+        favorite_category: z.string().max(40).optional(),
+        leaderboard_opt_out: z.boolean().optional(),
+        hide_from_public: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -72,11 +76,32 @@ export const updateMyProfile = createServerFn({ method: "POST" })
       .from("profiles")
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq("id", context.userId)
-      .select("id, display_name, username, avatar_id, bio, created_at")
+      .select(PROFILE_COLS)
       .single();
     if (error) throw new Error(error.message);
     return row as ProfileDTO;
   });
+
+// -------------------- XP ledger --------------------
+
+type AuthCtx = {
+  supabase: import("@supabase/supabase-js").SupabaseClient;
+  userId: string;
+};
+
+export type XpSource = "quiz" | "discovery" | "daily" | "streak" | "achievement" | "login" | "mission";
+
+/** Record an XP award in the append-only ledger. Safe to call after `total_points` is bumped. */
+export async function awardXp(ctx: AuthCtx, source: XpSource, points: number, category?: string | null): Promise<void> {
+  if (!points || points <= 0) return;
+  await ctx.supabase.from("xp_events").insert({
+    user_id: ctx.userId,
+    source,
+    points,
+    category: category ?? null,
+  });
+}
+
 
 // -------------------- Stats --------------------
 
