@@ -363,11 +363,16 @@ function WhyApp() {
                           exit={{ opacity: 0 }}
                           className="mt-6 flex flex-col items-center"
                         >
-                          <img
-                            src={mascotImg}
-                            alt=""
-                            className="mb-3 h-32 w-32 animate-float-slow drop-shadow-[0_10px_40px_rgba(124,58,237,0.5)]"
-                          />
+                          <motion.div
+                            initial={{ scale: 0.6, rotate: -8, opacity: 0 }}
+                            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                            transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                            className="mb-3 flex h-32 w-32 items-center justify-center rounded-full text-6xl shadow-[0_10px_40px_rgba(124,58,237,0.5)] animate-float-slow"
+                            style={{ background: catGradient }}
+                            aria-label={fact.category ?? "question icon"}
+                          >
+                            <span>{emojiFor(fact.category)}</span>
+                          </motion.div>
                           <button
                             type="button"
                             onClick={reveal}
