@@ -13,6 +13,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as BadgesRouteImport } from './routes/badges'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -34,18 +35,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
+  id: '/api/public/hooks/sync-sheet',
+  path: '/api/public/hooks/sync-sheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/badges': typeof BadgesRoute
   '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
+  '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/badges': typeof BadgesRoute
   '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
+  '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,30 @@ export interface FileRoutesById {
   '/badges': typeof BadgesRoute
   '/favorites': typeof FavoritesRoute
   '/settings': typeof SettingsRoute
+  '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/badges' | '/favorites' | '/settings'
+  fullPaths:
+    | '/'
+    | '/badges'
+    | '/favorites'
+    | '/settings'
+    | '/api/public/hooks/sync-sheet'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/badges' | '/favorites' | '/settings'
-  id: '__root__' | '/' | '/badges' | '/favorites' | '/settings'
+  to:
+    | '/'
+    | '/badges'
+    | '/favorites'
+    | '/settings'
+    | '/api/public/hooks/sync-sheet'
+  id:
+    | '__root__'
+    | '/'
+    | '/badges'
+    | '/favorites'
+    | '/settings'
+    | '/api/public/hooks/sync-sheet'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +92,7 @@ export interface RootRouteChildren {
   BadgesRoute: typeof BadgesRoute
   FavoritesRoute: typeof FavoritesRoute
   SettingsRoute: typeof SettingsRoute
+  ApiPublicHooksSyncSheetRoute: typeof ApiPublicHooksSyncSheetRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sync-sheet': {
+      id: '/api/public/hooks/sync-sheet'
+      path: '/api/public/hooks/sync-sheet'
+      fullPath: '/api/public/hooks/sync-sheet'
+      preLoaderRoute: typeof ApiPublicHooksSyncSheetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +140,7 @@ const rootRouteChildren: RootRouteChildren = {
   BadgesRoute: BadgesRoute,
   FavoritesRoute: FavoritesRoute,
   SettingsRoute: SettingsRoute,
+  ApiPublicHooksSyncSheetRoute: ApiPublicHooksSyncSheetRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
