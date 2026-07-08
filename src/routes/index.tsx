@@ -484,6 +484,38 @@ function WhyApp() {
           </button>
         )}
 
+        {/* Daily login bonus */}
+        {user && bonusAvailable && (
+          <motion.button
+            type="button"
+            onClick={handleClaimBonus}
+            disabled={bonusClaiming}
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            className="mb-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-300/30 bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-pink-500/15 px-4 py-3 text-left shadow-[0_0_24px_rgba(251,191,36,0.15)] transition disabled:opacity-60"
+          >
+            <span className="flex items-center gap-3">
+              <motion.span
+                animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
+                transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2 }}
+                className="text-2xl"
+              >
+                🎁
+              </motion.span>
+              <span>
+                <span className="block text-sm font-black text-white">Daily login bonus</span>
+                <span className="block text-xs text-white/70">Tap to claim today's curiosity reward</span>
+              </span>
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-black text-amber-200">
+              <CoinIcon className="h-3.5 w-3.5" />
+              claim
+            </span>
+          </motion.button>
+        )}
+
         {/* Continue last Why chain */}
         {user && lastChain && lastChain.step_count > 1 && (
           <Link
