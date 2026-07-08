@@ -22,6 +22,7 @@ import {
 import { CoinIcon } from "@/components/CoinIcon";
 import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
+import { StreakBadges } from "@/components/StreakBadges";
 import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
