@@ -122,7 +122,7 @@ export const markMissionTask = createServerFn({ method: "POST" })
 
 export const claimMissionBonus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ awarded: boolean; points: number; total_points: number }> => {
+  .handler(async ({ context }): Promise<{ awarded: boolean; points: number; total_points: number; newlyUnlocked: string[] }> => {
     const t = today();
     const { data: existing } = await context.supabase
       .from("daily_missions")
