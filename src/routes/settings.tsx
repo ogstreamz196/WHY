@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import {
   defaultSettings,
@@ -7,6 +8,7 @@ import {
   setSettings as saveSettings,
   type Settings,
 } from "@/lib/store";
+import { syncFactsFromSheet } from "@/lib/sync.functions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -22,11 +24,16 @@ export const Route = createFileRoute("/settings")({
 function SettingsPage() {
   const [settings, setLocal] = useState<Settings>(defaultSettings);
   const [badges, setBadges] = useState(getBadges());
+  const [sheetId, setSheetId] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const runSync = useServerFn(syncFactsFromSheet);
 
   useEffect(() => {
     setLocal(getSettings());
     setBadges(getBadges());
   }, []);
+
 
   const update = (patch: Partial<Settings>) => {
     const next = { ...settings, ...patch };
