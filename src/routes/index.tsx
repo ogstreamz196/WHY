@@ -94,6 +94,7 @@ function WhyApp() {
   const claimBonus = useServerFn(claimDailyLoginBonus);
 
   const { user, isGuest } = useCurrentUser();
+  const navigate = useNavigate();
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
