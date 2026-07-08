@@ -216,6 +216,87 @@ function ProfilePage() {
           </div>
         </section>
 
+        {/* Category interests */}
+        {interests.data && interests.data.length > 0 && (
+          <section className="mt-6">
+            <h2 className="mb-3 font-display text-lg font-black text-white">Your curiosity map</h2>
+            <div className="flex flex-wrap gap-2">
+              {interests.data.slice(0, 8).map((it) => (
+                <div key={it.category} className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85">
+                  <span>{emojiFor(it.category)}</span>
+                  <span className="capitalize">{it.category}</span>
+                  <span className="text-white/50">·{it.weight}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Saved chains */}
+        <section className="mt-6">
+          <header className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
+            <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
+              View all →
+            </Link>
+          </header>
+          {chains.data && chains.data.length > 0 ? (
+            <div className="space-y-2">
+              {chains.data.slice(0, 3).map((c) => (
+                <Link
+                  key={c.id}
+                  to="/chain/$id"
+                  params={{ id: c.id }}
+                  className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2.5"
+                >
+                  <Sparkles className="h-4 w-4 text-fuchsia-300" />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-sm font-bold text-white">{c.title ?? "Untitled chain"}</div>
+                    <div className="text-[10px] text-white/50">{c.step_count} steps</div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-white/40" />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+              Save your first Why chain from the home screen.
+            </p>
+          )}
+        </section>
+
+        {/* Discovery timeline */}
+        <section className="mt-6">
+          <h2 className="mb-3 inline-flex items-center gap-2 font-display text-lg font-black text-white">
+            <Clock className="h-4 w-4 text-white/70" /> Recent discoveries
+          </h2>
+          {timeline.data && timeline.data.length > 0 ? (
+            <ol className="space-y-2">
+              {timeline.data.map((entry, i) => (
+                <motion.li
+                  key={`${entry.fact.id}-${i}`}
+                  initial={{ opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.02 }}
+                  className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                >
+                  <span className="mt-0.5 text-base">{emojiFor(entry.fact.category)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate text-sm text-white/90">{entry.fact.question}</div>
+                    <div className="text-[10px] text-white/40">
+                      {new Date(entry.seen_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </div>
+                  </div>
+                </motion.li>
+              ))}
+            </ol>
+          ) : (
+            <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+              Every fact you reveal shows up here.
+            </p>
+          )}
+        </section>
+
         <div className="mt-8 flex flex-wrap gap-2">
           <Link
             to="/settings"
