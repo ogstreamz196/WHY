@@ -97,6 +97,9 @@ function ArenaPage() {
     else setFilter(null);
   }, [tab]);
 
+  const [celebrate, setCelebrate] = useState<{ title: string; subtitle: string; tone: string } | null>(null);
+  const [confettiTick, setConfettiTick] = useState(0);
+
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -106,12 +109,34 @@ function ArenaPage() {
       .then((r) => {
         if (!alive) return;
         setResult(r);
-        // Rank movement vs last visit (per view, local)
-        if (r?.my_rank && typeof window !== "undefined") {
-          const key = `lb:rank:${tab}:${filter ?? ""}`;
-          const prev = Number(window.sessionStorage.getItem(key));
-          if (Number.isFinite(prev) && prev > 0) setRankDelta(prev - r.my_rank);
-          window.sessionStorage.setItem(key, String(r.my_rank));
+        // Rank movement + rank-up celebrations vs last visit (per view, session)
+        if (r?.my_rank && r.total_users && typeof window !== "undefined") {
+          const rankKey = `lb:rank:${tab}:${filter ?? ""}`;
+          const tierKey = `lb:tier:${tab}:${filter ?? ""}`;
+          const store = window.sessionStorage;
+          const prevRank = Number(store.getItem(rankKey));
+          if (Number.isFinite(prevRank) && prevRank > 0) setRankDelta(prevRank - r.my_rank);
+
+          const pct = (r.my_rank / r.total_users) * 100;
+          const tierOf = (p: number, rank: number) =>
+            rank === 1 ? 6 : p <= 1 ? 5 : p <= 5 ? 4 : rank <= 10 ? 3 : p <= 10 ? 2 : p <= 25 ? 1 : 0;
+          const TIER_META = [
+            null,
+            { title: "Top 25%!", subtitle: "You just cracked the top quarter.", tone: "from-emerald-400 to-teal-500" },
+            { title: "Top 10%!", subtitle: "You're in elite company now.", tone: "from-cyan-400 to-emerald-400" },
+            { title: "Top 10 rank!", subtitle: "Ten seats from the throne.", tone: "from-fuchsia-500 to-violet-500" },
+            { title: "Top 5%!", subtitle: "Officially a Curiosity legend.", tone: "from-fuchsia-400 to-pink-500" },
+            { title: "Top 1%!", subtitle: "One in a hundred — nice.", tone: "from-amber-400 to-orange-500" },
+            { title: "#1 Champion!", subtitle: "You lead the entire board.", tone: "from-yellow-300 to-amber-500" },
+          ] as const;
+          const prevTier = Number(store.getItem(tierKey)) || 0;
+          const nextTier = tierOf(pct, r.my_rank);
+          if (nextTier > prevTier && TIER_META[nextTier]) {
+            setCelebrate(TIER_META[nextTier]);
+            setConfettiTick((n) => n + 1);
+          }
+          store.setItem(rankKey, String(r.my_rank));
+          store.setItem(tierKey, String(nextTier));
         }
       })
       .catch(() => { if (alive) setResult(null); })
