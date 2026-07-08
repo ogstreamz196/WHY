@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -93,6 +94,7 @@ function WhyApp() {
   const claimBonus = useServerFn(claimDailyLoginBonus);
 
   const { user, isGuest } = useCurrentUser();
+  const navigate = useNavigate();
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
@@ -340,17 +342,22 @@ function WhyApp() {
 
   const handleFav = () => {
     if (!fact) return;
-    if (isGuest) {
-      setSignInPrompt({
-        title: "Save your favourites",
-        message: "Sign up to keep your favourite whys across every device.",
-      });
-      return;
-    }
     const now = toggleFavorite(fact);
     setFav(now);
     if (now) grantPoints(1);
-    toggleFavServer({ data: { fact_id: fact.id } }).catch((e) => console.warn(e));
+    if (user) {
+      toggleFavServer({ data: { fact_id: fact.id } }).catch((e) => console.warn(e));
+    } else if (now) {
+      const nudgeKey = "why:favNudgeCount";
+      const count = Number(localStorage.getItem(nudgeKey) ?? "0") + 1;
+      localStorage.setItem(nudgeKey, String(count));
+      toast.success("Saved on this device", {
+        description: count % 3 === 1 ? "Sign up to keep favourites across every device." : undefined,
+        action: count % 3 === 1
+          ? { label: "Sign up", onClick: () => navigate({ to: "/auth", search: { mode: "signup", redirect: "/" } }) }
+          : undefined,
+      });
+    }
   };
 
   const doSearch = async (e: React.FormEvent) => {
