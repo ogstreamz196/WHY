@@ -453,3 +453,43 @@ function QuizStatsSection() {
   );
 }
 
+function MyRankingsSection() {
+  const fetchRankings = useServerFn(getMyRankings);
+  const q = useQuery({ queryKey: ["my-rankings"], queryFn: () => fetchRankings() });
+  if (!q.data || q.data.length === 0) return null;
+  return (
+    <section className="mt-6">
+      <header className="mb-3 flex items-center justify-between">
+        <h2 className="inline-flex items-center gap-2 font-display text-xl font-black text-white">
+          <Trophy className="h-5 w-5 text-amber-300" /> Your Curiosity Rankings
+        </h2>
+        <Link to="/leaderboard" className="text-xs font-bold text-fuchsia-200">Arena →</Link>
+      </header>
+      <ul className="space-y-2">
+        {q.data.map((r) => (
+          <motion.li
+            key={r.key}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-strong flex items-center gap-3 rounded-2xl border border-white/10 p-3"
+          >
+            <span className="text-2xl leading-none">{r.emoji}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-black text-white">{r.label}</p>
+              <p className="truncate text-[11px] text-white/60">{r.message}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-black text-white">
+                {r.rank ? `#${r.rank.toLocaleString()}` : "—"}
+              </p>
+              {r.percentile !== null && r.percentile <= 25 && (
+                <p className="text-[9px] font-black uppercase tracking-widest text-amber-200">Top {r.percentile}%</p>
+              )}
+            </div>
+          </motion.li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
