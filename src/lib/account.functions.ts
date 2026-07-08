@@ -297,11 +297,13 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
   const missionsCompleted = missionsRes.count ?? 0;
 
   const catCounts = new Map<string, number>();
-  const discRows = (discCatRes.data ?? []) as Array<{ facts: { category: string | null } | null }>;
+  const discRows = (discCatRes.data ?? []) as unknown as Array<{ facts: { category: string | null } | { category: string | null }[] | null }>;
   for (const r of discRows) {
-    const c = r.facts?.category;
+    const f = Array.isArray(r.facts) ? r.facts[0] : r.facts;
+    const c = f?.category;
     if (c) catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
   }
+
   const distinctCats = catCounts.size;
   const topCatCount = [...catCounts.values()].reduce((m, n) => Math.max(m, n), 0);
 
