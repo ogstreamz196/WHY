@@ -675,6 +675,12 @@ function WhyApp() {
         streak={streak}
         onClose={() => setCelebrate(null)}
       />
+      <SignInPrompt
+        open={!!signInPrompt}
+        onClose={() => setSignInPrompt(null)}
+        title={signInPrompt?.title}
+        message={signInPrompt?.message}
+      />
     </main>
   );
 }
