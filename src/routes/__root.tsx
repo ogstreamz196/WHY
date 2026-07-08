@@ -59,6 +59,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
+            type="button"
             onClick={() => { router.invalidate(); reset(); }}
             className="rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-glow)]"
             style={{ background: "var(--gradient-primary)" }}
@@ -140,7 +141,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-black"
+      >
+        Skip to content
+      </a>
+      <div id="main" tabIndex={-1}>
+        <Outlet />
+      </div>
       <GlobalStreakMilestoneWatcher />
       <Toaster theme="dark" position="top-center" richColors closeButton />
     </QueryClientProvider>
