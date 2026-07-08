@@ -464,6 +464,10 @@ export const finishQuiz = createServerFn({ method: "POST" })
         .eq("user_id", context.userId);
     }
 
+    if (finalScore > 0) {
+      await awardXp(context, "quiz", finalScore, session.category ?? null);
+    }
+
     // Achievement checks (quiz-specific)
     const unlocked = await checkQuizAchievements(context);
 
