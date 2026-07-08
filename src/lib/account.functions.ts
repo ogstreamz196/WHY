@@ -5,6 +5,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const DAILY_POINTS = 25;
+const LOGIN_BONUS_BASE = 10;
+const LOGIN_BONUS_STREAK_STEP = 2;
+const LOGIN_BONUS_MAX = 100;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
