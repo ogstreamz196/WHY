@@ -1016,3 +1016,82 @@ function GuestProgressCard({
     </motion.div>
   );
 }
+
+function WelcomeOverlay({ open, name, onClose }: { open: boolean; name: string | null; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 220, damping: 18 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm overflow-hidden rounded-4xl border border-white/15 bg-gradient-to-br from-indigo-900/90 via-violet-900/90 to-fuchsia-900/90 p-6 text-center shadow-[0_0_60px_rgba(139,92,246,0.4)]"
+          >
+            <div className="pointer-events-none absolute inset-0 opacity-40">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, y: 0, x: 0, scale: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    y: [0, -60 - Math.random() * 40],
+                    x: [(Math.random() - 0.5) * 40, (Math.random() - 0.5) * 120],
+                    scale: [0, 1, 0.5],
+                  }}
+                  transition={{ duration: 2.4, delay: i * 0.08, repeat: Infinity, repeatDelay: 0.8 }}
+                  className="absolute left-1/2 top-1/2 text-lg"
+                >
+                  {["✨", "⭐", "🌟", "💫"][i % 4]}
+                </motion.span>
+              ))}
+            </div>
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.15 }}
+              className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl text-4xl shadow-[0_0_40px_rgba(251,191,36,0.5)]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              🎉
+            </motion.div>
+            <h2 className="relative font-display text-2xl font-black text-white">
+              Welcome{name ? `, ${name}` : ""}!
+            </h2>
+            <p className="relative mt-2 text-sm text-white/70">
+              Your Curiosity Passport is ready. Every fact you discover, every chain you follow — it all belongs to you now.
+            </p>
+            <div className="relative mt-4 grid grid-cols-3 gap-2 text-xs">
+              {[
+                { i: "🔥", l: "Streaks" },
+                { i: "🎁", l: "Bonuses" },
+                { i: "⭐", l: "Badges" },
+              ].map((x) => (
+                <div key={x.l} className="rounded-2xl border border-white/10 bg-white/5 p-2">
+                  <div className="text-lg">{x.i}</div>
+                  <div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/60">{x.l}</div>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="relative mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] transition hover:scale-[1.02]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              Begin the journey
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
