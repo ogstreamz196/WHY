@@ -264,7 +264,9 @@ function WhyApp() {
         bumpSeen();
         grantPoints(1);
         if (user && next?.id) {
-          recordDiscoveryServer({ data: { fact_id: next.id } }).catch((e) => console.warn(e));
+          recordDiscoveryServer({ data: { fact_id: next.id } })
+            .then((r) => notifyAchievements(r?.newlyUnlocked))
+            .catch((e) => console.warn(e));
         }
       } catch (err) {
         console.error(err);
