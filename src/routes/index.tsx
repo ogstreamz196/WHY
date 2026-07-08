@@ -853,12 +853,14 @@ function WhyApp() {
                     className="group flex shrink-0 flex-col items-center gap-1"
                   >
                     <span
-                      className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-lg transition ${
+                      className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition ${
                         active ? "scale-110 ring-2 ring-white/60" : "opacity-80 group-hover:opacity-100"
                       }`}
                       style={{ background: c.gradient, boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined }}
                     >
-                      {c.emoji}
+                      <span className={c.key === "technology" ? "text-3xl leading-none" : "text-2xl leading-none"}>
+                        {c.emoji}
+                      </span>
                     </span>
                     <span className={`text-[10px] font-bold ${active ? "text-white" : "text-white/60"}`}>
                       {c.label}
