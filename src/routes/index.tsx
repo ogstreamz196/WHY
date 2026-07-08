@@ -113,6 +113,7 @@ function WhyApp() {
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
+  const [revealing, setRevealing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<CategoryKey>("all");
   const [fav, setFav] = useState(false);
@@ -306,14 +307,17 @@ function WhyApp() {
   }, [fact?.id, fact?.category, user, bumpInterest]);
 
   const reveal = () => {
-    if (revealed) return;
-    setRevealed(true);
-    grantPoints(2);
-    // First reveal of the session counts as today's mystery + surprise
-    markMission("mystery");
-    markMission("surprise");
-    // Category task: if user isn't on "all", explored a specific category
-    if (category !== "all" && fact?.category) markMission("category");
+    if (revealed || revealing) return;
+    setRevealing(true);
+    // Short morph/pulse before showing the answer
+    window.setTimeout(() => {
+      setRevealed(true);
+      setRevealing(false);
+      grantPoints(2);
+      markMission("mystery");
+      markMission("surprise");
+      if (category !== "all" && fact?.category) markMission("category");
+    }, 480);
   };
 
   const askWhy = async () => {
@@ -631,10 +635,10 @@ function WhyApp() {
           <AnimatePresence mode="wait">
             <motion.div
               key={fact?.id ?? "loading"}
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -24, scale: 0.98 }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 20, x: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -14, x: -16, scale: 0.97 }}
+              transition={{ duration: 0.36, ease: [0.32, 0.72, 0, 1] }}
               className="relative"
             >
               {/* Category-tinted glow behind card */}
@@ -690,18 +694,48 @@ function WhyApp() {
                           >
                             <span>{emojiFor(fact.category)}</span>
                           </motion.div>
-                          <button
+                          <motion.button
                             type="button"
                             onClick={reveal}
-                            className="animate-pulse-glow hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98]"
+                            disabled={revealing}
+                            layout
+                            animate={
+                              revealing
+                                ? { scale: [1, 1.04, 0.9], borderRadius: "9999px" }
+                                : { scale: 1 }
+                            }
+                            transition={{ duration: 0.48, ease: [0.32, 0.72, 0, 1] }}
+                            className={`hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98] ${
+                              revealing ? "" : "animate-pulse-glow"
+                            }`}
                             style={{ background: "var(--gradient-primary)" }}
                           >
                             <span aria-hidden className="shine-sweep" />
+                            {/* Progress pulse fill during reveal */}
+                            {revealing && (
+                              <motion.span
+                                aria-hidden
+                                initial={{ x: "-100%" }}
+                                animate={{ x: "0%" }}
+                                transition={{ duration: 0.46, ease: "easeOut" }}
+                                className="absolute inset-0 bg-white/25"
+                              />
+                            )}
                             <span className="relative z-10 inline-flex items-center gap-2">
-                              <Sparkles className="h-5 w-5" />
-                              Reveal Answer
+                              <motion.span
+                                animate={
+                                  revealing
+                                    ? { rotate: 360, scale: 1.3 }
+                                    : { rotate: 0, scale: 1 }
+                                }
+                                transition={{ duration: 0.48, ease: "easeOut" }}
+                                className="inline-flex"
+                              >
+                                <Sparkles className="h-5 w-5" />
+                              </motion.span>
+                              {revealing ? "Revealing…" : "Reveal Answer"}
                             </span>
-                          </button>
+                          </motion.button>
                           <p className="mt-3 text-xs text-white/50">Tap to discover the magic ↑</p>
                         </motion.div>
                       ) : (
