@@ -203,11 +203,23 @@ function ArenaPage() {
                 #{result.my_rank.toLocaleString()}
                 <span className="ml-2 text-xs font-bold text-white/60">of {result.total_users.toLocaleString()}</span>
               </p>
+              {rankDelta !== null && rankDelta !== 0 && (
+                <p className={`mt-0.5 text-[11px] font-black ${rankDelta > 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                  {rankDelta > 0
+                    ? `▲ Up ${rankDelta.toLocaleString()} since last visit`
+                    : `▼ Down ${Math.abs(rankDelta).toLocaleString()} since last visit`}
+                </p>
+              )}
             </div>
             {topPercent !== null && topPercent <= 25 && (
-              <span className="rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100">
+              <motion.span
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                className="rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100"
+              >
                 Top {topPercent}%
-              </span>
+              </motion.span>
             )}
           </motion.div>
         )}
