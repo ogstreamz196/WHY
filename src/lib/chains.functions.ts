@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { runAchievementCheckForUser } from "./account.functions";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -72,7 +73,7 @@ export const saveChain = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }): Promise<{ id: string }> => {
+  .handler(async ({ data, context }): Promise<{ id: string; newlyUnlocked: string[] }> => {
     const { data: chain, error } = await context.supabase
       .from("why_chains")
       .insert({
@@ -92,7 +93,8 @@ export const saveChain = createServerFn({ method: "POST" })
     }));
     const { error: stepsErr } = await context.supabase.from("why_chain_steps").insert(rows);
     if (stepsErr) throw new Error(stepsErr.message);
-    return { id: chain.id };
+    const newlyUnlocked = await runAchievementCheckForUser(context);
+    return { id: chain.id, newlyUnlocked };
   });
 
 export const listMyChains = createServerFn({ method: "GET" })
@@ -421,7 +423,8 @@ export const bumpCategoryInterest = createServerFn({ method: "POST" })
         { onConflict: "user_id,category" },
       );
     if (error) throw new Error(error.message);
-    return { ok: true as const, weight: nextWeight };
+    const newlyUnlocked = await runAchievementCheckForUser(context);
+    return { ok: true as const, weight: nextWeight, newlyUnlocked };
   });
 
 export const getCategoryInterests = createServerFn({ method: "GET" })
