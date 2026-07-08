@@ -3,8 +3,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAchievementCheckForUser, awardXp } from "./account.functions";
+import { awardAmountForUser } from "./vipStatus";
 
-const BONUS_POINTS = 50;
+const BONUS_POINTS_BASE = 50;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
