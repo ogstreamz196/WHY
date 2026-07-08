@@ -165,3 +165,170 @@ export function getBadges(): Badge[] {
     { id: "points100", label: "100 points", emoji: "⭐", unlocked: points >= 100 },
   ];
 }
+
+// ------- Store / Y-Coin economy -------
+// Note: "curiosity points" == Y-coins. Same underlying counter (KEY_POINTS)
+// so nothing existing breaks. The UI just presents them as coins with a Y.
+
+const KEY_INVENTORY = "why:inventory"; // array of owned item ids
+const KEY_EQUIPPED = "why:equipped";   // { avatar?: id, theme?: id }
+
+export type StoreCategory = "avatar" | "theme" | "boost";
+export type StoreItem = {
+  id: string;
+  category: StoreCategory;
+  name: string;
+  emoji: string;
+  description: string;
+  cost: number;         // in Y-coins
+  gradient?: string;    // CSS gradient for preview / theme application
+};
+
+export const STORE_CATALOG: StoreItem[] = [
+  // Avatars
+  { id: "avatar-sprout",   category: "avatar", name: "Sprout",     emoji: "🌱", description: "The starter — free for every explorer.", cost: 0 },
+  { id: "avatar-owl",      category: "avatar", name: "Wise Owl",   emoji: "🦉", description: "For those who ask the deepest whys.",     cost: 50 },
+  { id: "avatar-astro",    category: "avatar", name: "Astronaut",  emoji: "🧑‍🚀", description: "Explore the cosmos of curiosity.",       cost: 120 },
+  { id: "avatar-dino",     category: "avatar", name: "Tiny Rex",   emoji: "🦖", description: "Ancient curiosity — never extinct.",     cost: 200 },
+  { id: "avatar-wizard",   category: "avatar", name: "Why-zard",   emoji: "🧙", description: "Master of every curious spell.",         cost: 350 },
+  { id: "avatar-unicorn",  category: "avatar", name: "Unicorn",    emoji: "🦄", description: "Rare, magical, one of a kind.",          cost: 500 },
+
+  // Themes
+  { id: "theme-cosmos",   category: "theme", name: "Cosmos",     emoji: "🌌", description: "The signature deep-space look.", cost: 0,
+    gradient: "linear-gradient(135deg, oklch(0.30 0.12 280), oklch(0.28 0.15 320))" },
+  { id: "theme-sunset",   category: "theme", name: "Sunset",     emoji: "🌇", description: "Warm oranges and pinks.",        cost: 80,
+    gradient: "linear-gradient(135deg, #ff7e5f, #feb47b)" },
+  { id: "theme-ocean",    category: "theme", name: "Ocean",      emoji: "🌊", description: "Calm blues and teals.",          cost: 150,
+    gradient: "linear-gradient(135deg, #43cea2, #185a9d)" },
+  { id: "theme-forest",   category: "theme", name: "Forest",     emoji: "🌲", description: "Deep greens and mossy calm.",    cost: 220,
+    gradient: "linear-gradient(135deg, #134e5e, #71b280)" },
+  { id: "theme-candy",    category: "theme", name: "Candy",      emoji: "🍭", description: "Playful pinks and violets.",     cost: 300,
+    gradient: "linear-gradient(135deg, #ff9a9e, #fad0c4)" },
+];
+
+// Free items every user owns automatically.
+const FREE_ITEMS = STORE_CATALOG.filter((i) => i.cost === 0).map((i) => i.id);
+
+export const getInventory = (): string[] => {
+  const owned = read<string[]>(KEY_INVENTORY, []);
+  return Array.from(new Set([...FREE_ITEMS, ...owned]));
+};
+export const ownsItem = (id: string) => getInventory().includes(id);
+
+export type Equipped = { avatar?: string; theme?: string };
+const defaultEquipped: Equipped = { avatar: "avatar-sprout", theme: "theme-cosmos" };
+export const getEquipped = (): Equipped => ({ ...defaultEquipped, ...read<Equipped>(KEY_EQUIPPED, {}) });
+export const setEquipped = (patch: Equipped) => {
+  const next = { ...getEquipped(), ...patch };
+  write(KEY_EQUIPPED, next);
+  return next;
+};
+
+export type PurchaseResult =
+  | { ok: true; item: StoreItem; coinsLeft: number }
+  | { ok: false; reason: "insufficient_coins" | "already_owned" | "not_found" };
+
+export function purchaseItem(id: string): PurchaseResult {
+  const item = STORE_CATALOG.find((i) => i.id === id);
+  if (!item) return { ok: false, reason: "not_found" };
+  if (ownsItem(id)) return { ok: false, reason: "already_owned" };
+  const balance = getPoints();
+  if (balance < item.cost) return { ok: false, reason: "insufficient_coins" };
+
+  // Debit coins.
+  const remaining = Math.max(0, balance - item.cost);
+  write(KEY_POINTS, remaining);
+
+  // Add to inventory.
+  const owned = read<string[]>(KEY_INVENTORY, []);
+  write(KEY_INVENTORY, Array.from(new Set([...owned, id])));
+
+  // Auto-equip on purchase for a satisfying feel.
+  if (item.category === "avatar" || item.category === "theme") {
+    setEquipped({ [item.category]: id } as Equipped);
+  }
+  return { ok: true, item, coinsLeft: remaining };
+}
+
+// Coin packs available for purchase with real money (Stripe wiring later).
+export type CoinPack = { id: string; coins: number; priceUSD: number; bonus?: number; label: string };
+export const COIN_PACKS: CoinPack[] = [
+  { id: "pack-starter", coins: 100,  priceUSD: 0.99, label: "Starter Pouch" },
+  { id: "pack-plus",    coins: 550,  priceUSD: 4.99, bonus: 50,  label: "Explorer Pack" },
+  { id: "pack-mega",    coins: 1200, priceUSD: 9.99, bonus: 200, label: "Cosmic Chest" },
+];
+
+// ------- Achievements (future-ready structure) -------
+// Grouped: streak milestones, coin/level milestones, unlocked cosmetics.
+// All derived from existing state so no new persistence is needed.
+
+export type Achievement = {
+  id: string;
+  group: "streak" | "coins" | "collector";
+  name: string;
+  description: string;
+  emoji: string;
+  unlocked: boolean;
+  /** 0..1 progress toward the next tier when locked (undefined when unlocked or terminal). */
+  progress?: number;
+  /** Human-readable next-goal hint when locked. */
+  hint?: string;
+};
+
+const STREAK_TIERS = [3, 7, 14, 30, 60, 100];
+const COIN_TIERS = [50, 250, 500, 1_000, 2_500, 5_000];
+
+export function getAchievements(): Achievement[] {
+  const streak = getStreak();
+  const coins = getPoints();
+  const inventory = getInventory();
+
+  const list: Achievement[] = [];
+
+  for (const tier of STREAK_TIERS) {
+    const unlocked = streak >= tier;
+    list.push({
+      id: `streak-${tier}`,
+      group: "streak",
+      name: `${tier}-day streak`,
+      description: `Complete the Daily Challenge ${tier} days in a row.`,
+      emoji: tier >= 30 ? "🏆" : tier >= 7 ? "📅" : "🔥",
+      unlocked,
+      progress: unlocked ? undefined : Math.min(1, streak / tier),
+      hint: unlocked ? undefined : `${streak}/${tier} days`,
+    });
+  }
+
+  for (const tier of COIN_TIERS) {
+    const unlocked = coins >= tier;
+    list.push({
+      id: `coins-${tier}`,
+      group: "coins",
+      name: `${tier.toLocaleString()} Y-coins`,
+      description: `Earn ${tier.toLocaleString()} curiosity coins.`,
+      emoji: tier >= 1000 ? "💎" : "🪙",
+      unlocked,
+      progress: unlocked ? undefined : Math.min(1, coins / tier),
+      hint: unlocked ? undefined : `${coins}/${tier}`,
+    });
+  }
+
+  // Collector: own N cosmetics (avatars + themes).
+  const ownedCosmetics = inventory.filter((id) => id.startsWith("avatar-") || id.startsWith("theme-")).length;
+  for (const tier of [3, 6, 10]) {
+    const unlocked = ownedCosmetics >= tier;
+    list.push({
+      id: `collector-${tier}`,
+      group: "collector",
+      name: `Collector ×${tier}`,
+      description: `Own ${tier} avatars or themes.`,
+      emoji: "🎒",
+      unlocked,
+      progress: unlocked ? undefined : Math.min(1, ownedCosmetics / tier),
+      hint: unlocked ? undefined : `${ownedCosmetics}/${tier}`,
+    });
+  }
+
+  return list;
+}
+
