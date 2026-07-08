@@ -9,7 +9,7 @@ type Props = {
 
 // Per-badge unlock guidance. Keep close to how each badge is actually earned.
 const BADGE_META: Record<string, { requirement: string; examples: string[] }> = {
-  curious:   { requirement: "Discover 5 facts.",         examples: ["Tap “Next fact” 5 times", "Answer one daily challenge"] },
+  curious:   { requirement: "Discover 5 facts.",         examples: ["Tap “New fact” 5 times", "Answer one daily challenge"] },
   explorer:  { requirement: "Discover 25 facts.",        examples: ["Explore a new category", "Chain 3 whys in a row"] },
   scientist: { requirement: "Discover 100 facts.",       examples: ["Read facts across every category", "Build a chain of 5"] },
   sage:      { requirement: "Discover 250 facts.",       examples: ["Return every day for a week", "Save 10 favourites"] },
