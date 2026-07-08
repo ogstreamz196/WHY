@@ -371,12 +371,40 @@ function WhyApp() {
           </AnimatePresence>
         </header>
 
+        {/* Welcome / signup banner */}
+        {user ? (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm"
+          >
+            <span className="text-white/80">Welcome back, </span>
+            <span className="font-black text-white">{displayName ?? "explorer"}</span>
+            <span className="text-white/60"> — your streak is safe.</span>
+          </motion.div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSignInPrompt({ title: "Save your streak", message: "Create an account to keep your streak, coins and favourites forever." })}
+            className="mb-3 flex w-full items-center justify-between gap-2 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-2 text-left text-sm"
+          >
+            <span className="text-white/90">
+              <span className="font-black">Save your curiosity</span>
+              <span className="text-white/60"> — create a free account</span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-white/60" />
+          </button>
+        )}
+
         <DailyChallenge
           onCompleted={(r) => {
             setStreak(r.streak);
             setPoints(r.points);
             setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
             setCelebrate({ points: r.pointsDelta });
+            if (user) {
+              recordDailyServer().catch((e) => console.warn(e));
+            }
           }}
         />
 
