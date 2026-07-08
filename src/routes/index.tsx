@@ -1,6 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+
+function notifyAchievements(ids?: string[]) {
+  if (!ids?.length) return;
+  for (const id of ids) {
+    toast.success(`🏆 Achievement unlocked: ${id.replace(/_/g, " ")}`);
+  }
+}
+
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
