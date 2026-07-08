@@ -22,6 +22,7 @@ import {
 import { CoinIcon } from "@/components/CoinIcon";
 import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
+import { StreakBadges } from "@/components/StreakBadges";
 import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
@@ -221,6 +222,8 @@ function ProfilePage() {
           <StatTile icon={<Zap className="h-5 w-5 text-yellow-300" />} label="Longest streak" value={s.longest_streak} />
           <StatTile icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />} label="Facts seen" value={s.facts_seen} />
         </section>
+
+        <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
 
         <QuizStatsSection />
 
