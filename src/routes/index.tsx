@@ -387,8 +387,8 @@ function WhyApp() {
       toggleFavServer({ data: { fact_id: fact.id } }).catch((e) => console.warn(e));
     } else if (now) {
       const nudgeKey = "why:favNudgeCount";
-      const count = Number(localStorage.getItem(nudgeKey) ?? "0") + 1;
-      localStorage.setItem(nudgeKey, String(count));
+      const count = Number(sessionStorage.getItem(nudgeKey) ?? "0") + 1;
+      sessionStorage.setItem(nudgeKey, String(count));
       toast.success("Saved on this device", {
         description: count % 3 === 1 ? "Sign up to keep favourites across every device." : undefined,
         action: count % 3 === 1

@@ -14,7 +14,7 @@ type LevelUp = { level: number; title: string } | null;
  *   - increments a `confettiTrigger` (to render a burst)
  *   - surfaces a `levelUp` payload for the LevelUpCelebration modal
  *
- * Persists what has already been celebrated in localStorage so the same
+ * Persists what has already been celebrated in sessionStorage so the same
  * unlock never fires twice.
  */
 export function useUnlockWatcher(refreshKey: unknown = null) {
@@ -32,17 +32,17 @@ export function useUnlockWatcher(refreshKey: unknown = null) {
 
     let seenIds: string[] = [];
     try {
-      seenIds = JSON.parse(localStorage.getItem(KEY_SEEN_BADGES) ?? "[]");
+      seenIds = JSON.parse(sessionStorage.getItem(KEY_SEEN_BADGES) ?? "[]");
     } catch {
       seenIds = [];
     }
-    const seenLevel = Number(localStorage.getItem(KEY_SEEN_LEVEL) ?? "0");
+    const seenLevel = Number(sessionStorage.getItem(KEY_SEEN_LEVEL) ?? "0");
 
     // First run of the session: silently seed baseline so we only celebrate
     // *future* unlocks, not everything the user already has.
     if (!bootstrapped.current && seenIds.length === 0 && seenLevel === 0) {
-      localStorage.setItem(KEY_SEEN_BADGES, JSON.stringify(unlockedIds));
-      localStorage.setItem(KEY_SEEN_LEVEL, String(level));
+      sessionStorage.setItem(KEY_SEEN_BADGES, JSON.stringify(unlockedIds));
+      sessionStorage.setItem(KEY_SEEN_LEVEL, String(level));
       bootstrapped.current = true;
       return;
     }
@@ -59,14 +59,14 @@ export function useUnlockWatcher(refreshKey: unknown = null) {
         }, idx * 350);
       });
       setConfettiTrigger((n) => n + 1);
-      localStorage.setItem(KEY_SEEN_BADGES, JSON.stringify(unlockedIds));
+      sessionStorage.setItem(KEY_SEEN_BADGES, JSON.stringify(unlockedIds));
     }
 
     if (level > seenLevel) {
       const info = levelFor(points);
       setLevelUp({ level: info.level, title: info.title });
       setConfettiTrigger((n) => n + 1);
-      localStorage.setItem(KEY_SEEN_LEVEL, String(level));
+      sessionStorage.setItem(KEY_SEEN_LEVEL, String(level));
     }
   }, [refreshKey]);
 

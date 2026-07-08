@@ -109,9 +109,9 @@ function ArenaPage() {
         // Rank movement vs last visit (per view, local)
         if (r?.my_rank && typeof window !== "undefined") {
           const key = `lb:rank:${tab}:${filter ?? ""}`;
-          const prev = Number(window.localStorage.getItem(key));
+          const prev = Number(window.sessionStorage.getItem(key));
           if (Number.isFinite(prev) && prev > 0) setRankDelta(prev - r.my_rank);
-          window.localStorage.setItem(key, String(r.my_rank));
+          window.sessionStorage.setItem(key, String(r.my_rank));
         }
       })
       .catch(() => { if (alive) setResult(null); })
