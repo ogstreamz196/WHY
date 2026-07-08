@@ -1,11 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, History, Sparkles } from "lucide-react";
+import { ArrowLeft, History } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
+import { BadgeDetailsModal } from "@/components/BadgeDetailsModal";
+import { LevelProgressWidget } from "@/components/LevelProgressWidget";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { useUnlockWatcher } from "@/lib/unlock-watch";
 import { getBadges, getPoints, getSeen, getStreak, type Badge } from "@/lib/store";
-import { levelFor } from "@/lib/levels";
 import { useCurrentUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/badges")({
