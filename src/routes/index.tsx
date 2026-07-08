@@ -39,6 +39,8 @@ import {
   getFavorites,
   getPoints,
   getSeen,
+  getSeenIds,
+  markSeen,
   getStreak,
   isFavorite,
   toggleFavorite,
@@ -263,12 +265,13 @@ function WhyApp() {
           try { next = await generateNew({ data: { category: cat } }); } catch (e) { console.warn(e); }
           if (next) { tapCount.current = 0; nextGenAt.current = 4 + Math.floor(Math.random() * 7); }
         }
-        if (!next) next = await getRandom({ data: { excludeId: currentId, category: cat } });
+        if (!next) next = await getRandom({ data: { excludeId: currentId, category: cat, seenIds: getSeenIds() } });
         if (!next) {
           const cached = getCachedRandomFact(currentId);
           if (cached) next = cached;
         }
         showFact(next);
+        if (next?.id) markSeen(next.id);
         bumpSeen();
         grantPoints(1);
         if (user && next?.id) {
