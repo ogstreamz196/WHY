@@ -158,7 +158,8 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
     const prevStreak = existing?.current_streak ?? 0;
     const nextStreak = existing?.last_daily_challenge_day === y ? prevStreak + 1 : 1;
     const longest = Math.max(existing?.longest_streak ?? 0, nextStreak);
-    const nextPoints = (existing?.total_points ?? 0) + DAILY_POINTS;
+    const awardedPoints = await awardAmountForUser(context, DAILY_POINTS);
+    const nextPoints = (existing?.total_points ?? 0) + awardedPoints;
 
     const patch = {
       user_id: context.userId,
@@ -176,7 +177,7 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    await awardXp(context, "daily", DAILY_POINTS);
+    await awardXp(context, "daily", awardedPoints);
     const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
     return { awarded: true, stats: row as StatsDTO, newlyUnlocked };
   });
