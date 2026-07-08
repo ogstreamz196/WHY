@@ -28,7 +28,9 @@ export function useSubscription(userId: string | null | undefined) {
       setLoading(false);
       return;
     }
-    const { data } = await supabase
+    // Types haven't regenerated for the new table yet; cast for now.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase as any)
       .from("subscriptions")
       .select("*")
       .eq("user_id", userId)
