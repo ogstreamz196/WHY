@@ -1,19 +1,26 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo } from "react";
 import type { StreakMilestone } from "./StreakBadges";
+import { analytics } from "@/lib/analytics";
 
 type Props = {
   milestone: StreakMilestone | null;
   onClose: () => void;
+  /** Which flow triggered the celebration — used for analytics. */
+  source?: string;
 };
 
 /** Full-screen confetti burst when a streak milestone is reached. */
-export function StreakMilestoneCelebration({ milestone, onClose }: Props) {
+export function StreakMilestoneCelebration({ milestone, onClose, source = "unknown" }: Props) {
   useEffect(() => {
     if (!milestone) return;
-    const t = setTimeout(onClose, 3200);
+    analytics.streakCelebrationRendered(milestone.days, milestone.label, source);
+    const t = setTimeout(() => {
+      analytics.streakCelebrationDismissed(milestone.days, milestone.label, source);
+      onClose();
+    }, 3200);
     return () => clearTimeout(t);
-  }, [milestone, onClose]);
+  }, [milestone, onClose, source]);
 
   const confetti = useMemo(
     () =>
