@@ -12,6 +12,9 @@ import {
 import { syncFactsFromSheet } from "@/lib/sync.functions";
 import { useCurrentUser } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getMyProfile, updateMyProfile } from "@/lib/account.functions";
+import { CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
