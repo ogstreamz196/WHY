@@ -1,5 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowRight,
+  BookmarkPlus,
+  BookmarkCheck,
+  Flame,
+  Heart,
+  Search as SearchIcon,
+  Share2,
+  Sparkles,
+  Star,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   generateAndStoreFact,
@@ -14,29 +27,24 @@ import {
   cacheFact,
   getCachedRandomFact,
   getPoints,
-  getStreak,
   isFavorite,
   toggleFavorite,
   touchStreak,
 } from "@/lib/store";
-import { CATEGORIES, emojiFor, type CategoryKey } from "@/lib/categories";
+import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
+import { CosmicBackground } from "@/components/CosmicBackground";
+import { BottomNav } from "@/components/BottomNav";
+import { Celebration } from "@/components/Celebration";
+import mascotImg from "@/assets/mascot.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Why? — Fun facts for curious minds" },
-      {
-        name: "description",
-        content:
-          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts for families, kids and adults.",
-      },
-      { property: "og:title", content: "Why? — Fun facts for curious minds" },
-      {
-        property: "og:description",
-        content: "Tap Next for a new 'Do you know why…' fact. Fun, safe, educational.",
-      },
+      { title: "Why? — A pocket-sized universe of curiosity" },
+      { name: "description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
+      { property: "og:title", content: "Why? — A pocket-sized universe of curiosity" },
+      { property: "og:description", content: "Tap Next for a new 'Do you know why…' fact." },
       { property: "og:type", content: "website" },
-      { name: "theme-color", content: "#7c3aed" },
     ],
   }),
   component: WhyApp,
@@ -59,22 +67,40 @@ function WhyApp() {
   const [reaction, setReaction] = useState<Reaction>(null);
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [celebrate, setCelebrate] = useState<{ points: number } | null>(null);
 
-  // Randomize next AI-generation cadence between 4 and 10 taps.
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
+  const lastMilestone = useRef<number>(0);
 
-  const [chain, setChain] = useState<{ question: string; answer: string }[]>([]);
+  const [chain, setChain] = useState<{ question: string; answer: string; terminal?: boolean }[]>([]);
   const [chainLoading, setChainLoading] = useState(false);
 
+  const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
 
-  // hydrate points/streak on mount
   useEffect(() => {
-    setPoints(getPoints());
+    const p = getPoints();
+    setPoints(p);
+    setLevel(Math.max(1, Math.floor(p / 100) + 1));
     const s = touchStreak();
     setStreak(s.streak);
+  }, []);
+
+  const grantPoints = useCallback((delta: number) => {
+    const prev = getPoints();
+    const next = addPoints(delta);
+    setPoints(next);
+    const newLevel = Math.max(1, Math.floor(next / 100) + 1);
+    setLevel(newLevel);
+    // Milestones: every 50 pts (but not more than once per crossing)
+    const crossed = Math.floor(next / 50) > Math.floor(prev / 50);
+    if (crossed && next - lastMilestone.current >= 50) {
+      lastMilestone.current = next;
+      setCelebrate({ points: 50 });
+    }
   }, []);
 
   const showFact = useCallback((f: Fact | null) => {
@@ -93,68 +119,43 @@ function WhyApp() {
       try {
         tapCount.current += 1;
         const cat = category === "all" ? undefined : category;
-
         const shouldGenerate =
           opts?.forceGenerate ||
           tapCount.current >= nextGenAt.current ||
-          Math.random() < 0.05; // small chance of surprise generation
+          Math.random() < 0.05;
 
         let next: Fact | null = null;
         if (shouldGenerate) {
-          try {
-            next = await generateNew({ data: { category: cat } });
-          } catch (e) {
-            console.warn("[why?] generate failed", e);
-          }
-          if (next) {
-            tapCount.current = 0;
-            nextGenAt.current = 4 + Math.floor(Math.random() * 7);
-          }
+          try { next = await generateNew({ data: { category: cat } }); } catch (e) { console.warn(e); }
+          if (next) { tapCount.current = 0; nextGenAt.current = 4 + Math.floor(Math.random() * 7); }
         }
+        if (!next) next = await getRandom({ data: { excludeId: currentId, category: cat } });
         if (!next) {
-          next = await getRandom({ data: { excludeId: currentId, category: cat } });
-        }
-
-        if (!next) {
-          // Offline / no network → cache
           const cached = getCachedRandomFact(currentId);
           if (cached) next = cached;
         }
         showFact(next);
         bumpSeen();
-        setPoints(addPoints(1));
+        grantPoints(1);
       } catch (err) {
         console.error(err);
         const cached = getCachedRandomFact(currentId);
-        if (cached) {
-          showFact(cached);
-          setError("You're offline — showing a cached fact.");
-        } else {
-          setError("Couldn't load a fact. Try again.");
-        }
+        if (cached) { showFact(cached); setError("You're offline — showing a cached fact."); }
+        else setError("Couldn't load a fact. Try again.");
       } finally {
         setLoading(false);
       }
     },
-    [category, generateNew, getRandom, showFact],
+    [category, generateNew, getRandom, showFact, grantPoints],
   );
 
-  // initial load
-  useEffect(() => {
-    void loadNext();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // reload when category changes
-  useEffect(() => {
-    void loadNext(fact?.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category]);
+  useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
+  useEffect(() => { void loadNext(fact?.id); /* eslint-disable-line */ }, [category]);
 
   const reveal = () => {
     if (revealed) return;
     setRevealed(true);
-    setPoints(addPoints(2));
+    grantPoints(2);
   };
 
   const askWhy = async () => {
@@ -167,36 +168,27 @@ function WhyApp() {
       });
       if (layer) {
         setChain((c) => [...c, layer]);
-        setPoints(addPoints(3));
+        grantPoints(3);
       }
-    } catch (e) {
-      console.warn(e);
-    } finally {
-      setChainLoading(false);
-    }
+    } catch (e) { console.warn(e); }
+    finally { setChainLoading(false); }
   };
 
   const handleShare = async () => {
     if (!fact) return;
     const url = typeof window !== "undefined" ? window.location.origin : "https://why.app";
-    const text = `🤔 WHY?\n\nDo you know why ${fact.question}\n\nTap to discover the answer.\n${url}`;
+    const text = `🤔 WHY?\n\nDo you know why ${fact.question}\n\nTap to discover.\n${url}`;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "Why?", text, url });
-      } else {
-        await navigator.clipboard.writeText(text);
-        alert("Copied to clipboard!");
-      }
-    } catch {
-      /* user cancelled */
-    }
+      if (navigator.share) await navigator.share({ title: "Why?", text, url });
+      else { await navigator.clipboard.writeText(text); alert("Copied to clipboard!"); }
+    } catch { /* cancelled */ }
   };
 
   const handleFav = () => {
     if (!fact) return;
     const now = toggleFavorite(fact);
     setFav(now);
-    if (now) setPoints(addPoints(1));
+    if (now) grantPoints(1);
   };
 
   const doSearch = async (e: React.FormEvent) => {
@@ -207,279 +199,442 @@ function WhyApp() {
     setError(null);
     try {
       const f = await searchOrGen({ data: { query: q } });
-      if (f) {
-        showFact(f);
-        setSearch("");
-      } else {
-        setError("Couldn't find or make a fact for that. Try another question!");
-      }
+      if (f) { showFact(f); setSearch(""); setSearchOpen(false); }
+      else setError("Couldn't find or make a fact for that. Try another question!");
     } catch (err) {
-      console.error(err);
-      setError("Search failed. Try again in a moment.");
-    } finally {
-      setSearching(false);
-    }
+      console.error(err); setError("Search failed. Try again in a moment.");
+    } finally { setSearching(false); }
   };
 
-  return (
-    <main className="relative min-h-[100dvh] w-full overflow-x-hidden">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(1200px 600px at 15% 10%, #fde68a 0%, transparent 55%), radial-gradient(1000px 700px at 90% 20%, #a5f3fc 0%, transparent 60%), radial-gradient(900px 700px at 50% 100%, #ddd6fe 0%, transparent 60%), linear-gradient(180deg, #fef3c7 0%, #ede9fe 100%)",
-        }}
-      />
+  const levelXP = points % 100;
+  const catGradient = gradientFor(fact?.category);
 
-      <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-4 pb-6 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
-        {/* Header */}
-        <header className="mb-4 flex items-center justify-between gap-3">
-          <Link to="/" className="text-3xl font-black tracking-tight sm:text-4xl">
-            <span className="text-violet-700">Why</span>
-            <span className="text-amber-500">?</span>
-          </Link>
-          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <span className="rounded-full bg-white/80 px-3 py-1 shadow-sm backdrop-blur">
-              🔥 {streak}
-            </span>
-            <span className="rounded-full bg-white/80 px-3 py-1 shadow-sm backdrop-blur">
-              ⭐ {points}
-            </span>
-            <Link
-              to="/favorites"
-              className="rounded-full bg-white/80 px-3 py-1 shadow-sm backdrop-blur hover:bg-white"
-              aria-label="Favorites"
+  return (
+    <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
+      <CosmicBackground />
+
+      <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+        {/* ── GAMIFIED HEADER ─────────────────────────────── */}
+        <header className="mb-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setSearchOpen((v) => !v)}
+              aria-label="Search"
+              className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-foreground/90 transition active:scale-95"
             >
-              ❤️
-            </Link>
-            <Link
-              to="/settings"
-              className="rounded-full bg-white/80 px-3 py-1 shadow-sm backdrop-blur hover:bg-white"
-              aria-label="Settings"
-            >
-              ⚙️
-            </Link>
+              {searchOpen ? <X className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
+                <Flame className="h-4 w-4 text-orange-400" />
+                <span className="text-sm font-black text-white">{streak}</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">day</span>
+              </div>
+              <div className="glass flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden">
+                <img src={mascotImg} alt="" className="h-10 w-10 object-contain animate-float-slow" />
+              </div>
+              <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <motion.span key={points} initial={{ scale: 1.4, y: -4 }} animate={{ scale: 1, y: 0 }} className="text-sm font-black text-white">
+                  {points}
+                </motion.span>
+              </div>
+            </div>
           </div>
+
+          {/* XP bar */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
+              Lvl {level}
+            </span>
+            <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full"
+                style={{ background: "var(--gradient-primary)" }}
+                animate={{ width: `${levelXP}%` }}
+                transition={{ type: "spring", stiffness: 120, damping: 20 }}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-white/50">{levelXP}/100</span>
+          </div>
+
+          {/* Search sheet */}
+          <AnimatePresence>
+            {searchOpen && (
+              <motion.form
+                onSubmit={doSearch}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="glass mt-1 flex items-center gap-2 rounded-2xl p-1.5">
+                  <SearchIcon className="ml-2 h-4 w-4 text-white/60" />
+                  <input
+                    autoFocus
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Ask a why question…"
+                    maxLength={200}
+                    className="flex-1 bg-transparent px-1 py-2 text-base text-white placeholder-white/40 outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={searching || search.trim().length < 2}
+                    className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
+                    {searching ? "…" : "Ask"}
+                  </button>
+                </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
         </header>
 
-        {/* Search */}
-        <form onSubmit={doSearch} className="mb-3">
-          <div className="flex items-center gap-2 rounded-2xl bg-white/85 p-1.5 shadow-sm ring-1 ring-black/5 backdrop-blur">
-            <span className="pl-2 text-lg">🔍</span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Ask a why question…"
-              maxLength={200}
-              className="flex-1 bg-transparent px-1 py-2 text-base text-slate-800 placeholder-slate-400 outline-none"
-            />
-            <button
-              type="submit"
-              disabled={searching || search.trim().length < 2}
-              className="rounded-xl bg-violet-600 px-3 py-2 text-sm font-bold text-white shadow disabled:opacity-50"
+        {/* ── FACT CARD ───────────────────────────────────── */}
+        <section className="flex flex-1 flex-col">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={fact?.id ?? "loading"}
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -24, scale: 0.98 }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              className="relative"
             >
-              {searching ? "…" : "Ask"}
-            </button>
-          </div>
-        </form>
-
-        {/* Category chips */}
-        <div className="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex gap-2">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setCategory(c.key)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold shadow-sm transition ${
-                  category === c.key
-                    ? "bg-violet-600 text-white"
-                    : "bg-white/80 text-slate-700 hover:bg-white"
-                }`}
-              >
-                <span className="mr-1">{c.emoji}</span>
-                {c.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Fact card */}
-        <section className="flex flex-1 items-start">
-          <div
-            key={fact?.id ?? "loading"}
-            className="w-full animate-in fade-in slide-in-from-bottom-2 duration-500"
-          >
-            <div className="rounded-3xl bg-white/90 p-5 shadow-xl ring-1 ring-black/5 backdrop-blur sm:p-7">
-              {loading ? (
-                <FactSkeleton />
-              ) : error && !fact ? (
-                <p className="text-center text-lg text-rose-600">{error}</p>
-              ) : fact ? (
-                <article>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-widest text-amber-600">
-                      🤔 Do you know why…
-                    </p>
-                    <span className="text-2xl" aria-hidden>
-                      {emojiFor(fact.category)}
+              {/* Category-tinted glow behind card */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-6 -z-10 rounded-[3rem] opacity-40 blur-3xl"
+                style={{ background: catGradient }}
+              />
+              <article className="glass-strong relative overflow-hidden rounded-4xl p-5 shadow-[var(--shadow-card)] sm:p-6">
+                {/* Speech-bubble tag */}
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5">
+                    <span aria-hidden>🤔</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80">
+                      Do you know why…
                     </span>
                   </div>
-                  <h1 className="mt-3 text-2xl font-extrabold leading-snug text-slate-900 sm:text-3xl">
-                    {capitalize(fact.question)}
-                  </h1>
+                  <span
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-2xl text-lg shadow-lg"
+                    style={{ background: catGradient }}
+                    aria-label={fact?.category ?? "category"}
+                  >
+                    {emojiFor(fact?.category)}
+                  </span>
+                </div>
 
-                  {!revealed ? (
-                    <button
-                      type="button"
-                      onClick={reveal}
-                      className="mt-6 w-full rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 px-4 py-4 text-base font-bold text-white shadow-lg shadow-violet-500/30 transition active:scale-[0.99]"
-                    >
-                      Reveal Answer ✨
-                    </button>
-                  ) : (
-                    <div className="mt-5 space-y-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <div className="rounded-2xl bg-violet-50 p-4 sm:p-5">
-                        <p className="text-base leading-relaxed text-slate-800 sm:text-lg">
-                          {fact.answer}
-                        </p>
-                      </div>
+                {loading ? (
+                  <FactSkeleton />
+                ) : error && !fact ? (
+                  <p className="text-center text-lg text-rose-300">{error}</p>
+                ) : fact ? (
+                  <>
+                    <h1 className="font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
+                      {capitalize(fact.question)}
+                    </h1>
 
-                      {fact.fun_fact && (
-                        <div className="rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200">
-                          <p className="text-xs font-bold uppercase tracking-widest text-amber-700">
-                            ⭐ Fun Fact
-                          </p>
-                          <p className="mt-1 text-sm leading-relaxed text-slate-800 sm:text-base">
-                            {fact.fun_fact}
-                          </p>
-                        </div>
+                    <AnimatePresence initial={false} mode="wait">
+                      {!revealed ? (
+                        <motion.div
+                          key="cta"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="mt-6 flex flex-col items-center"
+                        >
+                          <img
+                            src={mascotImg}
+                            alt=""
+                            className="mb-3 h-32 w-32 animate-float-slow drop-shadow-[0_10px_40px_rgba(124,58,237,0.5)]"
+                          />
+                          <button
+                            type="button"
+                            onClick={reveal}
+                            className="animate-pulse-glow group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98]"
+                            style={{ background: "var(--gradient-primary)" }}
+                          >
+                            <span className="relative z-10 inline-flex items-center gap-2">
+                              <Sparkles className="h-5 w-5" />
+                              Reveal Answer
+                            </span>
+                          </button>
+                          <p className="mt-3 text-xs text-white/50">Tap to discover the magic ↑</p>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="answer"
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
+                          className="mt-5 space-y-4"
+                        >
+                          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                              ✨ Answer
+                            </p>
+                            <p className="mt-2 text-lg leading-relaxed text-white sm:text-xl">
+                              {fact.answer}
+                            </p>
+                          </div>
+
+                          {fact.fun_fact && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.15 }}
+                              className="rounded-3xl border p-4"
+                              style={{
+                                background: "linear-gradient(135deg, oklch(0.28 0.10 40 / 0.3), oklch(0.30 0.14 340 / 0.3))",
+                                borderColor: "oklch(0.72 0.20 40 / 0.35)",
+                              }}
+                            >
+                              <p className="text-[10px] font-black uppercase tracking-widest text-yellow-300">
+                                ⭐ Fun fact
+                              </p>
+                              <p className="mt-1.5 text-sm leading-relaxed text-white/90">
+                                {fact.fun_fact}
+                              </p>
+                            </motion.div>
+                          )}
+
+                          {/* Discovery signals */}
+                          <div className="grid grid-cols-4 gap-2">
+                            <SignalBtn
+                              active={reaction === "love"}
+                              onClick={() => { setReaction("love"); if (reaction !== "love") grantPoints(1); }}
+                              tone="pink"
+                              icon={<Heart className={`h-5 w-5 ${reaction === "love" ? "fill-current" : ""}`} />}
+                              label="Love"
+                            />
+                            <SignalBtn
+                              active={reaction === "like"}
+                              onClick={() => { setReaction("like"); if (reaction !== "like") grantPoints(1); }}
+                              tone="amber"
+                              icon={<Star className={`h-5 w-5 ${reaction === "like" ? "fill-current" : ""}`} />}
+                              label="Rate"
+                            />
+                            <SignalBtn
+                              active={false}
+                              onClick={handleShare}
+                              tone="cyan"
+                              icon={<Share2 className="h-5 w-5" />}
+                              label="Share"
+                            />
+                            <SignalBtn
+                              active={fav}
+                              onClick={handleFav}
+                              tone="violet"
+                              icon={fav ? <BookmarkCheck className="h-5 w-5" /> : <BookmarkPlus className="h-5 w-5" />}
+                              label={fav ? "Saved" : "Save"}
+                            />
+                          </div>
+
+                          {/* ── ENDLESS "BUT… WHY?" CHAIN ── */}
+                          {(chain.length > 0 || true) && (
+                            <div className="pt-2">
+                              <p className="mb-3 text-center font-display text-lg font-black text-white">
+                                But… <span className="text-gradient">Why?</span> 🤯
+                              </p>
+
+                              <ol className="relative space-y-3 pl-9">
+                                <span
+                                  aria-hidden
+                                  className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
+                                />
+                                <ChainStep index={0} question={capitalize(fact.question)} solved />
+                                {chain.map((layer, i) => (
+                                  <ChainStep
+                                    key={i}
+                                    index={i + 1}
+                                    question={layer.question}
+                                    answer={layer.answer}
+                                  />
+                                ))}
+                                {chainLoading && (
+                                  <li className="relative">
+                                    <span className="absolute -left-9 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/60">
+                                      …
+                                    </span>
+                                    <p className="text-sm italic text-white/60">Digging deeper…</p>
+                                  </li>
+                                )}
+                              </ol>
+
+                              <button
+                                type="button"
+                                onClick={askWhy}
+                                disabled={chainLoading || chain.length >= 6 || chain[chain.length - 1]?.terminal}
+                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-black text-white transition hover:bg-white/10 active:scale-[0.98] disabled:opacity-50"
+                              >
+                                {chain.length >= 6
+                                  ? "🌌 You've reached the bottom of the rabbit hole"
+                                  : chainLoading
+                                    ? "Diving deeper…"
+                                    : "🤔 But… Why?"}
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
                       )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <p className="text-center text-white/70">No facts yet. Tap Next!</p>
+                )}
 
-                      {/* But… why? chain */}
-                      {chain.map((layer, i) => (
-                        <div
-                          key={i}
-                          className="rounded-2xl bg-cyan-50 p-4 ring-1 ring-cyan-200 animate-in fade-in slide-in-from-top-1 duration-300"
-                        >
-                          <p className="text-xs font-bold uppercase tracking-widest text-cyan-700">
-                            🤔 But… why?
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-900">
-                            {layer.question}
-                          </p>
-                          <p className="mt-2 text-sm leading-relaxed text-slate-800">
-                            {layer.answer}
-                          </p>
-                        </div>
-                      ))}
+                {error && fact && (
+                  <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
+                )}
+              </article>
+            </motion.div>
+          </AnimatePresence>
 
-                      <button
-                        type="button"
-                        onClick={askWhy}
-                        disabled={chainLoading || chain.length >= 6}
-                        className="w-full rounded-2xl border-2 border-dashed border-cyan-400 bg-white/70 px-4 py-3 text-sm font-bold text-cyan-700 transition hover:bg-white disabled:opacity-50"
-                      >
-                        {chainLoading
-                          ? "Digging deeper…"
-                          : chain.length >= 6
-                            ? "That's deep enough! 🌌"
-                            : "🤔 But… Why?"}
-                      </button>
-
-                      {/* Reactions */}
-                      <div className="flex items-center justify-between gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReaction("like");
-                            if (reaction !== "like") setPoints(addPoints(1));
-                          }}
-                          className={`flex-1 rounded-2xl px-3 py-3 text-sm font-bold transition ${
-                            reaction === "like"
-                              ? "bg-emerald-500 text-white"
-                              : "bg-white text-slate-700 ring-1 ring-slate-200"
-                          }`}
-                        >
-                          👍 Interesting
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReaction("love");
-                            if (reaction !== "love") setPoints(addPoints(2));
-                          }}
-                          className={`flex-1 rounded-2xl px-3 py-3 text-sm font-bold transition ${
-                            reaction === "love"
-                              ? "bg-rose-500 text-white"
-                              : "bg-white text-slate-700 ring-1 ring-slate-200"
-                          }`}
-                        >
-                          ❤️ Loved it
-                        </button>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={handleFav}
-                          className={`flex-1 rounded-2xl px-3 py-3 text-sm font-bold transition ${
-                            fav
-                              ? "bg-rose-100 text-rose-700 ring-1 ring-rose-300"
-                              : "bg-white text-slate-700 ring-1 ring-slate-200"
-                          }`}
-                        >
-                          {fav ? "❤️ Saved" : "🤍 Save"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleShare}
-                          className="flex-1 rounded-2xl bg-white px-3 py-3 text-sm font-bold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
-                        >
-                          📤 Share
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </article>
-              ) : (
-                <p className="text-center text-slate-600">No facts yet. Tap Next!</p>
-              )}
-              {error && fact && (
-                <p className="mt-3 text-center text-xs text-amber-700">{error}</p>
-              )}
+          {/* Category bubbles */}
+          <div className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex gap-2.5 pb-1">
+              {CATEGORIES.map((c) => {
+                const active = category === c.key;
+                return (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setCategory(c.key)}
+                    className="group flex shrink-0 flex-col items-center gap-1"
+                  >
+                    <span
+                      className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl shadow-lg transition ${
+                        active ? "scale-110 ring-2 ring-white/60" : "opacity-80 group-hover:opacity-100"
+                      }`}
+                      style={{ background: c.gradient, boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined }}
+                    >
+                      {c.emoji}
+                    </span>
+                    <span className={`text-[10px] font-bold ${active ? "text-white" : "text-white/60"}`}>
+                      {c.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        {/* Giant Next button */}
-        <div className="sticky bottom-0 mt-6 pt-2 pb-[env(safe-area-inset-bottom)]">
-          <button
+        {/* Giant Next button (sticky above bottom nav) */}
+        <div className="mt-6 mb-4">
+          <motion.button
             type="button"
             disabled={loading}
             onClick={() => loadNext(fact?.id)}
-            className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-500 to-amber-500 px-6 py-5 text-2xl font-black uppercase tracking-wide text-white shadow-2xl shadow-violet-500/40 transition active:scale-[0.98] disabled:opacity-70 sm:py-6 sm:text-3xl"
+            whileTap={{ scale: 0.97 }}
+            className="animate-pulse-glow relative w-full overflow-hidden rounded-full px-6 py-5 text-xl font-black uppercase tracking-wide text-white disabled:opacity-70"
+            style={{ background: "var(--gradient-primary)" }}
           >
-            <span className="relative z-10 flex items-center justify-center gap-3">
-              {loading ? "Thinking…" : "🔄 Next"}
-              <span className="text-3xl transition group-hover:translate-x-1 sm:text-4xl">
-                ➜
-              </span>
+            <span className="relative z-10 inline-flex items-center justify-center gap-3">
+              {loading ? "Loading…" : "Next"}
+              <ArrowRight className="h-6 w-6" />
             </span>
-          </button>
+            <span
+              aria-hidden
+              className="absolute inset-y-0 -left-1/3 w-1/3 skew-x-12 bg-white/20"
+              style={{ animation: "shimmer 2.4s ease-in-out infinite" }}
+            />
+          </motion.button>
         </div>
       </div>
+
+      <BottomNav />
+      <Celebration
+        open={!!celebrate}
+        points={celebrate?.points ?? 0}
+        streak={streak}
+        onClose={() => setCelebrate(null)}
+      />
     </main>
+  );
+}
+
+// ── UI atoms ──────────────────────────────────────────────
+
+function SignalBtn({
+  active, onClick, icon, label, tone,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  tone: "pink" | "amber" | "cyan" | "violet";
+}) {
+  const tones: Record<string, { bg: string; ring: string; text: string }> = {
+    pink:   { bg: "oklch(0.30 0.16 340 / 0.25)", ring: "oklch(0.72 0.24 340)", text: "text-pink-300" },
+    amber:  { bg: "oklch(0.30 0.14 60 / 0.25)",  ring: "oklch(0.80 0.18 80)",  text: "text-yellow-300" },
+    cyan:   { bg: "oklch(0.30 0.14 200 / 0.25)", ring: "oklch(0.72 0.20 200)", text: "text-cyan-300" },
+    violet: { bg: "oklch(0.30 0.14 300 / 0.25)", ring: "oklch(0.72 0.22 305)", text: "text-violet-300" },
+  };
+  const t = tones[tone];
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileTap={{ scale: 0.9 }}
+      className={`flex flex-col items-center gap-1 rounded-2xl px-2 py-2.5 text-[10px] font-black uppercase tracking-wide transition ${
+        active ? `${t.text}` : "text-white/70"
+      }`}
+      style={{
+        background: active ? t.bg : "oklch(1 0 0 / 0.05)",
+        border: `1px solid ${active ? t.ring : "oklch(1 0 0 / 0.1)"}`,
+      }}
+    >
+      {icon}
+      <span>{label}</span>
+    </motion.button>
+  );
+}
+
+function ChainStep({
+  index, question, answer, solved,
+}: {
+  index: number;
+  question: string;
+  answer?: string;
+  solved?: boolean;
+}) {
+  return (
+    <motion.li
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.35 }}
+      className="relative"
+    >
+      <span
+        className="absolute -left-9 top-0.5 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-white shadow-lg"
+        style={{
+          background: solved ? "linear-gradient(135deg, oklch(0.72 0.18 155), oklch(0.72 0.22 195))" : "var(--gradient-primary)",
+        }}
+      >
+        {solved ? "✓" : index}
+      </span>
+      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        <p className="text-sm font-bold leading-snug text-white">{question}</p>
+        {answer && (
+          <p className="mt-1.5 text-xs leading-relaxed text-white/70">{answer}</p>
+        )}
+      </div>
+    </motion.li>
   );
 }
 
 function FactSkeleton() {
   return (
-    <div className="animate-pulse">
-      <div className="h-3 w-40 rounded bg-amber-200" />
-      <div className="mt-4 h-6 w-11/12 rounded bg-slate-200" />
-      <div className="mt-2 h-6 w-8/12 rounded bg-slate-200" />
-      <div className="mt-6 h-24 w-full rounded-2xl bg-violet-100" />
+    <div className="space-y-3 py-4">
+      <div className="h-8 w-3/4 animate-pulse rounded-xl bg-white/10" />
+      <div className="h-8 w-1/2 animate-pulse rounded-xl bg-white/10" />
+      <div className="mt-6 h-14 animate-pulse rounded-full bg-white/10" />
     </div>
   );
 }
