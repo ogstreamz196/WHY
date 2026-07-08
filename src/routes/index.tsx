@@ -49,6 +49,12 @@ import {
   recordDailyChallenge,
   toggleFavorite as toggleFavoriteServer,
 } from "@/lib/account.functions";
+import {
+  resumeLastChain,
+  saveChain,
+  bumpCategoryInterest,
+  type ChainSummary,
+} from "@/lib/chains.functions";
 
 
 import mascotImg from "@/assets/mascot.png";
