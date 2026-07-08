@@ -150,6 +150,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
       { user_id: context.userId, total_points: next, last_active_day: t },
       { onConflict: "user_id" },
     );
+    await awardXp(context, "mission", BONUS_POINTS);
     const newlyUnlocked = await runAchievementCheckForUser(context);
     return { awarded: true, points: BONUS_POINTS, total_points: next, newlyUnlocked };
   });
