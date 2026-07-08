@@ -160,13 +160,6 @@ function WhyApp() {
     setStreak(getStreak());
   }, []);
 
-  // Throttle skeleton display: only show after 180ms of loading so fast
-  // loads don't flicker a skeleton, but slower fetches still get feedback.
-  useEffect(() => {
-    if (!loading) { setShowSkeleton(false); return; }
-    const t = window.setTimeout(() => setShowSkeleton(true), 180);
-    return () => window.clearTimeout(t);
-  }, [loading]);
 
   // On sign-in: migrate any local guest state up to the server (once), then load
   // authoritative profile + stats from the server.
