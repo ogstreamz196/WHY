@@ -85,6 +85,38 @@ export const getRandomFact = createServerFn({ method: "GET" })
     return (fallback?.[0] as Fact) ?? null;
   });
 
+// -------------------- Daily Challenge fact --------------------
+
+/**
+ * Deterministic "fact of the day": every user sees the same fact on a given
+ * calendar date (UTC). Rotates through the entire library so a returning
+ * visitor gets something fresh each day.
+ */
+export const getDailyFact = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Fact | null> => {
+    const supabase = getSupabase();
+    const { count } = await supabase
+      .from("facts")
+      .select("id", { count: "exact", head: true });
+    if (!count || count === 0) return null;
+
+    // Day-of-year seed → deterministic offset within the library.
+    const now = new Date();
+    const start = Date.UTC(now.getUTCFullYear(), 0, 0);
+    const diff = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - start;
+    const dayOfYear = Math.floor(diff / 86_400_000);
+    const offset = dayOfYear % count;
+
+    const { data: rows } = await supabase
+      .from("facts")
+      .select(FACT_COLS)
+      .order("created_at", { ascending: true })
+      .range(offset, offset);
+    return (rows?.[0] as Fact) ?? null;
+  },
+);
+
+
 // -------------------- AI helpers --------------------
 
 const SAFETY_PROMPT = `You are writing content for the WHY? app used by kids, families, adults, and classrooms.
