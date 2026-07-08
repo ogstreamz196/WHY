@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, Flame, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { CoinIcon } from "@/components/CoinIcon";
-import { newlyReachedMilestone } from "@/components/StreakBadges";
+import { newlyReachedMilestone, type StreakMilestone } from "@/components/StreakBadges";
+import { StreakMilestoneCelebration } from "@/components/StreakMilestoneCelebration";
 
 import { useCallback, useEffect, useState } from "react";
 import { getDailyFact, type Fact } from "@/lib/facts.functions";
@@ -34,6 +35,7 @@ export function DailyChallenge({ onCompleted }: Props) {
     streak: number;
     delta: number;
   }>(null);
+  const [milestoneBurst, setMilestoneBurst] = useState<StreakMilestone | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +75,7 @@ export function DailyChallenge({ onCompleted }: Props) {
           `${milestone.emoji} ${milestone.label} unlocked! ${milestone.days}-day streak!`,
           { duration: 5000, className: "font-bold" },
         );
+        setMilestoneBurst(milestone);
       }
       window.setTimeout(() => setAwardedFlash(null), 3200);
     }
@@ -201,6 +204,10 @@ export function DailyChallenge({ onCompleted }: Props) {
           )}
         </AnimatePresence>
       </article>
+      <StreakMilestoneCelebration
+        milestone={milestoneBurst}
+        onClose={() => setMilestoneBurst(null)}
+      />
     </motion.section>
   );
 }
