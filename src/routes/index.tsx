@@ -85,6 +85,9 @@ function WhyApp() {
   const recordDailyServer = useServerFn(recordDailyChallenge);
   const recordDiscoveryServer = useServerFn(recordDiscovery);
   const toggleFavServer = useServerFn(toggleFavoriteServer);
+  const fetchLastChain = useServerFn(resumeLastChain);
+  const saveChainServer = useServerFn(saveChain);
+  const bumpInterest = useServerFn(bumpCategoryInterest);
 
   const { user, isGuest } = useCurrentUser();
 
@@ -101,6 +104,9 @@ function WhyApp() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [signInPrompt, setSignInPrompt] = useState<null | { title: string; message: string }>(null);
   const [celebrate, setCelebrate] = useState<{ points: number } | null>(null);
+  const [lastChain, setLastChain] = useState<ChainSummary | null>(null);
+  const [savingChain, setSavingChain] = useState(false);
+  const [savedChainId, setSavedChainId] = useState<string | null>(null);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
