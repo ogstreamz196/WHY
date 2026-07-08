@@ -33,19 +33,25 @@ export const Route = createFileRoute("/store")({
   component: StorePage,
 });
 
-type Tab = StoreCategory | "coins";
+type Tab = StoreCategory | "coins" | "vip";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
+  { id: "vip",    label: "VIP",     emoji: "👑" },
   { id: "avatar", label: "Avatars", emoji: "🧑‍🚀" },
   { id: "theme",  label: "Themes",  emoji: "🎨" },
-  { id: "coins",  label: "Get Coins", emoji: "💰" },
+  { id: "coins",  label: "Coins",   emoji: "💰" },
 ];
 
 function StorePage() {
-  const [tab, setTab] = useState<Tab>("avatar");
+  const [tab, setTab] = useState<Tab>("vip");
   const [coins, setCoins] = useState(0);
   const [inventory, setInventory] = useState<string[]>([]);
   const [equipped, setEquip] = useState(getEquipped());
   const [toast, setToast] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+  const [confetti, setConfetti] = useState(0);
+  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
+  const { isVip, subscription } = useSubscription(userId);
 
   const refresh = () => {
     setCoins(getPoints());
@@ -54,10 +60,50 @@ function StorePage() {
   };
   useEffect(() => { refresh(); }, []);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+      setUserEmail(data.user?.email ?? undefined);
+    });
+  }, []);
+
+  // Success toast + confetti when returning from Paddle checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      setToast("👑 Welcome to VIP! +500 bonus coins");
+      setConfetti((n) => n + 1);
+      window.setTimeout(() => setToast(null), 3500);
+      // clean the query param
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
   const flash = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2200);
   };
+
+  const buyVip = async () => {
+    if (!userId) {
+      flash("Please sign in first");
+      return;
+    }
+    try {
+      await openCheckout({
+        priceId: "vip_monthly",
+        customerEmail: userEmail,
+        customData: { userId },
+        successUrl: `${window.location.origin}/store?checkout=success`,
+      });
+    } catch (e) {
+      console.error(e);
+      flash("Checkout failed — try again");
+    }
+  };
+
 
   const buy = (item: StoreItem) => {
     const res = purchaseItem(item.id);
