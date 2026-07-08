@@ -139,7 +139,7 @@ function ArenaPage() {
           </Link>
           <div className="flex-1">
             <h1 className="font-display text-2xl font-black text-white">Curiosity Arena</h1>
-            <p className="text-xs text-white/60">One score, many ways to climb.</p>
+            <p className="text-xs text-white/60">{TAB_TAGLINE[tab]}</p>
           </div>
         </header>
 
