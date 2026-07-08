@@ -223,6 +223,10 @@ function ProfilePage() {
 
         <QuizStatsSection />
 
+        <MyRankingsSection />
+
+
+
 
         {/* Achievements */}
         <section className="mt-6">
