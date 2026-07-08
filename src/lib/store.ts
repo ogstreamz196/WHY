@@ -157,14 +157,30 @@ export function getBadges(): Badge[] {
   const streak = getStreak();
   const seen = getSeen();
   return [
-    { id: "curious", label: "Curious", emoji: "🌱", unlocked: seen >= 5 },
-    { id: "explorer", label: "Explorer", emoji: "🧭", unlocked: seen >= 25 },
-    { id: "scientist", label: "Scientist", emoji: "🔬", unlocked: seen >= 100 },
-    { id: "streak3", label: "3-day streak", emoji: "🔥", unlocked: streak >= 3 },
-    { id: "streak7", label: "Week of Why", emoji: "📅", unlocked: streak >= 7 },
-    { id: "points100", label: "100 points", emoji: "⭐", unlocked: points >= 100 },
+    // Discovery ladder
+    { id: "curious",    label: "Curious",         emoji: "🌱", unlocked: seen >= 5 },
+    { id: "explorer",   label: "Explorer",        emoji: "🧭", unlocked: seen >= 25 },
+    { id: "scientist",  label: "Scientist",       emoji: "🔬", unlocked: seen >= 100 },
+    { id: "sage",       label: "Sage",            emoji: "📚", unlocked: seen >= 250 },
+    { id: "polymath",   label: "Polymath",        emoji: "🧠", unlocked: seen >= 500 },
+    { id: "oracle",     label: "Oracle",          emoji: "🔮", unlocked: seen >= 1000 },
+    // Streak ladder
+    { id: "streak3",    label: "3-day streak",    emoji: "🔥", unlocked: streak >= 3 },
+    { id: "streak7",    label: "Week of Why",     emoji: "📅", unlocked: streak >= 7 },
+    { id: "streak14",   label: "Fortnight Flame", emoji: "🌟", unlocked: streak >= 14 },
+    { id: "streak30",   label: "Monthly Master",  emoji: "🏆", unlocked: streak >= 30 },
+    { id: "streak60",   label: "Curiosity Comet", emoji: "☄️", unlocked: streak >= 60 },
+    { id: "streak100",  label: "Century Champ",   emoji: "👑", unlocked: streak >= 100 },
+    // Point ladder
+    { id: "points100",  label: "100 points",      emoji: "⭐", unlocked: points >= 100 },
+    { id: "points500",  label: "500 points",      emoji: "✨", unlocked: points >= 500 },
+    { id: "points1k",   label: "1,000 points",    emoji: "💫", unlocked: points >= 1000 },
+    { id: "points5k",   label: "5,000 points",    emoji: "🌠", unlocked: points >= 5000 },
+    { id: "points10k",  label: "10,000 points",   emoji: "🚀", unlocked: points >= 10000 },
+    { id: "points25k",  label: "25,000 points",   emoji: "🪐", unlocked: points >= 25000 },
   ];
 }
+
 
 // ------- Store / Y-Coin economy -------
 // Note: "curiosity points" == Y-coins. Same underlying counter (KEY_POINTS)
