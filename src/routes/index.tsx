@@ -1,6 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+
+function notifyAchievements(ids?: string[]) {
+  if (!ids?.length) return;
+  for (const id of ids) {
+    toast.success(`🏆 Achievement unlocked: ${id.replace(/_/g, " ")}`);
+  }
+}
+
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -264,7 +272,9 @@ function WhyApp() {
         bumpSeen();
         grantPoints(1);
         if (user && next?.id) {
-          recordDiscoveryServer({ data: { fact_id: next.id } }).catch((e) => console.warn(e));
+          recordDiscoveryServer({ data: { fact_id: next.id } })
+            .then((r) => notifyAchievements(r?.newlyUnlocked))
+            .catch((e) => console.warn(e));
         }
       } catch (err) {
         console.error(err);
@@ -605,7 +615,9 @@ function WhyApp() {
             setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
             setCelebrate({ points: r.pointsDelta });
             if (user) {
-              recordDailyServer().catch((e) => console.warn(e));
+              recordDailyServer()
+                .then((r) => notifyAchievements(r?.newlyUnlocked))
+                .catch((e) => console.warn(e));
             }
           }}
         />
