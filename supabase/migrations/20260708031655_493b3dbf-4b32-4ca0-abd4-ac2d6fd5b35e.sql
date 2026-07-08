@@ -1,0 +1,1 @@
+ALTER TABLE public.user_stats ADD COLUMN IF NOT EXISTS last_login_bonus_day date;
