@@ -1,88 +1,49 @@
-# Curiosity Challenge — Quiz, Scoring & Leaderboards
 
-Sign-in required. Questions reuse existing `facts`; AI generates 3 distractors per fact and caches them so quizzes are fast and fair. Scoring is server-authoritative.
+# Curiosity Arena — Multi-View Leaderboards (one unified score)
 
-## Database (one migration)
+Keep the single Curiosity Score = XP (`user_stats.total_points`), which already accumulates from quizzes, discoveries, daily challenges, streaks, and achievements. All views below rank the SAME score — only the WHERE/window/GROUP changes.
 
-```text
-quiz_questions
-  fact_id (FK facts, unique) · category · difficulty (easy|medium|hard|expert)
-  correct_answer · distractors (text[3]) · explanation
-  generated_at
+## 1. Data (one migration)
 
-quiz_sessions
-  user_id · category (nullable → random) · difficulty
-  score · correct_count · question_count · accuracy · started_at · finished_at
+- **`profiles`** — add `age_band TEXT` (`under_10 | 10_12 | teen | adult`), `favorite_category TEXT`, `leaderboard_opt_out BOOLEAN DEFAULT false`, `hide_from_public BOOLEAN DEFAULT false`.
+- **`xp_events`** — new append-only ledger: `id, user_id, source (quiz|discovery|daily|streak|achievement|login), points INT, category TEXT NULL, created_at`. Every place that bumps `total_points` also inserts here (so time-window and category views are possible without changing scoring).
+- **Views** (all `security_invoker=true`, filter out opted-out users):
+  - `leaderboard_global` — refactor: ranks by `total_points` (unified).
+  - `leaderboard_age` — same, exposes `age_band`.
+  - `leaderboard_category` — sums `xp_events.points` per `(user_id, category)`.
+  - `leaderboard_window` — sums `xp_events.points` per `user_id` with `created_at >= <daily|weekly|monthly>` (single view, filter client-side by param).
+  - `leaderboard_activity` — derives: Rising Stars (biggest 7-day delta), Daily Players (active_days_30 desc), Quiz Masters (`quiz_stats.total_score`), Streak Champions (`current_streak`), Weekend Warriors (Sat/Sun XP), New Explorers (created_at < 14 days).
+- GRANT SELECT to authenticated on every view.
 
-quiz_answers
-  session_id · fact_id · picked_index · correct · ms_taken · points_awarded
+## 2. Server functions (`src/lib/leaderboard.functions.ts`)
 
-quiz_stats  (1 row per user)
-  total_score · best_score · questions_answered · correct_answered
-  best_streak · current_streak · favorite_category
+- `getLeaderboard({ view, filter, limit })` — one entry point; `view` = `global|age|category|window|activity`, `filter` = age band / category key / `daily|weekly|monthly` / activity kind. Returns `{ entries, meta: { total_users, window_label } }`.
+- `getMyRankings()` — returns the user's rank + percentile in each headline view (global, their age band, their favorite category, rising, weekly). Used on profile.
+- `updateLeaderboardPrivacy({ hide_from_public, leaderboard_opt_out, age_band, favorite_category })`.
+- Wire `xp_events` inserts into existing points-awarding server fns (discovery, daily challenge, login bonus, quiz finish, mission bonus) — a single helper `awardXp(context, source, points, category?)`.
 
-quiz_leaderboard_weekly  (materialized-ish view or table refreshed on write)
-  user_id · week_start · score · rank
-```
+## 3. UI
 
-- RLS: users read/write only their own sessions/answers/stats; leaderboards readable to `authenticated`; `quiz_questions` readable to `authenticated` (correct answer stripped in the API layer).
-- GRANTs for `authenticated` + `service_role` on every table.
+- `/arena` (renamed from `/leaderboard` if it exists) — segmented control: **Global · Age · Category · Activity · Weekly**. Second row of chips picks the filter within that tab. Rows show rank, avatar, name, score, delta arrow. Top-3 get medal styling; user's own row is sticky-highlighted with rank change animation.
+- `LeaderboardRow` — animated rank number, progress bar to next tier, medal effects for top 3, `motion` slide-in on rank change.
+- **Profile `/profile`** — "Your Curiosity Rankings" card listing global / category / age / rising / weekly with emoji + percentile message ("top 5% of Animal Explorers").
+- **Settings `/settings`** — privacy: display name, avatar, hide-from-public toggle, opt-out toggle, age band, favorite category picker.
+- **Toast** on quiz finish / daily claim: "You moved up 15 places on Rising Stars" (compare pre/post rank returned by `awardXp`).
 
-## Server functions (`src/lib/quiz.functions.ts`, protected)
+## 4. Achievements
 
-- `startQuiz({ category?, difficulty, length=5 })` — picks N facts, ensures each has a cached `quiz_questions` row (generates via Lovable AI `openai/gpt-5.5` if missing: 3 plausible wrong answers + short explanation), shuffles answer order per-user per-question, returns sanitized payload (no correct index).
-- `submitAnswer({ sessionId, factId, pickedIndex, msTaken })` — server checks correctness against `quiz_questions.correct_answer`, computes points:
-  - base +10 correct
-  - +5 speed bonus if `msTaken < 5000`
-  - difficulty multiplier (easy ×1, medium ×1.25, hard ×1.5, expert ×2)
-  - updates streaks, `quiz_stats`, weekly leaderboard row
-  - rate limit: max 1 answer / 500ms / user (reject faster)
-- `finishQuiz({ sessionId })` — perfect-quiz bonus (×1.5 total), returns summary + XP delta, calls `checkAchievements`.
-- `getGlobalLeaderboard({ limit=50 })`, `getWeeklyLeaderboard({ limit=50 })`, `getMyRank()`.
+Add: `top_100_global`, `top_10_category`, `rising_star_top_10`. Unlocked in `checkAchievements` using view queries.
 
-Anti-cheat: correct answer never leaves server until `submitAnswer` resolves; question + answer order shuffled server-side per session; server times each answer using `session.started_at + submitted_at`, ignores client `msTaken` for scoring beyond the speed bonus check clamp.
+## Technical notes
 
-## UI
+- No score duplication — leaderboards derive from `total_points` and `xp_events`; deleting `xp_events` rows never affects `total_points`.
+- Views use `security_invoker=true` and filter `hide_from_public=false`; owners can always see themselves via `getMyRankings` (bypasses that filter via `requireSupabaseAuth`).
+- Rank query uses `RANK() OVER (ORDER BY score DESC)` in SQL; percentile = `rank / total_users`.
+- All server fns are `requireSupabaseAuth` (arena is signed-in only — matches existing quiz gating).
 
-New authenticated routes:
+## Out of scope (unless you want them in)
 
-- `/_authenticated/quiz` — category + difficulty picker, "Random mode", CTA to start. Guests hitting `/quiz` see upgrade toast + redirect.
-- `/_authenticated/quiz/$sessionId` — game screen:
-  - Progress bar (question k/N) · optional countdown timer (15s easy → 8s expert)
-  - Animated question card, 4 answer buttons, correct/incorrect flash (green/red pulse + haptic via `navigator.vibrate`)
-  - After answer: explanation + related fact link + "Follow the Why chain" link
-  - Final screen: score, accuracy, streak, perfect-bonus celebration (reuses `<Celebration/>` + `<LevelUpCelebration/>`), share button
-- `/_authenticated/leaderboard` — tabs: Global · Weekly · Friends (Friends shows "Coming soon" placeholder). Row: rank, avatar, username, XP, quiz score. Highlight current user.
-
-Home screen: add a "Curiosity Challenge" card linking to `/quiz` alongside Daily Mission.
-Profile: new "Quiz stats" section (level, total points, best streak, accuracy %, favorite category, quiz badges).
-
-## Achievements (added to `achievements` catalog via migration)
-
-- `quiz_first` First Quiz Completed
-- `quiz_streak_7` 7 Correct in a Row
-- `quiz_100` 100 Questions Answered
-- `quiz_master_explorer` Answered in every category
-- `quiz_speed_genius` 10 correct answers under 3s
-- `quiz_perfect` Perfect quiz
-- `quiz_weekly_top3` Top 3 weekly
-
-Wired into `checkAchievements` (already invoked on quiz completion).
-
-## Design
-
-Reuses existing tokens (`--gradient-primary`, `glass-strong`, `text-gradient`). No new colors. Framer Motion for card enter/exit + correct/incorrect pulse; confetti via existing `<Celebration/>`. Countdown ring reuses the mission `ProgressRing` pattern.
-
-## Out of scope (this pass)
-
-- Real friends system (leaderboard tab shows placeholder + waitlist button).
-- Sound effects (haptic only; can add later).
-- Question reporting UI.
-
-## Files
-
-- Migration: `supabase/migrations/*_quiz_system.sql`
-- Server: `src/lib/quiz.functions.ts`
-- Components: `src/components/QuizCard.tsx`, `QuizResult.tsx`, `LeaderboardRow.tsx`, `QuizStatsCard.tsx`
-- Routes: `src/routes/_authenticated/quiz.tsx`, `quiz.$sessionId.tsx`, `leaderboard.tsx`
-- Edits: `src/routes/index.tsx` (home card), `src/routes/profile.tsx` (stats section), `src/lib/account.functions.ts` (new achievement rules)
+- Real-time push updates (poll every 30s instead)
+- Friends leaderboard
+- Country/region views
+- Season resets and historical archives
