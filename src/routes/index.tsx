@@ -635,10 +635,10 @@ function WhyApp() {
           <AnimatePresence mode="wait">
             <motion.div
               key={fact?.id ?? "loading"}
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -24, scale: 0.98 }}
-              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 20, x: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -14, x: -16, scale: 0.97 }}
+              transition={{ duration: 0.36, ease: [0.32, 0.72, 0, 1] }}
               className="relative"
             >
               {/* Category-tinted glow behind card */}
