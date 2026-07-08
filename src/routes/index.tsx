@@ -449,7 +449,7 @@ function WhyApp() {
                     <span className="font-black text-white">{(displayName ?? user.email ?? "?").slice(0, 1).toUpperCase()}</span>
                   </span>
                 ) : (
-                  <img src={mascotImg} alt="" className="h-10 w-10 object-contain animate-float-slow" />
+                  <img src={mascotImg} alt="" loading="lazy" decoding="async" className="h-10 w-10 object-contain animate-float-slow" />
                 )}
               </Link>
               <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
