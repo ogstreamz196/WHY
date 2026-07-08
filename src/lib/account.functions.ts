@@ -79,6 +79,7 @@ export type StatsDTO = {
   facts_seen: number;
   last_active_day: string | null;
   last_daily_challenge_day: string | null;
+  last_login_bonus_day: string | null;
 };
 
 export const getMyStats = createServerFn({ method: "GET" })
