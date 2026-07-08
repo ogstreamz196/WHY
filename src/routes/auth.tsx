@@ -57,10 +57,12 @@ function AuthPage() {
 
   function nextDestination(): string {
     try {
-      const hasGuest =
-        (Number(localStorage.getItem("why:points")) || 0) > 0 ||
-        (Number(localStorage.getItem("why:streak")) || 0) > 0 ||
-        (JSON.parse(localStorage.getItem("why:favorites") ?? "[]") as unknown[]).length > 0;
+      const store = typeof window !== "undefined" ? window.sessionStorage : null;
+      const hasGuest = !!store && (
+        (Number(store.getItem("why:points")) || 0) > 0 ||
+        (Number(store.getItem("why:streak")) || 0) > 0 ||
+        (JSON.parse(store.getItem("why:favorites") ?? "[]") as unknown[]).length > 0
+      );
       if (hasGuest) {
         const redirect = search.redirect ?? "/";
         return `/import-guest?redirect=${encodeURIComponent(redirect)}`;
