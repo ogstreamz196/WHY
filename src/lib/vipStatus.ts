@@ -1,24 +1,31 @@
 // Server-side VIP status lookup.
-//
-// While Paddle subscriptions are not yet wired up, `isVipUser` returns false
-// for everyone. When the `subscriptions` table lands, replace the body with a
-// query against it (e.g. `.eq('status', 'active').gt('current_period_end', now)`).
+// Queries the subscriptions table to determine whether the user has an
+// active VIP subscription in the current environment.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeCoinDrop } from "./coinDrop";
 
 type AuthCtx = { supabase: SupabaseClient; userId: string };
 
-export async function isVipUser(_ctx: AuthCtx): Promise<boolean> {
-  // TODO: query public.subscriptions once the VIP subscription flow is enabled.
-  // const { data } = await _ctx.supabase
-  //   .from("subscriptions")
-  //   .select("status, current_period_end")
-  //   .eq("user_id", _ctx.userId)
-  //   .eq("status", "active")
-  //   .gt("current_period_end", new Date().toISOString())
-  //   .maybeSingle();
-  // return !!data;
-  return false;
+function currentPaddleEnvFromServer(): "sandbox" | "live" {
+  const token = process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "";
+  return token.startsWith("test_") ? "sandbox" : "live";
+}
+
+export async function isVipUser(ctx: AuthCtx): Promise<boolean> {
+  const env = currentPaddleEnvFromServer();
+  const { data } = await ctx.supabase
+    .from("subscriptions")
+    .select("status, current_period_end")
+    .eq("user_id", ctx.userId)
+    .eq("environment", env)
+    .in("status", ["active", "trialing"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return false;
+  const row = data as { status: string; current_period_end: string | null };
+  if (!row.current_period_end) return true;
+  return new Date(row.current_period_end).getTime() > Date.now();
 }
 
 /**
