@@ -122,7 +122,7 @@ function AuthPage() {
       } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: search.redirect ?? "/" });
+        navigate({ to: nextDestination() });
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
