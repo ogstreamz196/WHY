@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { verifyWebhook, EventName, type PaddleEnv } from "@/lib/paddle.server";
+import { computeCoinDrop } from "@/lib/coinDrop";
 
-const SIGNUP_BONUS_COINS = 500;
+const SIGNUP_BONUS_COINS_BASE = 500;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _supabase: any = null;
@@ -73,9 +74,11 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
         .eq("user_id", userId)
         .maybeSingle();
       const current = (stats as { total_points?: number } | null)?.total_points ?? 0;
+      // User just purchased VIP → award bonus at VIP rate (isVip: true).
+      const bonus = computeCoinDrop(SIGNUP_BONUS_COINS_BASE, { isVip: true });
       await supabase
         .from("user_stats")
-        .update({ total_points: current + SIGNUP_BONUS_COINS })
+        .update({ total_points: current + bonus })
         .eq("user_id", userId);
       await supabase
         .from("subscriptions")
