@@ -323,6 +323,7 @@ function StorePage() {
         )}
       </AnimatePresence>
 
+      <ConfettiBurst trigger={confetti} />
       <BottomNav />
     </main>
   );
