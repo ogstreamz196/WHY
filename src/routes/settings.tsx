@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { LogOut, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   defaultSettings,
@@ -9,6 +10,8 @@ import {
   type Settings,
 } from "@/lib/store";
 import { syncFactsFromSheet } from "@/lib/sync.functions";
+import { useCurrentUser } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -28,6 +31,8 @@ function SettingsPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const runSync = useServerFn(syncFactsFromSheet);
+  const { user } = useCurrentUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLocal(getSettings());
@@ -64,6 +69,46 @@ function SettingsPage() {
         </header>
 
         <h1 className="mb-4 text-2xl font-extrabold text-slate-900">⚙️ Settings</h1>
+
+        <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
+          <h2 className="mb-3 text-lg font-extrabold text-slate-900">👤 Account</h2>
+          {user ? (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-slate-900">{user.email}</p>
+                <Link to="/profile" className="text-xs font-semibold text-violet-700 underline-offset-2 hover:underline">
+                  View profile
+                </Link>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate({ to: "/" });
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1.5 text-xs font-bold text-rose-700"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Sign out
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-bold text-slate-900">Guest explorer</p>
+                <p className="text-xs text-slate-600">
+                  Create a free account to keep your streak & favourites across devices.
+                </p>
+              </div>
+              <Link
+                to="/auth"
+                search={{ mode: "signup" }}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-violet-600 px-3 py-1.5 text-xs font-bold text-white shadow"
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Sign up
+              </Link>
+            </div>
+          )}
+        </section>
 
         <section className="mb-6 space-y-2 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <Toggle

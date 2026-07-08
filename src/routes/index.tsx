@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -11,6 +11,7 @@ import {
   Share2,
   Sparkles,
   Star,
+  User as UserIcon,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,6 +27,7 @@ import {
   bumpSeen,
   cacheFact,
   getCachedRandomFact,
+  getFavorites,
   getPoints,
   getStreak,
   isFavorite,
@@ -37,6 +39,16 @@ import { BottomNav } from "@/components/BottomNav";
 import { Celebration } from "@/components/Celebration";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
+import { SignInPrompt } from "@/components/SignInPrompt";
+import { useCurrentUser } from "@/lib/auth";
+import {
+  getMyProfile,
+  getMyStats,
+  migrateGuestData,
+  recordDiscovery,
+  recordDailyChallenge,
+  toggleFavorite as toggleFavoriteServer,
+} from "@/lib/account.functions";
 
 
 import mascotImg from "@/assets/mascot.png";
@@ -61,6 +73,14 @@ function WhyApp() {
   const generateNew = useServerFn(generateAndStoreFact);
   const generateLayer = useServerFn(generateWhyLayer);
   const searchOrGen = useServerFn(searchOrGenerateFact);
+  const migrateGuest = useServerFn(migrateGuestData);
+  const fetchProfile = useServerFn(getMyProfile);
+  const fetchStats = useServerFn(getMyStats);
+  const recordDailyServer = useServerFn(recordDailyChallenge);
+  const recordDiscoveryServer = useServerFn(recordDiscovery);
+  const toggleFavServer = useServerFn(toggleFavoriteServer);
+
+  const { user, isGuest } = useCurrentUser();
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +92,8 @@ function WhyApp() {
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
   const [level, setLevel] = useState(1);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [signInPrompt, setSignInPrompt] = useState<null | { title: string; message: string }>(null);
   const [celebrate, setCelebrate] = useState<{ points: number } | null>(null);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
@@ -85,13 +107,46 @@ function WhyApp() {
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
 
+  // Local (guest) initial hydration
   useEffect(() => {
     const p = getPoints();
     setPoints(p);
     setLevel(Math.max(1, Math.floor(p / 100) + 1));
     setStreak(getStreak());
-
   }, []);
+
+  // On sign-in: migrate any local guest state up to the server (once), then load
+  // authoritative profile + stats from the server.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const migratedKey = `why:migrated:${user.id}`;
+        if (typeof window !== "undefined" && !localStorage.getItem(migratedKey)) {
+          const favs = getFavorites();
+          await migrateGuest({
+            data: {
+              points: getPoints(),
+              streak: getStreak(),
+              favorite_fact_ids: favs.map((f) => f.id).slice(0, 500),
+            },
+          }).catch((e) => console.warn("guest migration failed", e));
+          localStorage.setItem(migratedKey, "1");
+        }
+        const [profile, stats] = await Promise.all([fetchProfile(), fetchStats()]);
+        if (cancelled) return;
+        setDisplayName(profile?.display_name ?? user.email?.split("@")[0] ?? null);
+        setPoints(stats.total_points);
+        setStreak(stats.current_streak);
+        setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
+      } catch (e) {
+        console.warn("account load failed", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, migrateGuest, fetchProfile, fetchStats]);
+
 
   const grantPoints = useCallback((delta: number) => {
     const prev = getPoints();
@@ -141,6 +196,9 @@ function WhyApp() {
         showFact(next);
         bumpSeen();
         grantPoints(1);
+        if (user && next?.id) {
+          recordDiscoveryServer({ data: { fact_id: next.id } }).catch((e) => console.warn(e));
+        }
       } catch (err) {
         console.error(err);
         const cached = getCachedRandomFact(currentId);
@@ -150,7 +208,7 @@ function WhyApp() {
         setLoading(false);
       }
     },
-    [category, generateNew, getRandom, showFact, grantPoints],
+    [category, generateNew, getRandom, showFact, grantPoints, user, recordDiscoveryServer],
   );
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
@@ -190,9 +248,17 @@ function WhyApp() {
 
   const handleFav = () => {
     if (!fact) return;
+    if (isGuest) {
+      setSignInPrompt({
+        title: "Save your favourites",
+        message: "Sign up to keep your favourite whys across every device.",
+      });
+      return;
+    }
     const now = toggleFavorite(fact);
     setFav(now);
     if (now) grantPoints(1);
+    toggleFavServer({ data: { fact_id: fact.id } }).catch((e) => console.warn(e));
   };
 
   const doSearch = async (e: React.FormEvent) => {
@@ -236,16 +302,25 @@ function WhyApp() {
                 <span className="text-sm font-black text-white">{streak}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">day</span>
               </div>
-              <div className="glass flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden">
-                <img src={mascotImg} alt="" className="h-10 w-10 object-contain animate-float-slow" />
-              </div>
+              <Link
+                to={user ? "/profile" : "/auth"}
+                aria-label={user ? "Open profile" : "Sign in"}
+                className="glass flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden active:scale-95 transition"
+              >
+                {user ? (
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl text-lg" style={{ background: "var(--gradient-primary)" }}>
+                    <span className="font-black text-white">{(displayName ?? user.email ?? "?").slice(0, 1).toUpperCase()}</span>
+                  </span>
+                ) : (
+                  <img src={mascotImg} alt="" className="h-10 w-10 object-contain animate-float-slow" />
+                )}
+              </Link>
               <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <CoinIcon size={16} />
                 <motion.span key={points} initial={{ scale: 1.4, y: -4 }} animate={{ scale: 1, y: 0 }} className="text-sm font-black text-white">
                   {points}
                 </motion.span>
               </div>
-
             </div>
           </div>
 
@@ -299,12 +374,40 @@ function WhyApp() {
           </AnimatePresence>
         </header>
 
+        {/* Welcome / signup banner */}
+        {user ? (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm"
+          >
+            <span className="text-white/80">Welcome back, </span>
+            <span className="font-black text-white">{displayName ?? "explorer"}</span>
+            <span className="text-white/60"> — your streak is safe.</span>
+          </motion.div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSignInPrompt({ title: "Save your streak", message: "Create an account to keep your streak, coins and favourites forever." })}
+            className="mb-3 flex w-full items-center justify-between gap-2 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-2 text-left text-sm"
+          >
+            <span className="text-white/90">
+              <span className="font-black">Save your curiosity</span>
+              <span className="text-white/60"> — create a free account</span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-white/60" />
+          </button>
+        )}
+
         <DailyChallenge
           onCompleted={(r) => {
             setStreak(r.streak);
             setPoints(r.points);
             setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
             setCelebrate({ points: r.pointsDelta });
+            if (user) {
+              recordDailyServer().catch((e) => console.warn(e));
+            }
           }}
         />
 
@@ -574,6 +677,12 @@ function WhyApp() {
         points={celebrate?.points ?? 0}
         streak={streak}
         onClose={() => setCelebrate(null)}
+      />
+      <SignInPrompt
+        open={!!signInPrompt}
+        onClose={() => setSignInPrompt(null)}
+        title={signInPrompt?.title}
+        message={signInPrompt?.message}
       />
     </main>
   );
