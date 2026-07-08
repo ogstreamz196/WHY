@@ -19,15 +19,21 @@ export const Route = createFileRoute("/_authenticated/leaderboard")({
   component: ArenaPage,
 });
 
+type TabKey =
+  | "today" | "week" | "month" | "alltime"
+  | "rising" | "category" | "age" | "streaks" | "weekend" | "new";
+
 type Tab = {
-  key: LeaderboardKind;
+  key: TabKey;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 };
 
 const TABS: Tab[] = [
-  { key: "global",   label: "Global",   icon: Trophy },
-  { key: "window",   label: "Weekly",   icon: Crown },
+  { key: "today",    label: "Today",    icon: Calendar },
+  { key: "week",     label: "Week",     icon: CalendarDays },
+  { key: "month",    label: "Month",    icon: TrendingUp },
+  { key: "alltime",  label: "All Time", icon: Trophy },
   { key: "rising",   label: "Rising",   icon: Rocket },
   { key: "category", label: "Category", icon: Sparkles },
   { key: "age",      label: "Age",      icon: Users },
@@ -36,11 +42,16 @@ const TABS: Tab[] = [
   { key: "new",      label: "New",      icon: Star },
 ];
 
-const WINDOWS: Array<{ key: string; label: string }> = [
-  { key: "daily",   label: "Today" },
-  { key: "weekly",  label: "This Week" },
-  { key: "monthly", label: "This Month" },
-];
+// Map UI tab -> server (kind, filter)
+function resolveQuery(tab: TabKey, filter: string | null): { kind: LeaderboardKind; filter: string | null } {
+  switch (tab) {
+    case "today":   return { kind: "window", filter: "daily" };
+    case "week":    return { kind: "window", filter: "weekly" };
+    case "month":   return { kind: "window", filter: "monthly" };
+    case "alltime": return { kind: "global", filter: null };
+    default:        return { kind: tab as LeaderboardKind, filter };
+  }
+}
 
 const AGES: Array<{ key: string; label: string }> = [
   { key: "under_10", label: "Under 10" },
@@ -48,6 +59,20 @@ const AGES: Array<{ key: string; label: string }> = [
   { key: "teen",     label: "Teen" },
   { key: "adult",    label: "Adult" },
 ];
+
+// Fun label under the tabs
+const TAB_TAGLINE: Record<TabKey, string> = {
+  today:    "Today's top explorers · resets at midnight",
+  week:     "Rolling 7 days · new week, new climb",
+  month:    "This month's champions",
+  alltime:  "Lifetime Curiosity Score",
+  rising:   "Biggest climbers right now",
+  category: "Category legends",
+  age:      "Compete inside your age band",
+  streaks:  "Longest current fire streaks",
+  weekend:  "Weekend warriors",
+  new:      "Fresh explorers taking off",
+};
 
 function medalClass(rank: number): string {
   if (rank === 1) return "bg-amber-400/25 text-amber-100 shadow-[0_0_24px_rgba(251,191,36,0.35)]";
