@@ -58,9 +58,11 @@ function ProfilePage() {
     queryFn: () => fetchAchievements(),
     enabled: !!user,
   });
-  const timeline = useQuery({
+  const timeline = useInfiniteQuery({
     queryKey: ["timeline"],
-    queryFn: () => fetchTimeline({ data: { limit: 20 } }),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => fetchTimeline({ data: { limit: 15, offset: pageParam as number } }),
+    getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
     enabled: !!user,
   });
   const interests = useQuery({
@@ -68,9 +70,11 @@ function ProfilePage() {
     queryFn: () => fetchInterests(),
     enabled: !!user,
   });
-  const chains = useQuery({
-    queryKey: ["chains", "preview"],
-    queryFn: () => fetchChains(),
+  const chains = useInfiniteQuery({
+    queryKey: ["chains", "profile"],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => fetchChains({ data: { limit: 10, offset: pageParam as number } }),
+    getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
     enabled: !!user,
   });
 
