@@ -14,9 +14,12 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as ChainsRouteImport } from './routes/chains'
 import { Route as BadgesRouteImport } from './routes/badges'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChainIdRouteImport } from './routes/chain.$id'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
 
 const StoreRoute = StoreRouteImport.update({
@@ -44,6 +47,11 @@ const FavoritesRoute = FavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChainsRoute = ChainsRouteImport.update({
+  id: '/chains',
+  path: '/chains',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BadgesRoute = BadgesRouteImport.update({
   id: '/badges',
   path: '/badges',
@@ -59,6 +67,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChainIdRoute = ChainIdRouteImport.update({
+  id: '/chain/$id',
+  path: '/chain/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
   id: '/api/public/hooks/sync-sheet',
   path: '/api/public/hooks/sync-sheet',
@@ -69,22 +87,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/badges': typeof BadgesRoute
+  '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/c/$slug': typeof CSlugRoute
+  '/chain/$id': typeof ChainIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/badges': typeof BadgesRoute
+  '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/c/$slug': typeof CSlugRoute
+  '/chain/$id': typeof ChainIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRoutesById {
@@ -92,11 +116,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/badges': typeof BadgesRoute
+  '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/c/$slug': typeof CSlugRoute
+  '/chain/$id': typeof ChainIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRouteTypes {
@@ -105,33 +132,42 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/badges'
+    | '/chains'
     | '/favorites'
     | '/profile'
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/c/$slug'
+    | '/chain/$id'
     | '/api/public/hooks/sync-sheet'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/badges'
+    | '/chains'
     | '/favorites'
     | '/profile'
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/c/$slug'
+    | '/chain/$id'
     | '/api/public/hooks/sync-sheet'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/badges'
+    | '/chains'
     | '/favorites'
     | '/profile'
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/c/$slug'
+    | '/chain/$id'
     | '/api/public/hooks/sync-sheet'
   fileRoutesById: FileRoutesById
 }
@@ -139,11 +175,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BadgesRoute: typeof BadgesRoute
+  ChainsRoute: typeof ChainsRoute
   FavoritesRoute: typeof FavoritesRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   StoreRoute: typeof StoreRoute
+  CSlugRoute: typeof CSlugRoute
+  ChainIdRoute: typeof ChainIdRoute
   ApiPublicHooksSyncSheetRoute: typeof ApiPublicHooksSyncSheetRoute
 }
 
@@ -184,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chains': {
+      id: '/chains'
+      path: '/chains'
+      fullPath: '/chains'
+      preLoaderRoute: typeof ChainsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/badges': {
       id: '/badges'
       path: '/badges'
@@ -205,6 +251,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/chain/$id': {
+      id: '/chain/$id'
+      path: '/chain/$id'
+      fullPath: '/chain/$id'
+      preLoaderRoute: typeof ChainIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-sheet': {
       id: '/api/public/hooks/sync-sheet'
       path: '/api/public/hooks/sync-sheet'
@@ -219,11 +279,14 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BadgesRoute: BadgesRoute,
+  ChainsRoute: ChainsRoute,
   FavoritesRoute: FavoritesRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   StoreRoute: StoreRoute,
+  CSlugRoute: CSlugRoute,
+  ChainIdRoute: ChainIdRoute,
   ApiPublicHooksSyncSheetRoute: ApiPublicHooksSyncSheetRoute,
 }
 export const routeTree = rootRouteImport

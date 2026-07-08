@@ -47,6 +47,90 @@ export type Database = {
         }
         Relationships: []
       }
+      category_interests: {
+        Row: {
+          category: string
+          last_engaged_at: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          category: string
+          last_engaged_at?: string
+          user_id: string
+          weight?: number
+        }
+        Update: {
+          category?: string
+          last_engaged_at?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      chain_collection_items: {
+        Row: {
+          added_at: string
+          chain_id: string
+          collection_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          chain_id: string
+          collection_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          chain_id?: string
+          collection_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chain_collection_items_chain_id_fkey"
+            columns: ["chain_id"]
+            isOneToOne: false
+            referencedRelation: "why_chains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chain_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "chain_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chain_collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       discoveries: {
         Row: {
           fact_id: string
@@ -356,7 +440,10 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_public: boolean
+          pinned: boolean
           root_fact_id: string | null
+          share_slug: string | null
           title: string | null
           updated_at: string
           user_id: string
@@ -364,7 +451,10 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_public?: boolean
+          pinned?: boolean
           root_fact_id?: string | null
+          share_slug?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
@@ -372,7 +462,10 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_public?: boolean
+          pinned?: boolean
           root_fact_id?: string | null
+          share_slug?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string

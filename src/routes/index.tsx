@@ -49,6 +49,12 @@ import {
   recordDailyChallenge,
   toggleFavorite as toggleFavoriteServer,
 } from "@/lib/account.functions";
+import {
+  resumeLastChain,
+  saveChain,
+  bumpCategoryInterest,
+  type ChainSummary,
+} from "@/lib/chains.functions";
 
 
 import mascotImg from "@/assets/mascot.png";
@@ -79,6 +85,9 @@ function WhyApp() {
   const recordDailyServer = useServerFn(recordDailyChallenge);
   const recordDiscoveryServer = useServerFn(recordDiscovery);
   const toggleFavServer = useServerFn(toggleFavoriteServer);
+  const fetchLastChain = useServerFn(resumeLastChain);
+  const saveChainServer = useServerFn(saveChain);
+  const bumpInterest = useServerFn(bumpCategoryInterest);
 
   const { user, isGuest } = useCurrentUser();
 
@@ -95,6 +104,9 @@ function WhyApp() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [signInPrompt, setSignInPrompt] = useState<null | { title: string; message: string }>(null);
   const [celebrate, setCelebrate] = useState<{ points: number } | null>(null);
+  const [lastChain, setLastChain] = useState<ChainSummary | null>(null);
+  const [savingChain, setSavingChain] = useState(false);
+  const [savedChainId, setSavedChainId] = useState<string | null>(null);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
@@ -134,18 +146,23 @@ function WhyApp() {
           }).catch((e) => console.warn("guest migration failed", e));
           localStorage.setItem(migratedKey, "1");
         }
-        const [profile, stats] = await Promise.all([fetchProfile(), fetchStats()]);
+        const [profile, stats, last] = await Promise.all([
+          fetchProfile(),
+          fetchStats(),
+          fetchLastChain().catch(() => null),
+        ]);
         if (cancelled) return;
         setDisplayName(profile?.display_name ?? user.email?.split("@")[0] ?? null);
         setPoints(stats.total_points);
         setStreak(stats.current_streak);
         setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
+        setLastChain(last);
       } catch (e) {
         console.warn("account load failed", e);
       }
     })();
     return () => { cancelled = true; };
-  }, [user, migrateGuest, fetchProfile, fetchStats]);
+  }, [user, migrateGuest, fetchProfile, fetchStats, fetchLastChain]);
 
 
   const grantPoints = useCallback((delta: number) => {
@@ -212,7 +229,18 @@ function WhyApp() {
   );
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
-  useEffect(() => { void loadNext(fact?.id); /* eslint-disable-line */ }, [category]);
+  useEffect(() => {
+    void loadNext(fact?.id); /* eslint-disable-line */
+    if (user && category !== "all") {
+      bumpInterest({ data: { category, delta: 1 } }).catch(() => {});
+    }
+  }, [category]);
+
+  // Bump interest for a fact's own category when we discover it (signed-in only)
+  useEffect(() => {
+    if (!user || !fact?.category) return;
+    bumpInterest({ data: { category: fact.category, delta: 1 } }).catch(() => {});
+  }, [fact?.id, fact?.category, user, bumpInterest]);
 
   const reveal = () => {
     if (revealed) return;
@@ -230,10 +258,42 @@ function WhyApp() {
       });
       if (layer) {
         setChain((c) => [...c, layer]);
+        setSavedChainId(null); // dirty
         grantPoints(3);
       }
     } catch (e) { console.warn(e); }
     finally { setChainLoading(false); }
+  };
+
+  const handleSaveChain = async () => {
+    if (!fact || chain.length === 0) return;
+    if (isGuest) {
+      setSignInPrompt({
+        title: "Save this trail",
+        message: "Sign up to keep your Why chains, share them, and pick up where you left off.",
+      });
+      return;
+    }
+    setSavingChain(true);
+    try {
+      const steps = [
+        { question: fact.question, answer: fact.answer },
+        ...chain.map((c) => ({ question: c.question, answer: c.answer ?? null })),
+      ];
+      const res = await saveChainServer({
+        data: {
+          title: fact.question.slice(0, 100),
+          root_fact_id: fact.id,
+          steps,
+        },
+      });
+      setSavedChainId(res.id);
+      grantPoints(5);
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setSavingChain(false);
+    }
   };
 
   const handleShare = async () => {
@@ -398,6 +458,28 @@ function WhyApp() {
             <ArrowRight className="h-4 w-4 text-white/60" />
           </button>
         )}
+
+        {/* Continue last Why chain */}
+        {user && lastChain && lastChain.step_count > 1 && (
+          <Link
+            to="/chain/$id"
+            params={{ id: lastChain.id }}
+            className="mb-3 flex items-center gap-3 rounded-2xl border border-fuchsia-400/25 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 px-4 py-3"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg" style={{ background: "var(--gradient-primary)" }}>
+              🧵
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">Continue your chain</div>
+              <div className="truncate text-sm font-bold text-white">
+                {lastChain.title ?? lastChain.last_question ?? "Pick up where you left off"}
+              </div>
+              <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-white/60" />
+          </Link>
+        )}
+
 
         <DailyChallenge
           onCompleted={(r) => {
@@ -601,6 +683,17 @@ function WhyApp() {
                                     ? "Diving deeper…"
                                     : "🤔 But… Why?"}
                               </button>
+
+                              {chain.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={handleSaveChain}
+                                  disabled={savingChain || !!savedChainId}
+                                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-3 text-xs font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-60"
+                                >
+                                  {savedChainId ? "✓ Saved to your chains" : savingChain ? "Saving…" : "🧵 Save this chain"}
+                                </button>
+                              )}
                             </div>
                           )}
                         </motion.div>
