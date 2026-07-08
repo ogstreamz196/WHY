@@ -239,6 +239,34 @@ export const listFavorites = createServerFn({ method: "GET" })
     return rows.map((r) => r.facts).filter((f): f is FavoriteFact => f !== null);
   });
 
+// -------------------- Discovery history --------------------
+
+export type DiscoveryEntry = {
+  id: string;
+  seen_at: string;
+  fact: FavoriteFact | null;
+};
+
+export const listMyDiscoveries = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ limit: z.number().int().min(1).max(200).default(50) }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<DiscoveryEntry[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("discoveries")
+      .select("id, seen_at, facts:fact_id (id, question, answer, category, fun_fact)")
+      .eq("user_id", context.userId)
+      .order("seen_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r) => ({
+      id: r.id as string,
+      seen_at: r.seen_at as string,
+      fact: (r as { facts: FavoriteFact | null }).facts ?? null,
+    }));
+  });
+
 export const toggleFavorite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ fact_id: z.string().uuid() }).parse(input))
