@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Calendar, CalendarDays, Crown, Flame, Rocket, Sparkles, Star, Sun, Trophy, TrendingUp, Users } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
 import { getLeaderboard, type LeaderboardKind, type LeaderboardResult } from "@/lib/leaderboard.functions";
@@ -97,6 +98,9 @@ function ArenaPage() {
     else setFilter(null);
   }, [tab]);
 
+  const [celebrate, setCelebrate] = useState<{ title: string; subtitle: string; tone: string } | null>(null);
+  const [confettiTick, setConfettiTick] = useState(0);
+
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -106,12 +110,34 @@ function ArenaPage() {
       .then((r) => {
         if (!alive) return;
         setResult(r);
-        // Rank movement vs last visit (per view, local)
-        if (r?.my_rank && typeof window !== "undefined") {
-          const key = `lb:rank:${tab}:${filter ?? ""}`;
-          const prev = Number(window.sessionStorage.getItem(key));
-          if (Number.isFinite(prev) && prev > 0) setRankDelta(prev - r.my_rank);
-          window.sessionStorage.setItem(key, String(r.my_rank));
+        // Rank movement + rank-up celebrations vs last visit (per view, session)
+        if (r?.my_rank && r.total_users && typeof window !== "undefined") {
+          const rankKey = `lb:rank:${tab}:${filter ?? ""}`;
+          const tierKey = `lb:tier:${tab}:${filter ?? ""}`;
+          const store = window.sessionStorage;
+          const prevRank = Number(store.getItem(rankKey));
+          if (Number.isFinite(prevRank) && prevRank > 0) setRankDelta(prevRank - r.my_rank);
+
+          const pct = (r.my_rank / r.total_users) * 100;
+          const tierOf = (p: number, rank: number) =>
+            rank === 1 ? 6 : p <= 1 ? 5 : p <= 5 ? 4 : rank <= 10 ? 3 : p <= 10 ? 2 : p <= 25 ? 1 : 0;
+          const TIER_META = [
+            null,
+            { title: "Top 25%!", subtitle: "You just cracked the top quarter.", tone: "from-emerald-400 to-teal-500" },
+            { title: "Top 10%!", subtitle: "You're in elite company now.", tone: "from-cyan-400 to-emerald-400" },
+            { title: "Top 10 rank!", subtitle: "Ten seats from the throne.", tone: "from-fuchsia-500 to-violet-500" },
+            { title: "Top 5%!", subtitle: "Officially a Curiosity legend.", tone: "from-fuchsia-400 to-pink-500" },
+            { title: "Top 1%!", subtitle: "One in a hundred — nice.", tone: "from-amber-400 to-orange-500" },
+            { title: "#1 Champion!", subtitle: "You lead the entire board.", tone: "from-yellow-300 to-amber-500" },
+          ] as const;
+          const prevTier = Number(store.getItem(tierKey)) || 0;
+          const nextTier = tierOf(pct, r.my_rank);
+          if (nextTier > prevTier && TIER_META[nextTier]) {
+            setCelebrate(TIER_META[nextTier]);
+            setConfettiTick((n) => n + 1);
+          }
+          store.setItem(rankKey, String(r.my_rank));
+          store.setItem(tierKey, String(nextTier));
         }
       })
       .catch(() => { if (alive) setResult(null); })
@@ -344,6 +370,66 @@ function ArenaPage() {
         )}
       </div>
       <BottomNav />
+      <ConfettiBurst trigger={confettiTick} duration={2200} />
+      <AnimatePresence>
+        {celebrate && (
+          <motion.div
+            key="rankup"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setCelebrate(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.6, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="glass-strong relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 p-6 text-center shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${celebrate.tone} shadow-[0_10px_40px_rgba(251,191,36,0.5)]`}>
+                <motion.div
+                  animate={{ rotate: [-8, 8, -8], scale: [1, 1.08, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Trophy className="h-12 w-12 text-white drop-shadow-lg" />
+                </motion.div>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                Rank up · {TABS.find((t) => t.key === tab)?.label}
+              </p>
+              <h2 className="mt-1 font-display text-3xl font-black text-white">{celebrate.title}</h2>
+              <p className="mt-2 text-sm text-white/70">{celebrate.subtitle}</p>
+              {result?.my_rank && result.total_users && (
+                <div className="mt-5">
+                  <div className="mb-1 flex justify-between text-[10px] font-black uppercase tracking-widest text-white/60">
+                    <span>#{result.my_rank.toLocaleString()}</span>
+                    <span>of {result.total_users.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.max(2, 100 - (result.my_rank / result.total_users) * 100)}%` }}
+                      transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+                      className={`h-full rounded-full bg-gradient-to-r ${celebrate.tone}`}
+                    />
+                  </div>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setCelebrate(null)}
+                className="mt-6 w-full rounded-full px-5 py-3 text-sm font-black text-white"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                Keep climbing
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
