@@ -693,9 +693,10 @@ function WhyApp() {
                           <button
                             type="button"
                             onClick={reveal}
-                            className="animate-pulse-glow group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98]"
+                            className="animate-pulse-glow hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98]"
                             style={{ background: "var(--gradient-primary)" }}
                           >
+                            <span aria-hidden className="shine-sweep" />
                             <span className="relative z-10 inline-flex items-center gap-2">
                               <Sparkles className="h-5 w-5" />
                               Reveal Answer
