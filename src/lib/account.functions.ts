@@ -27,19 +27,27 @@ export type ProfileDTO = {
   avatar_id: string;
   bio: string | null;
   created_at: string;
+  age_band: string | null;
+  favorite_category: string | null;
+  leaderboard_opt_out: boolean;
+  hide_from_public: boolean;
 };
+
+const PROFILE_COLS =
+  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProfileDTO | null> => {
     const { data, error } = await context.supabase
       .from("profiles")
-      .select("id, display_name, username, avatar_id, bio, created_at")
+      .select(PROFILE_COLS)
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return data as ProfileDTO | null;
   });
+
 
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
