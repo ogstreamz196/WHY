@@ -423,7 +423,8 @@ export const bumpCategoryInterest = createServerFn({ method: "POST" })
         { onConflict: "user_id,category" },
       );
     if (error) throw new Error(error.message);
-    return { ok: true as const, weight: nextWeight };
+    const newlyUnlocked = await runAchievementCheckForUser(context);
+    return { ok: true as const, weight: nextWeight, newlyUnlocked };
   });
 
 export const getCategoryInterests = createServerFn({ method: "GET" })
