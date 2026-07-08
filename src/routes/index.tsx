@@ -245,9 +245,17 @@ function WhyApp() {
 
   const handleFav = () => {
     if (!fact) return;
+    if (isGuest) {
+      setSignInPrompt({
+        title: "Save your favourites",
+        message: "Sign up to keep your favourite whys across every device.",
+      });
+      return;
+    }
     const now = toggleFavorite(fact);
     setFav(now);
     if (now) grantPoints(1);
+    toggleFavServer({ data: { fact_id: fact.id } }).catch((e) => console.warn(e));
   };
 
   const doSearch = async (e: React.FormEvent) => {
