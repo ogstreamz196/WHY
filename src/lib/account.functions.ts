@@ -99,6 +99,7 @@ export const getMyStats = createServerFn({ method: "GET" })
         facts_seen: 0,
         last_active_day: null,
         last_daily_challenge_day: null,
+        last_login_bonus_day: null,
       }
     );
   });
