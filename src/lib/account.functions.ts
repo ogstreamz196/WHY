@@ -175,6 +175,7 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    await awardXp(context, "daily", DAILY_POINTS);
     const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
     return { awarded: true, stats: row as StatsDTO, newlyUnlocked };
   });
