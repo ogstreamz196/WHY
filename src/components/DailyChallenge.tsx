@@ -206,6 +206,7 @@ export function DailyChallenge({ onCompleted }: Props) {
       </article>
       <StreakMilestoneCelebration
         milestone={milestoneBurst}
+        source="daily_challenge"
         onClose={() => setMilestoneBurst(null)}
       />
     </motion.section>
