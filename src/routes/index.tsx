@@ -607,7 +607,9 @@ function WhyApp() {
             setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
             setCelebrate({ points: r.pointsDelta });
             if (user) {
-              recordDailyServer().catch((e) => console.warn(e));
+              recordDailyServer()
+                .then((r) => notifyAchievements(r?.newlyUnlocked))
+                .catch((e) => console.warn(e));
             }
           }}
         />
