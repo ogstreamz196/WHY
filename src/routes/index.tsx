@@ -1218,7 +1218,49 @@ function GuestProgressCard({
   );
 }
 
-function WelcomeOverlay({ open, name, onClose }: { open: boolean; name: string | null; onClose: () => void }) {
+function WelcomeOverlay({
+  open,
+  name,
+  needsName,
+  onClose,
+  onSubmitName,
+}: {
+  open: boolean;
+  name: string | null;
+  needsName?: boolean;
+  onClose: () => void;
+  onSubmitName?: (nickname: string) => Promise<void>;
+}) {
+  const [nickname, setNickname] = useState(name ?? "");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setNickname(name ?? "");
+      setErr(null);
+    }
+  }, [open, name]);
+
+  const handleBegin = async () => {
+    if (!needsName || !onSubmitName) { onClose(); return; }
+    const trimmed = nickname.trim();
+    if (trimmed.length < 1 || trimmed.length > 60) {
+      setErr("Nickname must be 1–60 characters.");
+      return;
+    }
+    setSaving(true);
+    setErr(null);
+    try {
+      await onSubmitName(trimmed);
+      onClose();
+    } catch {
+      setErr("Couldn't save nickname. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -1265,31 +1307,64 @@ function WelcomeOverlay({ open, name, onClose }: { open: boolean; name: string |
               🎉
             </motion.div>
             <h2 className="relative font-display text-2xl font-black text-white">
-              Welcome{name ? `, ${name}` : ""}!
+              Welcome{name && !needsName ? `, ${name}` : ""}!
             </h2>
             <p className="relative mt-2 text-sm text-white/70">
-              Your Curiosity Passport is ready. Every fact you discover, every chain you follow — it all belongs to you now.
+              {needsName
+                ? "What should we call you on your Curiosity Passport?"
+                : "Your Curiosity Passport is ready. Every fact you discover, every chain you follow — it all belongs to you now."}
             </p>
-            <div className="relative mt-4 grid grid-cols-3 gap-2 text-xs">
-              {[
-                { i: "🔥", l: "Streaks" },
-                { i: "🎁", l: "Bonuses" },
-                { i: "⭐", l: "Badges" },
-              ].map((x) => (
-                <div key={x.l} className="rounded-2xl border border-white/10 bg-white/5 p-2">
-                  <div className="text-lg">{x.i}</div>
-                  <div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/60">{x.l}</div>
-                </div>
-              ))}
-            </div>
+
+            {needsName && (
+              <div className="relative mt-4 text-left">
+                <label htmlFor="nickname" className="mb-1 block text-[11px] font-black uppercase tracking-wider text-white/60">
+                  Your nickname
+                </label>
+                <input
+                  id="nickname"
+                  type="text"
+                  autoFocus
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") void handleBegin(); }}
+                  maxLength={60}
+                  placeholder="e.g. Curious Cat"
+                  className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base font-bold text-white placeholder-white/40 outline-none focus:border-white/50"
+                />
+                {err && <p className="mt-2 text-xs font-bold text-rose-300">{err}</p>}
+              </div>
+            )}
+
+            {!needsName && (
+              <div className="relative mt-4 grid grid-cols-3 gap-2 text-xs">
+                {[
+                  { i: "🔥", l: "Streaks" },
+                  { i: "🎁", l: "Bonuses" },
+                  { i: "⭐", l: "Badges" },
+                ].map((x) => (
+                  <div key={x.l} className="rounded-2xl border border-white/10 bg-white/5 p-2">
+                    <div className="text-lg">{x.i}</div>
+                    <div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/60">{x.l}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <button
               type="button"
-              onClick={onClose}
-              className="relative mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] transition hover:scale-[1.02]"
+              onClick={handleBegin}
+              disabled={saving}
+              className="relative mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] transition hover:scale-[1.02] disabled:opacity-60"
               style={{ background: "var(--gradient-primary)" }}
             >
-              Begin the journey
+              {saving ? "Saving…" : "Begin the journey"}
             </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
           </motion.div>
         </motion.div>
       )}
