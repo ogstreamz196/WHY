@@ -114,7 +114,7 @@ function WhyApp() {
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSkeleton, setShowSkeleton] = useState(true);
+  const showSkeleton = useThrottledFlag(loading, 180);
   const [revealed, setRevealed] = useState(false);
   const [revealing, setRevealing] = useState(false);
   const [error, setError] = useState<string | null>(null);
