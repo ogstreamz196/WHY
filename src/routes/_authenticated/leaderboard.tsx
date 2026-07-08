@@ -84,15 +84,15 @@ function medalClass(rank: number): string {
 function ArenaPage() {
   const { user } = useCurrentUser();
   const fetchBoard = useServerFn(getLeaderboard);
-  const [tab, setTab] = useState<LeaderboardKind>("global");
+  const [tab, setTab] = useState<TabKey>("today");
   const [filter, setFilter] = useState<string | null>(null);
   const [result, setResult] = useState<LeaderboardResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rankDelta, setRankDelta] = useState<number | null>(null);
 
   // Reset filter when tab changes
   useEffect(() => {
-    if (tab === "window") setFilter("weekly");
-    else if (tab === "age") setFilter("adult");
+    if (tab === "age") setFilter("adult");
     else if (tab === "category") setFilter(CATEGORIES[1]?.key ?? "animals");
     else setFilter(null);
   }, [tab]);
@@ -100,18 +100,29 @@ function ArenaPage() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fetchBoard({ data: { kind: tab, filter: filter ?? undefined, limit: 50 } })
-      .then((r) => { if (alive) setResult(r); })
+    setRankDelta(null);
+    const q = resolveQuery(tab, filter);
+    fetchBoard({ data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50 } })
+      .then((r) => {
+        if (!alive) return;
+        setResult(r);
+        // Rank movement vs last visit (per view, local)
+        if (r?.my_rank && typeof window !== "undefined") {
+          const key = `lb:rank:${tab}:${filter ?? ""}`;
+          const prev = Number(window.localStorage.getItem(key));
+          if (Number.isFinite(prev) && prev > 0) setRankDelta(prev - r.my_rank);
+          window.localStorage.setItem(key, String(r.my_rank));
+        }
+      })
       .catch(() => { if (alive) setResult(null); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [tab, filter, fetchBoard]);
 
   const chips = useMemo(() => {
-    if (tab === "window") return WINDOWS;
     if (tab === "age")    return AGES;
     if (tab === "category") return CATEGORIES.filter((c) => c.key !== "all").map((c) => ({ key: c.key, label: c.label }));
-    return [];
+    return [] as Array<{ key: string; label: string }>;
   }, [tab]);
 
   const topPercent = result?.my_rank && result.total_users
