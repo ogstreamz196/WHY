@@ -39,6 +39,9 @@ function ProfilePage() {
   const fetchStats = useServerFn(getMyStats);
   const fetchAchievements = useServerFn(listAchievements);
   const doUpdate = useServerFn(updateMyProfile);
+  const fetchTimeline = useServerFn(getDiscoveryTimeline);
+  const fetchInterests = useServerFn(getCategoryInterests);
+  const fetchChains = useServerFn(listMyChains);
 
   const profile = useQuery({
     queryKey: ["profile"],
@@ -53,6 +56,21 @@ function ProfilePage() {
   const achievements = useQuery({
     queryKey: ["achievements"],
     queryFn: () => fetchAchievements(),
+    enabled: !!user,
+  });
+  const timeline = useQuery({
+    queryKey: ["timeline"],
+    queryFn: () => fetchTimeline({ data: { limit: 20 } }),
+    enabled: !!user,
+  });
+  const interests = useQuery({
+    queryKey: ["interests"],
+    queryFn: () => fetchInterests(),
+    enabled: !!user,
+  });
+  const chains = useQuery({
+    queryKey: ["chains", "preview"],
+    queryFn: () => fetchChains(),
     enabled: !!user,
   });
 
