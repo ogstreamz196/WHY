@@ -43,6 +43,10 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { useCurrentUser } from "@/lib/auth";
+import { levelFor } from "@/lib/levels";
+import { DailyMission } from "@/components/DailyMission";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { markMissionTask, type MissionTask } from "@/lib/missions.functions";
 import {
   getMyProfile,
   getMyStats,
