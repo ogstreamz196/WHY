@@ -31,6 +31,8 @@ function SettingsPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const runSync = useServerFn(syncFactsFromSheet);
+  const { user } = useCurrentUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLocal(getSettings());
