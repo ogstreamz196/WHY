@@ -667,7 +667,7 @@ function WhyApp() {
                   <p className="text-center text-lg text-rose-300">{error}</p>
                 ) : fact ? (
                   <>
-                    <h1 className="font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
+                    <h1 className="animate-fade-up stagger-1 font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
                       {capitalize(fact.question)}
                     </h1>
 
