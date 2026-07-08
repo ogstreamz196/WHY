@@ -12,6 +12,9 @@ import {
 import { syncFactsFromSheet } from "@/lib/sync.functions";
 import { useCurrentUser } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getMyProfile, updateMyProfile } from "@/lib/account.functions";
+import { CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -150,6 +153,10 @@ function SettingsPage() {
           </div>
         </section>
 
+        {user && <ArenaPreferences />}
+
+
+
         <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <h2 className="text-lg font-extrabold text-slate-900">🏅 Explorer Badges</h2>
           <div className="mt-3 grid grid-cols-3 gap-2">
@@ -266,3 +273,104 @@ function Toggle({
     </label>
   );
 }
+
+const AGE_OPTIONS: Array<{ key: "under_10" | "10_12" | "teen" | "adult"; label: string }> = [
+  { key: "under_10", label: "Under 10" },
+  { key: "10_12",    label: "10–12" },
+  { key: "teen",     label: "Teen" },
+  { key: "adult",    label: "Adult" },
+];
+
+function ArenaPreferences() {
+  const qc = useQueryClient();
+  const fetchProfile = useServerFn(getMyProfile);
+  const doUpdate = useServerFn(updateMyProfile);
+  const p = useQuery({ queryKey: ["profile"], queryFn: () => fetchProfile() });
+  const [saving, setSaving] = useState(false);
+
+  const save = async (patch: {
+    age_band?: "under_10" | "10_12" | "teen" | "adult";
+    favorite_category?: string;
+    leaderboard_opt_out?: boolean;
+    hide_from_public?: boolean;
+  }) => {
+    setSaving(true);
+    try {
+      await doUpdate({ data: patch });
+      await qc.invalidateQueries({ queryKey: ["profile"] });
+      await qc.invalidateQueries({ queryKey: ["my-rankings"] });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const profile = p.data;
+
+  return (
+    <section className="mb-6 space-y-4 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
+      <h2 className="text-lg font-extrabold text-slate-900">🏆 Curiosity Arena</h2>
+
+      <div>
+        <p className="text-sm font-semibold text-slate-800">Age group</p>
+        <p className="text-xs text-slate-500">Ranks you against explorers your age.</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {AGE_OPTIONS.map((a) => {
+            const active = profile?.age_band === a.key;
+            return (
+              <button
+                key={a.key}
+                type="button"
+                disabled={saving}
+                onClick={() => save({ age_band: a.key })}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                  active ? "bg-violet-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"
+                }`}
+              >
+                {a.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-slate-800">Favourite topic</p>
+        <p className="text-xs text-slate-500">Shows on your profile and category board.</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {CATEGORIES.filter((c) => c.key !== "all").map((c) => {
+            const active = profile?.favorite_category === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                disabled={saving}
+                onClick={() => save({ favorite_category: c.key })}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                  active ? "bg-violet-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"
+                }`}
+              >
+                {c.emoji} {c.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-200 pt-3">
+        <Toggle
+          label="Hide me from public leaderboards"
+          hint="You still see your own rank, but others won't."
+          checked={!!profile?.leaderboard_opt_out}
+          onChange={(v) => save({ leaderboard_opt_out: v })}
+        />
+        <Toggle
+          label="Hide profile from public pages"
+          hint="Chains and shared links stop showing your name."
+          checked={!!profile?.hide_from_public}
+          onChange={(v) => save({ hide_from_public: v })}
+        />
+      </div>
+    </section>
+  );
+}
+

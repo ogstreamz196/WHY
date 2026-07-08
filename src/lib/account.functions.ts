@@ -27,19 +27,27 @@ export type ProfileDTO = {
   avatar_id: string;
   bio: string | null;
   created_at: string;
+  age_band: string | null;
+  favorite_category: string | null;
+  leaderboard_opt_out: boolean;
+  hide_from_public: boolean;
 };
+
+const PROFILE_COLS =
+  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProfileDTO | null> => {
     const { data, error } = await context.supabase
       .from("profiles")
-      .select("id, display_name, username, avatar_id, bio, created_at")
+      .select(PROFILE_COLS)
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return data as ProfileDTO | null;
   });
+
 
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -56,6 +64,10 @@ export const updateMyProfile = createServerFn({ method: "POST" })
           .optional(),
         avatar_id: z.string().max(60).optional(),
         bio: z.string().max(280).optional(),
+        age_band: z.enum(["under_10", "10_12", "teen", "adult"]).optional(),
+        favorite_category: z.string().max(40).optional(),
+        leaderboard_opt_out: z.boolean().optional(),
+        hide_from_public: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -64,11 +76,32 @@ export const updateMyProfile = createServerFn({ method: "POST" })
       .from("profiles")
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq("id", context.userId)
-      .select("id, display_name, username, avatar_id, bio, created_at")
+      .select(PROFILE_COLS)
       .single();
     if (error) throw new Error(error.message);
     return row as ProfileDTO;
   });
+
+// -------------------- XP ledger --------------------
+
+type AuthCtx = {
+  supabase: import("@supabase/supabase-js").SupabaseClient;
+  userId: string;
+};
+
+export type XpSource = "quiz" | "discovery" | "daily" | "streak" | "achievement" | "login" | "mission";
+
+/** Record an XP award in the append-only ledger. Safe to call after `total_points` is bumped. */
+export async function awardXp(ctx: AuthCtx, source: XpSource, points: number, category?: string | null): Promise<void> {
+  if (!points || points <= 0) return;
+  await ctx.supabase.from("xp_events").insert({
+    user_id: ctx.userId,
+    source,
+    points,
+    category: category ?? null,
+  });
+}
+
 
 // -------------------- Stats --------------------
 
@@ -142,6 +175,7 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    await awardXp(context, "daily", DAILY_POINTS);
     const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
     return { awarded: true, stats: row as StatsDTO, newlyUnlocked };
   });
@@ -155,15 +189,15 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       .from("discoveries")
       .insert({ user_id: context.userId, fact_id: data.fact_id });
 
-    const { data: existing } = await context.supabase
-      .from("user_stats")
-      .select("*")
-      .eq("user_id", context.userId)
-      .maybeSingle();
+    const [{ data: existing }, { data: fact }] = await Promise.all([
+      context.supabase.from("user_stats").select("*").eq("user_id", context.userId).maybeSingle(),
+      context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle(),
+    ]);
 
+    const DISCOVERY_POINTS = 1;
     const patch = {
       user_id: context.userId,
-      total_points: existing?.total_points ?? 0,
+      total_points: (existing?.total_points ?? 0) + DISCOVERY_POINTS,
       current_streak: existing?.current_streak ?? 0,
       longest_streak: existing?.longest_streak ?? 0,
       facts_seen: (existing?.facts_seen ?? 0) + 1,
@@ -177,6 +211,7 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    await awardXp(context, "discovery", DISCOVERY_POINTS, (fact as { category: string | null } | null)?.category ?? null);
     const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
     return { stats: row as StatsDTO, newlyUnlocked };
   });
@@ -510,6 +545,7 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    await awardXp(context, "login", bonus);
     await checkAchievements(context, row as StatsDTO);
     return {
       claimed: true,

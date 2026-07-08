@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { runAchievementCheckForUser } from "./account.functions";
+import { runAchievementCheckForUser, awardXp } from "./account.functions";
 
 const BONUS_POINTS = 50;
 
@@ -150,6 +150,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
       { user_id: context.userId, total_points: next, last_active_day: t },
       { onConflict: "user_id" },
     );
+    await awardXp(context, "mission", BONUS_POINTS);
     const newlyUnlocked = await runAchievementCheckForUser(context);
     return { awarded: true, points: BONUS_POINTS, total_points: next, newlyUnlocked };
   });

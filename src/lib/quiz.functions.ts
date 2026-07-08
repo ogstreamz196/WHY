@@ -6,6 +6,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { awardXp } from "./account.functions";
 
 // ---------------- Types ----------------
 
@@ -461,6 +462,10 @@ export const finishQuiz = createServerFn({ method: "POST" })
           total_points: (userStats.total_points ?? 0) + finalScore,
         })
         .eq("user_id", context.userId);
+    }
+
+    if (finalScore > 0) {
+      await awardXp(context, "quiz", finalScore, session.category ?? null);
     }
 
     // Achievement checks (quiz-specific)

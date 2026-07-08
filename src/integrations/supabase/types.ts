@@ -318,33 +318,45 @@ export type Database = {
         Row: {
           adult_provider: string | null
           adult_verified_at: string | null
+          age_band: string | null
           avatar_id: string
           bio: string | null
           created_at: string
           display_name: string | null
+          favorite_category: string | null
+          hide_from_public: boolean
           id: string
+          leaderboard_opt_out: boolean
           updated_at: string
           username: string | null
         }
         Insert: {
           adult_provider?: string | null
           adult_verified_at?: string | null
+          age_band?: string | null
           avatar_id?: string
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          favorite_category?: string | null
+          hide_from_public?: boolean
           id: string
+          leaderboard_opt_out?: boolean
           updated_at?: string
           username?: string | null
         }
         Update: {
           adult_provider?: string | null
           adult_verified_at?: string | null
+          age_band?: string | null
           avatar_id?: string
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          favorite_category?: string | null
+          hide_from_public?: boolean
           id?: string
+          leaderboard_opt_out?: boolean
           updated_at?: string
           username?: string | null
         }
@@ -722,19 +734,109 @@ export type Database = {
           },
         ]
       }
+      xp_events: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          points: number
+          source: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          points: number
+          source: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          points?: number
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      leaderboard_global: {
+      leaderboard_category: {
         Row: {
+          age_band: string | null
           avatar_id: string | null
-          best_score: number | null
-          correct_answered: number | null
+          category: string | null
           display_name: string | null
-          questions_answered: number | null
-          quiz_score: number | null
+          score: number | null
           user_id: string | null
           username: string | null
-          xp: number | null
+        }
+        Relationships: []
+      }
+      leaderboard_global: {
+        Row: {
+          age_band: string | null
+          avatar_id: string | null
+          current_streak: number | null
+          display_name: string | null
+          facts_seen: number | null
+          favorite_category: string | null
+          longest_streak: number | null
+          score: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
+      leaderboard_new: {
+        Row: {
+          age_band: string | null
+          avatar_id: string | null
+          display_name: string | null
+          favorite_category: string | null
+          joined_at: string | null
+          score: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
+      leaderboard_rising: {
+        Row: {
+          age_band: string | null
+          avatar_id: string | null
+          display_name: string | null
+          favorite_category: string | null
+          score: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
+      leaderboard_streaks: {
+        Row: {
+          age_band: string | null
+          avatar_id: string | null
+          display_name: string | null
+          favorite_category: string | null
+          longest_streak: number | null
+          score: number | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
+      leaderboard_weekend: {
+        Row: {
+          age_band: string | null
+          avatar_id: string | null
+          display_name: string | null
+          favorite_category: string | null
+          score: number | null
+          user_id: string | null
+          username: string | null
         }
         Relationships: []
       }
@@ -747,6 +849,19 @@ export type Database = {
           user_id: string | null
           username: string | null
           week_score: number | null
+        }
+        Relationships: []
+      }
+      leaderboard_windowed: {
+        Row: {
+          age_band: string | null
+          avatar_id: string | null
+          created_at: string | null
+          display_name: string | null
+          favorite_category: string | null
+          score: number | null
+          user_id: string | null
+          username: string | null
         }
         Relationships: []
       }
