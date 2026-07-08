@@ -27,14 +27,16 @@ import {
   cacheFact,
   getCachedRandomFact,
   getPoints,
+  getStreak,
   isFavorite,
   toggleFavorite,
-  touchStreak,
 } from "@/lib/store";
 import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { Celebration } from "@/components/Celebration";
+import { DailyChallenge } from "@/components/DailyChallenge";
+
 import mascotImg from "@/assets/mascot.png";
 
 export const Route = createFileRoute("/")({
@@ -85,8 +87,8 @@ function WhyApp() {
     const p = getPoints();
     setPoints(p);
     setLevel(Math.max(1, Math.floor(p / 100) + 1));
-    const s = touchStreak();
-    setStreak(s.streak);
+    setStreak(getStreak());
+
   }, []);
 
   const grantPoints = useCallback((delta: number) => {
@@ -294,8 +296,18 @@ function WhyApp() {
           </AnimatePresence>
         </header>
 
+        <DailyChallenge
+          onCompleted={(r) => {
+            setStreak(r.streak);
+            setPoints(r.points);
+            setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
+            setCelebrate({ points: r.pointsDelta });
+          }}
+        />
+
         {/* ── FACT CARD ───────────────────────────────────── */}
         <section className="flex flex-1 flex-col">
+
           <AnimatePresence mode="wait">
             <motion.div
               key={fact?.id ?? "loading"}

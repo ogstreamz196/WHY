@@ -67,7 +67,10 @@ export function toggleFavorite(fact: Fact): boolean {
   return true;
 }
 
-// ------- Curiosity points + streak -------
+// ------- Curiosity points + streak (tied to Daily Challenge) -------
+const KEY_DAILY_DONE = "why:dailyDone"; // last date the daily challenge was completed
+const DAILY_POINTS = 25;
+
 export const getPoints = () => read<number>(KEY_POINTS, 0);
 export const addPoints = (delta: number) => {
   const next = Math.max(0, getPoints() + delta);
@@ -84,20 +87,46 @@ function yesterdayKey() {
   d.setDate(d.getDate() - 1);
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
+
+/**
+ * Deprecated: kept for compatibility. Streaks now advance only when the
+ * user completes the Daily Challenge. See `completeDailyChallenge`.
+ */
 export function touchStreak(): { streak: number; isNewDay: boolean } {
-  const last = read<string>(KEY_LAST_DAY, "");
-  const today = todayKey();
-  let streak = read<number>(KEY_STREAK, 0);
-  let isNewDay = false;
-  if (last !== today) {
-    isNewDay = true;
-    streak = last === yesterdayKey() ? streak + 1 : 1;
-    write(KEY_STREAK, streak);
-    write(KEY_LAST_DAY, today);
-  }
-  return { streak, isNewDay };
+  return { streak: getStreak(), isNewDay: false };
 }
+
 export const getStreak = () => read<number>(KEY_STREAK, 0);
+
+export const hasCompletedDailyChallenge = (): boolean =>
+  read<string>(KEY_DAILY_DONE, "") === todayKey();
+
+/**
+ * Called when the user views/reveals the Daily Challenge fact.
+ * - First completion of the day: awards +25 points, advances streak
+ *   (or resets to 1 if a day was missed).
+ * - Later completions the same day: no-op.
+ */
+export function completeDailyChallenge(): {
+  awarded: boolean;
+  streak: number;
+  points: number;
+  pointsDelta: number;
+} {
+  const today = todayKey();
+  const last = read<string>(KEY_DAILY_DONE, "");
+  if (last === today) {
+    return { awarded: false, streak: getStreak(), points: getPoints(), pointsDelta: 0 };
+  }
+  const prevStreak = read<number>(KEY_STREAK, 0);
+  const nextStreak = last === yesterdayKey() ? prevStreak + 1 : 1;
+  write(KEY_STREAK, nextStreak);
+  write(KEY_DAILY_DONE, today);
+  write(KEY_LAST_DAY, today);
+  const newPoints = addPoints(DAILY_POINTS);
+  return { awarded: true, streak: nextStreak, points: newPoints, pointsDelta: DAILY_POINTS };
+}
+
 
 // ------- Seen count (for "next generation cadence") -------
 export const bumpSeen = () => {

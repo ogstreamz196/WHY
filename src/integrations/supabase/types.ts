@@ -22,6 +22,9 @@ export type Database = {
           fun_fact: string | null
           id: string
           question: string
+          sheet_id: string | null
+          source: string
+          updated_at: string
         }
         Insert: {
           answer: string
@@ -30,6 +33,9 @@ export type Database = {
           fun_fact?: string | null
           id?: string
           question: string
+          sheet_id?: string | null
+          source?: string
+          updated_at?: string
         }
         Update: {
           answer?: string
@@ -38,6 +44,9 @@ export type Database = {
           fun_fact?: string | null
           id?: string
           question?: string
+          sheet_id?: string | null
+          source?: string
+          updated_at?: string
         }
         Relationships: []
       }

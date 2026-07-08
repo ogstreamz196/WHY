@@ -85,6 +85,8 @@ export const getRandomFact = createServerFn({ method: "GET" })
     return (fallback?.[0] as Fact) ?? null;
   });
 
+
+
 // -------------------- AI helpers --------------------
 
 const SAFETY_PROMPT = `You are writing content for the WHY? app used by kids, families, adults, and classrooms.
