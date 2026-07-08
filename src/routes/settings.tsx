@@ -153,6 +153,10 @@ function SettingsPage() {
           </div>
         </section>
 
+        {user && <ArenaPreferences />}
+
+
+
         <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <h2 className="text-lg font-extrabold text-slate-900">🏅 Explorer Badges</h2>
           <div className="mt-3 grid grid-cols-3 gap-2">
