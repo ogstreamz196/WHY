@@ -350,6 +350,188 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_answers: {
+        Row: {
+          correct: boolean
+          created_at: string
+          fact_id: string
+          id: string
+          ms_taken: number
+          picked_index: number
+          points_awarded: number
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          correct: boolean
+          created_at?: string
+          fact_id: string
+          id?: string
+          ms_taken?: number
+          picked_index: number
+          points_awarded?: number
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          correct?: boolean
+          created_at?: string
+          fact_id?: string
+          id?: string
+          ms_taken?: number
+          picked_index?: number
+          points_awarded?: number
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_answers_fact_id_fkey"
+            columns: ["fact_id"]
+            isOneToOne: false
+            referencedRelation: "facts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          category: string | null
+          correct_answer: string
+          difficulty: Database["public"]["Enums"]["quiz_difficulty"]
+          distractors: string[]
+          explanation: string | null
+          fact_id: string
+          generated_at: string
+          id: string
+        }
+        Insert: {
+          category?: string | null
+          correct_answer: string
+          difficulty?: Database["public"]["Enums"]["quiz_difficulty"]
+          distractors: string[]
+          explanation?: string | null
+          fact_id: string
+          generated_at?: string
+          id?: string
+        }
+        Update: {
+          category?: string | null
+          correct_answer?: string
+          difficulty?: Database["public"]["Enums"]["quiz_difficulty"]
+          distractors?: string[]
+          explanation?: string | null
+          fact_id?: string
+          generated_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_fact_id_fkey"
+            columns: ["fact_id"]
+            isOneToOne: true
+            referencedRelation: "facts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_sessions: {
+        Row: {
+          accuracy: number
+          answer_order: number[]
+          category: string | null
+          correct_count: number
+          created_at: string
+          difficulty: Database["public"]["Enums"]["quiz_difficulty"]
+          fact_ids: string[]
+          finished_at: string | null
+          id: string
+          question_count: number
+          score: number
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number
+          answer_order?: number[]
+          category?: string | null
+          correct_count?: number
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["quiz_difficulty"]
+          fact_ids?: string[]
+          finished_at?: string | null
+          id?: string
+          question_count?: number
+          score?: number
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          answer_order?: number[]
+          category?: string | null
+          correct_count?: number
+          created_at?: string
+          difficulty?: Database["public"]["Enums"]["quiz_difficulty"]
+          fact_ids?: string[]
+          finished_at?: string | null
+          id?: string
+          question_count?: number
+          score?: number
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_stats: {
+        Row: {
+          best_score: number
+          best_streak: number
+          categories_answered: string[]
+          correct_answered: number
+          current_streak: number
+          fast_correct: number
+          favorite_category: string | null
+          questions_answered: number
+          total_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_score?: number
+          best_streak?: number
+          categories_answered?: string[]
+          correct_answered?: number
+          current_streak?: number
+          fast_correct?: number
+          favorite_category?: string | null
+          questions_answered?: number
+          total_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_score?: number
+          best_streak?: number
+          categories_answered?: string[]
+          correct_answered?: number
+          current_streak?: number
+          fast_correct?: number
+          favorite_category?: string | null
+          questions_answered?: number
+          total_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -542,13 +724,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_global: {
+        Row: {
+          avatar_id: string | null
+          best_score: number | null
+          correct_answered: number | null
+          display_name: string | null
+          questions_answered: number | null
+          quiz_score: number | null
+          user_id: string | null
+          username: string | null
+          xp: number | null
+        }
+        Relationships: []
+      }
+      leaderboard_weekly: {
+        Row: {
+          avatar_id: string | null
+          best_this_week: number | null
+          display_name: string | null
+          quizzes_played: number | null
+          user_id: string | null
+          username: string | null
+          week_score: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_adult_verified: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      quiz_difficulty: "easy" | "medium" | "hard" | "expert"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -675,6 +882,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      quiz_difficulty: ["easy", "medium", "hard", "expert"],
+    },
   },
 } as const
