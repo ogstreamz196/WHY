@@ -147,9 +147,9 @@ function RootComponent() {
       >
         Skip to content
       </a>
-      <main id="main">
+      <div id="main" tabIndex={-1}>
         <Outlet />
-      </main>
+      </div>
       <GlobalStreakMilestoneWatcher />
       <Toaster theme="dark" position="top-center" richColors closeButton />
     </QueryClientProvider>
