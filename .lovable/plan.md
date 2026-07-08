@@ -1,87 +1,81 @@
-# User Accounts + Curiosity Profiles
+# Retention upgrade
 
-Adds a full account system on top of the current guest-first experience. Nothing in today's UI, fact data, Google Sheets sync, or Daily Challenge logic is removed — auth simply *unlocks* cloud sync, real achievements, and a personalised dashboard. Signed-out users keep the app they have today.
+Turn one-off visits into a daily habit by giving each day a clear "mission" to finish, a named progression ladder that celebrates level-ups, and a weekly recap that makes the last 7 days feel like a personal report.
 
-## Scope
+Notifications and native mobile push are **out of scope** — the app is a PWA in the browser and cannot silently push. The plan makes the app *ready* for reminders (deterministic daily mission slot, streak state, unfinished chains surfaced) so a push worker can be layered on later.
 
-### 1. Auth (Lovable Cloud managed)
-- Email + password signup / login / logout
-- Password reset flow with `/reset-password` page
-- Email verification (default Lovable auth emails; custom templates optional later)
-- Google sign-in via `lovable.auth.signInWithOAuth`
-- Persistent sessions, `onAuthStateChange` wired once in `__root.tsx`
-- Public `/auth` route (sign in + sign up + forgot password tabs) with animated cosmic welcome
+## 1. Daily Curiosity Mission
 
-### 2. Database (new migration, RLS on every table)
-Existing `facts` table untouched — AI + Sheet facts stay global/public.
-New tables, each with `user_id uuid references auth.users on delete cascade`, RLS `auth.uid() = user_id`, and required GRANTs:
+A single card on the home screen that appears once per day for both guests and signed-in users. Signed-in users earn XP + streak credit; guests see a nudge.
 
-- `profiles` — display_name, username, avatar_id, bio, created_at
-- `user_stats` — total_points, current_streak, longest_streak, facts_seen, last_active_day
-- `favorites` — fact_id → facts
-- `discoveries` — fact_id, seen_at (activity history)
-- `generated_questions` — question, answer, category, source='user'
-- `why_chains` — root_fact_id, title, updated_at + `why_chain_steps` (chain_id, fact_id, position)
-- `achievements` catalog table (public read) + `user_achievements` (user_id, achievement_id, unlocked_at)
-- `user_settings` — child_mode, reading_level, sound, theme_id, avatar_id
-- Trigger: on `auth.users` insert → create `profiles` + `user_stats` + `user_settings` rows
-- Trigger: `updated_at` maintenance on mutable tables
+Four tasks, deterministic per calendar day so notifications later can preview them:
+- **Mystery** — the day's featured fact (seeded by date across the `facts` catalog)
+- **Surprise fact** — random fresh discovery
+- **Why chain** — start a "But… why?" trail of at least 3 steps
+- **Category** — explore one fact in a rotating category-of-the-day
 
-### 3. Server functions (`createServerFn` + `requireSupabaseAuth`)
-- `getMyProfile`, `updateMyProfile`
-- `getMyStats`, `recordDailyChallenge` (server-authoritative streak/points award)
-- `toggleFavorite`, `listFavorites`
-- `recordDiscovery` (bumps stats, checks achievement unlocks)
-- `saveGeneratedQuestion`, `listGeneratedQuestions`
-- `createWhyChain`, `appendWhyChainStep`, `listWhyChains`, `getWhyChain`
-- `listAchievements` (public catalog + my unlocks)
-- `migrateGuestData` — one-shot import of localStorage favorites/points/streak into the account on first login
+Progress is tracked per task; finishing all four unlocks a bonus (+50 XP + confetti). Completion state persists per day (server for accounts, localStorage for guests).
 
-### 4. Guest mode (unchanged surface, gated writes)
-- `useCurrentUser()` hook exposes `{ user, isGuest }`
-- Existing local-store helpers stay as the guest backend
-- Signed-in users: same helpers become thin wrappers that hit server fns (with optimistic local cache for offline)
-- Guest-blocked actions (favorite, permanent points, cross-device sync) open a friendly `SignInPrompt` modal instead of silently failing
+Data:
+- New table `daily_missions` — `user_id`, `mission_date`, `mystery_done`, `surprise_done`, `chain_done`, `category_done`, `category_key`, `completed_at`, `bonus_awarded`
+- Server fns: `getTodayMission`, `markMissionTask`
+- Guest fallback in `store.ts` keyed by date
 
-### 5. Personalised dashboard
-- Signed-in home replaces the anonymous header with:
-  - "Welcome back, {name}" + avatar
-  - Streak calendar (last 30 days from `discoveries`)
-  - XP bar + level tied to `user_stats.total_points`
-  - "Resume Why chain" card if a chain has unsaved next step
-- Signed-out home = today's experience, plus a soft "Create account to save your streak" banner
+UI:
+- `<DailyMission />` component with 4 checkbox-style task rows, progress ring, animated completion state, "Claim bonus" button when all four are done
+- Auto-marks tasks as user completes matching in-app actions
 
-### 6. Achievements
-Catalog seeded via migration: `first_question`, `ten_facts`, `why_chain_master`, `streak_7`, `hundred_questions`, plus existing badge tiers. Unlock check runs inside `recordDiscovery` / `recordDailyChallenge` / `createWhyChain` and toasts a celebratory card (reusing `<Celebration />`).
+## 2. Named Curiosity Levels
 
-### 7. UI
-- `/auth` — animated cosmic welcome, tab-switch between Sign in / Sign up / Reset, Google button, guest "Keep exploring" link
-- `/reset-password` — public, handles Supabase recovery hash
-- `/profile` — avatar, display name, edit form, achievement grid, stats
-- `/settings` — restyled with account section (email, sign out, delete) preserving existing preferences + Sheets sync (admin-only stays admin-only)
-- `_authenticated` layout stays integration-managed; profile/settings account section live there. Home stays public.
+Replace bare "Level N" numbers with named tiers everywhere they appear (home header, profile, celebrations):
 
-### 8. Offline
-- TanStack Query cache persisted via existing PWA service worker (add `persistQueryClient` with localStorage bucket)
-- Mutations use `queryClient.setQueryData` optimistic updates
-- Offline queue: mutation retry on `online` event, dedup by `(kind, target_id)`
+| XP | Level | Title |
+|---|---|---|
+| 0 | 1 | Curious Mind |
+| 100 | 2 | Question Seeker |
+| 300 | 5 | Question Hunter |
+| 800 | 10 | Knowledge Explorer |
+| 2000 | 25 | Curiosity Expert |
+| 5000 | 50 | Infinite Thinker |
 
-### 9. Security
-- RLS on every new table (`auth.uid() = user_id`); GRANTs to `authenticated` only, plus `service_role`
-- No `anon` grants on user tables
-- Zod validation on every server fn input
-- Passwords via Supabase Auth (bcrypt); HIBP check enabled via `configure_auth`
-- Google auth uses managed Lovable Cloud client
-- Existing `facts` table stays publicly readable (AI + Sheet facts serve everyone)
+- Add `src/lib/levels.ts` with `levelFor(xp)` returning `{ level, title, xpIntoLevel, xpToNext, nextTitle }`
+- New `<LevelUpCelebration />` overlay: full-screen burst with the new title, XP bar filling animation, "Continue exploring" CTA
+- Wire into `grantPoints` in `index.tsx` — detect level change and fire the overlay
 
-## Out of scope (call out for follow-ups)
-- Custom auth email templates (default Lovable auth emails suffice for launch)
-- Social features (follow, share chains publicly)
-- Realtime multiplayer
+## 3. Weekly Recap
+
+New route `/recap` (signed-in only) + a "Your week in curiosity" teaser card on `/profile`. Server fn `getWeeklySummary` aggregates the last 7 days from `discoveries`, `user_stats`, `category_interests`, `user_achievements`:
+
+- Facts discovered
+- Categories explored (top 3 with % share)
+- XP earned this week
+- New achievements
+- Best streak day
+- One "curiosity insight" line ("You leaned into space this week")
+
+Presented as animated scroll-through cards, each with a subtle motion transition. Includes a share-card button (see §4).
+
+## 4. Better share cards
+
+Extend the existing chain-share flow so users can also share:
+- Individual facts (already has native share; upgrade the copy + preview text)
+- Achievements (new: `/s/achievement/<id>` OG route)
+- Weekly recap summary (new: `/s/week/<user>/<iso-week>` OG route with server-rendered head tags)
+
+Each share route sets rich `og:title`, `og:description`, `og:image` for good previews in messaging apps.
+
+## 5. Discovery Timeline (light polish)
+
+Timeline already exists on `/profile`. Add grouping labels ("Today", "Yesterday", "Last week", "Earlier") and a tap-to-revisit action that reopens the fact in the home reader.
+
+## Out of scope (call out for follow-up)
+- **Push notifications** — needs a service worker + FCM/APNs pipeline; the mission slot and streak API are the foundation
+- **Server-generated OG images** — the share routes will use static Open Graph HTML tags for now; dynamic image rendering can be added later with a satori/resvg worker
+- **Sheets/AI/adult mode** — untouched
 
 ## Technical notes
-- Ask for user profile data: **yes** — will create `profiles` + related tables per spec
-- Migration is one large approved migration to keep FK order coherent
-- No changes to `facts.source` ownership rules; Sheets sync + AI protection preserved
-- `configure_social_auth` for Google (keeps email enabled)
-- `configure_auth` with `password_hibp_enabled: true`
+- One migration: `daily_missions` table with RLS scoped to `auth.uid()` + service_role grants; append `xp_earned_this_week` view or materialize on-read (chosen: on-read query, no view needed)
+- `levels.ts` is pure utility (no server), used in home + profile + celebrations
+- Level-up detection guards against double-fire by comparing previous → next level in `grantPoints`
+- Weekly recap query bounds by `date_trunc('week', now())` and stays under 4 queries total
+- Share cards reuse existing `head()` per route; no new tooling

@@ -131,6 +131,51 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_missions: {
+        Row: {
+          bonus_awarded: boolean
+          category_done: boolean
+          category_key: string | null
+          chain_done: boolean
+          completed_at: string | null
+          created_at: string
+          id: string
+          mission_date: string
+          mystery_done: boolean
+          surprise_done: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bonus_awarded?: boolean
+          category_done?: boolean
+          category_key?: string | null
+          chain_done?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_date: string
+          mystery_done?: boolean
+          surprise_done?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bonus_awarded?: boolean
+          category_done?: boolean
+          category_key?: string | null
+          chain_done?: boolean
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_date?: string
+          mystery_done?: boolean
+          surprise_done?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       discoveries: {
         Row: {
           fact_id: string
