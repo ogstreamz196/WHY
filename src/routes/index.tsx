@@ -472,17 +472,12 @@ function WhyApp() {
             <span className="text-white/60"> — your streak is safe.</span>
           </motion.div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setSignInPrompt({ title: "Save your streak", message: "Create an account to keep your streak, coins and favourites forever." })}
-            className="mb-3 flex w-full items-center justify-between gap-2 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-2 text-left text-sm"
-          >
-            <span className="text-white/90">
-              <span className="font-black">Save your curiosity</span>
-              <span className="text-white/60"> — create a free account</span>
-            </span>
-            <ArrowRight className="h-4 w-4 text-white/60" />
-          </button>
+          <GuestProgressCard
+            discoveries={getSeen()}
+            streak={streak}
+            points={points}
+            onSignUp={() => setSignInPrompt({ title: "Save your curiosity", message: "Create a free account to keep your streak, coins, favourites and daily rewards forever." })}
+          />
         )}
 
         {/* Daily login bonus */}
