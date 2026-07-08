@@ -370,6 +370,66 @@ function ArenaPage() {
         )}
       </div>
       <BottomNav />
+      <ConfettiBurst trigger={confettiTick} duration={2200} />
+      <AnimatePresence>
+        {celebrate && (
+          <motion.div
+            key="rankup"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setCelebrate(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.6, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="glass-strong relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 p-6 text-center shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${celebrate.tone} shadow-[0_10px_40px_rgba(251,191,36,0.5)]`}>
+                <motion.div
+                  animate={{ rotate: [-8, 8, -8], scale: [1, 1.08, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Trophy className="h-12 w-12 text-white drop-shadow-lg" />
+                </motion.div>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                Rank up · {TABS.find((t) => t.key === tab)?.label}
+              </p>
+              <h2 className="mt-1 font-display text-3xl font-black text-white">{celebrate.title}</h2>
+              <p className="mt-2 text-sm text-white/70">{celebrate.subtitle}</p>
+              {result?.my_rank && result.total_users && (
+                <div className="mt-5">
+                  <div className="mb-1 flex justify-between text-[10px] font-black uppercase tracking-widest text-white/60">
+                    <span>#{result.my_rank.toLocaleString()}</span>
+                    <span>of {result.total_users.toLocaleString()}</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.max(2, 100 - (result.my_rank / result.total_users) * 100)}%` }}
+                      transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+                      className={`h-full rounded-full bg-gradient-to-r ${celebrate.tone}`}
+                    />
+                  </div>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setCelebrate(null)}
+                className="mt-6 w-full rounded-full px-5 py-3 text-sm font-black text-white"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                Keep climbing
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
