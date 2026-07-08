@@ -318,6 +318,7 @@ function WhyApp() {
                   {points}
                 </motion.span>
               </div>
+            </div>
           </div>
 
           {/* XP bar */}
