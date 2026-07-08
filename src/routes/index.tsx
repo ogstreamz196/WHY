@@ -73,6 +73,14 @@ function WhyApp() {
   const generateNew = useServerFn(generateAndStoreFact);
   const generateLayer = useServerFn(generateWhyLayer);
   const searchOrGen = useServerFn(searchOrGenerateFact);
+  const migrateGuest = useServerFn(migrateGuestData);
+  const fetchProfile = useServerFn(getMyProfile);
+  const fetchStats = useServerFn(getMyStats);
+  const recordDailyServer = useServerFn(recordDailyChallenge);
+  const recordDiscoveryServer = useServerFn(recordDiscovery);
+  const toggleFavServer = useServerFn(toggleFavoriteServer);
+
+  const { user, isGuest } = useCurrentUser();
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +92,8 @@ function WhyApp() {
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
   const [level, setLevel] = useState(1);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [signInPrompt, setSignInPrompt] = useState<null | { title: string; message: string }>(null);
   const [celebrate, setCelebrate] = useState<{ points: number } | null>(null);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
@@ -97,13 +107,46 @@ function WhyApp() {
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
 
+  // Local (guest) initial hydration
   useEffect(() => {
     const p = getPoints();
     setPoints(p);
     setLevel(Math.max(1, Math.floor(p / 100) + 1));
     setStreak(getStreak());
-
   }, []);
+
+  // On sign-in: migrate any local guest state up to the server (once), then load
+  // authoritative profile + stats from the server.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const migratedKey = `why:migrated:${user.id}`;
+        if (typeof window !== "undefined" && !localStorage.getItem(migratedKey)) {
+          const favs = getFavorites();
+          await migrateGuest({
+            data: {
+              points: getPoints(),
+              streak: getStreak(),
+              favorite_fact_ids: favs.map((f) => f.id).slice(0, 500),
+            },
+          }).catch((e) => console.warn("guest migration failed", e));
+          localStorage.setItem(migratedKey, "1");
+        }
+        const [profile, stats] = await Promise.all([fetchProfile(), fetchStats()]);
+        if (cancelled) return;
+        setDisplayName(profile?.display_name ?? user.email?.split("@")[0] ?? null);
+        setPoints(stats.total_points);
+        setStreak(stats.current_streak);
+        setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
+      } catch (e) {
+        console.warn("account load failed", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, migrateGuest, fetchProfile, fetchStats]);
+
 
   const grantPoints = useCallback((delta: number) => {
     const prev = getPoints();
