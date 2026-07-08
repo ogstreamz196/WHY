@@ -75,6 +75,7 @@ export function DailyChallenge({ onCompleted }: Props) {
           `${milestone.emoji} ${milestone.label} unlocked! ${milestone.days}-day streak!`,
           { duration: 5000, className: "font-bold" },
         );
+        setMilestoneBurst(milestone);
       }
       window.setTimeout(() => setAwardedFlash(null), 3200);
     }
