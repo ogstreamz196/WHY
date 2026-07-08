@@ -12,6 +12,7 @@ import {
   listAchievements,
   type Achievement,
 } from "@/lib/account.functions";
+import { getMyQuizStats } from "@/lib/quiz.functions";
 import {
   getDiscoveryTimeline,
   getCategoryInterests,
@@ -220,6 +221,9 @@ function ProfilePage() {
           <StatTile icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />} label="Facts seen" value={s.facts_seen} />
         </section>
 
+        <QuizStatsSection />
+
+
         {/* Achievements */}
         <section className="mt-6">
           <header className="mb-3 flex items-center justify-between">
@@ -403,3 +407,44 @@ function AchievementTile({ a }: { a: Achievement }) {
     </motion.div>
   );
 }
+
+function QuizStatsSection() {
+  const fetchQuiz = useServerFn(getMyQuizStats);
+  const q = useQuery({ queryKey: ["quiz-stats"], queryFn: () => fetchQuiz() });
+  if (!q.data) return null;
+  const s = q.data;
+  const hasPlayed = s.questions_answered > 0;
+  return (
+    <section className="mt-6">
+      <header className="mb-3 flex items-center justify-between">
+        <h2 className="inline-flex items-center gap-2 font-display text-xl font-black text-white">
+          <Trophy className="h-5 w-5 text-amber-300" /> Quiz stats
+        </h2>
+        <Link to="/leaderboard" className="text-xs font-bold text-fuchsia-200">Leaderboard →</Link>
+      </header>
+      {!hasPlayed ? (
+        <Link
+          to="/quiz"
+          className="glass-strong flex items-center gap-3 rounded-3xl p-4 active:scale-[0.99]"
+        >
+          <span className="text-3xl">🏆</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-black text-white">Take your first quiz</div>
+            <div className="text-xs text-white/60">Score points, unlock badges, top the leaderboard.</div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-white/60" />
+        </Link>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <StatTile icon={<Trophy className="h-5 w-5 text-amber-300" />} label="Total score" value={s.total_score} />
+          <StatTile icon={<Zap className="h-5 w-5 text-yellow-300" />} label="Best quiz" value={s.best_score} />
+          <StatTile icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />} label="Questions" value={s.questions_answered} />
+          <StatTile icon={<Check className="h-5 w-5 text-emerald-300" />} label="Accuracy" value={`${s.accuracy}%`} />
+          <StatTile icon={<Flame className="h-5 w-5 text-orange-400" />} label="Best streak" value={s.best_streak} />
+          <StatTile icon={<span className="text-lg">{emojiFor(s.favorite_category)}</span>} label="Top theme" value={s.favorite_category ?? "—"} />
+        </div>
+      )}
+    </section>
+  );
+}
+
