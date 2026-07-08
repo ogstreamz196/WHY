@@ -269,15 +269,91 @@ type AuthContext = {
 };
 
 async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise<string[]> {
+  // Fetch richer signals in parallel (all scoped to the caller by RLS).
+  const [favRes, chainsRes, discCatRes, missionsRes] = await Promise.all([
+    context.supabase
+      .from("favorites")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId),
+    context.supabase
+      .from("why_chains")
+      .select("id, step_count")
+      .eq("user_id", context.userId),
+    context.supabase
+      .from("discoveries")
+      .select("facts:fact_id (category)")
+      .eq("user_id", context.userId),
+    context.supabase
+      .from("daily_missions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId)
+      .eq("bonus_awarded", true),
+  ]);
+
+  const favCount = favRes.count ?? 0;
+  const chains = (chainsRes.data ?? []) as Array<{ step_count: number | null }>;
+  const chainCount = chains.length;
+  const maxChain = chains.reduce((m, c) => Math.max(m, c.step_count ?? 0), 0);
+  const missionsCompleted = missionsRes.count ?? 0;
+
+  const catCounts = new Map<string, number>();
+  const discRows = (discCatRes.data ?? []) as unknown as Array<{ facts: { category: string | null } | { category: string | null }[] | null }>;
+  for (const r of discRows) {
+    const f = Array.isArray(r.facts) ? r.facts[0] : r.facts;
+    const c = f?.category;
+    if (c) catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
+  }
+
+  const distinctCats = catCounts.size;
+  const topCatCount = [...catCounts.values()].reduce((m, n) => Math.max(m, n), 0);
+
   const rules: Record<string, boolean> = {
+    // discovery
     first_question: stats.facts_seen >= 1,
     ten_facts: stats.facts_seen >= 10,
+    facts_50: stats.facts_seen >= 50,
     hundred_questions: stats.facts_seen >= 100,
+    facts_250: stats.facts_seen >= 250,
+    facts_500: stats.facts_seen >= 500,
+    facts_1000: stats.facts_seen >= 1000,
+    // streak (current)
     streak_3: stats.current_streak >= 3,
     streak_7: stats.current_streak >= 7,
+    streak_14: stats.current_streak >= 14,
     streak_30: stats.current_streak >= 30,
+    streak_60: stats.current_streak >= 60,
+    streak_100: stats.current_streak >= 100,
+    // streak (longest)
+    longest_streak_7: stats.longest_streak >= 7,
+    longest_streak_30: stats.longest_streak >= 30,
+    // points
     points_100: stats.total_points >= 100,
     points_500: stats.total_points >= 500,
+    points_1000: stats.total_points >= 1000,
+    points_2500: stats.total_points >= 2500,
+    points_5000: stats.total_points >= 5000,
+    points_10000: stats.total_points >= 10000,
+    // chains
+    chain_first: chainCount >= 1,
+    chain_5: chainCount >= 5,
+    why_chain_master: maxChain >= 5,
+    chain_deep_10: maxChain >= 10,
+    chain_deep_20: maxChain >= 20,
+    chain_25: chainCount >= 25,
+    // favorites
+    fav_first: favCount >= 1,
+    fav_10: favCount >= 10,
+    fav_50: favCount >= 50,
+    fav_100: favCount >= 100,
+    // categories
+    cat_3: distinctCats >= 3,
+    cat_5: distinctCats >= 5,
+    cat_10: distinctCats >= 10,
+    cat_focus_25: topCatCount >= 25,
+    // missions
+    mission_first: missionsCompleted >= 1,
+    mission_7: missionsCompleted >= 7,
+    mission_30: missionsCompleted >= 30,
   };
   const candidates = Object.entries(rules)
     .filter(([, ok]) => ok)
@@ -297,6 +373,7 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
     .insert(toInsert.map((id) => ({ user_id: context.userId, achievement_id: id })));
   return toInsert;
 }
+
 
 // -------------------- Guest migration --------------------
 

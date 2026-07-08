@@ -18,6 +18,7 @@ import { Route as ChainsRouteImport } from './routes/chains'
 import { Route as BadgesRouteImport } from './routes/badges'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdultRouteImport } from './routes/adult'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChainIdRouteImport } from './routes/chain.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
@@ -69,6 +70,10 @@ const AdultRoute = AdultRouteImport.update({
   path: '/adult',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -85,9 +90,9 @@ const CSlugRoute = CSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRecapRoute = AuthenticatedRecapRouteImport.update({
-  id: '/_authenticated/recap',
+  id: '/recap',
   path: '/recap',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
   id: '/api/public/hooks/sync-sheet',
@@ -130,6 +135,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/adult': typeof AdultRoute
   '/auth': typeof AuthRoute
   '/badges': typeof BadgesRoute
@@ -180,6 +186,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/adult'
     | '/auth'
     | '/badges'
@@ -197,6 +204,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdultRoute: typeof AdultRoute
   AuthRoute: typeof AuthRoute
   BadgesRoute: typeof BadgesRoute
@@ -206,7 +214,6 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   StoreRoute: typeof StoreRoute
-  AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
   CSlugRoute: typeof CSlugRoute
   ChainIdRoute: typeof ChainIdRoute
   ApiPublicHooksSyncSheetRoute: typeof ApiPublicHooksSyncSheetRoute
@@ -277,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdultRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -303,7 +317,7 @@ declare module '@tanstack/react-router' {
       path: '/recap'
       fullPath: '/recap'
       preLoaderRoute: typeof AuthenticatedRecapRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/hooks/sync-sheet': {
       id: '/api/public/hooks/sync-sheet'
@@ -315,8 +329,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedRecapRoute: AuthenticatedRecapRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdultRoute: AdultRoute,
   AuthRoute: AuthRoute,
   BadgesRoute: BadgesRoute,
@@ -326,7 +352,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   StoreRoute: StoreRoute,
-  AuthenticatedRecapRoute: AuthenticatedRecapRoute,
   CSlugRoute: CSlugRoute,
   ChainIdRoute: ChainIdRoute,
   ApiPublicHooksSyncSheetRoute: ApiPublicHooksSyncSheetRoute,
