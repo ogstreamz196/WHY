@@ -1365,9 +1365,3 @@ function WelcomeOverlay({
     </AnimatePresence>
   );
 }
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
