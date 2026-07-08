@@ -49,7 +49,7 @@ export const Route = createFileRoute("/c/$slug")({
 });
 
 function PublicChainPage() {
-  const chain = Route.useLoaderData();
+  const chain: PublicChain = Route.useLoaderData();
   const owner = chain.owner;
   const avatar = STORE_CATALOG.find((i) => i.id === owner?.avatar_id) ?? STORE_CATALOG[0];
 
