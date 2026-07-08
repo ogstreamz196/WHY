@@ -53,6 +53,7 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { useCurrentUser } from "@/lib/auth";
+import { useThrottledFlag } from "@/lib/useThrottledFlag";
 import { levelFor } from "@/lib/levels";
 import { DailyMission } from "@/components/DailyMission";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
@@ -114,7 +115,7 @@ function WhyApp() {
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSkeleton, setShowSkeleton] = useState(true);
+  const showSkeleton = useThrottledFlag(loading, 180);
   const [revealed, setRevealed] = useState(false);
   const [revealing, setRevealing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,13 +161,6 @@ function WhyApp() {
     setStreak(getStreak());
   }, []);
 
-  // Throttle skeleton display: only show after 180ms of loading so fast
-  // loads don't flicker a skeleton, but slower fetches still get feedback.
-  useEffect(() => {
-    if (!loading) { setShowSkeleton(false); return; }
-    const t = window.setTimeout(() => setShowSkeleton(true), 180);
-    return () => window.clearTimeout(t);
-  }, [loading]);
 
   // On sign-in: migrate any local guest state up to the server (once), then load
   // authoritative profile + stats from the server.
@@ -676,12 +670,36 @@ function WhyApp() {
                   </span>
                 </div>
 
+                <AnimatePresence mode="wait" initial={false}>
                 {showSkeleton ? (
-                  <FactSkeleton />
+                  <motion.div
+                    key="skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <FactSkeleton />
+                  </motion.div>
                 ) : error && !fact ? (
-                  <p className="text-center text-lg text-rose-300">{error}</p>
+                  <motion.p
+                    key="err"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-center text-lg text-rose-300"
+                  >
+                    {error}
+                  </motion.p>
                 ) : fact ? (
-                  <>
+                  <motion.div
+                    key={`fact-${fact.id}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
                     <h1 className="animate-fade-up stagger-1 font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
                       {capitalize(fact.question)}
                     </h1>
@@ -877,10 +895,20 @@ function WhyApp() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </>
+                  </motion.div>
                 ) : (
-                  <p className="text-center text-white/70">No facts yet. Tap Next!</p>
+                  <motion.p
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-center text-white/70"
+                  >
+                    No facts yet. Tap Next!
+                  </motion.p>
                 )}
+                </AnimatePresence>
 
                 {error && fact && (
                   <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
