@@ -296,8 +296,18 @@ function WhyApp() {
           </AnimatePresence>
         </header>
 
+        <DailyChallenge
+          onCompleted={(r) => {
+            setStreak(r.streak);
+            setPoints(r.points);
+            setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
+            setCelebrate({ points: r.pointsDelta });
+          }}
+        />
+
         {/* ── FACT CARD ───────────────────────────────────── */}
         <section className="flex flex-1 flex-col">
+
           <AnimatePresence mode="wait">
             <motion.div
               key={fact?.id ?? "loading"}
