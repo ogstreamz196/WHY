@@ -112,6 +112,7 @@ function WhyApp() {
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const [revealed, setRevealed] = useState(false);
   const [revealing, setRevealing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,6 +157,14 @@ function WhyApp() {
     setLevel(Math.max(1, Math.floor(p / 100) + 1));
     setStreak(getStreak());
   }, []);
+
+  // Throttle skeleton display: only show after 180ms of loading so fast
+  // loads don't flicker a skeleton, but slower fetches still get feedback.
+  useEffect(() => {
+    if (!loading) { setShowSkeleton(false); return; }
+    const t = window.setTimeout(() => setShowSkeleton(true), 180);
+    return () => window.clearTimeout(t);
+  }, [loading]);
 
   // On sign-in: migrate any local guest state up to the server (once), then load
   // authoritative profile + stats from the server.
@@ -665,7 +674,7 @@ function WhyApp() {
                   </span>
                 </div>
 
-                {loading ? (
+                {showSkeleton ? (
                   <FactSkeleton />
                 ) : error && !fact ? (
                   <p className="text-center text-lg text-rose-300">{error}</p>
@@ -945,7 +954,7 @@ function WhyApp() {
         </div>
       </div>
 
-      {loading && !fact ? <BottomNavSkeleton /> : <BottomNav />}
+      {showSkeleton && !fact ? <BottomNavSkeleton /> : <BottomNav />}
       <Celebration
         open={!!celebrate}
         points={celebrate?.points ?? 0}
