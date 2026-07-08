@@ -50,37 +50,51 @@ export const getRandomFact = createServerFn({ method: "GET" })
       .object({
         excludeId: z.string().optional(),
         category: z.string().optional(),
+        seenIds: z.array(z.string().uuid()).max(5000).optional(),
       })
       .parse(input ?? {}),
   )
   .handler(async ({ data }): Promise<Fact | null> => {
     const supabase = getSupabase();
+    // Build a set of ids to skip: caller's seen list + the current fact.
+    const skip = new Set<string>(data.seenIds ?? []);
+    if (data.excludeId) skip.add(data.excludeId);
+
     const base = () => {
-      let q = supabase.from("facts").select(FACT_COLS, { count: "exact", head: false });
+      let q = supabase.from("facts").select(FACT_COLS);
       if (data.category) q = q.eq("category", data.category);
       return q;
     };
 
-    // Fast path: get count first
     let countQuery = supabase.from("facts").select("id", { count: "exact", head: true });
     if (data.category) countQuery = countQuery.eq("category", data.category);
     const { count } = await countQuery;
     if (!count || count === 0) {
-      // fallback: any category
-      const { data: any } = await supabase
-        .from("facts")
-        .select(FACT_COLS)
-        .limit(1);
+      const { data: any } = await supabase.from("facts").select(FACT_COLS).limit(1);
       return (any?.[0] as Fact) ?? null;
     }
 
-    for (let attempt = 0; attempt < 4; attempt++) {
+    // If the caller has seen (nearly) everything in this scope, fall back to
+    // any fact — we've exhausted the pool.
+    const exhausted = skip.size >= count;
+
+    for (let attempt = 0; attempt < 8 && !exhausted; attempt++) {
       const offset = Math.floor(Math.random() * count);
-      const { data: rows } = await base().order("created_at", { ascending: true }).range(offset, offset);
+      const { data: rows } = await base()
+        .order("created_at", { ascending: true })
+        .range(offset, offset);
       const row = rows?.[0] as Fact | undefined;
-      if (row && row.id !== data.excludeId) return row;
-      if (count === 1) return row ?? null;
+      if (row && !skip.has(row.id)) return row;
     }
+
+    // Deterministic scan for the first unseen row (handles clustered seens).
+    if (!exhausted) {
+      const { data: rows } = await base().order("created_at", { ascending: true }).limit(200);
+      const fresh = (rows ?? []).find((r) => !skip.has((r as Fact).id));
+      if (fresh) return fresh as Fact;
+    }
+
+    // Truly exhausted — return any row so the UI doesn't stall.
     const { data: fallback } = await base().limit(1);
     return (fallback?.[0] as Fact) ?? null;
   });
