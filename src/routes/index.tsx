@@ -526,7 +526,7 @@ function WhyApp() {
         </section>
 
         {/* Giant Next button (sticky above bottom nav) */}
-        <div className="sticky bottom-24 mt-4 pt-2">
+        <div className="mt-6 mb-4">
           <motion.button
             type="button"
             disabled={loading}
