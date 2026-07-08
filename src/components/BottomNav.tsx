@@ -30,7 +30,7 @@ export function BottomNav() {
               <span
                 aria-hidden
                 className="absolute inset-0 -z-10 rounded-2xl opacity-0 transition group-data-[active=true]:opacity-100"
-                style={{ background: "var(--gradient-primary)", filter: "blur(14px)", opacity: 0 }}
+                style={{ background: "var(--gradient-primary)", filter: "blur(14px)" }}
               />
               <span
                 aria-hidden
