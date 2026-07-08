@@ -545,6 +545,7 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    await awardXp(context, "login", bonus);
     await checkAchievements(context, row as StatsDTO);
     return {
       claimed: true,
