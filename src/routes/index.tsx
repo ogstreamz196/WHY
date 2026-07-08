@@ -65,6 +65,7 @@ import {
   recordDailyChallenge,
   claimDailyLoginBonus,
   toggleFavorite as toggleFavoriteServer,
+  updateMyProfile,
 } from "@/lib/account.functions";
 import {
   resumeLastChain,
