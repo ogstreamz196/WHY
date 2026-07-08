@@ -36,6 +36,8 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { Celebration } from "@/components/Celebration";
 import { DailyChallenge } from "@/components/DailyChallenge";
+import { CoinIcon } from "@/components/CoinIcon";
+
 
 import mascotImg from "@/assets/mascot.png";
 
@@ -238,11 +240,12 @@ function WhyApp() {
                 <img src={mascotImg} alt="" className="h-10 w-10 object-contain animate-float-slow" />
               </div>
               <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <CoinIcon size={16} />
                 <motion.span key={points} initial={{ scale: 1.4, y: -4 }} animate={{ scale: 1, y: 0 }} className="text-sm font-black text-white">
                   {points}
                 </motion.span>
               </div>
+
             </div>
           </div>
 

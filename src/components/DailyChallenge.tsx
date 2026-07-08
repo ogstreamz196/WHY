@@ -1,6 +1,8 @@
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, Flame, Sparkles, Star } from "lucide-react";
+import { Calendar, Flame, Sparkles } from "lucide-react";
+import { CoinIcon } from "@/components/CoinIcon";
+
 import { useCallback, useEffect, useState } from "react";
 import { getDailyFact, type Fact } from "@/lib/facts.functions";
 import {
@@ -178,8 +180,9 @@ export function DailyChallenge({ onCompleted }: Props) {
               className="mt-3 flex items-center justify-center gap-3 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 px-3 py-2 text-xs font-black text-yellow-100"
             >
               <span className="inline-flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
-                +{awardedFlash.delta} pts
+                <CoinIcon size={16} />
+                +{awardedFlash.delta} coins
+
               </span>
               <span className="inline-flex items-center gap-1">
                 <Flame className="h-4 w-4 text-orange-300" />
