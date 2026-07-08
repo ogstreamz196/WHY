@@ -196,6 +196,9 @@ function WhyApp() {
         showFact(next);
         bumpSeen();
         grantPoints(1);
+        if (user && next?.id) {
+          recordDiscoveryServer({ data: { fact_id: next.id } }).catch((e) => console.warn(e));
+        }
       } catch (err) {
         console.error(err);
         const cached = getCachedRandomFact(currentId);
