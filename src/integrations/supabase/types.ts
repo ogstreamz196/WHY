@@ -19,6 +19,7 @@ export type Database = {
           answer: string
           category: string | null
           created_at: string
+          fun_fact: string | null
           id: string
           question: string
         }
@@ -26,6 +27,7 @@ export type Database = {
           answer: string
           category?: string | null
           created_at?: string
+          fun_fact?: string | null
           id?: string
           question: string
         }
@@ -33,6 +35,7 @@ export type Database = {
           answer?: string
           category?: string | null
           created_at?: string
+          fun_fact?: string | null
           id?: string
           question?: string
         }
