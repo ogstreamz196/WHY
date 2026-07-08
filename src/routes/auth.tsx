@@ -55,15 +55,15 @@ function AuthPage() {
       ? "Continue your curiosity journey."
       : "We'll email you a magic link to set a new password.";
 
-  async function handleGoogle() {
+  async function handleOAuth(provider: "google" | "apple") {
     setLoading(true);
     setMessage(null);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: `${window.location.origin}/auth/callback`,
       });
       if (result.error) {
-        setMessage({ type: "error", text: "Google sign-in failed. Please try again." });
+        setMessage({ type: "error", text: `${provider === "apple" ? "Apple" : "Google"} sign-in failed. Please try again.` });
       } else if (!result.redirected) {
         navigate({ to: search.redirect ?? "/" });
       }
