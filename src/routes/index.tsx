@@ -1246,7 +1246,7 @@ function GuestProgressCard({
   );
 }
 
-function WelcomeOverlay({
+export function WelcomeOverlay({
   open,
   name,
   needsName,
