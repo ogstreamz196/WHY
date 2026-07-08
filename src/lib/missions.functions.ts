@@ -130,12 +130,12 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .eq("mission_date", t)
       .maybeSingle();
-    if (!existing) return { awarded: false, points: 0, total_points: 0 };
+    if (!existing) return { awarded: false, points: 0, total_points: 0, newlyUnlocked: [] };
     const complete = existing.mystery_done && existing.surprise_done && existing.chain_done && existing.category_done;
     if (!complete || existing.bonus_awarded) {
       const { data: s } = await context.supabase
         .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
-      return { awarded: false, points: 0, total_points: s?.total_points ?? 0 };
+      return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
     }
     await context.supabase
       .from("daily_missions")
@@ -150,7 +150,8 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
       { user_id: context.userId, total_points: next, last_active_day: t },
       { onConflict: "user_id" },
     );
-    return { awarded: true, points: BONUS_POINTS, total_points: next };
+    const newlyUnlocked = await runAchievementCheckForUser(context);
+    return { awarded: true, points: BONUS_POINTS, total_points: next, newlyUnlocked };
   });
 
 // -------- Weekly recap --------
