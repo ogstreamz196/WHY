@@ -557,10 +557,11 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     const loginStreak = existing?.last_login_bonus_day === y
       ? (existing?.current_streak ?? 0) + 1
       : 1;
-    const bonus = Math.min(
+    const baseBonus = Math.min(
       LOGIN_BONUS_MAX,
       LOGIN_BONUS_BASE + (loginStreak - 1) * LOGIN_BONUS_STREAK_STEP,
     );
+    const bonus = await awardAmountForUser(context, baseBonus);
     const currentStreak = existing?.current_streak ?? 0;
     const longest = Math.max(existing?.longest_streak ?? 0, currentStreak);
 
