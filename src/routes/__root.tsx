@@ -1,5 +1,5 @@
-import "@fontsource-variable/fraunces";
-import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/fraunces/index.css";
+import "@fontsource-variable/plus-jakarta-sans/index.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
