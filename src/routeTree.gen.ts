@@ -25,7 +25,6 @@ import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
-import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedQuizSessionIdRouteImport } from './routes/_authenticated/quiz.$sessionId'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
 
@@ -109,11 +108,6 @@ const AuthenticatedLeaderboardRoute =
     path: '/leaderboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedQuizSessionIdRoute =
   AuthenticatedQuizSessionIdRouteImport.update({
     id: '/$sessionId',
@@ -137,7 +131,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
-  '/history': typeof AuthenticatedHistoryRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/recap': typeof AuthenticatedRecapRoute
@@ -157,7 +150,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
-  '/history': typeof AuthenticatedHistoryRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/recap': typeof AuthenticatedRecapRoute
@@ -179,7 +171,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
-  '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/_authenticated/recap': typeof AuthenticatedRecapRoute
@@ -201,7 +192,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
-    | '/history'
     | '/leaderboard'
     | '/quiz'
     | '/recap'
@@ -221,7 +211,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
-    | '/history'
     | '/leaderboard'
     | '/quiz'
     | '/recap'
@@ -242,7 +231,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
-    | '/_authenticated/history'
     | '/_authenticated/leaderboard'
     | '/_authenticated/quiz'
     | '/_authenticated/recap'
@@ -383,13 +371,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/history': {
-      id: '/_authenticated/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof AuthenticatedHistoryRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/quiz/$sessionId': {
       id: '/_authenticated/quiz/$sessionId'
       path: '/$sessionId'
@@ -419,14 +400,12 @@ const AuthenticatedQuizRouteWithChildren =
   AuthenticatedQuizRoute._addFileChildren(AuthenticatedQuizRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRouteWithChildren
   AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRouteWithChildren,
   AuthenticatedRecapRoute: AuthenticatedRecapRoute,
