@@ -836,6 +836,7 @@ function WhyApp() {
         title={signInPrompt?.title}
         message={signInPrompt?.message}
       />
+      <WelcomeOverlay open={welcome} name={displayName} onClose={() => setWelcome(false)} />
     </main>
   );
 }
