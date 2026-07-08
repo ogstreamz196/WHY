@@ -141,6 +141,7 @@ function WhyApp() {
     (async () => {
       try {
         const migratedKey = `why:migrated:${user.id}`;
+        const welcomedKey = `why:welcomed:${user.id}`;
         if (typeof window !== "undefined" && !localStorage.getItem(migratedKey)) {
           const favs = getFavorites();
           await migrateGuest({
@@ -151,6 +152,10 @@ function WhyApp() {
             },
           }).catch((e) => console.warn("guest migration failed", e));
           localStorage.setItem(migratedKey, "1");
+        }
+        if (typeof window !== "undefined" && !localStorage.getItem(welcomedKey)) {
+          setWelcome(true);
+          localStorage.setItem(welcomedKey, "1");
         }
         const [profile, stats, last] = await Promise.all([
           fetchProfile(),
