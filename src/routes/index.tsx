@@ -459,6 +459,28 @@ function WhyApp() {
           </button>
         )}
 
+        {/* Continue last Why chain */}
+        {user && lastChain && lastChain.step_count > 1 && (
+          <Link
+            to="/chain/$id"
+            params={{ id: lastChain.id }}
+            className="mb-3 flex items-center gap-3 rounded-2xl border border-fuchsia-400/25 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 px-4 py-3"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg" style={{ background: "var(--gradient-primary)" }}>
+              🧵
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">Continue your chain</div>
+              <div className="truncate text-sm font-bold text-white">
+                {lastChain.title ?? lastChain.last_question ?? "Pick up where you left off"}
+              </div>
+              <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-white/60" />
+          </Link>
+        )}
+
+
         <DailyChallenge
           onCompleted={(r) => {
             setStreak(r.streak);
