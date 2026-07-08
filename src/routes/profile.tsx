@@ -183,18 +183,33 @@ function ProfilePage() {
           )}
 
           <div className="mt-5">
-            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-white/50">
-              <span>Level {level}</span>
-              <span>{levelXP}/100</span>
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+              <span className="text-white/50">Lvl {level} · <span className="text-white/80">{lvl.title}</span></span>
+              <span className="text-white/50">
+                {lvl.next ? `${lvl.xpToNext} XP to ${lvl.next.title}` : "Max tier"}
+              </span>
             </div>
             <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10">
               <motion.div
                 className="h-full rounded-full"
                 style={{ background: "var(--gradient-primary)" }}
-                animate={{ width: `${levelXP}%` }}
+                initial={{ width: 0 }}
+                animate={{ width: `${levelPct}%` }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
               />
             </div>
           </div>
+
+          <Link
+            to="/recap"
+            className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-violet-400/25 bg-violet-500/10 px-4 py-2.5 text-sm transition hover:bg-violet-500/15"
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-300" />
+              <span className="font-black text-white">Your curiosity week</span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-white/60" />
+          </Link>
         </motion.div>
 
         {/* Stats grid */}
