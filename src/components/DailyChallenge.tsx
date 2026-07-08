@@ -204,6 +204,10 @@ export function DailyChallenge({ onCompleted }: Props) {
           )}
         </AnimatePresence>
       </article>
+      <StreakMilestoneCelebration
+        milestone={milestoneBurst}
+        onClose={() => setMilestoneBurst(null)}
+      />
     </motion.section>
   );
 }
