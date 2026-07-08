@@ -13,7 +13,8 @@ function currentPaddleEnvFromServer(): "sandbox" | "live" {
 
 export async function isVipUser(ctx: AuthCtx): Promise<boolean> {
   const env = currentPaddleEnvFromServer();
-  const { data } = await ctx.supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (ctx.supabase as any)
     .from("subscriptions")
     .select("status, current_period_end")
     .eq("user_id", ctx.userId)
