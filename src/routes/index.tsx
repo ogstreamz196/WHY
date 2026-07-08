@@ -47,6 +47,7 @@ import {
   migrateGuestData,
   recordDiscovery,
   recordDailyChallenge,
+  claimDailyLoginBonus,
   toggleFavorite as toggleFavoriteServer,
 } from "@/lib/account.functions";
 import {
