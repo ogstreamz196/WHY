@@ -161,6 +161,8 @@ function WhyApp() {
         setStreak(stats.current_streak);
         setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
         setLastChain(last);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        setBonusAvailable(stats.last_login_bonus_day !== todayStr);
       } catch (e) {
         console.warn("account load failed", e);
       }
