@@ -103,8 +103,9 @@ function ProfilePage() {
   }
 
   const s = stats.data ?? { total_points: 0, current_streak: 0, longest_streak: 0, facts_seen: 0 };
-  const level = Math.max(1, Math.floor(s.total_points / 100) + 1);
-  const levelXP = s.total_points % 100;
+  const lvl = levelFor(s.total_points);
+  const level = lvl.level;
+  const levelPct = lvl.progressPct;
   const avatar = STORE_CATALOG.find((i) => i.id === profile.data?.avatar_id) ?? STORE_CATALOG[0];
   const unlockedCount = (achievements.data ?? []).filter((a) => a.unlocked_at).length;
 
