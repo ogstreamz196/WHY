@@ -167,6 +167,7 @@ export type Database = {
           created_at: string
           fun_fact: string | null
           id: string
+          is_adult: boolean
           question: string
           sheet_id: string | null
           source: string
@@ -178,6 +179,7 @@ export type Database = {
           created_at?: string
           fun_fact?: string | null
           id?: string
+          is_adult?: boolean
           question: string
           sheet_id?: string | null
           source?: string
@@ -189,6 +191,7 @@ export type Database = {
           created_at?: string
           fun_fact?: string | null
           id?: string
+          is_adult?: boolean
           question?: string
           sheet_id?: string | null
           source?: string
@@ -268,6 +271,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          adult_provider: string | null
+          adult_verified_at: string | null
           avatar_id: string
           bio: string | null
           created_at: string
@@ -277,6 +282,8 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          adult_provider?: string | null
+          adult_verified_at?: string | null
           avatar_id?: string
           bio?: string | null
           created_at?: string
@@ -286,6 +293,8 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          adult_provider?: string | null
+          adult_verified_at?: string | null
           avatar_id?: string
           bio?: string | null
           created_at?: string
@@ -324,6 +333,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          adult_mode_enabled: boolean
           avatar_id: string
           child_mode: boolean
           dark_mode: boolean
@@ -334,6 +344,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          adult_mode_enabled?: boolean
           avatar_id?: string
           child_mode?: boolean
           dark_mode?: boolean
@@ -344,6 +355,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          adult_mode_enabled?: boolean
           avatar_id?: string
           child_mode?: boolean
           dark_mode?: boolean
@@ -485,7 +497,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_adult_verified: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
