@@ -184,8 +184,13 @@ function WhyApp() {
     const prev = getPoints();
     const next = addPoints(delta);
     setPoints(next);
-    const newLevel = Math.max(1, Math.floor(next / 100) + 1);
-    setLevel(newLevel);
+    const prevInfo = levelFor(prev);
+    const nextInfo = levelFor(next);
+    setLevel(nextInfo.level);
+    if (nextInfo.level > prevInfo.level) {
+      setLevelUp({ level: nextInfo.level, title: nextInfo.title });
+      return;
+    }
     // Milestones: every 50 pts (but not more than once per crossing)
     const crossed = Math.floor(next / 50) > Math.floor(prev / 50);
     if (crossed && next - lastMilestone.current >= 50) {
