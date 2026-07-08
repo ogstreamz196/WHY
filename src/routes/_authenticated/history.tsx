@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { useUnlockWatcher } from "@/lib/unlock-watch";
 import { listMyDiscoveries } from "@/lib/account.functions";
 import { emojiFor, gradientFor } from "@/lib/categories";
 
