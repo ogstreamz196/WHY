@@ -28,6 +28,7 @@ import { Route as AuthenticatedImportGuestRouteImport } from './routes/_authenti
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedQuizIndexRouteImport } from './routes/_authenticated/quiz.index'
 import { Route as AuthenticatedQuizSessionIdRouteImport } from './routes/_authenticated/quiz.$sessionId'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
 
 const StoreRoute = StoreRouteImport.update({
@@ -127,6 +128,12 @@ const AuthenticatedQuizSessionIdRoute =
     path: '/quiz/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
   id: '/api/public/hooks/sync-sheet',
   path: '/api/public/hooks/sync-sheet',
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/quiz/': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,6 +182,7 @@ export interface FileRoutesByTo {
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/quiz': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/_authenticated/quiz/': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/quiz/$sessionId'
     | '/quiz/'
     | '/api/public/hooks/sync-sheet'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/quiz/$sessionId'
     | '/quiz'
     | '/api/public/hooks/sync-sheet'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -263,6 +275,7 @@ export interface FileRouteTypes {
     | '/_authenticated/quiz/$sessionId'
     | '/_authenticated/quiz/'
     | '/api/public/hooks/sync-sheet'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -280,6 +293,7 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   ChainIdRoute: typeof ChainIdRoute
   ApiPublicHooksSyncSheetRoute: typeof ApiPublicHooksSyncSheetRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -417,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuizSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-sheet': {
       id: '/api/public/hooks/sync-sheet'
       path: '/api/public/hooks/sync-sheet'
@@ -463,6 +484,7 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   ChainIdRoute: ChainIdRoute,
   ApiPublicHooksSyncSheetRoute: ApiPublicHooksSyncSheetRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

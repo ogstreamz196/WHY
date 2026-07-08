@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Lock, Sparkles } from "lucide-react";
+import { Check, Crown, Lock, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CoinIcon } from "@/components/CoinIcon";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
 import {
   COIN_PACKS,
   STORE_CATALOG,
@@ -28,19 +33,25 @@ export const Route = createFileRoute("/store")({
   component: StorePage,
 });
 
-type Tab = StoreCategory | "coins";
+type Tab = StoreCategory | "coins" | "vip";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
+  { id: "vip",    label: "VIP",     emoji: "👑" },
   { id: "avatar", label: "Avatars", emoji: "🧑‍🚀" },
   { id: "theme",  label: "Themes",  emoji: "🎨" },
-  { id: "coins",  label: "Get Coins", emoji: "💰" },
+  { id: "coins",  label: "Coins",   emoji: "💰" },
 ];
 
 function StorePage() {
-  const [tab, setTab] = useState<Tab>("avatar");
+  const [tab, setTab] = useState<Tab>("vip");
   const [coins, setCoins] = useState(0);
   const [inventory, setInventory] = useState<string[]>([]);
   const [equipped, setEquip] = useState(getEquipped());
   const [toast, setToast] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+  const [confetti, setConfetti] = useState(0);
+  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
+  const { isVip, subscription } = useSubscription(userId);
 
   const refresh = () => {
     setCoins(getPoints());
@@ -49,10 +60,50 @@ function StorePage() {
   };
   useEffect(() => { refresh(); }, []);
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+      setUserEmail(data.user?.email ?? undefined);
+    });
+  }, []);
+
+  // Success toast + confetti when returning from Paddle checkout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      setToast("👑 Welcome to VIP! +500 bonus coins");
+      setConfetti((n) => n + 1);
+      window.setTimeout(() => setToast(null), 3500);
+      // clean the query param
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
   const flash = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2200);
   };
+
+  const buyVip = async () => {
+    if (!userId) {
+      flash("Please sign in first");
+      return;
+    }
+    try {
+      await openCheckout({
+        priceId: "vip_monthly",
+        customerEmail: userEmail,
+        customData: { userId },
+        successUrl: `${window.location.origin}/store?checkout=success`,
+      });
+    } catch (e) {
+      console.error(e);
+      flash("Checkout failed — try again");
+    }
+  };
+
 
   const buy = (item: StoreItem) => {
     const res = purchaseItem(item.id);
@@ -77,11 +128,12 @@ function StorePage() {
     flash(`${item.emoji} equipped`);
   };
 
-  const items = STORE_CATALOG.filter((i) => i.category === tab);
+  const items = STORE_CATALOG.filter((i) => tab !== "coins" && tab !== "vip" && i.category === tab);
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
       <CosmicBackground />
+      <PaymentTestModeBanner />
 
       <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center justify-between gap-3">
@@ -98,13 +150,13 @@ function StorePage() {
         </header>
 
         {/* Tabs */}
-        <div className="mb-4 grid grid-cols-3 gap-2">
+        <div className="mb-4 grid grid-cols-4 gap-2">
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-wider transition ${
+              className={`rounded-2xl px-2 py-2 text-[11px] font-black uppercase tracking-wider transition ${
                 tab === t.id
                   ? "text-white shadow-[var(--shadow-card)]"
                   : "border border-white/10 bg-white/5 text-white/70"
@@ -118,7 +170,45 @@ function StorePage() {
         </div>
 
         {/* Content */}
-        {tab === "coins" ? (
+        {tab === "vip" ? (
+          <section className="space-y-3">
+            <div className="glass-strong relative overflow-hidden rounded-3xl p-5">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 opacity-60"
+                style={{ background: "radial-gradient(circle at 20% 10%, rgba(255,200,80,0.35), transparent 60%), radial-gradient(circle at 90% 90%, rgba(180,80,255,0.25), transparent 60%)" }}
+              />
+              <div className="flex items-center gap-2">
+                <Crown className="h-6 w-6 text-yellow-300" />
+                <h2 className="font-display text-2xl font-black text-white">VIP Membership</h2>
+              </div>
+              <p className="mt-2 text-sm text-white/85">
+                Double your coin drops on every fact, quiz and mission — plus a one-time <b>500 coin</b> welcome bonus.
+              </p>
+              <ul className="mt-3 space-y-1.5 text-sm text-white/85">
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> 2× coins on all activity</li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> 500 welcome coins</li>
+                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> Cancel anytime</li>
+              </ul>
+
+              {isVip ? (
+                <div className="mt-4 rounded-full bg-emerald-500/20 px-4 py-2.5 text-center text-sm font-black text-emerald-200">
+                  ✨ You're a VIP{subscription?.current_period_end ? ` — renews ${new Date(subscription.current_period_end).toLocaleDateString()}` : ""}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={buyVip}
+                  disabled={checkoutLoading || !userId}
+                  className="mt-4 w-full rounded-full px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  {!userId ? "Sign in to subscribe" : checkoutLoading ? "Opening checkout…" : "Go VIP — $4.99 / month"}
+                </button>
+              )}
+            </div>
+          </section>
+        ) : tab === "coins" ? (
           <section className="space-y-3">
             <div className="glass-strong rounded-3xl p-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Earn free coins</p>
@@ -233,6 +323,7 @@ function StorePage() {
         )}
       </AnimatePresence>
 
+      <ConfettiBurst trigger={confetti} />
       <BottomNav />
     </main>
   );
