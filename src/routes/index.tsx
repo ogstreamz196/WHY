@@ -941,7 +941,7 @@ function WhyApp() {
         </div>
       </div>
 
-      <BottomNav />
+      {loading && !fact ? <BottomNavSkeleton /> : <BottomNav />}
       <Celebration
         open={!!celebrate}
         points={celebrate?.points ?? 0}
@@ -1035,15 +1035,63 @@ function ChainStep({
   );
 }
 
-function FactSkeleton() {
+function ShimmerBar({ className = "" }: { className?: string }) {
   return (
-    <div className="space-y-3 py-4">
-      <div className="h-8 w-3/4 animate-pulse rounded-xl bg-white/10" />
-      <div className="h-8 w-1/2 animate-pulse rounded-xl bg-white/10" />
-      <div className="mt-6 h-14 animate-pulse rounded-full bg-white/10" />
+    <div className={`relative overflow-hidden rounded-xl bg-white/[0.06] ${className}`}>
+      <motion.span
+        aria-hidden
+        className="absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+        animate={{ x: ["0%", "300%"] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+      />
     </div>
   );
 }
+
+function FactSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label="Loading next fact"
+      className="space-y-3 py-4"
+    >
+      <div className="mb-4 flex items-center gap-3">
+        <ShimmerBar className="h-9 w-9 rounded-2xl" />
+        <ShimmerBar className="h-4 w-32" />
+      </div>
+      <ShimmerBar className="h-8 w-11/12" />
+      <ShimmerBar className="h-8 w-3/4" />
+      <ShimmerBar className="h-8 w-1/2" />
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <ShimmerBar className="h-24 w-24 rounded-full" />
+        <ShimmerBar className="h-14 w-full rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+function BottomNavSkeleton() {
+  return (
+    <nav
+      aria-label="Loading navigation"
+      aria-busy="true"
+      className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]"
+    >
+      <div className="mx-auto max-w-2xl px-3 pb-3">
+        <div className="glass-strong flex items-center justify-around rounded-3xl px-2 py-2 shadow-[var(--shadow-card)]">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-1 flex-col items-center gap-1 px-2 py-1.5">
+              <ShimmerBar className="h-5 w-5 rounded-md" />
+              <ShimmerBar className="h-2 w-8" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 
 function capitalize(s: string) {
   if (!s) return s;
