@@ -3,8 +3,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAchievementCheckForUser, awardXp } from "./account.functions";
+import { awardAmountForUser } from "./vipStatus";
 
-const BONUS_POINTS = 50;
+const BONUS_POINTS_BASE = 50;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -145,14 +146,15 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
 
     const { data: stats } = await context.supabase
       .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
-    const next = (stats?.total_points ?? 0) + BONUS_POINTS;
+    const awardedPoints = await awardAmountForUser(context, BONUS_POINTS_BASE);
+    const next = (stats?.total_points ?? 0) + awardedPoints;
     await context.supabase.from("user_stats").upsert(
       { user_id: context.userId, total_points: next, last_active_day: t },
       { onConflict: "user_id" },
     );
-    await awardXp(context, "mission", BONUS_POINTS);
+    await awardXp(context, "mission", awardedPoints);
     const newlyUnlocked = await runAchievementCheckForUser(context);
-    return { awarded: true, points: BONUS_POINTS, total_points: next, newlyUnlocked };
+    return { awarded: true, points: awardedPoints, total_points: next, newlyUnlocked };
   });
 
 // -------- Weekly recap --------

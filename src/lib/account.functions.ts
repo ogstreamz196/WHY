@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { awardAmountForUser } from "./vipStatus";
 
 const DAILY_POINTS = 25;
 const LOGIN_BONUS_BASE = 10;
@@ -157,7 +158,8 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
     const prevStreak = existing?.current_streak ?? 0;
     const nextStreak = existing?.last_daily_challenge_day === y ? prevStreak + 1 : 1;
     const longest = Math.max(existing?.longest_streak ?? 0, nextStreak);
-    const nextPoints = (existing?.total_points ?? 0) + DAILY_POINTS;
+    const awardedPoints = await awardAmountForUser(context, DAILY_POINTS);
+    const nextPoints = (existing?.total_points ?? 0) + awardedPoints;
 
     const patch = {
       user_id: context.userId,
@@ -175,7 +177,7 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    await awardXp(context, "daily", DAILY_POINTS);
+    await awardXp(context, "daily", awardedPoints);
     const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
     return { awarded: true, stats: row as StatsDTO, newlyUnlocked };
   });
@@ -194,10 +196,11 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle(),
     ]);
 
-    const DISCOVERY_POINTS = 1;
+    const DISCOVERY_POINTS_BASE = 1;
+    const awardedPoints = await awardAmountForUser(context, DISCOVERY_POINTS_BASE);
     const patch = {
       user_id: context.userId,
-      total_points: (existing?.total_points ?? 0) + DISCOVERY_POINTS,
+      total_points: (existing?.total_points ?? 0) + awardedPoints,
       current_streak: existing?.current_streak ?? 0,
       longest_streak: existing?.longest_streak ?? 0,
       facts_seen: (existing?.facts_seen ?? 0) + 1,
@@ -211,7 +214,7 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
-    await awardXp(context, "discovery", DISCOVERY_POINTS, (fact as { category: string | null } | null)?.category ?? null);
+    await awardXp(context, "discovery", awardedPoints, (fact as { category: string | null } | null)?.category ?? null);
     const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
     return { stats: row as StatsDTO, newlyUnlocked };
   });
@@ -554,10 +557,11 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     const loginStreak = existing?.last_login_bonus_day === y
       ? (existing?.current_streak ?? 0) + 1
       : 1;
-    const bonus = Math.min(
+    const baseBonus = Math.min(
       LOGIN_BONUS_MAX,
       LOGIN_BONUS_BASE + (loginStreak - 1) * LOGIN_BONUS_STREAK_STEP,
     );
+    const bonus = await awardAmountForUser(context, baseBonus);
     const currentStreak = existing?.current_streak ?? 0;
     const longest = Math.max(existing?.longest_streak ?? 0, currentStreak);
 
