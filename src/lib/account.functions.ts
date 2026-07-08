@@ -87,7 +87,7 @@ export const getMyStats = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<StatsDTO> => {
     const { data, error } = await context.supabase
       .from("user_stats")
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day")
+      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -137,7 +137,7 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase
       .from("user_stats")
       .upsert(patch, { onConflict: "user_id" })
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day")
+      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
       .single();
     if (error) throw new Error(error.message);
 
@@ -172,7 +172,7 @@ export const recordDiscovery = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase
       .from("user_stats")
       .upsert(patch, { onConflict: "user_id" })
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day")
+      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
       .single();
     if (error) throw new Error(error.message);
 
