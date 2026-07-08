@@ -53,6 +53,7 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { useCurrentUser } from "@/lib/auth";
+import { useThrottledFlag } from "@/lib/useThrottledFlag";
 import { levelFor } from "@/lib/levels";
 import { DailyMission } from "@/components/DailyMission";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
