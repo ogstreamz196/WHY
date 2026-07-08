@@ -107,6 +107,7 @@ function WhyApp() {
   const saveChainServer = useServerFn(saveChain);
   const bumpInterest = useServerFn(bumpCategoryInterest);
   const claimBonus = useServerFn(claimDailyLoginBonus);
+  const updateProfile = useServerFn(updateMyProfile);
 
   const { user, isGuest } = useCurrentUser();
   const navigate = useNavigate();
