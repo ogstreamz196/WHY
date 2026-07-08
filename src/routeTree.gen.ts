@@ -21,6 +21,7 @@ import { Route as AdultRouteImport } from './routes/adult'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChainIdRouteImport } from './routes/chain.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
 
 const StoreRoute = StoreRouteImport.update({
@@ -83,6 +84,11 @@ const CSlugRoute = CSlugRouteImport.update({
   path: '/c/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRecapRoute = AuthenticatedRecapRouteImport.update({
+  id: '/_authenticated/recap',
+  path: '/recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
   id: '/api/public/hooks/sync-sheet',
   path: '/api/public/hooks/sync-sheet',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/_authenticated/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/recap'
     | '/c/$slug'
     | '/chain/$id'
     | '/api/public/hooks/sync-sheet'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/recap'
     | '/c/$slug'
     | '/chain/$id'
     | '/api/public/hooks/sync-sheet'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/_authenticated/recap'
     | '/c/$slug'
     | '/chain/$id'
     | '/api/public/hooks/sync-sheet'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   StoreRoute: typeof StoreRoute
+  AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
   CSlugRoute: typeof CSlugRoute
   ChainIdRoute: typeof ChainIdRoute
   ApiPublicHooksSyncSheetRoute: typeof ApiPublicHooksSyncSheetRoute
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/recap': {
+      id: '/_authenticated/recap'
+      path: '/recap'
+      fullPath: '/recap'
+      preLoaderRoute: typeof AuthenticatedRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-sheet': {
       id: '/api/public/hooks/sync-sheet'
       path: '/api/public/hooks/sync-sheet'
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   StoreRoute: StoreRoute,
+  AuthenticatedRecapRoute: AuthenticatedRecapRoute,
   CSlugRoute: CSlugRoute,
   ChainIdRoute: ChainIdRoute,
   ApiPublicHooksSyncSheetRoute: ApiPublicHooksSyncSheetRoute,
