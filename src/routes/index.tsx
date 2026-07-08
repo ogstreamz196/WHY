@@ -119,6 +119,13 @@ function WhyApp() {
   const [bonusAvailable, setBonusAvailable] = useState(false);
   const [bonusClaiming, setBonusClaiming] = useState(false);
   const [welcome, setWelcome] = useState(false);
+  const [levelUp, setLevelUp] = useState<null | { level: number; title: string }>(null);
+  const missionMarkerRef = useRef<null | ((t: MissionTask) => void)>(null);
+  const markMissionServer = useServerFn(markMissionTask);
+  const markMission = useCallback((t: MissionTask) => {
+    if (missionMarkerRef.current) missionMarkerRef.current(t);
+    else if (user) markMissionServer({ data: { task: t } }).catch(() => {});
+  }, [markMissionServer, user]);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
