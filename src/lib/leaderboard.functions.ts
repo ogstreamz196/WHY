@@ -166,33 +166,35 @@ export const getLeaderboard = createServerFn({ method: "GET" })
         .select("user_id, username, display_name, avatar_id, age_band, favorite_category, score");
       rows = (r ?? []) as LbRow[];
     } else if (data.kind === "quiz") {
-      const { data: r } = await context.supabase
+      const { data: qs } = await context.supabase
         .from("quiz_stats")
-        .select("user_id, total_score, profiles:user_id (username, display_name, avatar_id, age_band, favorite_category, leaderboard_opt_out)");
-      const arr = (r ?? []) as Array<{
-        user_id: string;
-        total_score: number | null;
-        profiles: {
-          username: string | null;
-          display_name: string | null;
-          avatar_id: string | null;
-          age_band: string | null;
-          favorite_category: string | null;
-          leaderboard_opt_out: boolean | null;
-        } | null;
-      }>;
-      rows = arr
-        .filter((x) => !x.profiles?.leaderboard_opt_out)
-        .map((x) => ({
-          user_id: x.user_id,
-          username: x.profiles?.username ?? null,
-          display_name: x.profiles?.display_name ?? null,
-          avatar_id: x.profiles?.avatar_id ?? null,
-          age_band: x.profiles?.age_band ?? null,
-          favorite_category: x.profiles?.favorite_category ?? null,
-          score: x.total_score ?? 0,
-        }));
+        .select("user_id, total_score");
+      const stats = (qs ?? []) as Array<{ user_id: string; total_score: number | null }>;
+      const ids = stats.map((s) => s.user_id);
+      const { data: profs } = ids.length
+        ? await context.supabase
+            .from("profiles")
+            .select("id, username, display_name, avatar_id, age_band, favorite_category, leaderboard_opt_out")
+            .in("id", ids)
+        : { data: [] as Array<{ id: string; username: string | null; display_name: string | null; avatar_id: string | null; age_band: string | null; favorite_category: string | null; leaderboard_opt_out: boolean | null }> };
+      const pmap = new Map((profs ?? []).map((p) => [p.id, p]));
+      rows = stats
+        .map((s) => {
+          const p = pmap.get(s.user_id);
+          if (p?.leaderboard_opt_out) return null;
+          return {
+            user_id: s.user_id,
+            username: p?.username ?? null,
+            display_name: p?.display_name ?? null,
+            avatar_id: p?.avatar_id ?? null,
+            age_band: p?.age_band ?? null,
+            favorite_category: p?.favorite_category ?? null,
+            score: s.total_score ?? 0,
+          } as LbRow;
+        })
+        .filter((r): r is LbRow => r !== null);
     }
+
 
     const { entries, total, my_rank, my_score } = rank(rows, me, data.limit);
     return {
