@@ -29,6 +29,7 @@ import {
   getCachedRandomFact,
   getFavorites,
   getPoints,
+  getSeen,
   getStreak,
   isFavorite,
   toggleFavorite,
