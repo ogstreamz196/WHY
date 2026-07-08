@@ -81,7 +81,7 @@ function AuthPage() {
       if (result.error) {
         setMessage({ type: "error", text: `${provider === "apple" ? "Apple" : "Google"} sign-in failed. Please try again.` });
       } else if (!result.redirected) {
-        navigate({ to: nextDestination() });
+        window.location.assign(nextDestination());
       }
     } finally {
       setLoading(false);
