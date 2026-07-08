@@ -126,8 +126,23 @@ function ArenaPage() {
   }, [tab]);
 
   const topPercent = result?.my_rank && result.total_users
-    ? Math.max(1, Math.round((result.my_rank / result.total_users) * 100))
+    ? Math.max(0.1, Math.min(100, (result.my_rank / result.total_users) * 100))
     : null;
+  const percentileLabel = topPercent === null
+    ? null
+    : topPercent < 1
+      ? "Top 1%"
+      : `Top ${Math.round(topPercent)}%`;
+  const percentileTone = topPercent === null
+    ? ""
+    : topPercent <= 1
+      ? "bg-amber-400/25 text-amber-100 shadow-[0_0_28px_rgba(251,191,36,0.45)]"
+      : topPercent <= 5
+        ? "bg-fuchsia-400/25 text-fuchsia-100"
+        : topPercent <= 25
+          ? "bg-emerald-400/20 text-emerald-100"
+          : "bg-white/10 text-white/80";
+  const leaderScore = result?.entries?.[0]?.score ?? 0;
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
