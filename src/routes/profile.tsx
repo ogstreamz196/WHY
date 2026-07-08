@@ -18,6 +18,7 @@ import {
   listMyChains,
 } from "@/lib/chains.functions";
 import { CoinIcon } from "@/components/CoinIcon";
+import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
 import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
