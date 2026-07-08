@@ -35,6 +35,7 @@ export function DailyChallenge({ onCompleted }: Props) {
     streak: number;
     delta: number;
   }>(null);
+  const [milestoneBurst, setMilestoneBurst] = useState<StreakMilestone | null>(null);
 
   useEffect(() => {
     let cancelled = false;
