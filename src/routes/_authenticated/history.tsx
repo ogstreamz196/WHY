@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { useUnlockWatcher } from "@/lib/unlock-watch";
 import { listMyDiscoveries } from "@/lib/account.functions";
 import { emojiFor, gradientFor } from "@/lib/categories";
 
@@ -34,10 +37,18 @@ function HistoryPage() {
   });
 
   const items = q.data ?? [];
+  const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(items.length);
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
       <CosmicBackground />
+      <ConfettiBurst trigger={confettiTrigger} />
+      <LevelUpCelebration
+        open={!!levelUp}
+        level={levelUp?.level ?? 0}
+        title={levelUp?.title ?? ""}
+        onClose={dismissLevelUp}
+      />
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
           <Link to="/badges" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90">
