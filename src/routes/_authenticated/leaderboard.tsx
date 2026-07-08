@@ -1,46 +1,97 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Crown, Trophy, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, Crown, Flame, Rocket, Sparkles, Star, Sun, Trophy, Users } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { useCurrentUser } from "@/lib/auth";
-import {
-  getGlobalLeaderboard,
-  getWeeklyLeaderboard,
-  type LeaderboardEntry,
-} from "@/lib/quiz.functions";
+import { CATEGORIES, emojiFor } from "@/lib/categories";
+import { getLeaderboard, type LeaderboardKind, type LeaderboardResult } from "@/lib/leaderboard.functions";
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
   head: () => ({
     meta: [
-      { title: "Leaderboard — Why?" },
-      { name: "description", content: "Who's the most curious this week?" },
+      { title: "Curiosity Arena — Why?" },
+      { name: "description", content: "Rank on global, weekly, age, category and activity boards." },
     ],
   }),
-  component: LeaderboardPage,
+  component: ArenaPage,
 });
 
-type Tab = "global" | "weekly" | "friends";
+type Tab = {
+  key: LeaderboardKind;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
 
-function LeaderboardPage() {
+const TABS: Tab[] = [
+  { key: "global",   label: "Global",   icon: Trophy },
+  { key: "window",   label: "Weekly",   icon: Crown },
+  { key: "rising",   label: "Rising",   icon: Rocket },
+  { key: "category", label: "Category", icon: Sparkles },
+  { key: "age",      label: "Age",      icon: Users },
+  { key: "streaks",  label: "Streaks",  icon: Flame },
+  { key: "weekend",  label: "Weekend",  icon: Sun },
+  { key: "new",      label: "New",      icon: Star },
+];
+
+const WINDOWS: Array<{ key: string; label: string }> = [
+  { key: "daily",   label: "Today" },
+  { key: "weekly",  label: "This Week" },
+  { key: "monthly", label: "This Month" },
+];
+
+const AGES: Array<{ key: string; label: string }> = [
+  { key: "under_10", label: "Under 10" },
+  { key: "10_12",    label: "10–12" },
+  { key: "teen",     label: "Teen" },
+  { key: "adult",    label: "Adult" },
+];
+
+function medalClass(rank: number): string {
+  if (rank === 1) return "bg-amber-400/25 text-amber-100 shadow-[0_0_24px_rgba(251,191,36,0.35)]";
+  if (rank === 2) return "bg-slate-300/20 text-slate-100";
+  if (rank === 3) return "bg-orange-400/20 text-orange-200";
+  return "bg-white/5 text-white/70";
+}
+
+function ArenaPage() {
   const { user } = useCurrentUser();
-  const fetchGlobal = useServerFn(getGlobalLeaderboard);
-  const fetchWeekly = useServerFn(getWeeklyLeaderboard);
-  const [tab, setTab] = useState<Tab>("weekly");
-  const [rows, setRows] = useState<LeaderboardEntry[]>([]);
+  const fetchBoard = useServerFn(getLeaderboard);
+  const [tab, setTab] = useState<LeaderboardKind>("global");
+  const [filter, setFilter] = useState<string | null>(null);
+  const [result, setResult] = useState<LeaderboardResult | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Reset filter when tab changes
   useEffect(() => {
-    if (tab === "friends") { setRows([]); setLoading(false); return; }
+    if (tab === "window") setFilter("weekly");
+    else if (tab === "age") setFilter("adult");
+    else if (tab === "category") setFilter(CATEGORIES[1]?.key ?? "animals");
+    else setFilter(null);
+  }, [tab]);
+
+  useEffect(() => {
+    let alive = true;
     setLoading(true);
-    const fn = tab === "global" ? fetchGlobal : fetchWeekly;
-    fn({ data: { limit: 50 } })
-      .then((r) => setRows(r))
-      .catch(() => setRows([]))
-      .finally(() => setLoading(false));
-  }, [tab, fetchGlobal, fetchWeekly]);
+    fetchBoard({ data: { kind: tab, filter: filter ?? undefined, limit: 50 } })
+      .then((r) => { if (alive) setResult(r); })
+      .catch(() => { if (alive) setResult(null); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [tab, filter, fetchBoard]);
+
+  const chips = useMemo(() => {
+    if (tab === "window") return WINDOWS;
+    if (tab === "age")    return AGES;
+    if (tab === "category") return CATEGORIES.filter((c) => c.key !== "all").map((c) => ({ key: c.key, label: c.label }));
+    return [];
+  }, [tab]);
+
+  const topPercent = result?.my_rank && result.total_users
+    ? Math.max(1, Math.round((result.my_rank / result.total_users) * 100))
+    : null;
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
@@ -51,47 +102,90 @@ function LeaderboardPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex-1">
-            <h1 className="font-display text-2xl font-black text-white">Leaderboard</h1>
-            <p className="text-xs text-white/60">Compete with the curious minds worldwide.</p>
+            <h1 className="font-display text-2xl font-black text-white">Curiosity Arena</h1>
+            <p className="text-xs text-white/60">One score, many ways to climb.</p>
           </div>
         </header>
 
-        <div className="glass-strong mb-3 flex rounded-2xl p-1">
-          {(["weekly", "global", "friends"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`flex flex-1 items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wider transition ${
-                tab === t ? "text-white shadow-[var(--shadow-glow)]" : "text-white/50"
-              }`}
-              style={tab === t ? { background: "var(--gradient-primary)" } : undefined}
-            >
-              {t === "global" && <Trophy className="h-3.5 w-3.5" />}
-              {t === "weekly" && <Crown className="h-3.5 w-3.5" />}
-              {t === "friends" && <Users className="h-3.5 w-3.5" />}
-              {t}
-            </button>
-          ))}
+        {/* Tab strip */}
+        <div className="glass-strong mb-3 flex gap-1 overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                className={`flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-wider transition ${
+                  active ? "text-white shadow-[var(--shadow-glow)]" : "text-white/50"
+                }`}
+                style={active ? { background: "var(--gradient-primary)" } : undefined}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
-        {tab === "friends" ? (
-          <div className="glass-strong rounded-3xl p-8 text-center">
-            <Users className="mx-auto h-10 w-10 text-white/40" />
-            <p className="mt-2 font-display text-lg font-black text-white">Friends coming soon</p>
-            <p className="mt-1 text-sm text-white/60">
-              Follow other curious minds and race them to the top.
-            </p>
+        {/* Sub-filter chips */}
+        {chips.length > 0 && (
+          <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {chips.map((c) => {
+              const active = filter === c.key;
+              return (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setFilter(c.key)}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${
+                    active
+                      ? "border-fuchsia-300/50 bg-fuchsia-500/15 text-white"
+                      : "border-white/10 bg-white/5 text-white/60 hover:text-white/90"
+                  }`}
+                >
+                  {tab === "category" && <span className="mr-1">{emojiFor(c.key)}</span>}
+                  {c.label}
+                </button>
+              );
+            })}
           </div>
-        ) : loading ? (
+        )}
+
+        {/* My rank banner */}
+        {result?.my_rank && (
+          <motion.div
+            key={`${tab}-${filter}-me`}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-strong mb-3 flex items-center justify-between rounded-2xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-3"
+          >
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200">Your rank</p>
+              <p className="font-display text-xl font-black text-white">
+                #{result.my_rank.toLocaleString()}
+                <span className="ml-2 text-xs font-bold text-white/60">of {result.total_users.toLocaleString()}</span>
+              </p>
+            </div>
+            {topPercent !== null && topPercent <= 25 && (
+              <span className="rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100">
+                Top {topPercent}%
+              </span>
+            )}
+          </motion.div>
+        )}
+
+        {/* Rows */}
+        {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-14 animate-pulse rounded-2xl bg-white/5" />
             ))}
           </div>
-        ) : rows.length === 0 ? (
+        ) : !result || result.entries.length === 0 ? (
           <div className="glass-strong rounded-3xl p-8 text-center">
-            <p className="text-sm text-white/70">Nobody's on the board yet. Be the first!</p>
+            <p className="text-sm text-white/70">Nobody's on this board yet. Be the first!</p>
             <Link
               to="/quiz"
               className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-black text-white"
@@ -102,53 +196,47 @@ function LeaderboardPage() {
           </div>
         ) : (
           <ol className="space-y-2">
-            {rows.map((r, i) => {
-              const me = r.user_id === user?.id;
-              const score = tab === "weekly" ? r.week_score ?? 0 : r.quiz_score ?? 0;
-              return (
-                <motion.li
-                  key={r.user_id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.02 }}
-                  className={`flex items-center gap-3 rounded-2xl border p-3 ${
-                    me
-                      ? "border-fuchsia-300/40 bg-fuchsia-500/10"
-                      : "border-white/10 bg-white/[0.04]"
-                  }`}
-                >
-                  <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black ${
-                      i === 0
-                        ? "bg-amber-400/20 text-amber-200"
-                        : i === 1
-                          ? "bg-slate-300/20 text-slate-100"
-                          : i === 2
-                            ? "bg-orange-400/20 text-orange-200"
-                            : "bg-white/5 text-white/70"
+            <AnimatePresence initial={false}>
+              {result.entries.map((r) => {
+                const me = r.user_id === user?.id;
+                return (
+                  <motion.li
+                    key={r.user_id}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className={`flex items-center gap-3 rounded-2xl border p-3 ${
+                      me
+                        ? "border-fuchsia-300/40 bg-fuchsia-500/10"
+                        : "border-white/10 bg-white/[0.04]"
                     }`}
                   >
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-black text-white">
-                      {r.display_name || r.username || "Explorer"}
-                      {me && <span className="ml-1 text-[10px] font-black text-fuchsia-300">YOU</span>}
-                    </p>
-                    {tab === "global" && (
-                      <p className="text-[11px] text-white/50">Best {r.best_score ?? 0} · {r.questions_answered ?? 0} Qs</p>
-                    )}
-                    {tab === "weekly" && (
-                      <p className="text-[11px] text-white/50">{r.quizzes_played ?? 0} quizzes · best {r.best_this_week ?? 0}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-black text-white">{score.toLocaleString()}</p>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-white/40">pts</p>
-                  </div>
-                </motion.li>
-              );
-            })}
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black ${medalClass(r.rank)}`}
+                    >
+                      {r.rank}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-black text-white">
+                        {r.display_name || r.username || "Explorer"}
+                        {me && <span className="ml-1 text-[10px] font-black text-fuchsia-300">YOU</span>}
+                      </p>
+                      <p className="text-[11px] text-white/50">
+                        {r.favorite_category ? `${emojiFor(r.favorite_category)} ${r.favorite_category}` : "Curious mind"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
+                      <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
+                        {tab === "streaks" ? "days" : "pts"}
+                      </p>
+                    </div>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
           </ol>
         )}
       </div>
