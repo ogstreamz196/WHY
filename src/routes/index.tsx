@@ -577,6 +577,24 @@ function WhyApp() {
           registerMarker={(fn) => { missionMarkerRef.current = fn; }}
         />
 
+        {user && (
+          <Link
+            to="/quiz"
+            className="mb-3 flex items-center gap-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/15 to-violet-500/15 p-4 shadow-[0_0_24px_rgba(236,72,153,0.15)] active:scale-[0.99]"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl shadow" style={{ background: "var(--gradient-primary)" }}>
+              🏆
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-black uppercase tracking-widest text-amber-200/80">Curiosity Challenge</div>
+              <div className="truncate text-sm font-bold text-white">Take a quiz · climb the leaderboard</div>
+              <div className="text-[10px] text-white/50">Correct +10 · Fast bonus · Perfect ×1.5</div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-white/60" />
+          </Link>
+        )}
+
+
 
 
 
