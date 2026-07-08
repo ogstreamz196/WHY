@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { LogIn, LogOut, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   defaultSettings,
@@ -9,6 +10,8 @@ import {
   type Settings,
 } from "@/lib/store";
 import { syncFactsFromSheet } from "@/lib/sync.functions";
+import { useCurrentUser } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
