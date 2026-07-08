@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Lock, Sparkles } from "lucide-react";
+import { Check, Crown, Lock, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CoinIcon } from "@/components/CoinIcon";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
+import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
 import {
   COIN_PACKS,
   STORE_CATALOG,
