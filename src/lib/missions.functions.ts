@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { runAchievementCheckForUser } from "./account.functions";
 
 const BONUS_POINTS = 50;
 
