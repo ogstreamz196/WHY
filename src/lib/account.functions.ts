@@ -356,3 +356,77 @@ export const migrateGuestData = createServerFn({ method: "POST" })
 
     return { ok: true, imported_favorites: imported };
   });
+
+// -------------------- Daily login bonus --------------------
+
+export type LoginBonusResult = {
+  claimed: boolean;
+  awarded_points: number;
+  streak: number;
+  stats: StatsDTO;
+  next_available_at: string;
+};
+
+/** Claim today's login bonus. Idempotent per UTC day. Awards escalating XP with streak. */
+export const claimDailyLoginBonus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<LoginBonusResult> => {
+    const t = today();
+    const y = yesterday();
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
+    const nextAvailable = tomorrow.toISOString();
+
+    const { data: existing } = await context.supabase
+      .from("user_stats")
+      .select("*")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+
+    if (existing?.last_login_bonus_day === t) {
+      return {
+        claimed: false,
+        awarded_points: 0,
+        streak: existing.current_streak ?? 0,
+        stats: existing as StatsDTO,
+        next_available_at: nextAvailable,
+      };
+    }
+
+    const prevStreak = existing?.current_streak ?? 0;
+    const nextStreak = existing?.last_login_bonus_day === y ? prevStreak + 1 : 1;
+    const bonus = Math.min(
+      LOGIN_BONUS_MAX,
+      LOGIN_BONUS_BASE + (nextStreak - 1) * LOGIN_BONUS_STREAK_STEP,
+    );
+    const longest = Math.max(existing?.longest_streak ?? 0, nextStreak);
+
+    const { data: row, error } = await context.supabase
+      .from("user_stats")
+      .upsert(
+        {
+          user_id: context.userId,
+          total_points: (existing?.total_points ?? 0) + bonus,
+          current_streak: nextStreak,
+          longest_streak: longest,
+          facts_seen: existing?.facts_seen ?? 0,
+          last_active_day: t,
+          last_daily_challenge_day: existing?.last_daily_challenge_day ?? null,
+          last_login_bonus_day: t,
+        },
+        { onConflict: "user_id" },
+      )
+      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
+      .single();
+    if (error) throw new Error(error.message);
+
+    await checkAchievements(context, row as StatsDTO);
+    return {
+      claimed: true,
+      awarded_points: bonus,
+      streak: nextStreak,
+      stats: row as StatsDTO,
+      next_available_at: nextAvailable,
+    };
+  });
