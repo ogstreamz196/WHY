@@ -25,7 +25,7 @@ export function GlobalStreakMilestoneWatcher() {
       const current = milestoneFor(streak);
       let seen = 0;
       try {
-        seen = Number(localStorage.getItem(KEY_SEEN) ?? "0") || 0;
+        seen = Number(sessionStorage.getItem(KEY_SEEN) ?? "0") || 0;
       } catch {
         seen = 0;
       }
@@ -34,13 +34,13 @@ export function GlobalStreakMilestoneWatcher() {
       if (!bootstrapped.current) {
         bootstrapped.current = true;
         if (current && current.days > seen) {
-          localStorage.setItem(KEY_SEEN, String(current.days));
+          sessionStorage.setItem(KEY_SEEN, String(current.days));
         }
         return;
       }
 
       if (current && current.days > seen) {
-        localStorage.setItem(KEY_SEEN, String(current.days));
+        sessionStorage.setItem(KEY_SEEN, String(current.days));
         analytics.streakMilestoneUnlocked(current.days, current.label, "global_watcher");
         toast.success(
           `${current.emoji} ${current.label} unlocked! ${current.days}-day streak!`,
@@ -50,9 +50,9 @@ export function GlobalStreakMilestoneWatcher() {
       } else if (current && current.days < seen) {
         // Streak dropped below a previously celebrated milestone — reset baseline
         // so the user can celebrate reaching it again.
-        localStorage.setItem(KEY_SEEN, String(current.days));
+        sessionStorage.setItem(KEY_SEEN, String(current.days));
       } else if (!current && seen > 0) {
-        localStorage.setItem(KEY_SEEN, "0");
+        sessionStorage.setItem(KEY_SEEN, "0");
       }
     }
 

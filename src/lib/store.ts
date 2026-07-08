@@ -1,6 +1,7 @@
-// Client-side persistent state: favorites, curiosity points, streak, offline cache.
-// No user accounts yet — everything lives in localStorage. Designed to migrate
-// cleanly to per-user server storage later.
+// Client-side session state: favorites, curiosity points, streak, offline cache.
+// Guests: state lives ONLY in sessionStorage — it clears when the browser
+// (or last tab of this origin) is closed. No progress is persisted for guests.
+// Signed-in users: canonical progress lives on the server; this is a cache.
 
 import type { Fact } from "@/lib/facts.functions";
 
@@ -16,10 +17,17 @@ const CACHE_MAX = 40;
 
 const isBrowser = () => typeof window !== "undefined";
 
+// Session-only storage: cleared on browser exit. Falls back safely on SSR.
+function storage(): Storage | null {
+  if (!isBrowser()) return null;
+  try { return window.sessionStorage; } catch { return null; }
+}
+
 function read<T>(key: string, fallback: T): T {
-  if (!isBrowser()) return fallback;
+  const s = storage();
+  if (!s) return fallback;
   try {
-    const v = window.localStorage.getItem(key);
+    const v = s.getItem(key);
     if (!v) return fallback;
     return JSON.parse(v) as T;
   } catch {
@@ -27,13 +35,41 @@ function read<T>(key: string, fallback: T): T {
   }
 }
 function write<T>(key: string, value: T) {
-  if (!isBrowser()) return;
+  const s = storage();
+  if (!s) return;
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    s.setItem(key, JSON.stringify(value));
   } catch {
     /* quota — ignore */
   }
 }
+
+// One-time migration: if legacy guest data lives in localStorage from a prior
+// build, move it into this session and wipe localStorage so nothing persists
+// across browser exits going forward.
+(function migrateLegacyLocalStorage() {
+  if (!isBrowser()) return;
+  try {
+    const ls = window.localStorage;
+    const keys: string[] = [];
+    for (let i = 0; i < ls.length; i++) {
+      const k = ls.key(i);
+      if (k && k.startsWith("why:")) keys.push(k);
+    }
+    if (keys.length === 0) return;
+    const ss = window.sessionStorage;
+    for (const k of keys) {
+      if (ss.getItem(k) == null) {
+        const v = ls.getItem(k);
+        if (v != null) ss.setItem(k, v);
+      }
+      ls.removeItem(k);
+    }
+  } catch {
+    /* ignore */
+  }
+})();
+
 
 // ------- Settings -------
 export type Settings = {

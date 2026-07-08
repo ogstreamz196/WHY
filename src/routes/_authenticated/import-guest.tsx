@@ -69,9 +69,9 @@ function ImportGuestPage() {
       setImported(res.imported_favorites);
       // Clear local guest snapshot so we don't re-prompt on next sign-in.
       try {
-        localStorage.removeItem("why:points");
-        localStorage.removeItem("why:streak");
-        localStorage.removeItem("why:favorites");
+        sessionStorage.removeItem("why:points");
+        sessionStorage.removeItem("why:streak");
+        sessionStorage.removeItem("why:favorites");
       } catch {
         // ignore
       }

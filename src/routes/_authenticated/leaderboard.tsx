@@ -109,9 +109,9 @@ function ArenaPage() {
         // Rank movement vs last visit (per view, local)
         if (r?.my_rank && typeof window !== "undefined") {
           const key = `lb:rank:${tab}:${filter ?? ""}`;
-          const prev = Number(window.localStorage.getItem(key));
+          const prev = Number(window.sessionStorage.getItem(key));
           if (Number.isFinite(prev) && prev > 0) setRankDelta(prev - r.my_rank);
-          window.localStorage.setItem(key, String(r.my_rank));
+          window.sessionStorage.setItem(key, String(r.my_rank));
         }
       })
       .catch(() => { if (alive) setResult(null); })
@@ -126,8 +126,23 @@ function ArenaPage() {
   }, [tab]);
 
   const topPercent = result?.my_rank && result.total_users
-    ? Math.max(1, Math.round((result.my_rank / result.total_users) * 100))
+    ? Math.max(0.1, Math.min(100, (result.my_rank / result.total_users) * 100))
     : null;
+  const percentileLabel = topPercent === null
+    ? null
+    : topPercent < 1
+      ? "Top 1%"
+      : `Top ${Math.round(topPercent)}%`;
+  const percentileTone = topPercent === null
+    ? ""
+    : topPercent <= 1
+      ? "bg-amber-400/25 text-amber-100 shadow-[0_0_28px_rgba(251,191,36,0.45)]"
+      : topPercent <= 5
+        ? "bg-fuchsia-400/25 text-fuchsia-100"
+        : topPercent <= 25
+          ? "bg-emerald-400/20 text-emerald-100"
+          : "bg-white/10 text-white/80";
+  const leaderScore = result?.entries?.[0]?.score ?? 0;
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
@@ -211,14 +226,17 @@ function ArenaPage() {
                 </p>
               )}
             </div>
-            {topPercent !== null && topPercent <= 25 && (
+            {percentileLabel && (
               <motion.span
+                key={percentileLabel}
                 initial={{ scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 300, damping: 18 }}
-                className="rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100"
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${percentileTone}`}
+                title={`${TABS.find((t) => t.key === tab)?.label ?? "This view"} percentile`}
               >
-                Top {topPercent}%
+                {topPercent !== null && topPercent <= 5 && <Crown className="h-3 w-3" />}
+                {percentileLabel}
               </motion.span>
             )}
           </motion.div>
@@ -247,6 +265,16 @@ function ArenaPage() {
             <AnimatePresence initial={false}>
               {result.entries.map((r) => {
                 const me = r.user_id === user?.id;
+                const pct = leaderScore > 0 ? Math.max(4, Math.min(100, (r.score / leaderScore) * 100)) : 0;
+                const barGradient = r.rank === 1
+                  ? "linear-gradient(90deg,#fbbf24,#f97316)"
+                  : r.rank === 2
+                    ? "linear-gradient(90deg,#e2e8f0,#94a3b8)"
+                    : r.rank === 3
+                      ? "linear-gradient(90deg,#fdba74,#c2410c)"
+                      : me
+                        ? "var(--gradient-primary)"
+                        : "linear-gradient(90deg,rgba(255,255,255,0.35),rgba(255,255,255,0.1))";
                 return (
                   <motion.li
                     key={r.user_id}
@@ -254,17 +282,34 @@ function ArenaPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex items-center gap-3 rounded-2xl border p-3 ${
+                    transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                    className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 ${
                       me
                         ? "border-fuchsia-300/40 bg-fuchsia-500/10"
                         : "border-white/10 bg-white/[0.04]"
                     }`}
                   >
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black ${medalClass(r.rank)}`}
+                      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black ${medalClass(r.rank)}`}
                     >
-                      {r.rank}
+                      {r.rank <= 3 ? (
+                        <>
+                          <Trophy className="h-4 w-4" />
+                          <span className="absolute -bottom-1 -right-1 rounded-full bg-black/60 px-1 text-[9px] leading-tight text-white">
+                            {r.rank}
+                          </span>
+                          {r.rank === 1 && (
+                            <motion.span
+                              aria-hidden
+                              className="absolute inset-0 rounded-xl"
+                              animate={{ boxShadow: ["0 0 0 rgba(251,191,36,0.0)", "0 0 22px rgba(251,191,36,0.55)", "0 0 0 rgba(251,191,36,0.0)"] }}
+                              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        r.rank
+                      )}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-black text-white">
@@ -274,6 +319,16 @@ function ArenaPage() {
                       <p className="text-[11px] text-white/50">
                         {r.favorite_category ? `${emojiFor(r.favorite_category)} ${r.favorite_category}` : "Curious mind"}
                       </p>
+                      {/* Progress bar relative to the leader */}
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                          className="h-full rounded-full"
+                          style={{ background: barGradient }}
+                        />
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
