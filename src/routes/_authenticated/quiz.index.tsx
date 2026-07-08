@@ -9,7 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { CATEGORIES, gradientFor } from "@/lib/categories";
 import { startQuiz, type Difficulty } from "@/lib/quiz.functions";
 
-export const Route = createFileRoute("/_authenticated/quiz")({
+export const Route = createFileRoute("/_authenticated/quiz/")({
   head: () => ({
     meta: [
       { title: "Curiosity Challenge — Why?" },
