@@ -674,7 +674,7 @@ function WhyApp() {
                   </span>
                 </div>
 
-                {loading ? (
+                {showSkeleton ? (
                   <FactSkeleton />
                 ) : error && !fact ? (
                   <p className="text-center text-lg text-rose-300">{error}</p>
