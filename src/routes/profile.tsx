@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Flame, LogOut, Sparkles, Trophy, Zap, Pencil, Loader2, Check } from "lucide-react";
+import { Flame, LogOut, Sparkles, Trophy, Zap, Pencil, Loader2, Check, Clock, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -12,10 +12,16 @@ import {
   listAchievements,
   type Achievement,
 } from "@/lib/account.functions";
+import {
+  getDiscoveryTimeline,
+  getCategoryInterests,
+  listMyChains,
+} from "@/lib/chains.functions";
 import { CoinIcon } from "@/components/CoinIcon";
 import { BottomNav } from "@/components/BottomNav";
 import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
+import { emojiFor } from "@/lib/categories";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
