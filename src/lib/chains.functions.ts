@@ -451,17 +451,50 @@ export type TimelineEntry = {
 export const getDiscoveryTimeline = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ limit: z.number().int().min(1).max(100).default(30) }).parse(input ?? {}),
+    z
+      .object({
+        limit: z.number().int().min(1).max(100).default(30),
+        offset: z.number().int().min(0).max(10_000).default(0),
+      })
+      .parse(input ?? {}),
   )
-  .handler(async ({ data, context }): Promise<TimelineEntry[]> => {
+  .handler(async ({ data, context }): Promise<{ items: TimelineEntry[]; hasMore: boolean; nextOffset: number }> => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
     const { data: rows, error } = await context.supabase
       .from("discoveries")
       .select("seen_at, facts:fact_id (id, question, category)")
       .eq("user_id", context.userId)
       .order("seen_at", { ascending: false })
-      .limit(data.limit);
+      .range(from, to);
     if (error) throw new Error(error.message);
-    return ((rows ?? []) as Array<{ seen_at: string; facts: TimelineEntry["fact"] | null }>)
+    const items = ((rows ?? []) as Array<{ seen_at: string; facts: TimelineEntry["fact"] | null }>)
       .filter((r) => r.facts !== null)
       .map((r) => ({ seen_at: r.seen_at, fact: r.facts! }));
+    return {
+      items,
+      hasMore: items.length === data.limit,
+      nextOffset: data.offset + items.length,
+    };
+  });
+
+// ---------- Share slug regeneration ----------
+
+export const regenerateChainSlug = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<{ share_slug: string }> => {
+    // Try a few times in case of unique collision
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const newSlug = makeSlug();
+      const { data: row, error } = await context.supabase
+        .from("why_chains")
+        .update({ share_slug: newSlug })
+        .eq("id", data.id)
+        .eq("user_id", context.userId)
+        .select("share_slug")
+        .maybeSingle();
+      if (!error && row?.share_slug) return { share_slug: row.share_slug };
+    }
+    throw new Error("Could not regenerate share link");
   });
