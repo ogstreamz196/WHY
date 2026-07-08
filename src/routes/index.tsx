@@ -43,6 +43,10 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { useCurrentUser } from "@/lib/auth";
+import { levelFor } from "@/lib/levels";
+import { DailyMission } from "@/components/DailyMission";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { markMissionTask, type MissionTask } from "@/lib/missions.functions";
 import {
   getMyProfile,
   getMyStats,
@@ -115,6 +119,13 @@ function WhyApp() {
   const [bonusAvailable, setBonusAvailable] = useState(false);
   const [bonusClaiming, setBonusClaiming] = useState(false);
   const [welcome, setWelcome] = useState(false);
+  const [levelUp, setLevelUp] = useState<null | { level: number; title: string }>(null);
+  const missionMarkerRef = useRef<null | ((t: MissionTask) => void)>(null);
+  const markMissionServer = useServerFn(markMissionTask);
+  const markMission = useCallback((t: MissionTask) => {
+    if (missionMarkerRef.current) missionMarkerRef.current(t);
+    else if (user) markMissionServer({ data: { task: t } }).catch(() => {});
+  }, [markMissionServer, user]);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
@@ -184,8 +195,13 @@ function WhyApp() {
     const prev = getPoints();
     const next = addPoints(delta);
     setPoints(next);
-    const newLevel = Math.max(1, Math.floor(next / 100) + 1);
-    setLevel(newLevel);
+    const prevInfo = levelFor(prev);
+    const nextInfo = levelFor(next);
+    setLevel(nextInfo.level);
+    if (nextInfo.level > prevInfo.level) {
+      setLevelUp({ level: nextInfo.level, title: nextInfo.title });
+      return;
+    }
     // Milestones: every 50 pts (but not more than once per crossing)
     const crossed = Math.floor(next / 50) > Math.floor(prev / 50);
     if (crossed && next - lastMilestone.current >= 50) {
@@ -280,6 +296,11 @@ function WhyApp() {
     if (revealed) return;
     setRevealed(true);
     grantPoints(2);
+    // First reveal of the session counts as today's mystery + surprise
+    markMission("mystery");
+    markMission("surprise");
+    // Category task: if user isn't on "all", explored a specific category
+    if (category !== "all" && fact?.category) markMission("category");
   };
 
   const askWhy = async () => {
@@ -291,7 +312,11 @@ function WhyApp() {
         data: { rootQuestion: fact.question, previousChain: prev },
       });
       if (layer) {
-        setChain((c) => [...c, layer]);
+        setChain((c) => {
+          const next = [...c, layer];
+          if (next.length >= 3) markMission("chain");
+          return next;
+        });
         setSavedChainId(null); // dirty
         grantPoints(3);
       }
@@ -545,6 +570,14 @@ function WhyApp() {
             <ArrowRight className="h-4 w-4 text-white/60" />
           </Link>
         )}
+
+        <DailyMission
+          onOpenCategory={(k) => setCategory(k as CategoryKey)}
+          onCelebrate={(pts) => setCelebrate({ points: pts })}
+          registerMarker={(fn) => { missionMarkerRef.current = fn; }}
+        />
+
+
 
 
         <DailyChallenge
@@ -844,6 +877,12 @@ function WhyApp() {
         message={signInPrompt?.message}
       />
       <WelcomeOverlay open={welcome} name={displayName} onClose={() => setWelcome(false)} />
+      <LevelUpCelebration
+        open={!!levelUp}
+        level={levelUp?.level ?? 1}
+        title={levelUp?.title ?? ""}
+        onClose={() => setLevelUp(null)}
+      />
     </main>
   );
 }
