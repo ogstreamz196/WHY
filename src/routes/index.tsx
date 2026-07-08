@@ -109,6 +109,8 @@ function WhyApp() {
   const [lastChain, setLastChain] = useState<ChainSummary | null>(null);
   const [savingChain, setSavingChain] = useState(false);
   const [savedChainId, setSavedChainId] = useState<string | null>(null);
+  const [bonusAvailable, setBonusAvailable] = useState(false);
+  const [bonusClaiming, setBonusClaiming] = useState(false);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
