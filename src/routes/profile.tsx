@@ -220,6 +220,9 @@ function ProfilePage() {
           <StatTile icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />} label="Facts seen" value={s.facts_seen} />
         </section>
 
+        <QuizStatsSection />
+
+
         {/* Achievements */}
         <section className="mt-6">
           <header className="mb-3 flex items-center justify-between">
