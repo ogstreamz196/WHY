@@ -954,7 +954,7 @@ function WhyApp() {
         </div>
       </div>
 
-      {loading && !fact ? <BottomNavSkeleton /> : <BottomNav />}
+      {showSkeleton && !fact ? <BottomNavSkeleton /> : <BottomNav />}
       <Celebration
         open={!!celebrate}
         points={celebrate?.points ?? 0}
