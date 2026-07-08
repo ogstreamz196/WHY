@@ -179,10 +179,10 @@ export const getWeeklyRecap = createServerFn({ method: "GET" })
     const [discoveriesRes, statsRes, achRes] = await Promise.all([
       context.supabase
         .from("discoveries")
-        .select("fact_id, created_at, facts:fact_id(category)")
+        .select("fact_id, seen_at, facts:fact_id(category)")
         .eq("user_id", context.userId)
-        .gte("created_at", startIso)
-        .lte("created_at", endIso),
+        .gte("seen_at", startIso)
+        .lte("seen_at", endIso),
       context.supabase
         .from("user_stats")
         .select("total_points, current_streak, longest_streak")
