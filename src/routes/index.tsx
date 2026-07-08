@@ -208,7 +208,7 @@ function WhyApp() {
         setLoading(false);
       }
     },
-    [category, generateNew, getRandom, showFact, grantPoints],
+    [category, generateNew, getRandom, showFact, grantPoints, user, recordDiscoveryServer],
   );
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
