@@ -17,6 +17,7 @@ import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as ChainsRouteImport } from './routes/chains'
 import { Route as BadgesRouteImport } from './routes/badges'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdultRouteImport } from './routes/adult'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChainIdRouteImport } from './routes/chain.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
@@ -62,6 +63,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdultRoute = AdultRouteImport.update({
+  id: '/adult',
+  path: '/adult',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -85,6 +91,7 @@ const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/adult': typeof AdultRoute
   '/auth': typeof AuthRoute
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/adult': typeof AdultRoute
   '/auth': typeof AuthRoute
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
@@ -114,6 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/adult': typeof AdultRoute
   '/auth': typeof AuthRoute
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/adult'
     | '/auth'
     | '/badges'
     | '/chains'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/adult'
     | '/auth'
     | '/badges'
     | '/chains'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/adult'
     | '/auth'
     | '/badges'
     | '/chains'
@@ -173,6 +185,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdultRoute: typeof AdultRoute
   AuthRoute: typeof AuthRoute
   BadgesRoute: typeof BadgesRoute
   ChainsRoute: typeof ChainsRoute
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/adult': {
+      id: '/adult'
+      path: '/adult'
+      fullPath: '/adult'
+      preLoaderRoute: typeof AdultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -277,6 +297,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdultRoute: AdultRoute,
   AuthRoute: AuthRoute,
   BadgesRoute: BadgesRoute,
   ChainsRoute: ChainsRoute,
