@@ -67,6 +67,13 @@ export function DailyChallenge({ onCompleted }: Props) {
         points: result.points,
         pointsDelta: result.pointsDelta,
       });
+      const milestone = newlyReachedMilestone(result.streak);
+      if (milestone) {
+        toast.success(
+          `${milestone.emoji} ${milestone.label} unlocked! ${milestone.days}-day streak!`,
+          { duration: 5000, className: "font-bold" },
+        );
+      }
       window.setTimeout(() => setAwardedFlash(null), 3200);
     }
   }, [revealed, onCompleted]);
