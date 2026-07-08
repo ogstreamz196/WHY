@@ -12,6 +12,7 @@ import {
   listAchievements,
   type Achievement,
 } from "@/lib/account.functions";
+import { getMyQuizStats } from "@/lib/quiz.functions";
 import {
   getDiscoveryTimeline,
   getCategoryInterests,
