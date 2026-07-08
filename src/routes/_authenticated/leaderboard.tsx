@@ -226,14 +226,17 @@ function ArenaPage() {
                 </p>
               )}
             </div>
-            {topPercent !== null && topPercent <= 25 && (
+            {percentileLabel && (
               <motion.span
+                key={percentileLabel}
                 initial={{ scale: 0.6, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: "spring", stiffness: 300, damping: 18 }}
-                className="rounded-full bg-amber-400/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100"
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${percentileTone}`}
+                title={`${TABS.find((t) => t.key === tab)?.label ?? "This view"} percentile`}
               >
-                Top {topPercent}%
+                {topPercent !== null && topPercent <= 5 && <Crown className="h-3 w-3" />}
+                {percentileLabel}
               </motion.span>
             )}
           </motion.div>
