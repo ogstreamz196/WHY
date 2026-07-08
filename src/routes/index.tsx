@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -11,6 +11,7 @@ import {
   Share2,
   Sparkles,
   Star,
+  User as UserIcon,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,6 +27,7 @@ import {
   bumpSeen,
   cacheFact,
   getCachedRandomFact,
+  getFavorites,
   getPoints,
   getStreak,
   isFavorite,
@@ -37,6 +39,16 @@ import { BottomNav } from "@/components/BottomNav";
 import { Celebration } from "@/components/Celebration";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
+import { SignInPrompt } from "@/components/SignInPrompt";
+import { useCurrentUser } from "@/lib/auth";
+import {
+  getMyProfile,
+  getMyStats,
+  migrateGuestData,
+  recordDiscovery,
+  recordDailyChallenge,
+  toggleFavorite as toggleFavoriteServer,
+} from "@/lib/account.functions";
 
 
 import mascotImg from "@/assets/mascot.png";
