@@ -676,12 +676,36 @@ function WhyApp() {
                   </span>
                 </div>
 
+                <AnimatePresence mode="wait" initial={false}>
                 {showSkeleton ? (
-                  <FactSkeleton />
+                  <motion.div
+                    key="skeleton"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <FactSkeleton />
+                  </motion.div>
                 ) : error && !fact ? (
-                  <p className="text-center text-lg text-rose-300">{error}</p>
+                  <motion.p
+                    key="err"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-center text-lg text-rose-300"
+                  >
+                    {error}
+                  </motion.p>
                 ) : fact ? (
-                  <>
+                  <motion.div
+                    key={`fact-${fact.id}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
                     <h1 className="animate-fade-up stagger-1 font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
                       {capitalize(fact.question)}
                     </h1>
