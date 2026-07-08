@@ -55,6 +55,22 @@ function AuthPage() {
       ? "Continue your curiosity journey."
       : "We'll email you a magic link to set a new password.";
 
+  function nextDestination(): string {
+    try {
+      const hasGuest =
+        (Number(localStorage.getItem("why:points")) || 0) > 0 ||
+        (Number(localStorage.getItem("why:streak")) || 0) > 0 ||
+        (JSON.parse(localStorage.getItem("why:favorites") ?? "[]") as unknown[]).length > 0;
+      if (hasGuest) {
+        const redirect = search.redirect ?? "/";
+        return `/import-guest?redirect=${encodeURIComponent(redirect)}`;
+      }
+    } catch {
+      // ignore
+    }
+    return search.redirect ?? "/";
+  }
+
   async function handleOAuth(provider: "google" | "apple") {
     setLoading(true);
     setMessage(null);
@@ -65,7 +81,7 @@ function AuthPage() {
       if (result.error) {
         setMessage({ type: "error", text: `${provider === "apple" ? "Apple" : "Google"} sign-in failed. Please try again.` });
       } else if (!result.redirected) {
-        navigate({ to: search.redirect ?? "/" });
+        window.location.assign(nextDestination());
       }
     } finally {
       setLoading(false);
@@ -106,7 +122,7 @@ function AuthPage() {
       } else if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: search.redirect ?? "/" });
+        window.location.assign(nextDestination());
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
