@@ -178,16 +178,25 @@ export const recordDiscovery = createServerFn({ method: "POST" })
 
 // -------------------- Favorites --------------------
 
+export type FavoriteFact = {
+  id: string;
+  question: string;
+  answer: string;
+  category: string | null;
+  fun_fact: string | null;
+};
+
 export const listFavorites = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<FavoriteFact[]> => {
     const { data, error } = await context.supabase
       .from("favorites")
       .select("fact_id, created_at, facts:fact_id (id, question, answer, category, fun_fact)")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((r: { facts: unknown }) => r.facts).filter(Boolean);
+    const rows = (data ?? []) as Array<{ facts: FavoriteFact | null }>;
+    return rows.map((r) => r.facts).filter((f): f is FavoriteFact => f !== null);
   });
 
 export const toggleFavorite = createServerFn({ method: "POST" })
