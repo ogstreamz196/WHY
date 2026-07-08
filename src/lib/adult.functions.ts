@@ -38,13 +38,11 @@ export const getAdultStatus = createServerFn({ method: "GET" })
     const [{ data: profile }, { data: settings }] = await Promise.all([
       context.supabase
         .from("profiles")
-        // @ts-expect-error columns added by latest migration, types regenerate later
         .select("adult_verified_at, adult_provider")
         .eq("id", context.userId)
         .maybeSingle(),
       context.supabase
         .from("user_settings")
-        // @ts-expect-error columns added by latest migration, types regenerate later
         .select("adult_mode_enabled")
         .eq("user_id", context.userId)
         .maybeSingle(),
@@ -75,13 +73,11 @@ export const verifyAdult = createServerFn({ method: "POST" })
     const now = new Date().toISOString();
     const { error } = await context.supabase
       .from("profiles")
-      // @ts-expect-error columns added by latest migration
       .update({ adult_verified_at: now, adult_provider: matched })
       .eq("id", context.userId);
     if (error) throw new Error(error.message);
     await context.supabase
       .from("user_settings")
-      // @ts-expect-error columns added by latest migration
       .upsert({ user_id: context.userId, adult_mode_enabled: true }, { onConflict: "user_id" });
     return {
       verified: true,
@@ -97,7 +93,6 @@ export const setAdultMode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ mode_enabled: boolean }> => {
     const { error } = await context.supabase
       .from("user_settings")
-      // @ts-expect-error columns added by latest migration
       .upsert({ user_id: context.userId, adult_mode_enabled: data.enabled }, { onConflict: "user_id" });
     if (error) throw new Error(error.message);
     return { mode_enabled: data.enabled };
@@ -108,13 +103,11 @@ export const revokeAdultVerification = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<AdultStatus> => {
     const { error } = await context.supabase
       .from("profiles")
-      // @ts-expect-error columns added by latest migration
       .update({ adult_verified_at: null, adult_provider: null })
       .eq("id", context.userId);
     if (error) throw new Error(error.message);
     await context.supabase
       .from("user_settings")
-      // @ts-expect-error columns added by latest migration
       .upsert({ user_id: context.userId, adult_mode_enabled: false }, { onConflict: "user_id" });
     return { verified: false, provider: null, verified_at: null, mode_enabled: false };
   });
@@ -136,7 +129,6 @@ export const listAdultFacts = createServerFn({ method: "GET" })
     const { data: rows, error } = await context.supabase
       .from("facts")
       .select("id, question, answer, category, fun_fact, is_adult")
-      // @ts-expect-error column added by latest migration
       .eq("is_adult", true)
       .order("created_at", { ascending: false })
       .range(from, to);
