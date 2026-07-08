@@ -23,6 +23,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChainIdRouteImport } from './routes/chain.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
+import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
+import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
+import { Route as AuthenticatedQuizSessionIdRouteImport } from './routes/_authenticated/quiz.$sessionId'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
 
 const StoreRoute = StoreRouteImport.update({
@@ -94,6 +97,23 @@ const AuthenticatedRecapRoute = AuthenticatedRecapRouteImport.update({
   path: '/recap',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedQuizRoute = AuthenticatedQuizRouteImport.update({
+  id: '/quiz',
+  path: '/quiz',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeaderboardRoute =
+  AuthenticatedLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedQuizSessionIdRoute =
+  AuthenticatedQuizSessionIdRouteImport.update({
+    id: '/$sessionId',
+    path: '/$sessionId',
+    getParentRoute: () => AuthenticatedQuizRoute,
+  } as any)
 const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
   id: '/api/public/hooks/sync-sheet',
   path: '/api/public/hooks/sync-sheet',
@@ -111,9 +131,12 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
+  '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRoutesByTo {
@@ -127,9 +150,12 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
+  '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRoutesById {
@@ -145,9 +171,12 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/_authenticated/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/_authenticated/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
+  '/_authenticated/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
 }
 export interface FileRouteTypes {
@@ -163,9 +192,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/leaderboard'
+    | '/quiz'
     | '/recap'
     | '/c/$slug'
     | '/chain/$id'
+    | '/quiz/$sessionId'
     | '/api/public/hooks/sync-sheet'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -179,9 +211,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/leaderboard'
+    | '/quiz'
     | '/recap'
     | '/c/$slug'
     | '/chain/$id'
+    | '/quiz/$sessionId'
     | '/api/public/hooks/sync-sheet'
   id:
     | '__root__'
@@ -196,9 +231,12 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/_authenticated/leaderboard'
+    | '/_authenticated/quiz'
     | '/_authenticated/recap'
     | '/c/$slug'
     | '/chain/$id'
+    | '/_authenticated/quiz/$sessionId'
     | '/api/public/hooks/sync-sheet'
   fileRoutesById: FileRoutesById
 }
@@ -319,6 +357,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecapRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/quiz': {
+      id: '/_authenticated/quiz'
+      path: '/quiz'
+      fullPath: '/quiz'
+      preLoaderRoute: typeof AuthenticatedQuizRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leaderboard': {
+      id: '/_authenticated/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/quiz/$sessionId': {
+      id: '/_authenticated/quiz/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/quiz/$sessionId'
+      preLoaderRoute: typeof AuthenticatedQuizSessionIdRouteImport
+      parentRoute: typeof AuthenticatedQuizRoute
+    }
     '/api/public/hooks/sync-sheet': {
       id: '/api/public/hooks/sync-sheet'
       path: '/api/public/hooks/sync-sheet'
@@ -329,11 +388,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedQuizRouteChildren {
+  AuthenticatedQuizSessionIdRoute: typeof AuthenticatedQuizSessionIdRoute
+}
+
+const AuthenticatedQuizRouteChildren: AuthenticatedQuizRouteChildren = {
+  AuthenticatedQuizSessionIdRoute: AuthenticatedQuizSessionIdRoute,
+}
+
+const AuthenticatedQuizRouteWithChildren =
+  AuthenticatedQuizRoute._addFileChildren(AuthenticatedQuizRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
+  AuthenticatedQuizRoute: typeof AuthenticatedQuizRouteWithChildren
   AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
+  AuthenticatedQuizRoute: AuthenticatedQuizRouteWithChildren,
   AuthenticatedRecapRoute: AuthenticatedRecapRoute,
 }
 

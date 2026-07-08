@@ -60,6 +60,9 @@ export type LeaderboardEntry = {
   week_score?: number;
   best_score?: number;
   quizzes_played?: number;
+  questions_answered?: number;
+  correct_answered?: number;
+  best_this_week?: number;
 };
 
 // ---------------- Constants ----------------
