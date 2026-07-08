@@ -146,18 +146,23 @@ function WhyApp() {
           }).catch((e) => console.warn("guest migration failed", e));
           localStorage.setItem(migratedKey, "1");
         }
-        const [profile, stats] = await Promise.all([fetchProfile(), fetchStats()]);
+        const [profile, stats, last] = await Promise.all([
+          fetchProfile(),
+          fetchStats(),
+          fetchLastChain().catch(() => null),
+        ]);
         if (cancelled) return;
         setDisplayName(profile?.display_name ?? user.email?.split("@")[0] ?? null);
         setPoints(stats.total_points);
         setStreak(stats.current_streak);
         setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
+        setLastChain(last);
       } catch (e) {
         console.warn("account load failed", e);
       }
     })();
     return () => { cancelled = true; };
-  }, [user, migrateGuest, fetchProfile, fetchStats]);
+  }, [user, migrateGuest, fetchProfile, fetchStats, fetchLastChain]);
 
 
   const grantPoints = useCallback((delta: number) => {
