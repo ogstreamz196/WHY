@@ -42,14 +42,31 @@ function BadgesPage() {
     setSeen(getSeen());
   }, []);
 
-  const level = useMemo(() => levelFor(points), [points]);
   const unlocked = badges.filter((b) => b.unlocked).length;
-
   const stats: Record<string, number> = { seen, streak, points };
+  const [selected, setSelected] = useState<Badge | null>(null);
+  const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(badges);
+
+  const widgetMilestones = useMemo(() => {
+    return MILESTONES.map((m) => {
+      const current = stats[m.key] ?? 0;
+      const nextIdx = m.steps.findIndex((s) => current < s);
+      const next = nextIdx === -1 ? m.steps[m.steps.length - 1] : m.steps[nextIdx];
+      return { label: m.label, value: current, next };
+    });
+  }, [stats]);
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
       <CosmicBackground />
+      <ConfettiBurst trigger={confettiTrigger} />
+      <LevelUpCelebration
+        open={!!levelUp}
+        level={levelUp?.level ?? 0}
+        title={levelUp?.title ?? ""}
+        onClose={dismissLevelUp}
+      />
+      <BadgeDetailsModal badge={selected} onClose={() => setSelected(null)} />
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
           <Link to="/" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-foreground/90 active:scale-95">
@@ -66,47 +83,14 @@ function BadgesPage() {
           )}
         </header>
 
-        {/* Level card */}
-        <motion.section
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-strong mb-4 overflow-hidden rounded-3xl p-4"
-          style={{ background: "var(--gradient-primary)" }}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/80">Level {level.level}</p>
-              <p className="font-display text-2xl font-black text-white">{level.title}</p>
-            </div>
-            <motion.div
-              initial={{ rotate: -12, scale: 0.8 }}
-              animate={{ rotate: 0, scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 15 }}
-              className="text-4xl drop-shadow-[0_4px_16px_rgba(255,255,255,0.4)]"
-            >
-              <Sparkles className="h-10 w-10 text-white" />
-            </motion.div>
-          </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-black/25">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${level.progressPct}%` }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full rounded-full bg-white/90 shadow-[0_0_18px_rgba(255,255,255,0.6)]"
-            />
-          </div>
-          <p className="mt-2 text-[11px] font-bold text-white/85">
-            {level.next
-              ? `${level.xpToNext?.toLocaleString()} pts to ${level.next.title}`
-              : "Max tier reached — legendary!"}
-          </p>
-        </motion.section>
+        <LevelProgressWidget xp={points} milestones={widgetMilestones} />
 
         <div className="glass-strong mb-4 grid grid-cols-3 gap-3 rounded-3xl p-4 text-center">
           <Stat label="Points" value={points} />
           <Stat label="Streak" value={`${streak}🔥`} />
           <Stat label="Seen" value={seen} />
         </div>
+
 
         {/* Milestones */}
         <section className="mb-4">
