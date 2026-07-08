@@ -89,6 +89,7 @@ function WhyApp() {
   const fetchLastChain = useServerFn(resumeLastChain);
   const saveChainServer = useServerFn(saveChain);
   const bumpInterest = useServerFn(bumpCategoryInterest);
+  const claimBonus = useServerFn(claimDailyLoginBonus);
 
   const { user, isGuest } = useCurrentUser();
 
