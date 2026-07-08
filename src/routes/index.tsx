@@ -296,6 +296,11 @@ function WhyApp() {
     if (revealed) return;
     setRevealed(true);
     grantPoints(2);
+    // First reveal of the session counts as today's mystery + surprise
+    markMission("mystery");
+    markMission("surprise");
+    // Category task: if user isn't on "all", explored a specific category
+    if (category !== "all" && fact?.category) markMission("category");
   };
 
   const askWhy = async () => {
@@ -307,7 +312,11 @@ function WhyApp() {
         data: { rootQuestion: fact.question, previousChain: prev },
       });
       if (layer) {
-        setChain((c) => [...c, layer]);
+        setChain((c) => {
+          const next = [...c, layer];
+          if (next.length >= 3) markMission("chain");
+          return next;
+        });
         setSavedChainId(null); // dirty
         grantPoints(3);
       }
