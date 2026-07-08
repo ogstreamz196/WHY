@@ -27,14 +27,16 @@ import {
   cacheFact,
   getCachedRandomFact,
   getPoints,
+  getStreak,
   isFavorite,
   toggleFavorite,
-  touchStreak,
 } from "@/lib/store";
 import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { Celebration } from "@/components/Celebration";
+import { DailyChallenge } from "@/components/DailyChallenge";
+
 import mascotImg from "@/assets/mascot.png";
 
 export const Route = createFileRoute("/")({
