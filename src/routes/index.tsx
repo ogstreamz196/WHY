@@ -29,6 +29,7 @@ import {
   getCachedRandomFact,
   getFavorites,
   getPoints,
+  getSeen,
   getStreak,
   isFavorite,
   toggleFavorite,
@@ -111,6 +112,7 @@ function WhyApp() {
   const [savedChainId, setSavedChainId] = useState<string | null>(null);
   const [bonusAvailable, setBonusAvailable] = useState(false);
   const [bonusClaiming, setBonusClaiming] = useState(false);
+  const [welcome, setWelcome] = useState(false);
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
@@ -139,6 +141,7 @@ function WhyApp() {
     (async () => {
       try {
         const migratedKey = `why:migrated:${user.id}`;
+        const welcomedKey = `why:welcomed:${user.id}`;
         if (typeof window !== "undefined" && !localStorage.getItem(migratedKey)) {
           const favs = getFavorites();
           await migrateGuest({
@@ -149,6 +152,10 @@ function WhyApp() {
             },
           }).catch((e) => console.warn("guest migration failed", e));
           localStorage.setItem(migratedKey, "1");
+        }
+        if (typeof window !== "undefined" && !localStorage.getItem(welcomedKey)) {
+          setWelcome(true);
+          localStorage.setItem(welcomedKey, "1");
         }
         const [profile, stats, last] = await Promise.all([
           fetchProfile(),
@@ -471,17 +478,12 @@ function WhyApp() {
             <span className="text-white/60"> — your streak is safe.</span>
           </motion.div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setSignInPrompt({ title: "Save your streak", message: "Create an account to keep your streak, coins and favourites forever." })}
-            className="mb-3 flex w-full items-center justify-between gap-2 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-2 text-left text-sm"
-          >
-            <span className="text-white/90">
-              <span className="font-black">Save your curiosity</span>
-              <span className="text-white/60"> — create a free account</span>
-            </span>
-            <ArrowRight className="h-4 w-4 text-white/60" />
-          </button>
+          <GuestProgressCard
+            discoveries={getSeen()}
+            streak={streak}
+            points={points}
+            onSignUp={() => setSignInPrompt({ title: "Save your curiosity", message: "Create a free account to keep your streak, coins, favourites and daily rewards forever." })}
+          />
         )}
 
         {/* Daily login bonus */}
@@ -834,6 +836,7 @@ function WhyApp() {
         title={signInPrompt?.title}
         message={signInPrompt?.message}
       />
+      <WelcomeOverlay open={welcome} name={displayName} onClose={() => setWelcome(false)} />
     </main>
   );
 }
@@ -921,4 +924,174 @@ function FactSkeleton() {
 function capitalize(s: string) {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function GuestProgressCard({
+  discoveries,
+  streak,
+  points,
+  onSignUp,
+}: {
+  discoveries: number;
+  streak: number;
+  points: number;
+  onSignUp: () => void;
+}) {
+  const nextMilestone = discoveries < 10 ? 10 : discoveries < 25 ? 25 : discoveries < 50 ? 50 : 100;
+  const pct = Math.min(100, Math.round((discoveries / nextMilestone) * 100));
+  const rewards = [
+    { icon: "🔥", label: "Daily streak", locked: streak < 2 },
+    { icon: "🎁", label: "Login bonus", locked: true },
+    { icon: "⭐", label: "Achievements", locked: true },
+    { icon: "☁️", label: "Cloud sync", locked: true },
+  ];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-3 overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-indigo-500/15 p-4 shadow-[0_0_28px_rgba(139,92,246,0.15)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🧭</span>
+            <h3 className="font-display text-sm font-black uppercase tracking-wider text-white">
+              Guest explorer
+            </h3>
+          </div>
+          <p className="mt-1 text-xs text-white/60">
+            You've discovered{" "}
+            <span className="font-black text-white">{discoveries}</span>{" "}
+            {discoveries === 1 ? "fact" : "facts"} — {nextMilestone - discoveries > 0 ? `${nextMilestone - discoveries} more to your next milestone.` : "milestone unlocked!"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onSignUp}
+          className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-violet-700 shadow-md transition hover:scale-105"
+        >
+          Unlock
+        </button>
+      </div>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="h-full rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-300"
+        />
+      </div>
+
+      <div className="mt-3 grid grid-cols-4 gap-1.5">
+        {rewards.map((r) => (
+          <button
+            key={r.label}
+            type="button"
+            onClick={onSignUp}
+            className={`group flex flex-col items-center gap-1 rounded-2xl border p-2 text-center transition ${
+              r.locked
+                ? "border-white/5 bg-white/[0.03] hover:border-violet-400/30 hover:bg-white/[0.06]"
+                : "border-emerald-400/30 bg-emerald-500/10"
+            }`}
+          >
+            <span className={`text-lg ${r.locked ? "opacity-60 group-hover:opacity-100" : ""}`}>
+              {r.locked ? "🔒" : r.icon}
+            </span>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-white/60">
+              {r.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {(streak > 0 || points > 0) && (
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-white/60">
+          <span>Local progress:</span>
+          {streak > 0 && <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-orange-200">🔥 {streak}d</span>}
+          {points > 0 && <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-amber-200">✨ {points} XP</span>}
+          <span className="ml-auto text-white/40">saved on this device</span>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function WelcomeOverlay({ open, name, onClose }: { open: boolean; name: string | null; onClose: () => void }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 220, damping: 18 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm overflow-hidden rounded-4xl border border-white/15 bg-gradient-to-br from-indigo-900/90 via-violet-900/90 to-fuchsia-900/90 p-6 text-center shadow-[0_0_60px_rgba(139,92,246,0.4)]"
+          >
+            <div className="pointer-events-none absolute inset-0 opacity-40">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, y: 0, x: 0, scale: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    y: [0, -60 - Math.random() * 40],
+                    x: [(Math.random() - 0.5) * 40, (Math.random() - 0.5) * 120],
+                    scale: [0, 1, 0.5],
+                  }}
+                  transition={{ duration: 2.4, delay: i * 0.08, repeat: Infinity, repeatDelay: 0.8 }}
+                  className="absolute left-1/2 top-1/2 text-lg"
+                >
+                  {["✨", "⭐", "🌟", "💫"][i % 4]}
+                </motion.span>
+              ))}
+            </div>
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.15 }}
+              className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl text-4xl shadow-[0_0_40px_rgba(251,191,36,0.5)]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              🎉
+            </motion.div>
+            <h2 className="relative font-display text-2xl font-black text-white">
+              Welcome{name ? `, ${name}` : ""}!
+            </h2>
+            <p className="relative mt-2 text-sm text-white/70">
+              Your Curiosity Passport is ready. Every fact you discover, every chain you follow — it all belongs to you now.
+            </p>
+            <div className="relative mt-4 grid grid-cols-3 gap-2 text-xs">
+              {[
+                { i: "🔥", l: "Streaks" },
+                { i: "🎁", l: "Bonuses" },
+                { i: "⭐", l: "Badges" },
+              ].map((x) => (
+                <div key={x.l} className="rounded-2xl border border-white/10 bg-white/5 p-2">
+                  <div className="text-lg">{x.i}</div>
+                  <div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/60">{x.l}</div>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="relative mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] transition hover:scale-[1.02]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              Begin the journey
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
