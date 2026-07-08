@@ -456,17 +456,18 @@ export const finishQuiz = createServerFn({ method: "POST" })
       .select("total_points, current_streak, longest_streak, facts_seen, last_active_day")
       .eq("user_id", context.userId)
       .maybeSingle();
+    const awardedFinalScore = await awardAmountForUser(context, finalScore);
     if (userStats) {
       await context.supabase
         .from("user_stats")
         .update({
-          total_points: (userStats.total_points ?? 0) + finalScore,
+          total_points: (userStats.total_points ?? 0) + awardedFinalScore,
         })
         .eq("user_id", context.userId);
     }
 
-    if (finalScore > 0) {
-      await awardXp(context, "quiz", finalScore, session.category ?? null);
+    if (awardedFinalScore > 0) {
+      await awardXp(context, "quiz", awardedFinalScore, session.category ?? null);
     }
 
     // Achievement checks (quiz-specific)
