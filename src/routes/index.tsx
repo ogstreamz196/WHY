@@ -571,6 +571,14 @@ function WhyApp() {
           </Link>
         )}
 
+        <DailyMission
+          onOpenCategory={(k) => setCategory(k as CategoryKey)}
+          onCelebrate={(pts) => setCelebrate({ points: pts })}
+          registerMarker={(fn) => { missionMarkerRef.current = fn; }}
+        />
+
+
+
 
         <DailyChallenge
           onCompleted={(r) => {
