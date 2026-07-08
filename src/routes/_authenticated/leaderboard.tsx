@@ -265,6 +265,16 @@ function ArenaPage() {
             <AnimatePresence initial={false}>
               {result.entries.map((r) => {
                 const me = r.user_id === user?.id;
+                const pct = leaderScore > 0 ? Math.max(4, Math.min(100, (r.score / leaderScore) * 100)) : 0;
+                const barGradient = r.rank === 1
+                  ? "linear-gradient(90deg,#fbbf24,#f97316)"
+                  : r.rank === 2
+                    ? "linear-gradient(90deg,#e2e8f0,#94a3b8)"
+                    : r.rank === 3
+                      ? "linear-gradient(90deg,#fdba74,#c2410c)"
+                      : me
+                        ? "var(--gradient-primary)"
+                        : "linear-gradient(90deg,rgba(255,255,255,0.35),rgba(255,255,255,0.1))";
                 return (
                   <motion.li
                     key={r.user_id}
@@ -272,17 +282,34 @@ function ArenaPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className={`flex items-center gap-3 rounded-2xl border p-3 ${
+                    transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                    className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 ${
                       me
                         ? "border-fuchsia-300/40 bg-fuchsia-500/10"
                         : "border-white/10 bg-white/[0.04]"
                     }`}
                   >
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black ${medalClass(r.rank)}`}
+                      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black ${medalClass(r.rank)}`}
                     >
-                      {r.rank}
+                      {r.rank <= 3 ? (
+                        <>
+                          <Trophy className="h-4 w-4" />
+                          <span className="absolute -bottom-1 -right-1 rounded-full bg-black/60 px-1 text-[9px] leading-tight text-white">
+                            {r.rank}
+                          </span>
+                          {r.rank === 1 && (
+                            <motion.span
+                              aria-hidden
+                              className="absolute inset-0 rounded-xl"
+                              animate={{ boxShadow: ["0 0 0 rgba(251,191,36,0.0)", "0 0 22px rgba(251,191,36,0.55)", "0 0 0 rgba(251,191,36,0.0)"] }}
+                              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        r.rank
+                      )}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-black text-white">
@@ -292,6 +319,16 @@ function ArenaPage() {
                       <p className="text-[11px] text-white/50">
                         {r.favorite_category ? `${emojiFor(r.favorite_category)} ${r.favorite_category}` : "Curious mind"}
                       </p>
+                      {/* Progress bar relative to the leader */}
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                          className="h-full rounded-full"
+                          style={{ background: barGradient }}
+                        />
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
