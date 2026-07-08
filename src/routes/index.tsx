@@ -646,9 +646,9 @@ function WhyApp() {
               <article className="glass-strong relative overflow-hidden rounded-4xl p-5 shadow-[var(--shadow-card)] sm:p-6">
                 {/* Speech-bubble tag */}
                 <div className="mb-4 flex items-center justify-between">
-                  <div className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5">
-                    <span aria-hidden>🤔</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/80">
+                  <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-2">
+                    <span aria-hidden className="text-lg">🤔</span>
+                    <span className="text-base font-black uppercase tracking-widest text-white/85 sm:text-lg">
                       Do you know why…
                     </span>
                   </div>
