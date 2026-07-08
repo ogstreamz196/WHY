@@ -97,17 +97,30 @@ export const saveChain = createServerFn({ method: "POST" })
 
 export const listMyChains = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<ChainSummary[]> => {
-    const { data: chains, error } = await context.supabase
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        offset: z.number().int().min(0).max(10_000).default(0),
+        limit: z.number().int().min(1).max(50).default(100),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<{ items: ChainSummary[]; hasMore: boolean; nextOffset: number }> => {
+    const from = data.offset;
+    const to = data.offset + data.limit - 1;
+    const { data: chains, error, count } = await context.supabase
       .from("why_chains")
-      .select("id, title, root_fact_id, is_public, share_slug, pinned, updated_at")
+      .select("id, title, root_fact_id, is_public, share_slug, pinned, updated_at", { count: "exact" })
       .eq("user_id", context.userId)
       .order("pinned", { ascending: false })
       .order("updated_at", { ascending: false })
-      .limit(100);
+      .range(from, to);
     if (error) throw new Error(error.message);
-    if (!chains?.length) return [];
-    const ids = chains.map((c) => c.id);
+    const rows = chains ?? [];
+    if (!rows.length) {
+      return { items: [], hasMore: false, nextOffset: data.offset };
+    }
+    const ids = rows.map((c) => c.id);
     const { data: steps } = await context.supabase
       .from("why_chain_steps")
       .select("chain_id, question, position")
@@ -119,7 +132,7 @@ export const listMyChains = createServerFn({ method: "GET" })
       if (!prev) lastByChain.set(s.chain_id, { q: s.question, count: 1 });
       else lastByChain.set(s.chain_id, { q: prev.q, count: prev.count + 1 });
     });
-    return chains.map((c) => {
+    const items = rows.map((c) => {
       const meta = lastByChain.get(c.id);
       return {
         ...c,
@@ -127,6 +140,8 @@ export const listMyChains = createServerFn({ method: "GET" })
         last_question: meta?.q ?? null,
       } as ChainSummary;
     });
+    const total = count ?? (data.offset + items.length);
+    return { items, hasMore: data.offset + items.length < total, nextOffset: data.offset + items.length };
   });
 
 export const getChain = createServerFn({ method: "GET" })
