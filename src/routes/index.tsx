@@ -299,17 +299,25 @@ function WhyApp() {
                 <span className="text-sm font-black text-white">{streak}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">day</span>
               </div>
-              <div className="glass flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden">
-                <img src={mascotImg} alt="" className="h-10 w-10 object-contain animate-float-slow" />
-              </div>
+              <Link
+                to={user ? "/profile" : "/auth"}
+                aria-label={user ? "Open profile" : "Sign in"}
+                className="glass flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden active:scale-95 transition"
+              >
+                {user ? (
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl text-lg" style={{ background: "var(--gradient-primary)" }}>
+                    <span className="font-black text-white">{(displayName ?? user.email ?? "?").slice(0, 1).toUpperCase()}</span>
+                  </span>
+                ) : (
+                  <img src={mascotImg} alt="" className="h-10 w-10 object-contain animate-float-slow" />
+                )}
+              </Link>
               <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <CoinIcon size={16} />
                 <motion.span key={points} initial={{ scale: 1.4, y: -4 }} animate={{ scale: 1, y: 0 }} className="text-sm font-black text-white">
                   {points}
                 </motion.span>
               </div>
-
-            </div>
           </div>
 
           {/* XP bar */}
