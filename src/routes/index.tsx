@@ -307,14 +307,17 @@ function WhyApp() {
   }, [fact?.id, fact?.category, user, bumpInterest]);
 
   const reveal = () => {
-    if (revealed) return;
-    setRevealed(true);
-    grantPoints(2);
-    // First reveal of the session counts as today's mystery + surprise
-    markMission("mystery");
-    markMission("surprise");
-    // Category task: if user isn't on "all", explored a specific category
-    if (category !== "all" && fact?.category) markMission("category");
+    if (revealed || revealing) return;
+    setRevealing(true);
+    // Short morph/pulse before showing the answer
+    window.setTimeout(() => {
+      setRevealed(true);
+      setRevealing(false);
+      grantPoints(2);
+      markMission("mystery");
+      markMission("surprise");
+      if (category !== "all" && fact?.category) markMission("category");
+    }, 480);
   };
 
   const askWhy = async () => {
