@@ -1,81 +1,88 @@
-# Retention upgrade
+# Curiosity Challenge — Quiz, Scoring & Leaderboards
 
-Turn one-off visits into a daily habit by giving each day a clear "mission" to finish, a named progression ladder that celebrates level-ups, and a weekly recap that makes the last 7 days feel like a personal report.
+Sign-in required. Questions reuse existing `facts`; AI generates 3 distractors per fact and caches them so quizzes are fast and fair. Scoring is server-authoritative.
 
-Notifications and native mobile push are **out of scope** — the app is a PWA in the browser and cannot silently push. The plan makes the app *ready* for reminders (deterministic daily mission slot, streak state, unfinished chains surfaced) so a push worker can be layered on later.
+## Database (one migration)
 
-## 1. Daily Curiosity Mission
+```text
+quiz_questions
+  fact_id (FK facts, unique) · category · difficulty (easy|medium|hard|expert)
+  correct_answer · distractors (text[3]) · explanation
+  generated_at
 
-A single card on the home screen that appears once per day for both guests and signed-in users. Signed-in users earn XP + streak credit; guests see a nudge.
+quiz_sessions
+  user_id · category (nullable → random) · difficulty
+  score · correct_count · question_count · accuracy · started_at · finished_at
 
-Four tasks, deterministic per calendar day so notifications later can preview them:
-- **Mystery** — the day's featured fact (seeded by date across the `facts` catalog)
-- **Surprise fact** — random fresh discovery
-- **Why chain** — start a "But… why?" trail of at least 3 steps
-- **Category** — explore one fact in a rotating category-of-the-day
+quiz_answers
+  session_id · fact_id · picked_index · correct · ms_taken · points_awarded
 
-Progress is tracked per task; finishing all four unlocks a bonus (+50 XP + confetti). Completion state persists per day (server for accounts, localStorage for guests).
+quiz_stats  (1 row per user)
+  total_score · best_score · questions_answered · correct_answered
+  best_streak · current_streak · favorite_category
 
-Data:
-- New table `daily_missions` — `user_id`, `mission_date`, `mystery_done`, `surprise_done`, `chain_done`, `category_done`, `category_key`, `completed_at`, `bonus_awarded`
-- Server fns: `getTodayMission`, `markMissionTask`
-- Guest fallback in `store.ts` keyed by date
+quiz_leaderboard_weekly  (materialized-ish view or table refreshed on write)
+  user_id · week_start · score · rank
+```
 
-UI:
-- `<DailyMission />` component with 4 checkbox-style task rows, progress ring, animated completion state, "Claim bonus" button when all four are done
-- Auto-marks tasks as user completes matching in-app actions
+- RLS: users read/write only their own sessions/answers/stats; leaderboards readable to `authenticated`; `quiz_questions` readable to `authenticated` (correct answer stripped in the API layer).
+- GRANTs for `authenticated` + `service_role` on every table.
 
-## 2. Named Curiosity Levels
+## Server functions (`src/lib/quiz.functions.ts`, protected)
 
-Replace bare "Level N" numbers with named tiers everywhere they appear (home header, profile, celebrations):
+- `startQuiz({ category?, difficulty, length=5 })` — picks N facts, ensures each has a cached `quiz_questions` row (generates via Lovable AI `openai/gpt-5.5` if missing: 3 plausible wrong answers + short explanation), shuffles answer order per-user per-question, returns sanitized payload (no correct index).
+- `submitAnswer({ sessionId, factId, pickedIndex, msTaken })` — server checks correctness against `quiz_questions.correct_answer`, computes points:
+  - base +10 correct
+  - +5 speed bonus if `msTaken < 5000`
+  - difficulty multiplier (easy ×1, medium ×1.25, hard ×1.5, expert ×2)
+  - updates streaks, `quiz_stats`, weekly leaderboard row
+  - rate limit: max 1 answer / 500ms / user (reject faster)
+- `finishQuiz({ sessionId })` — perfect-quiz bonus (×1.5 total), returns summary + XP delta, calls `checkAchievements`.
+- `getGlobalLeaderboard({ limit=50 })`, `getWeeklyLeaderboard({ limit=50 })`, `getMyRank()`.
 
-| XP | Level | Title |
-|---|---|---|
-| 0 | 1 | Curious Mind |
-| 100 | 2 | Question Seeker |
-| 300 | 5 | Question Hunter |
-| 800 | 10 | Knowledge Explorer |
-| 2000 | 25 | Curiosity Expert |
-| 5000 | 50 | Infinite Thinker |
+Anti-cheat: correct answer never leaves server until `submitAnswer` resolves; question + answer order shuffled server-side per session; server times each answer using `session.started_at + submitted_at`, ignores client `msTaken` for scoring beyond the speed bonus check clamp.
 
-- Add `src/lib/levels.ts` with `levelFor(xp)` returning `{ level, title, xpIntoLevel, xpToNext, nextTitle }`
-- New `<LevelUpCelebration />` overlay: full-screen burst with the new title, XP bar filling animation, "Continue exploring" CTA
-- Wire into `grantPoints` in `index.tsx` — detect level change and fire the overlay
+## UI
 
-## 3. Weekly Recap
+New authenticated routes:
 
-New route `/recap` (signed-in only) + a "Your week in curiosity" teaser card on `/profile`. Server fn `getWeeklySummary` aggregates the last 7 days from `discoveries`, `user_stats`, `category_interests`, `user_achievements`:
+- `/_authenticated/quiz` — category + difficulty picker, "Random mode", CTA to start. Guests hitting `/quiz` see upgrade toast + redirect.
+- `/_authenticated/quiz/$sessionId` — game screen:
+  - Progress bar (question k/N) · optional countdown timer (15s easy → 8s expert)
+  - Animated question card, 4 answer buttons, correct/incorrect flash (green/red pulse + haptic via `navigator.vibrate`)
+  - After answer: explanation + related fact link + "Follow the Why chain" link
+  - Final screen: score, accuracy, streak, perfect-bonus celebration (reuses `<Celebration/>` + `<LevelUpCelebration/>`), share button
+- `/_authenticated/leaderboard` — tabs: Global · Weekly · Friends (Friends shows "Coming soon" placeholder). Row: rank, avatar, username, XP, quiz score. Highlight current user.
 
-- Facts discovered
-- Categories explored (top 3 with % share)
-- XP earned this week
-- New achievements
-- Best streak day
-- One "curiosity insight" line ("You leaned into space this week")
+Home screen: add a "Curiosity Challenge" card linking to `/quiz` alongside Daily Mission.
+Profile: new "Quiz stats" section (level, total points, best streak, accuracy %, favorite category, quiz badges).
 
-Presented as animated scroll-through cards, each with a subtle motion transition. Includes a share-card button (see §4).
+## Achievements (added to `achievements` catalog via migration)
 
-## 4. Better share cards
+- `quiz_first` First Quiz Completed
+- `quiz_streak_7` 7 Correct in a Row
+- `quiz_100` 100 Questions Answered
+- `quiz_master_explorer` Answered in every category
+- `quiz_speed_genius` 10 correct answers under 3s
+- `quiz_perfect` Perfect quiz
+- `quiz_weekly_top3` Top 3 weekly
 
-Extend the existing chain-share flow so users can also share:
-- Individual facts (already has native share; upgrade the copy + preview text)
-- Achievements (new: `/s/achievement/<id>` OG route)
-- Weekly recap summary (new: `/s/week/<user>/<iso-week>` OG route with server-rendered head tags)
+Wired into `checkAchievements` (already invoked on quiz completion).
 
-Each share route sets rich `og:title`, `og:description`, `og:image` for good previews in messaging apps.
+## Design
 
-## 5. Discovery Timeline (light polish)
+Reuses existing tokens (`--gradient-primary`, `glass-strong`, `text-gradient`). No new colors. Framer Motion for card enter/exit + correct/incorrect pulse; confetti via existing `<Celebration/>`. Countdown ring reuses the mission `ProgressRing` pattern.
 
-Timeline already exists on `/profile`. Add grouping labels ("Today", "Yesterday", "Last week", "Earlier") and a tap-to-revisit action that reopens the fact in the home reader.
+## Out of scope (this pass)
 
-## Out of scope (call out for follow-up)
-- **Push notifications** — needs a service worker + FCM/APNs pipeline; the mission slot and streak API are the foundation
-- **Server-generated OG images** — the share routes will use static Open Graph HTML tags for now; dynamic image rendering can be added later with a satori/resvg worker
-- **Sheets/AI/adult mode** — untouched
+- Real friends system (leaderboard tab shows placeholder + waitlist button).
+- Sound effects (haptic only; can add later).
+- Question reporting UI.
 
-## Technical notes
-- One migration: `daily_missions` table with RLS scoped to `auth.uid()` + service_role grants; append `xp_earned_this_week` view or materialize on-read (chosen: on-read query, no view needed)
-- `levels.ts` is pure utility (no server), used in home + profile + celebrations
-- Level-up detection guards against double-fire by comparing previous → next level in `grantPoints`
-- Weekly recap query bounds by `date_trunc('week', now())` and stays under 4 queries total
-- Share cards reuse existing `head()` per route; no new tooling
+## Files
+
+- Migration: `supabase/migrations/*_quiz_system.sql`
+- Server: `src/lib/quiz.functions.ts`
+- Components: `src/components/QuizCard.tsx`, `QuizResult.tsx`, `LeaderboardRow.tsx`, `QuizStatsCard.tsx`
+- Routes: `src/routes/_authenticated/quiz.tsx`, `quiz.$sessionId.tsx`, `leaderboard.tsx`
+- Edits: `src/routes/index.tsx` (home card), `src/routes/profile.tsx` (stats section), `src/lib/account.functions.ts` (new achievement rules)
