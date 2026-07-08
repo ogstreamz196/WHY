@@ -646,14 +646,14 @@ function WhyApp() {
               <article className="glass-strong relative overflow-hidden rounded-4xl p-5 shadow-[var(--shadow-card)] sm:p-6">
                 {/* Speech-bubble tag */}
                 <div className="mb-4 flex items-center justify-between">
-                  <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-2">
+                  <div className="glass animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
                     <span aria-hidden className="text-lg">🤔</span>
                     <span className="text-base font-black uppercase tracking-widest text-white/85 sm:text-lg">
                       Do you know why…
                     </span>
                   </div>
                   <span
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-2xl text-lg shadow-lg"
+                    className="animate-bounce-in inline-flex h-9 w-9 items-center justify-center rounded-2xl text-lg shadow-lg"
                     style={{ background: catGradient }}
                     aria-label={fact?.category ?? "category"}
                   >
@@ -667,7 +667,7 @@ function WhyApp() {
                   <p className="text-center text-lg text-rose-300">{error}</p>
                 ) : fact ? (
                   <>
-                    <h1 className="font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
+                    <h1 className="animate-fade-up stagger-1 font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
                       {capitalize(fact.question)}
                     </h1>
 
@@ -693,9 +693,10 @@ function WhyApp() {
                           <button
                             type="button"
                             onClick={reveal}
-                            className="animate-pulse-glow group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98]"
+                            className="animate-pulse-glow hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98]"
                             style={{ background: "var(--gradient-primary)" }}
                           >
+                            <span aria-hidden className="shine-sweep" />
                             <span className="relative z-10 inline-flex items-center gap-2">
                               <Sparkles className="h-5 w-5" />
                               Reveal Answer
