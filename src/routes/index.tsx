@@ -877,6 +877,12 @@ function WhyApp() {
         message={signInPrompt?.message}
       />
       <WelcomeOverlay open={welcome} name={displayName} onClose={() => setWelcome(false)} />
+      <LevelUpCelebration
+        open={!!levelUp}
+        level={levelUp?.level ?? 1}
+        title={levelUp?.title ?? ""}
+        onClose={() => setLevelUp(null)}
+      />
     </main>
   );
 }
