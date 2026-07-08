@@ -25,6 +25,7 @@ import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
 import { Route as AuthenticatedQuizRouteImport } from './routes/_authenticated/quiz'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
+import { Route as AuthenticatedImportGuestRouteImport } from './routes/_authenticated/import-guest'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedQuizSessionIdRouteImport } from './routes/_authenticated/quiz.$sessionId'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
@@ -109,6 +110,12 @@ const AuthenticatedLeaderboardRoute =
     path: '/leaderboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedImportGuestRoute =
+  AuthenticatedImportGuestRouteImport.update({
+    id: '/import-guest',
+    path: '/import-guest',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/import-guest': typeof AuthenticatedImportGuestRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/recap': typeof AuthenticatedRecapRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/import-guest': typeof AuthenticatedImportGuestRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/recap': typeof AuthenticatedRecapRoute
@@ -180,6 +189,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/import-guest': typeof AuthenticatedImportGuestRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/quiz': typeof AuthenticatedQuizRouteWithChildren
   '/_authenticated/recap': typeof AuthenticatedRecapRoute
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/store'
     | '/history'
+    | '/import-guest'
     | '/leaderboard'
     | '/quiz'
     | '/recap'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/store'
     | '/history'
+    | '/import-guest'
     | '/leaderboard'
     | '/quiz'
     | '/recap'
@@ -243,6 +255,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/store'
     | '/_authenticated/history'
+    | '/_authenticated/import-guest'
     | '/_authenticated/leaderboard'
     | '/_authenticated/quiz'
     | '/_authenticated/recap'
@@ -383,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/import-guest': {
+      id: '/_authenticated/import-guest'
+      path: '/import-guest'
+      fullPath: '/import-guest'
+      preLoaderRoute: typeof AuthenticatedImportGuestRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/history': {
       id: '/_authenticated/history'
       path: '/history'
@@ -420,6 +440,7 @@ const AuthenticatedQuizRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedImportGuestRoute: typeof AuthenticatedImportGuestRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedQuizRoute: typeof AuthenticatedQuizRouteWithChildren
   AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
@@ -427,6 +448,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedImportGuestRoute: AuthenticatedImportGuestRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedQuizRoute: AuthenticatedQuizRouteWithChildren,
   AuthenticatedRecapRoute: AuthenticatedRecapRoute,

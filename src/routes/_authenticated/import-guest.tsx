@@ -182,7 +182,7 @@ function ImportGuestPage() {
                           <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1 text-xs text-white/70">
                             {guest.favorites.slice(0, 20).map((f) => (
                               <li key={f.id} className="line-clamp-1 rounded-lg bg-white/5 px-2 py-1">
-                                • {f.question ?? f.title ?? f.id}
+                                • {f.question ?? f.id}
                               </li>
                             ))}
                             {guest.favorites.length > 20 && (
