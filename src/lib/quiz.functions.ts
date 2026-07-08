@@ -6,6 +6,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { awardXp } from "./account.functions";
 
 // ---------------- Types ----------------
 
