@@ -889,14 +889,13 @@ function WhyApp() {
                     type="button"
                     onClick={() => setCategory(c.key)}
                     className="group flex shrink-0 flex-col items-center gap-1"
+                    style={{ width: "clamp(3rem, 12vw, 3.75rem)" }}
                   >
                     <span
-                      className={`flex items-center justify-center rounded-2xl shadow-lg transition ${
+                      className={`flex aspect-square w-full items-center justify-center rounded-2xl shadow-lg transition ${
                         active ? "scale-110 ring-2 ring-white/60" : "opacity-80 group-hover:opacity-100"
                       }`}
                       style={{
-                        width: "clamp(3rem, 12vw, 3.75rem)",
-                        height: "clamp(3rem, 12vw, 3.75rem)",
                         background: c.gradient,
                         boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined,
                       }}
@@ -908,7 +907,12 @@ function WhyApp() {
                         {c.emoji}
                       </span>
                     </span>
-                    <span className={`text-[10px] font-bold ${active ? "text-white" : "text-white/60"}`}>
+                    <span
+                      className={`w-full truncate text-center text-[10px] font-bold leading-tight ${
+                        active ? "text-white" : "text-white/60"
+                      }`}
+                      title={c.label}
+                    >
                       {c.label}
                     </span>
                   </button>
