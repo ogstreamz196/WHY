@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { awardAmountForUser } from "./vipStatus";
 
 const DAILY_POINTS = 25;
 const LOGIN_BONUS_BASE = 10;
