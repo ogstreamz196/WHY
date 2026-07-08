@@ -694,18 +694,48 @@ function WhyApp() {
                           >
                             <span>{emojiFor(fact.category)}</span>
                           </motion.div>
-                          <button
+                          <motion.button
                             type="button"
                             onClick={reveal}
-                            className="animate-pulse-glow hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98]"
+                            disabled={revealing}
+                            layout
+                            animate={
+                              revealing
+                                ? { scale: [1, 1.04, 0.9], borderRadius: "9999px" }
+                                : { scale: 1 }
+                            }
+                            transition={{ duration: 0.48, ease: [0.32, 0.72, 0, 1] }}
+                            className={`hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98] ${
+                              revealing ? "" : "animate-pulse-glow"
+                            }`}
                             style={{ background: "var(--gradient-primary)" }}
                           >
                             <span aria-hidden className="shine-sweep" />
+                            {/* Progress pulse fill during reveal */}
+                            {revealing && (
+                              <motion.span
+                                aria-hidden
+                                initial={{ x: "-100%" }}
+                                animate={{ x: "0%" }}
+                                transition={{ duration: 0.46, ease: "easeOut" }}
+                                className="absolute inset-0 bg-white/25"
+                              />
+                            )}
                             <span className="relative z-10 inline-flex items-center gap-2">
-                              <Sparkles className="h-5 w-5" />
-                              Reveal Answer
+                              <motion.span
+                                animate={
+                                  revealing
+                                    ? { rotate: 360, scale: 1.3 }
+                                    : { rotate: 0, scale: 1 }
+                                }
+                                transition={{ duration: 0.48, ease: "easeOut" }}
+                                className="inline-flex"
+                              >
+                                <Sparkles className="h-5 w-5" />
+                              </motion.span>
+                              {revealing ? "Revealing…" : "Reveal Answer"}
                             </span>
-                          </button>
+                          </motion.button>
                           <p className="mt-3 text-xs text-white/50">Tap to discover the magic ↑</p>
                         </motion.div>
                       ) : (
