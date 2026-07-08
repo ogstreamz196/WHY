@@ -857,12 +857,20 @@ function WhyApp() {
                     className="group flex shrink-0 flex-col items-center gap-1"
                   >
                     <span
-                      className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition ${
+                      className={`flex items-center justify-center rounded-2xl shadow-lg transition ${
                         active ? "scale-110 ring-2 ring-white/60" : "opacity-80 group-hover:opacity-100"
                       }`}
-                      style={{ background: c.gradient, boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined }}
+                      style={{
+                        width: "clamp(3rem, 12vw, 3.75rem)",
+                        height: "clamp(3rem, 12vw, 3.75rem)",
+                        background: c.gradient,
+                        boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined,
+                      }}
                     >
-                      <span className={c.key === "technology" ? "text-3xl leading-none" : "text-2xl leading-none"}>
+                      <span
+                        className="leading-none"
+                        style={{ fontSize: "clamp(1.25rem, 5vw, 1.6rem)" }}
+                      >
                         {c.emoji}
                       </span>
                     </span>
