@@ -1385,7 +1385,7 @@ function WelcomeOverlay({
               className="relative mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] transition hover:scale-[1.02] disabled:opacity-60"
               style={{ background: "var(--gradient-primary)" }}
             >
-              {saving ? "Saving…" : "Begin the journey"}
+              {saving ? "Saving…" : needsName ? "Begin the journey" : "Continue the journey"}
             </button>
           </motion.div>
         </motion.div>
