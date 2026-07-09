@@ -26,6 +26,7 @@ import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
 import { Route as AuthenticatedImportGuestRouteImport } from './routes/_authenticated/import-guest'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
+import { Route as AuthenticatedBossRouteImport } from './routes/_authenticated/boss'
 import { Route as AuthenticatedQuizIndexRouteImport } from './routes/_authenticated/quiz.index'
 import { Route as AuthenticatedQuizSessionIdRouteImport } from './routes/_authenticated/quiz.$sessionId'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -116,6 +117,11 @@ const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBossRoute = AuthenticatedBossRouteImport.update({
+  id: '/boss',
+  path: '/boss',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedQuizIndexRoute = AuthenticatedQuizIndexRouteImport.update({
   id: '/quiz/',
   path: '/quiz/',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/boss': typeof AuthenticatedBossRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/import-guest': typeof AuthenticatedImportGuestRoute
   '/recap': typeof AuthenticatedRecapRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/boss': typeof AuthenticatedBossRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/import-guest': typeof AuthenticatedImportGuestRoute
   '/recap': typeof AuthenticatedRecapRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
+  '/_authenticated/boss': typeof AuthenticatedBossRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/import-guest': typeof AuthenticatedImportGuestRoute
   '/_authenticated/recap': typeof AuthenticatedRecapRoute
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/boss'
     | '/history'
     | '/import-guest'
     | '/recap'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/boss'
     | '/history'
     | '/import-guest'
     | '/recap'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/store'
+    | '/_authenticated/boss'
     | '/_authenticated/history'
     | '/_authenticated/import-guest'
     | '/_authenticated/recap'
@@ -417,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/boss': {
+      id: '/_authenticated/boss'
+      path: '/boss'
+      fullPath: '/boss'
+      preLoaderRoute: typeof AuthenticatedBossRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/quiz/': {
       id: '/_authenticated/quiz/'
       path: '/quiz'
@@ -449,6 +468,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBossRoute: typeof AuthenticatedBossRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedImportGuestRoute: typeof AuthenticatedImportGuestRoute
   AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
@@ -457,6 +477,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBossRoute: AuthenticatedBossRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedImportGuestRoute: AuthenticatedImportGuestRoute,
   AuthenticatedRecapRoute: AuthenticatedRecapRoute,

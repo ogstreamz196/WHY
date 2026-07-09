@@ -47,6 +47,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       category_interests: {
         Row: {
           category: string
@@ -923,6 +944,7 @@ export type Database = {
         Returns: boolean
       }
       is_adult_verified: { Args: { _uid: string }; Returns: boolean }
+      is_boss: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
       quiz_difficulty: "easy" | "medium" | "hard" | "expert"
