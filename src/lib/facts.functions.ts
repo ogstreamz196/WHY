@@ -340,9 +340,39 @@ If the question is inappropriate, unsafe, or nonsensical for kids, instead retur
         fun_fact: candidate.fun_fact.trim(),
         category,
       })
-      .select(FACT_COLS)
+      .select("id, question, answer, category, fun_fact, code, code_seq, created_at")
       .single();
+    if (inserted) {
+      const { appendFactToSheet } = await import("@/lib/sheets.server");
+      void appendFactToSheet({
+        code: inserted.code as string,
+        code_seq: Number(inserted.code_seq ?? 0),
+        category: inserted.category as string | null,
+        question: inserted.question as string,
+        answer: inserted.answer as string,
+        fun_fact: (inserted.fun_fact as string | null) ?? null,
+        created_at: inserted.created_at as string | null,
+      });
+    }
     return (inserted as Fact) ?? null;
+  });
+
+// -------------------- Boss: decode a fact code --------------------
+
+export const decodeFactCode = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ code: z.string().min(4).max(64) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const admin = await getAdmin();
+    const { data: rows, error } = await admin.rpc("boss_decode_fact_code", { _code: data.code });
+    if (error) throw error;
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return (row as {
+      id: string; code: string; code_seq: number; category: string | null;
+      question: string; answer: string; fun_fact: string | null;
+      source: string; created_at: string;
+    } | null) ?? null;
   });
 
 // -------------------- "But… Why?" endless chain --------------------
