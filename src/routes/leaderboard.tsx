@@ -308,6 +308,9 @@ function ArenaPage() {
                   const barGradient = me
                     ? "var(--gradient-primary)"
                     : "linear-gradient(90deg,rgba(255,255,255,0.35),rgba(255,255,255,0.1))";
+                  const totalUsers = result.total_users || result.entries.length;
+                  const topPct = Math.max(1, Math.ceil((r.rank / totalUsers) * 100));
+                  const honor = honorFor(r.rank, topPct);
                   return (
                     <motion.li
                       key={r.user_id}
@@ -322,9 +325,12 @@ function ArenaPage() {
                           : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
                       }`}
                     >
-                      <span className="w-6 shrink-0 text-center text-sm font-black text-white/50 group-hover:text-white/80">
-                        {r.rank}
-                      </span>
+                      <div className="flex w-14 shrink-0 flex-col items-center gap-0.5">
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}>
+                          {honor.label}
+                        </span>
+                        <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
+                      </div>
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
                         {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
                       </div>
@@ -333,8 +339,8 @@ function ArenaPage() {
                           {r.display_name || r.username || "Explorer"}
                           {me && <span className="ml-1 text-[10px] font-black text-fuchsia-300">YOU</span>}
                         </p>
-                        <p className="text-[11px] text-white/50">
-                          {r.favorite_category ? `${emojiFor(r.favorite_category)} ${r.favorite_category}` : "Curious mind"}
+                        <p className="truncate text-[11px] text-white/60">
+                          {honor.cheer}
                         </p>
                         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
                           <motion.div
@@ -427,6 +433,40 @@ function ArenaPage() {
 }
 
 type PodiumEntry = LeaderboardResult["entries"][number];
+
+function honorFor(rank: number, topPct: number): { label: string; cheer: string; tone: string } {
+  if (rank <= 10) return {
+    label: "Top 10",
+    cheer: "Elite of the arena — legends rise here. Keep the throne in sight! 👑",
+    tone: "border-amber-300/40 bg-amber-400/15 text-amber-200",
+  };
+  if (topPct <= 5) return {
+    label: `Top ${topPct}%`,
+    cheer: "Absolute powerhouse — the podium is within striking distance! ⚡",
+    tone: "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-200",
+  };
+  if (topPct <= 10) return {
+    label: `Top ${topPct}%`,
+    cheer: "Top-tier curiosity — you're outpacing the pack. Push higher! 🚀",
+    tone: "border-sky-300/40 bg-sky-500/15 text-sky-200",
+  };
+  if (topPct <= 25) return {
+    label: `Top ${topPct}%`,
+    cheer: "Serious climber — the leaderboard is bending your way. 🔥",
+    tone: "border-emerald-300/40 bg-emerald-500/15 text-emerald-200",
+  };
+  if (topPct <= 50) return {
+    label: `Top ${topPct}%`,
+    cheer: "Ahead of the field — momentum is on your side. Keep going! 💪",
+    tone: "border-teal-300/40 bg-teal-500/15 text-teal-200",
+  };
+  return {
+    label: `Top ${topPct}%`,
+    cheer: "Every discovery lifts your rank — the climb starts now. ✨",
+    tone: "border-white/15 bg-white/5 text-white/70",
+  };
+}
+
 
 function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string; meId?: string }) {
   const byRank = (n: number) => entries.find((e) => e.rank === n);
