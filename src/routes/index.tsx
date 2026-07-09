@@ -830,6 +830,8 @@ function WhyApp() {
                                   <span aria-hidden className="text-xl">{rv.emoji}</span>
                                 </>;
                               })()}
+                            </span>
+
 
                           </motion.button>
                           <p className="mt-3 text-xs font-bold text-white/70">
