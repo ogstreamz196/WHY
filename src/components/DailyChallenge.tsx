@@ -260,22 +260,25 @@ export function DailyChallenge({ onCompleted }: Props) {
         <AnimatePresence>
           {awardedFlash && (
             <motion.div
+              role="status"
+              aria-live="polite"
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               className="mt-3 flex items-center justify-center gap-3 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 px-3 py-2 text-xs font-black text-yellow-100"
             >
               <span className="inline-flex items-center gap-1">
-                <CoinIcon size={16} />
+                <CoinIcon size={16} aria-hidden />
                 +{awardedFlash.delta} coins
               </span>
               <span className="inline-flex items-center gap-1">
-                <Flame className="h-4 w-4 text-orange-300" />
+                <Flame className="h-4 w-4 text-orange-300" aria-hidden />
                 {awardedFlash.streak}-day streak!
               </span>
             </motion.div>
           )}
         </AnimatePresence>
+
       </article>
       <StreakMilestoneCelebration
         milestone={milestoneBurst}
