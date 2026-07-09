@@ -310,17 +310,23 @@ function WhyApp() {
       try {
         tapCount.current += 1;
         const cat = category === "all" ? undefined : category;
-        const shouldGenerate =
-          opts?.forceGenerate ||
-          tapCount.current >= nextGenAt.current ||
-          Math.random() < 0.05;
+        const seen = getSeenIds();
 
         let next: Fact | null = null;
-        if (shouldGenerate) {
-          try { next = await generateNew({ data: { category: cat } }); } catch (e) { console.warn(e); }
+
+        // Always prefer an unseen fact from the DB. Only when the pool is
+        // exhausted (or the user explicitly asked) do we generate a new one.
+        if (!opts?.forceGenerate) {
+          next = await getRandom({ data: { excludeId: currentId, category: cat, seenIds: seen });
+        }
+        if (!next || opts?.forceGenerate) {
+          try {
+            next = await generateNew({
+              data: { category: cat, seenIds: seen, force: opts?.forceGenerate },
+            });
+          } catch (e) { console.warn(e); }
           if (next) { tapCount.current = 0; nextGenAt.current = 4 + Math.floor(Math.random() * 7); }
         }
-        if (!next) next = await getRandom({ data: { excludeId: currentId, category: cat, seenIds: getSeenIds() } });
         if (!next) {
           const cached = getCachedRandomFact(currentId);
           if (cached) next = cached;
