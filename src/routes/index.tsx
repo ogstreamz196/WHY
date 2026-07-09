@@ -108,6 +108,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { useThrottledFlag } from "@/lib/useThrottledFlag";
 import { levelFor } from "@/lib/levels";
 import { DailyMission } from "@/components/DailyMission";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { markMissionTask, type MissionTask } from "@/lib/missions.functions";
 import {
