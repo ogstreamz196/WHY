@@ -14,7 +14,7 @@ import {
   hasCompletedDailyChallenge,
 } from "@/lib/store";
 import { emojiFor, gradientFor } from "@/lib/categories";
-const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 type Props = {
   onCompleted?: (result: { streak: number; points: number; pointsDelta: number }) => void;
