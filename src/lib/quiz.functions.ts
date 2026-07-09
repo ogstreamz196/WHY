@@ -9,6 +9,17 @@ import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { awardXp } from "./account.functions";
 import { awardAmountForUser } from "./vipStatus";
 
+let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
+async function loadAdmin() {
+  const m = await import("@/integrations/supabase/client.server");
+  return m.supabaseAdmin;
+}
+async function admin() {
+  if (!_admin) _admin = await loadAdmin();
+  return _admin;
+}
+
+
 // ---------------- Types ----------------
 
 export type Difficulty = "easy" | "medium" | "hard" | "expert";
@@ -499,7 +510,7 @@ export const submitAnswer = createServerFn({ method: "POST" })
     ).data?.category;
     if (catForFact) cats.add(catForFact);
 
-    await context.supabase.from("quiz_stats").upsert(
+    await (await admin()).from("quiz_stats").upsert(
       {
         user_id: context.userId,
         total_score: (prevStats?.total_score ?? 0) + points,
@@ -574,7 +585,7 @@ export const finishQuiz = createServerFn({ method: "POST" })
       .maybeSingle();
     const nextBest = Math.max(prevStats?.best_score ?? 0, finalScore);
     if (bonus > 0 || nextBest !== (prevStats?.best_score ?? 0)) {
-      await context.supabase.from("quiz_stats").upsert(
+      await (await admin()).from("quiz_stats").upsert(
         {
           user_id: context.userId,
           total_score: (prevStats?.total_score ?? 0) + bonus,

@@ -5,6 +5,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { awardAmountForUser } from "./vipStatus";
 
+let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
+async function loadAdmin() {
+  const m = await import("@/integrations/supabase/client.server");
+  return m.supabaseAdmin;
+}
+async function admin() {
+  if (!_admin) _admin = await loadAdmin();
+  return _admin;
+}
+
+
 const DAILY_POINTS = 25;
 const LOGIN_BONUS_BASE = 10;
 const LOGIN_BONUS_STREAK_STEP = 2;
@@ -95,7 +106,7 @@ export type XpSource = "quiz" | "discovery" | "daily" | "streak" | "achievement"
 /** Record an XP award in the append-only ledger. Safe to call after `total_points` is bumped. */
 export async function awardXp(ctx: AuthCtx, source: XpSource, points: number, category?: string | null): Promise<void> {
   if (!points || points <= 0) return;
-  await ctx.supabase.from("xp_events").insert({
+  await (await admin()).from("xp_events").insert({
     user_id: ctx.userId,
     source,
     points,
@@ -192,7 +203,7 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       .insert({ user_id: context.userId, fact_id: data.fact_id });
 
     const [{ data: existing }, { data: fact }] = await Promise.all([
-      context.supabase.from("user_stats").select("*").eq("user_id", context.userId).maybeSingle(),
+      (await admin()).from("user_stats").select("*").eq("user_id", context.userId).maybeSingle(),
       context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle(),
     ]);
 

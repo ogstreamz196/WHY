@@ -5,6 +5,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAchievementCheckForUser, awardXp } from "./account.functions";
 import { awardAmountForUser } from "./vipStatus";
 
+let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
+async function loadAdmin() {
+  const m = await import("@/integrations/supabase/client.server");
+  return m.supabaseAdmin;
+}
+async function admin() {
+  if (!_admin) _admin = await loadAdmin();
+  return _admin;
+}
+
+
 const BONUS_POINTS_BASE = 50;
 
 function today(): string {
@@ -148,7 +159,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
       .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
     const awardedPoints = await awardAmountForUser(context, BONUS_POINTS_BASE);
     const next = (stats?.total_points ?? 0) + awardedPoints;
-    await context.supabase.from("user_stats").upsert(
+    await (await admin()).from("user_stats").upsert(
       { user_id: context.userId, total_points: next, last_active_day: t },
       { onConflict: "user_id" },
     );
