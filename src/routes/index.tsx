@@ -721,21 +721,22 @@ function WhyApp() {
                   ))}
                 </div>
                 {/* Speech-bubble tag */}
-                <div className="relative mb-4 flex items-center justify-between">
-                  <div className="candy-chip animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
-                    <span aria-hidden className="text-lg">🍭</span>
-                    <span className="text-base font-black uppercase tracking-widest sm:text-lg">
+                <div className="relative mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                  <div className="candy-chip animate-fade-up inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 sm:px-4">
+                    <span aria-hidden className="shrink-0 text-lg">🍭</span>
+                    <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
                       Do you know why…
                     </span>
                   </div>
                   <span
-                    className="animate-bounce-in inline-flex h-11 w-11 items-center justify-center rounded-2xl text-xl shadow-lg"
+                    className="animate-bounce-in inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11"
                     style={{ background: catGradient }}
                     aria-label={fact?.category ?? "category"}
                   >
                     {emojiFor(fact?.category)}
                   </span>
                 </div>
+
 
 
                 <AnimatePresence mode="wait" initial={false}>
