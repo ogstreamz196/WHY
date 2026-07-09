@@ -14,6 +14,7 @@ import {
   type QuizStartResult,
 } from "@/lib/quiz.functions";
 import { emojiFor } from "@/lib/categories";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/_authenticated/quiz/$sessionId")({
   component: QuizPlayPage,
