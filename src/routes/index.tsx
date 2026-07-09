@@ -823,9 +823,14 @@ function WhyApp() {
                               >
                                 <Sparkles className="h-5 w-5" />
                               </motion.span>
-                              {revealing ? "Unwrapping…" : "Reveal the Sweet Answer"}
-                              <span aria-hidden className="text-xl">🍬</span>
-                            </span>
+                              {(() => {
+                                const rv = getRevealLabel(fact.question, fact.category);
+                                return <>
+                                  {revealing ? "Unwrapping…" : rv.label}
+                                  <span aria-hidden className="text-xl">{rv.emoji}</span>
+                                </>;
+                              })()}
+
                           </motion.button>
                           <p className="mt-3 text-xs font-bold text-white/70">
                             <span aria-hidden>🎉</span> Tap the candy button — go on! <span aria-hidden>🎉</span>
