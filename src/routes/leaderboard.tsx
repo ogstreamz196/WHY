@@ -434,6 +434,40 @@ function ArenaPage() {
 
 type PodiumEntry = LeaderboardResult["entries"][number];
 
+function honorFor(rank: number, topPct: number): { label: string; cheer: string; tone: string } {
+  if (rank <= 10) return {
+    label: "Top 10",
+    cheer: "Elite of the arena — legends rise here. Keep the throne in sight! 👑",
+    tone: "border-amber-300/40 bg-amber-400/15 text-amber-200",
+  };
+  if (topPct <= 5) return {
+    label: `Top ${topPct}%`,
+    cheer: "Absolute powerhouse — the podium is within striking distance! ⚡",
+    tone: "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-200",
+  };
+  if (topPct <= 10) return {
+    label: `Top ${topPct}%`,
+    cheer: "Top-tier curiosity — you're outpacing the pack. Push higher! 🚀",
+    tone: "border-sky-300/40 bg-sky-500/15 text-sky-200",
+  };
+  if (topPct <= 25) return {
+    label: `Top ${topPct}%`,
+    cheer: "Serious climber — the leaderboard is bending your way. 🔥",
+    tone: "border-emerald-300/40 bg-emerald-500/15 text-emerald-200",
+  };
+  if (topPct <= 50) return {
+    label: `Top ${topPct}%`,
+    cheer: "Ahead of the field — momentum is on your side. Keep going! 💪",
+    tone: "border-teal-300/40 bg-teal-500/15 text-teal-200",
+  };
+  return {
+    label: `Top ${topPct}%`,
+    cheer: "Every discovery lifts your rank — the climb starts now. ✨",
+    tone: "border-white/15 bg-white/5 text-white/70",
+  };
+}
+
+
 function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string; meId?: string }) {
   const byRank = (n: number) => entries.find((e) => e.rank === n);
   const first = byRank(1);
