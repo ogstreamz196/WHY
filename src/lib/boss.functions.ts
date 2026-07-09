@@ -222,6 +222,11 @@ export const bossUpdatePrivileges = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertBoss(context);
+    const { data: prev } = await context.supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "privileges")
+      .maybeSingle();
     const { error } = await context.supabase
       .from("app_config")
       .upsert(
@@ -230,7 +235,10 @@ export const bossUpdatePrivileges = createServerFn({ method: "POST" })
       );
     if (error) throw new Error(error.message);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await writeAudit(supabaseAdmin, context.userId, "update_privileges", null, { privileges: data });
+    await writeAudit(supabaseAdmin, context.userId, "update_privileges", null, {
+      previous: prev?.value ?? null,
+      next: data,
+    });
     return { ok: true };
   });
 
