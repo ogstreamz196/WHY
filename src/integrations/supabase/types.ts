@@ -994,6 +994,48 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles_public: {
+        Row: {
+          age_band: string | null
+          avatar_id: string | null
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          favorite_category: string | null
+          hide_from_public: boolean | null
+          id: string | null
+          leaderboard_opt_out: boolean | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          age_band?: string | null
+          avatar_id?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          favorite_category?: string | null
+          hide_from_public?: boolean | null
+          id?: string | null
+          leaderboard_opt_out?: boolean | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          age_band?: string | null
+          avatar_id?: string | null
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          favorite_category?: string | null
+          hide_from_public?: boolean | null
+          id?: string | null
+          leaderboard_opt_out?: boolean | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       boss_decode_fact_code: {

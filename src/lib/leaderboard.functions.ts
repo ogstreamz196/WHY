@@ -174,7 +174,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
       const ids = stats.map((s) => s.user_id);
       const { data: profs } = ids.length
         ? await context.supabase
-            .from("profiles")
+            .from("profiles_public")
             .select("id, username, display_name, avatar_id, age_band, favorite_category, leaderboard_opt_out")
             .in("id", ids)
         : { data: [] as Array<{ id: string; username: string | null; display_name: string | null; avatar_id: string | null; age_band: string | null; favorite_category: string | null; leaderboard_opt_out: boolean | null }> };
