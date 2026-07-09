@@ -232,22 +232,7 @@ function ProfilePage() {
 
 
 
-        {/* Achievements */}
-        <section className="mt-6">
-          <header className="mb-3 flex items-center justify-between">
-            <h2 className="inline-flex items-center gap-2 font-display text-xl font-black text-white">
-              <Trophy className="h-5 w-5 text-amber-300" /> Achievements
-            </h2>
-            <span className="text-xs font-bold text-white/50">
-              {unlockedCount}/{achievements.data?.length ?? 0}
-            </span>
-          </header>
-          <div className="grid grid-cols-3 gap-3">
-            {(achievements.data ?? []).map((a) => (
-              <AchievementTile key={a.id} a={a} />
-            ))}
-          </div>
-        </section>
+
 
         {/* Category interests */}
         {interests.data && interests.data.length > 0 && (
