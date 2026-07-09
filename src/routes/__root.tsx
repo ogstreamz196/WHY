@@ -162,6 +162,7 @@ function RootComponent() {
       </div>
       <GlobalStreakMilestoneWatcher />
       <TopSignInBar />
+      <ThemeDebugger />
       <Toaster theme="dark" position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
