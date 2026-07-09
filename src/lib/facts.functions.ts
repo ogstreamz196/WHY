@@ -284,6 +284,7 @@ ${recentQs.slice(0, 30).map((q) => `- ${q}`).join("\n") || "(none)"}`;
 // -------------------- Search or generate --------------------
 
 export const searchOrGenerateFact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z.object({ query: z.string().min(2).max(200) }).parse(input),
   )
