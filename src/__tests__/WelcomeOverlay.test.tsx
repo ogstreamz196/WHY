@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
-import { WelcomeOverlay } from "./index";
+import { WelcomeOverlay } from "../routes/index";
 
 afterEach(cleanup);
 
