@@ -234,6 +234,21 @@ function ProfilePage() {
             </span>
             <ArrowRight className="h-4 w-4 text-white/60" />
           </Link>
+
+          <nav aria-label="Jump to profile section" className="mt-3 flex flex-wrap gap-2">
+            <a
+              href="#achievements"
+              className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-1.5 text-xs font-black text-amber-100 transition hover:bg-amber-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+            >
+              <Trophy className="h-3.5 w-3.5" aria-hidden="true" /> Achievements
+            </a>
+            <a
+              href="#recent-discoveries"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-white/85 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            >
+              <Clock className="h-3.5 w-3.5" aria-hidden="true" /> Recent discoveries
+            </a>
+          </nav>
         </motion.div>
 
         {/* Stats grid */}
