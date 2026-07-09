@@ -438,7 +438,7 @@ function WhyApp() {
   const handleShare = async () => {
     if (!fact) return;
     const url = typeof window !== "undefined" ? window.location.origin : "https://why.app";
-    const text = `🤔 WHY?\n\nDo you know why ${fact.question}\n\nTap to discover.\n${url}`;
+    const text = `🤔 WHY?\n\n${asWhyQuestion(fact.question)}\n\nTap to discover.\n${url}`;
     try {
       if (navigator.share) await navigator.share({ title: "Why?", text, url });
       else { await navigator.clipboard.writeText(text); alert("Copied to clipboard!"); }
@@ -725,8 +725,9 @@ function WhyApp() {
                   <div className="candy-chip animate-fade-up inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 sm:px-4">
                     <span aria-hidden className="shrink-0 text-lg">🍭</span>
                     <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
-                      Do you know why…
+                      Curious?
                     </span>
+
                   </div>
                   <span
                     className="animate-bounce-in inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11"
@@ -770,8 +771,9 @@ function WhyApp() {
                     transition={{ duration: 0.25 }}
                   >
                     <h1 className="animate-fade-up stagger-1 font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
-                      {capitalize(fact.question)}
+                      {asWhyQuestion(fact.question)}
                     </h1>
+
 
                     <AnimatePresence initial={false} mode="wait">
                       {!revealed ? (
@@ -931,7 +933,7 @@ function WhyApp() {
                                   aria-hidden
                                   className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
                                 />
-                                <ChainStep index={0} question={capitalize(fact.question)} solved />
+                                <ChainStep index={0} question={asWhyQuestion(fact.question)} solved />
                                 {chain.map((layer, i) => (
                                   <ChainStep
                                     key={i}
@@ -1228,6 +1230,20 @@ function capitalize(s: string) {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+// Ensure the fact question reads as a full "Why…?" question.
+// Prepends "Why" (if missing) and appends a "?" (if missing).
+function asWhyQuestion(raw: string) {
+  if (!raw) return raw;
+  let q = raw.trim().replace(/^(do you know\s+)/i, "");
+  const startsWithWhy = /^(why|how come|how|what makes|what causes)\b/i.test(q);
+  if (!startsWithWhy) q = `Why ${q.charAt(0).toLowerCase() + q.slice(1)}`;
+  else q = q.charAt(0).toUpperCase() + q.slice(1);
+  if (!/[?!.]$/.test(q)) q += "?";
+  else if (/[.!]$/.test(q)) q = q.slice(0, -1) + "?";
+  return q;
+}
+
 
 function GuestProgressCard({
   discoveries,
