@@ -236,15 +236,16 @@ export const startQuiz = createServerFn({ method: "POST" })
       const ai = apiKey ? createLovableAiGatewayProvider(apiKey) : null;
       const results = await Promise.all(
         missing.map(async (f) => {
-          const gen = await generateDistractors(ai, f);
-          return { fact: f, ...gen };
+          const factDifficulty = inferDifficulty((f.answer ?? "").length);
+          const gen = await generateDistractors(ai, f, factDifficulty);
+          return { fact: f, factDifficulty, ...gen };
         }),
       );
-      const rowsToInsert = results.map(({ fact, distractors, explanation }) => ({
+      const rowsToInsert = results.map(({ fact, factDifficulty, answer, distractors, explanation }) => ({
         fact_id: fact.id,
         category: fact.category,
-        difficulty: inferDifficulty((fact.answer ?? "").length),
-        correct_answer: fact.answer,
+        difficulty: factDifficulty,
+        correct_answer: answer,
         distractors,
         explanation,
       }));
