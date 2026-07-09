@@ -19,14 +19,20 @@ export function BottomNav() {
   const [isBoss, setIsBoss] = useState(false);
   useEffect(() => {
     let alive = true;
+    const apply = (boss: boolean) => {
+      if (!alive) return;
+      setIsBoss(boss);
+      document.documentElement.classList.toggle("theme-boss", boss);
+    };
     supabase.auth.getUser().then(({ data }) => {
-      if (alive) setIsBoss(data.user?.email?.toLowerCase() === BOSS_EMAIL);
+      apply(data.user?.email?.toLowerCase() === BOSS_EMAIL);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setIsBoss(session?.user?.email?.toLowerCase() === BOSS_EMAIL);
+      apply(session?.user?.email?.toLowerCase() === BOSS_EMAIL);
     });
     return () => { alive = false; sub.subscription.unsubscribe(); };
   }, []);
+
 
   return (
     <nav
