@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.is_adult_verified(uuid) TO authenticated, anon;
