@@ -183,13 +183,18 @@
   background: color-mix(in oklab, var(--nebula) 65%, transparent);
   backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid oklch(1 0 0 / 0.08);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--glow) 8%, transparent),
+              0 8px 28px -18px color-mix(in oklab, var(--glow) 35%, transparent);
 }
 
 @utility glass-strong {
   background: color-mix(in oklab, var(--nebula) 85%, transparent);
   backdrop-filter: blur(24px) saturate(160%);
   border: 1px solid oklch(1 0 0 / 0.12);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--glow) 10%, transparent),
+              0 10px 34px -18px color-mix(in oklab, var(--glow) 40%, transparent);
 }
+
 
 @utility text-gradient {
   background: var(--gradient-primary);
