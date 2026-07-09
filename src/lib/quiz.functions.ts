@@ -288,14 +288,26 @@ export const startQuiz = createServerFn({ method: "POST" })
           return { fact: f, factDifficulty, ...gen };
         }),
       );
-      const rowsToInsert = results.map(({ fact, factDifficulty, answer, distractors, explanation }) => ({
-        fact_id: fact.id,
-        category: fact.category,
-        difficulty: factDifficulty,
-        correct_answer: answer,
-        distractors,
-        explanation,
-      }));
+      const rowsToInsert = results
+        .map(({ fact, factDifficulty, answer, distractors, explanation }) => {
+          const clean = sanitizeQuizRow({
+            correct_answer: answer,
+            distractors,
+            explanation,
+            difficulty: factDifficulty,
+            fallbackAnswer: fact.answer ?? "",
+          });
+          if (!clean) return null;
+          return {
+            fact_id: fact.id,
+            category: fact.category,
+            difficulty: factDifficulty,
+            correct_answer: clean.correct_answer,
+            distractors: clean.distractors,
+            explanation: clean.explanation,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
       if (rowsToInsert.length > 0) {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         await supabaseAdmin.from("quiz_questions").upsert(rowsToInsert, { onConflict: "fact_id" });
@@ -307,21 +319,35 @@ export const startQuiz = createServerFn({ method: "POST" })
 
     // Build public questions (shuffle choices, remember order per-question).
     const answerOrder: number[] = []; // 0..3 index of correct answer per question, in question order
-    const questions: QuizQuestionPublic[] = picked.map((f) => {
-      const q = cacheMap.get(f.id)!;
-      const correct = q.correct_answer as string;
-      const distractors = (q.distractors as string[]).slice(0, 3);
-      const choices = shuffle([correct, ...distractors]);
-      answerOrder.push(choices.indexOf(correct));
-      return {
+    const questions: QuizQuestionPublic[] = [];
+    for (const f of picked) {
+      const q = cacheMap.get(f.id);
+      if (!q) continue;
+      const qDifficulty = (q.difficulty as Difficulty) ?? difficulty;
+      // Re-validate cached rows so historical bad data can't break grading.
+      const clean = sanitizeQuizRow({
+        correct_answer: q.correct_answer,
+        distractors: q.distractors,
+        explanation: (q as { explanation?: unknown }).explanation,
+        difficulty: qDifficulty,
+        fallbackAnswer: f.answer ?? "",
+      });
+      if (!clean) continue;
+      const choices = shuffle([clean.correct_answer, ...clean.distractors]);
+      answerOrder.push(choices.indexOf(clean.correct_answer));
+      questions.push({
         fact_id: f.id,
         category: f.category,
-        difficulty: (q.difficulty as Difficulty) ?? difficulty,
+        difficulty: qDifficulty,
         question: f.question,
         choices,
         fun_fact: f.fun_fact,
-      };
-    });
+      });
+    }
+    if (questions.length === 0) {
+      throw new Error("No valid quiz questions could be prepared. Please try again.");
+    }
+
 
     const { data: session, error: sErr } = await context.supabase
       .from("quiz_sessions")
