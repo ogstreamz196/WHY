@@ -577,4 +577,112 @@ nav[aria-label="Primary"] button:focus-visible {
   }
 }
 
+/* ============================================================
+   Global polish pass — "fun for all ages"
+   Bigger tap targets, playful focus, kinder motion, better rhythm
+   ============================================================ */
+
+/* Fluid base type — scales gently across mobile → desktop */
+html { font-size: clamp(15px, 0.9rem + 0.25vw, 17px); -webkit-text-size-adjust: 100%; }
+body { text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+
+/* Section rhythm */
+main { padding-inline: clamp(1rem, 3vw, 2rem); }
+main > * + * { margin-top: clamp(1.25rem, 2.5vw, 2rem); }
+
+/* Headings feel confident but never crushed on mobile */
+h1 { font-size: clamp(1.75rem, 1.2rem + 2.5vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.35rem, 1rem + 1.5vw, 2rem); line-height: 1.1;  letter-spacing: -0.015em; }
+h3 { font-size: clamp(1.1rem,  0.95rem + 0.8vw, 1.5rem); line-height: 1.15; }
+
+/* Friendly, visible focus for everyone — keyboard + switch users */
+:where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--primary) 85%, white);
+  outline-offset: 3px;
+  border-radius: 10px;
+  transition: outline-offset 0.15s ease;
+}
+
+/* Kid-friendly tap targets */
+@media (pointer: coarse) {
+  :where(button, a, [role="button"], input[type="checkbox"], input[type="radio"]) {
+    min-height: 44px;
+  }
+  :where(button, [role="button"]) { min-width: 44px; }
+}
+
+/* Playful press feedback on any button-like element */
+:where(button, [role="button"], a.btn, .btn) {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.2s ease;
+  will-change: transform;
+}
+:where(button, [role="button"], a.btn, .btn):hover:not(:disabled) {
+  transform: translateY(-1px) scale(1.02);
+  filter: saturate(1.08);
+}
+:where(button, [role="button"], a.btn, .btn):active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Cards lift a little on hover — invites interaction */
+:where([data-card], .card-lift) {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+:where([data-card], .card-lift):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -18px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+/* Playful entrance for freshly-mounted content */
+@keyframes pop-in {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.animate-pop-in { animation: pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Gentle wobble for emoji / icon accents */
+@keyframes wiggle {
+  0%,100% { transform: rotate(0deg); }
+  25%     { transform: rotate(-6deg); }
+  75%     { transform: rotate(6deg); }
+}
+.hover-wiggle:hover { animation: wiggle 0.5s ease-in-out; }
+
+/* Loading skeleton shimmer — friendlier than a spinner */
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--muted) 60%, transparent) 0%,
+    color-mix(in oklab, var(--primary) 25%, transparent) 50%,
+    color-mix(in oklab, var(--muted) 60%, transparent) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 12px;
+}
+
+/* Selection color feels branded */
+::selection { background: color-mix(in oklab, var(--primary) 55%, transparent); color: var(--foreground); }
+
+/* Scrollbars — subtle but visible on all backgrounds */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--primary) 60%, transparent) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--primary) 55%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--primary); background-clip: padding-box; }
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+
 
