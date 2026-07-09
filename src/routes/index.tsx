@@ -923,6 +923,8 @@ function WhyApp() {
                   <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
                 )}
               </article>
+              </div>
+
             </motion.div>
           </AnimatePresence>
 
