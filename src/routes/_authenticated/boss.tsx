@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Crown, Search, Save, Shield, Coins, UserCog } from "lucide-react";
+import { ArrowLeft, Crown, Search, Save, Shield, Coins, UserCog, ScrollText } from "lucide-react";
 import {
   bossAmIBoss,
   bossListUsers,
@@ -11,6 +11,7 @@ import {
   bossSetVip,
   bossGetPrivileges,
   bossUpdatePrivileges,
+  bossListAudit,
   type Privileges,
 } from "@/lib/boss.functions";
 
