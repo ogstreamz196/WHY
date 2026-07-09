@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Heart, Trophy, Store, User, Sparkles } from "lucide-react";
+import { Home, Trophy, Store, User, Sparkles, Medal } from "lucide-react";
 
 const items = [
-  { to: "/",          label: "Home",     Icon: Home },
-  { to: "/chains",    label: "Chains",   Icon: Sparkles },
-  { to: "/favorites", label: "Faves",    Icon: Heart },
-  { to: "/store",     label: "Store",    Icon: Store },
-  { to: "/badges",    label: "Badges",   Icon: Trophy },
-  { to: "/profile",   label: "You",      Icon: User },
+  { to: "/",            label: "Home",   Icon: Home },
+  { to: "/chains",      label: "Chains", Icon: Sparkles },
+  { to: "/leaderboard", label: "Ranks",  Icon: Medal },
+  { to: "/store",       label: "Store",  Icon: Store },
+  { to: "/badges",      label: "Badges", Icon: Trophy },
+  { to: "/profile",     label: "You",    Icon: User },
 ] as const;
 
 
