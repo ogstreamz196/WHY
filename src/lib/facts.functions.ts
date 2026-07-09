@@ -23,9 +23,10 @@ export type Fact = {
   answer: string;
   category: string | null;
   fun_fact: string | null;
+  code: string;
 };
 
-const FACT_COLS = "id, question, answer, category, fun_fact";
+const FACT_COLS = "id, question, answer, category, fun_fact, code";
 
 export const CATEGORY_KEYS = [
   "animals",
