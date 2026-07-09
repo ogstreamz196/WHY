@@ -108,9 +108,20 @@ function ProfilePage() {
     });
   };
 
-  const [collapsed, setCollapsed] = useState<{ achievements: boolean; discoveries: boolean }>({
+  type CollapseKey =
+    | "achievements"
+    | "discoveries"
+    | "interests"
+    | "chains"
+    | "quiz"
+    | "rankings";
+  const [collapsed, setCollapsed] = useState<Record<CollapseKey, boolean>>({
     achievements: false,
     discoveries: false,
+    interests: false,
+    chains: false,
+    quiz: false,
+    rankings: false,
   });
 
   useEffect(() => {
@@ -119,15 +130,17 @@ function ProfilePage() {
       const raw = window.localStorage.getItem("profile:collapsed");
       if (raw) {
         const parsed = JSON.parse(raw);
-        setCollapsed({
-          achievements: !!parsed.achievements,
-          discoveries: !!parsed.discoveries,
-        });
+        setCollapsed((prev) => ({
+          ...prev,
+          ...Object.fromEntries(
+            Object.keys(prev).map((k) => [k, !!parsed[k]]),
+          ),
+        }));
       }
     } catch {}
   }, []);
 
-  const toggleCollapsed = (key: "achievements" | "discoveries") => {
+  const toggleCollapsed = (key: CollapseKey) => {
     setCollapsed((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       if (typeof window !== "undefined") {
@@ -299,9 +312,22 @@ function ProfilePage() {
 
         <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
 
-        <QuizStatsSection />
+        <CollapsibleWrap
+          collapsed={collapsed.quiz}
+          onToggle={() => toggleCollapsed("quiz")}
+          label="Quiz stats"
+        >
+          <QuizStatsSection />
+        </CollapsibleWrap>
 
-        <MyRankingsSection />
+        <CollapsibleWrap
+          collapsed={collapsed.rankings}
+          onToggle={() => toggleCollapsed("rankings")}
+          label="Your Curiosity Rankings"
+        >
+          <MyRankingsSection />
+        </CollapsibleWrap>
+
 
 
 
@@ -311,28 +337,45 @@ function ProfilePage() {
         {/* Category interests */}
         {interests.data && interests.data.length > 0 && (
           <section className="mt-6">
-            <h2 className="mb-3 font-display text-lg font-black text-white">Your curiosity map</h2>
-            <div className="flex flex-wrap gap-2">
-              {interests.data.slice(0, 8).map((it) => (
-                <div key={it.category} className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85">
-                  <span>{emojiFor(it.category)}</span>
-                  <span className="capitalize">{it.category}</span>
-                  <span className="text-white/50">·{it.weight}</span>
-                </div>
-              ))}
-            </div>
+            <header className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-lg font-black text-white">Your curiosity map</h2>
+              <CollapseChevron
+                collapsed={collapsed.interests}
+                onToggle={() => toggleCollapsed("interests")}
+                label="curiosity map"
+              />
+            </header>
+            {!collapsed.interests && (
+              <div className="flex flex-wrap gap-2">
+                {interests.data.slice(0, 8).map((it) => (
+                  <div key={it.category} className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85">
+                    <span>{emojiFor(it.category)}</span>
+                    <span className="capitalize">{it.category}</span>
+                    <span className="text-white/50">·{it.weight}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
         {/* Saved chains */}
         <section className="mt-6">
-          <header className="mb-3 flex items-center justify-between">
+          <header className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
-            <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
-              View all →
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
+                View all →
+              </Link>
+              <CollapseChevron
+                collapsed={collapsed.chains}
+                onToggle={() => toggleCollapsed("chains")}
+                label="Saved chains"
+              />
+            </div>
           </header>
-          {(() => {
+          {!collapsed.chains && (() => {
+
             const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
             if (items.length === 0) {
               return (
@@ -563,6 +606,34 @@ function ProfilePage() {
     </main>
   );
 }
+
+function CollapseChevron({ collapsed, onToggle, label }: { collapsed: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={!collapsed}
+      aria-label={`${collapsed ? "Expand" : "Collapse"} ${label}`}
+      className="glass grid h-8 w-8 place-items-center rounded-full border border-white/10 text-white/70 transition hover:text-white"
+    >
+      <ChevronDown className={`h-4 w-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
+    </button>
+  );
+}
+
+function CollapsibleWrap({ collapsed, onToggle, label, children }: { collapsed: boolean; onToggle: () => void; label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-6">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[10px] font-black uppercase tracking-widest text-white/50">{label}</span>
+        <CollapseChevron collapsed={collapsed} onToggle={onToggle} label={label} />
+      </div>
+      {!collapsed && children}
+    </div>
+  );
+}
+
+
 
 function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
   return (

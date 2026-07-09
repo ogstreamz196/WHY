@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Crown, Search, Save, Shield, Coins, UserCog } from "lucide-react";
+import { ArrowLeft, Crown, Search, Save, Shield, Coins, UserCog, ScrollText } from "lucide-react";
 import {
   bossAmIBoss,
   bossListUsers,
@@ -11,6 +11,7 @@ import {
   bossSetVip,
   bossGetPrivileges,
   bossUpdatePrivileges,
+  bossListAudit,
   type Privileges,
 } from "@/lib/boss.functions";
 
@@ -106,8 +107,21 @@ function BossDashboard() {
             <UserRow
               key={u.id}
               row={u}
-              onAdjust={(delta, setTo) => adjustMut.mutate({ userId: u.id, delta, setTo })}
-              onVip={(grant, days) => vipMut.mutate({ userId: u.id, grant, days })}
+              onAdjust={(delta, setTo) => {
+                const label =
+                  setTo !== undefined
+                    ? `set balance to ${setTo.toLocaleString()}`
+                    : `${(delta ?? 0) >= 0 ? "add" : "remove"} ${Math.abs(delta ?? 0).toLocaleString()} coins`;
+                if (!window.confirm(`Confirm: ${label} for ${u.email ?? u.id}?`)) return;
+                adjustMut.mutate({ userId: u.id, delta, setTo });
+              }}
+              onVip={(grant, days) => {
+                const label = grant
+                  ? `grant VIP for ${days ?? 30} days to ${u.email ?? u.id}`
+                  : `revoke VIP from ${u.email ?? u.id}`;
+                if (!window.confirm(`Confirm: ${label}?`)) return;
+                vipMut.mutate({ userId: u.id, grant, days });
+              }}
               busy={adjustMut.isPending || vipMut.isPending}
             />
           ))}
@@ -118,6 +132,8 @@ function BossDashboard() {
           )}
         </ul>
       </section>
+
+      <AuditLogSection />
     </Shell>
   );
 }
@@ -334,5 +350,56 @@ function TierEditor({
         </label>
       </div>
     </div>
+  );
+}
+
+function AuditLogSection() {
+  const list = useServerFn(bossListAudit);
+  const q = useQuery({
+    queryKey: ["boss:audit"],
+    queryFn: () => list({ data: { limit: 50 } }),
+    refetchOnWindowFocus: false,
+  });
+  const entries = q.data?.entries ?? [];
+  return (
+    <section className="mt-8">
+      <div className="mb-3 flex items-center gap-2">
+        <ScrollText className="h-4 w-4 text-amber-300" />
+        <h2 className="text-lg font-black text-white">Audit log</h2>
+      </div>
+      {q.isPending ? (
+        <p className="text-xs text-white/50">Loading…</p>
+      ) : entries.length === 0 ? (
+        <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-xs text-white/60">
+          No admin actions recorded yet.
+        </p>
+      ) : (
+        <ul className="space-y-1.5">
+          {entries.map((e) => (
+            <li
+              key={e.id}
+              className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] text-white/80"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-black uppercase tracking-wider text-amber-200">
+                  {e.action.replace(/_/g, " ")}
+                </span>
+                <span className="text-white/40">
+                  {new Date(e.created_at).toLocaleString()}
+                </span>
+              </div>
+              {e.target_email && (
+                <div className="mt-0.5 truncate text-white/60">→ {e.target_email}</div>
+              )}
+              {e.details && Object.keys(e.details).length > 0 && (
+                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-words text-[10px] text-white/50">
+                  {JSON.stringify(e.details)}
+                </pre>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
