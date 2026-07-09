@@ -111,6 +111,12 @@ export const bossAdjustBalance = createServerFn({ method: "POST" })
       .from("user_stats")
       .upsert({ user_id: data.userId, total_points: next }, { onConflict: "user_id" });
     if (error) throw new Error(error.message);
+    await writeAudit(supabaseAdmin, context.userId, "adjust_balance", data.userId, {
+      previous: current,
+      next,
+      delta: data.delta ?? null,
+      set_to: data.setTo ?? null,
+    });
     return { ok: true, total_points: next };
   });
 
