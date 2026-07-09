@@ -15,6 +15,8 @@
     "@ai-sdk/openai-compatible": "^3.0.5",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/archivo-black": "^5.2.8",
+    "@fontsource/hind": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@paddle/paddle-node-sdk": "^3.8.0",
