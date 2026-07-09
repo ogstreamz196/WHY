@@ -352,3 +352,54 @@ function TierEditor({
     </div>
   );
 }
+
+function AuditLogSection() {
+  const list = useServerFn(bossListAudit);
+  const q = useQuery({
+    queryKey: ["boss:audit"],
+    queryFn: () => list({ data: { limit: 50 } }),
+    refetchOnWindowFocus: false,
+  });
+  const entries = q.data?.entries ?? [];
+  return (
+    <section className="mt-8">
+      <div className="mb-3 flex items-center gap-2">
+        <ScrollText className="h-4 w-4 text-amber-300" />
+        <h2 className="text-lg font-black text-white">Audit log</h2>
+      </div>
+      {q.isPending ? (
+        <p className="text-xs text-white/50">Loading…</p>
+      ) : entries.length === 0 ? (
+        <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-xs text-white/60">
+          No admin actions recorded yet.
+        </p>
+      ) : (
+        <ul className="space-y-1.5">
+          {entries.map((e) => (
+            <li
+              key={e.id}
+              className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] text-white/80"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-black uppercase tracking-wider text-amber-200">
+                  {e.action.replace(/_/g, " ")}
+                </span>
+                <span className="text-white/40">
+                  {new Date(e.created_at).toLocaleString()}
+                </span>
+              </div>
+              {e.target_email && (
+                <div className="mt-0.5 truncate text-white/60">→ {e.target_email}</div>
+              )}
+              {e.details && Object.keys(e.details).length > 0 && (
+                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-words text-[10px] text-white/50">
+                  {JSON.stringify(e.details)}
+                </pre>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
