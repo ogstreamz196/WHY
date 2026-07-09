@@ -185,12 +185,13 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60 sm:col-span-2"
                 style={{ background: "var(--gradient-primary)" }}
               >
                 {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : "🎁 Claim +50 XP bonus"}
               </motion.button>
             )}
+
           </motion.div>
         )}
       </AnimatePresence>
