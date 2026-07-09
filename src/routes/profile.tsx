@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Flame, LogOut, Sparkles, Trophy, Zap, Pencil, Loader2, Check, Clock, ArrowRight, ArrowUpDown } from "lucide-react";
+import { Flame, LogOut, Sparkles, Trophy, Zap, Pencil, Loader2, Check, Clock, ArrowRight, ArrowUpDown, ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -103,6 +103,35 @@ function ProfilePage() {
       const next = prev === "achievements-first" ? "discoveries-first" : "achievements-first";
       if (typeof window !== "undefined") {
         window.localStorage.setItem("profile:sectionOrder", next);
+      }
+      return next;
+    });
+  };
+
+  const [collapsed, setCollapsed] = useState<{ achievements: boolean; discoveries: boolean }>({
+    achievements: false,
+    discoveries: false,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("profile:collapsed");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setCollapsed({
+          achievements: !!parsed.achievements,
+          discoveries: !!parsed.discoveries,
+        });
+      }
+    } catch {}
+  }, []);
+
+  const toggleCollapsed = (key: "achievements" | "discoveries") => {
+    setCollapsed((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("profile:collapsed", JSON.stringify(next));
       }
       return next;
     });
@@ -341,13 +370,17 @@ function ProfilePage() {
               key="achievements"
               id="achievements"
               aria-labelledby="achievements-heading"
-              className="mt-8 scroll-mt-24 border-t border-white/10 pt-6"
+              className="mt-14 scroll-mt-24 pt-8"
             >
-              <div className="mb-4 flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 text-amber-200 shadow-[0_0_20px_-6px_rgba(251,191,36,0.6)]">
+              <div
+                aria-hidden="true"
+                className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+              />
+              <div className="mb-5 flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 text-amber-200 shadow-[0_0_20px_-6px_rgba(251,191,36,0.6)]">
                   <Trophy className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/70">
                     Section
                   </p>
@@ -358,14 +391,14 @@ function ProfilePage() {
                     Achievements
                   </h2>
                 </div>
-                <span className="rounded-full border border-amber-300/25 bg-amber-400/10 px-2.5 py-1 text-xs font-black text-amber-100">
+                <span className="inline-flex h-7 shrink-0 items-center rounded-full border border-amber-300/25 bg-amber-400/10 px-2.5 text-xs font-black text-amber-100">
                   {unlockedCount}/{achievements.data?.length ?? 0}
                 </span>
                 <button
                   type="button"
                   onClick={toggleSectionOrder}
                   data-no-chrome
-                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                  className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 text-[10px] font-black uppercase tracking-wider text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                   aria-label={
                     sectionOrder === "achievements-first"
                       ? "Show Recent discoveries above Achievements"
@@ -374,12 +407,28 @@ function ProfilePage() {
                 >
                   <ArrowUpDown className="h-3 w-3" aria-hidden="true" /> Swap
                 </button>
+                <button
+                  type="button"
+                  onClick={() => toggleCollapsed("achievements")}
+                  data-no-chrome
+                  aria-expanded={!collapsed.achievements}
+                  aria-controls="achievements-body"
+                  aria-label={collapsed.achievements ? "Expand Achievements" : "Collapse Achievements"}
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                >
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${collapsed.achievements ? "-rotate-90" : ""}`}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {(achievements.data ?? []).map((a) => (
-                  <AchievementTile key={a.id} a={a} />
-                ))}
-              </div>
+              {!collapsed.achievements && (
+                <div id="achievements-body" className="grid grid-cols-3 gap-3">
+                  {(achievements.data ?? []).map((a) => (
+                    <AchievementTile key={a.id} a={a} />
+                  ))}
+                </div>
+              )}
             </section>
           );
 
@@ -388,13 +437,17 @@ function ProfilePage() {
               key="recent-discoveries"
               id="recent-discoveries"
               aria-labelledby="recent-discoveries-heading"
-              className="mt-8 scroll-mt-24 border-t border-white/10 pt-6"
+              className="mt-14 scroll-mt-24 pt-8"
             >
-              <div className="mb-4 flex items-center gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl border border-sky-300/30 bg-sky-400/15 text-sky-200 shadow-[0_0_20px_-6px_rgba(56,189,248,0.55)]">
+              <div
+                aria-hidden="true"
+                className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-sky-300/40 to-transparent"
+              />
+              <div className="mb-5 flex items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-sky-300/30 bg-sky-400/15 text-sky-200 shadow-[0_0_20px_-6px_rgba(56,189,248,0.55)]">
                   <Clock className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200/70">
                     Section
                   </p>
@@ -405,7 +458,24 @@ function ProfilePage() {
                     Recent discoveries
                   </h2>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => toggleCollapsed("discoveries")}
+                  data-no-chrome
+                  aria-expanded={!collapsed.discoveries}
+                  aria-controls="recent-discoveries-body"
+                  aria-label={collapsed.discoveries ? "Expand Recent discoveries" : "Collapse Recent discoveries"}
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                >
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${collapsed.discoveries ? "-rotate-90" : ""}`}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
+              {!collapsed.discoveries && (
+                <div id="recent-discoveries-body">
+
               {(() => {
                 const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
                 if (entries.length === 0) {
@@ -449,7 +519,10 @@ function ProfilePage() {
                   </>
                 );
               })()}
+                </div>
+              )}
             </section>
+
           );
 
           return sectionOrder === "achievements-first"
