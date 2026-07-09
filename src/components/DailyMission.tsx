@@ -127,7 +127,7 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="mt-3 space-y-1.5"
+            className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
           >
             {TASKS.map((t, i) => {
               const isDone = done[i];
