@@ -519,7 +519,10 @@ function ProfilePage() {
                   </>
                 );
               })()}
+                </div>
+              )}
             </section>
+
           );
 
           return sectionOrder === "achievements-first"
