@@ -54,7 +54,7 @@ export function BottomNav() {
                 style={{ background: "var(--gradient-primary)" }}
               />
               <Icon className="h-5 w-5 transition-transform duration-300 group-data-[active=true]:scale-110 group-hover:rotate-[-6deg]" strokeWidth={2.2} />
-              <span className="text-[10px] font-semibold tracking-wide">{label}</span>
+              <span className="text-[10px] font-semibold tracking-wide">{label === "You" && isBoss ? "Boss" : label}</span>
             </Link>
           ))}
         </div>
