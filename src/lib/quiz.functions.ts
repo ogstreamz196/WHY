@@ -296,7 +296,38 @@ export const submitAnswer = createServerFn({ method: "POST" })
     if (!session || session.user_id !== context.userId) {
       throw new Error("Session not found.");
     }
-    if (session.finished_at) throw new Error("Session already finished.");
+    if (session.finished_at) {
+      // Idempotent: return the previously recorded answer for this fact if any.
+      const factIdsPrev = (session.fact_ids ?? []) as string[];
+      const answerOrderPrev = (session.answer_order ?? []) as number[];
+      const idxPrev = factIdsPrev.indexOf(data.fact_id);
+      const correctIdxPrev = idxPrev >= 0 ? answerOrderPrev[idxPrev] : 0;
+      const { data: prevAns } = await context.supabase
+        .from("quiz_answers")
+        .select("correct, points_awarded, picked_index")
+        .eq("session_id", session.id)
+        .eq("fact_id", data.fact_id)
+        .maybeSingle();
+      const { data: qrowPrev } = await context.supabase
+        .from("quiz_questions")
+        .select("correct_answer, explanation")
+        .eq("fact_id", data.fact_id)
+        .maybeSingle();
+      const { data: statsPrev } = await context.supabase
+        .from("quiz_stats")
+        .select("current_streak, best_streak")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      return {
+        correct: prevAns?.correct ?? false,
+        correct_index: correctIdxPrev,
+        correct_answer: (qrowPrev?.correct_answer as string) ?? "",
+        explanation: (qrowPrev?.explanation as string) ?? null,
+        points_awarded: prevAns?.points_awarded ?? 0,
+        current_streak: statsPrev?.current_streak ?? 0,
+        best_streak: statsPrev?.best_streak ?? 0,
+      };
+    }
 
     const factIds = (session.fact_ids ?? []) as string[];
     const answerOrder = (session.answer_order ?? []) as number[];
