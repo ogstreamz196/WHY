@@ -172,6 +172,7 @@ Return STRICT JSON only, no prose, no markdown:
 }
 
 export const generateAndStoreFact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
