@@ -288,12 +288,19 @@ function ArenaPage() {
             </Link>
           </div>
         ) : (
-          <>
+          <motion.div
+            key={tab + (filter ?? "")}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="arena-active"
+          >
             {/* Podium — top 3 */}
             {result.entries.length >= 1 && (
               <Podium entries={result.entries.slice(0, 3)} unit={tab === "streaks" ? "days" : "pts"} meId={user?.id} />
             )}
             <ol className="space-y-2">
+
               <AnimatePresence initial={false}>
                 {result.entries.slice(3).map((r) => {
                   const me = r.user_id === user?.id;
@@ -350,7 +357,7 @@ function ArenaPage() {
                 })}
               </AnimatePresence>
             </ol>
-          </>
+          </motion.div>
         )}
 
       </div>
@@ -465,10 +472,11 @@ const PODIUM_CFG = {
     card: "h-64 sm:h-72 rounded-t-[2.25rem] border-t-2 border-x-2 border-amber-400/40 bg-gradient-to-b from-amber-500/12 to-transparent shadow-[0_-25px_60px_-15px_rgba(251,191,36,0.25)] podium-shimmer",
     medal: "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.55)]",
     medalSize: "h-9 w-9",
-    name: "text-white text-lg sm:text-xl font-black tracking-tight",
+    name: "shimmer-gold-text text-lg sm:text-xl font-black tracking-tight",
     score: "text-amber-300 text-base font-black",
     tier: "Grandmaster",
-    tierPill: "bg-amber-400/20 border-amber-400/40 text-amber-200",
+    tierPill: "shimmer-gold-text bg-amber-400/15 border border-amber-400/40",
+
   },
   2: {
     delay: 0,
