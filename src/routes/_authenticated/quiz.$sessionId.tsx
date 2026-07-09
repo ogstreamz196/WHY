@@ -204,38 +204,54 @@ function QuizPlayPage() {
               {current.question}
             </h2>
 
-            <div className="mt-4 space-y-2">
-              {current.choices.map((choice, i) => {
-                const isPicked = picked === i;
-                const isCorrect = result && result.correct_index === i;
-                const isWrongPick = result && isPicked && !result.correct;
-                return (
-                  <motion.button
-                    key={i}
-                    type="button"
-                    onClick={() => handlePick(i)}
-                    disabled={answering || !!result}
-                    whileTap={{ scale: 0.98 }}
-                    className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
-                      isCorrect
-                        ? "border-emerald-400/50 bg-emerald-400/15"
-                        : isWrongPick
-                          ? "border-rose-400/50 bg-rose-400/15"
-                          : isPicked
-                            ? "border-white/30 bg-white/10"
-                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
-                    }`}
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/80">
-                      {String.fromCharCode(65 + i)}
-                    </span>
-                    <span className="flex-1 text-sm font-semibold text-white">{choice}</span>
-                    {isCorrect && <Check className="h-4 w-4 text-emerald-300" />}
-                    {isWrongPick && <X className="h-4 w-4 text-rose-300" />}
-                  </motion.button>
-                );
-              })}
-            </div>
+            {!revealed ? (
+              <div className="mt-5 space-y-3">
+                <p className="text-sm text-white/70">
+                  Take your time to read the question. When you're ready, reveal the answers — the timer starts then.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setRevealed(true)}
+                  className="w-full rounded-full px-4 py-3 text-sm font-black text-white"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  Reveal answers & start timer
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-2">
+                {current.choices.map((choice, i) => {
+                  const isPicked = picked === i;
+                  const isCorrect = result && result.correct_index === i;
+                  const isWrongPick = result && isPicked && !result.correct;
+                  return (
+                    <motion.button
+                      key={i}
+                      type="button"
+                      onClick={() => handlePick(i)}
+                      disabled={answering || !!result}
+                      whileTap={{ scale: 0.98 }}
+                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                        isCorrect
+                          ? "border-emerald-400/50 bg-emerald-400/15"
+                          : isWrongPick
+                            ? "border-rose-400/50 bg-rose-400/15"
+                            : isPicked
+                              ? "border-white/30 bg-white/10"
+                              : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+                      }`}
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/80">
+                        {String.fromCharCode(65 + i)}
+                      </span>
+                      <span className="flex-1 text-sm font-semibold text-white">{choice}</span>
+                      {isCorrect && <Check className="h-4 w-4 text-emerald-300" />}
+                      {isWrongPick && <X className="h-4 w-4 text-rose-300" />}
+                    </motion.button>
+                  );
+                })}
+              </div>
+            )}
 
             <AnimatePresence>
               {result && (
