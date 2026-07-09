@@ -460,41 +460,40 @@ export const migrateGuestData = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        points: z.number().int().min(0).max(1_000_000).optional(),
-        streak: z.number().int().min(0).max(10_000).optional(),
+        // NOTE: points/streak are intentionally NOT accepted from the client.
+        // Guest activity does not confer server-verified progress and would
+        // let any signed-in user self-award leaderboard points. Only genuine
+        // guest artefacts (their favourited fact ids) are migrated.
         favorite_fact_ids: z.array(z.string().uuid()).max(500).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<{ ok: true; imported_favorites: number }> => {
-    // Merge points/streak — only bump upwards, never lower.
+    // Ensure a user_stats row exists but never bump points/streak from guest input.
     const { data: existing } = await context.supabase
       .from("user_stats")
       .select("*")
       .eq("user_id", context.userId)
       .maybeSingle();
 
-    const nextPoints = Math.max(existing?.total_points ?? 0, data.points ?? 0);
-    const nextStreak = Math.max(existing?.current_streak ?? 0, data.streak ?? 0);
-    const nextLongest = Math.max(existing?.longest_streak ?? 0, data.streak ?? 0);
-
-    await context.supabase
-      .from("user_stats")
-      .upsert(
-        {
-          user_id: context.userId,
-          total_points: nextPoints,
-          current_streak: nextStreak,
-          longest_streak: nextLongest,
-          facts_seen: existing?.facts_seen ?? 0,
-          last_active_day: existing?.last_active_day ?? today(),
-        },
-        { onConflict: "user_id" },
-      );
+    if (!existing) {
+      await context.supabase
+        .from("user_stats")
+        .upsert(
+          {
+            user_id: context.userId,
+            total_points: 0,
+            current_streak: 0,
+            longest_streak: 0,
+            facts_seen: 0,
+            last_active_day: today(),
+          },
+          { onConflict: "user_id" },
+        );
+    }
 
     let imported = 0;
     if (data.favorite_fact_ids?.length) {
-      // Only insert those that actually exist in facts table and aren't already favorited.
       const { data: valid } = await context.supabase
         .from("facts")
         .select("id")

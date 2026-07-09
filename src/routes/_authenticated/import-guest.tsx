@@ -61,8 +61,6 @@ function ImportGuestPage() {
     try {
       const res = await migrate({
         data: {
-          points: guest.points,
-          streak: guest.streak,
           favorite_fact_ids: guest.favorites.map((f) => f.id),
         },
       });
