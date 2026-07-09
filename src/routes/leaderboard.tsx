@@ -107,7 +107,7 @@ function ArenaPage() {
     setLoading(true);
     setRankDelta(null);
     const q = resolveQuery(tab, filter);
-    fetchBoard({ data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50 } })
+    fetchBoard({ data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50, userId: user?.id } })
       .then((r) => {
         if (!alive) return;
         setResult(r);
