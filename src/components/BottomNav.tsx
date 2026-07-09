@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Trophy, Store, User, Sparkles, Medal } from "lucide-react";
+import { Home, Trophy, Store, User, Sparkles, Medal, Crown } from "lucide-react";
 import { useBossTheme } from "@/lib/useBossTheme";
+import { useCurrentUser } from "@/lib/auth";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const items = [
   { to: "/",            label: "Home",   Icon: Home },
