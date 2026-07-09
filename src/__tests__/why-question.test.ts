@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { asWhyQuestion } from "@/routes/index";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 const variants = [
   ["do we have different blood types?", "Why do we have different blood types?"],
@@ -76,6 +76,27 @@ describe("asWhyQuestion", () => {
     const out = asWhyQuestion("we ask why things happen");
     expect(out).toBe("Why we ask why things happen?");
     expect(/\bwhy\s+why\b/i.test(out)).toBe(false);
+  });
+
+  it("every output starts with 'Why' (or an allowed variant) and ends with exactly one '?'", () => {
+    const inputs = [
+      "the sky is blue",
+      "do you know why the sky is blue",
+      "Why is the sky blue!!",
+      "How come leaves change color.",
+      "what causes rainbows",
+      "cats purr when happy?",
+      "WHY do we sleep",
+      "why why why do we dream",
+    ];
+    for (const s of inputs) {
+      const out = asWhyQuestion(s);
+      expect(/^(Why|How come|How|What makes|What causes)\b/.test(out)).toBe(true);
+      // exactly one trailing '?' and no other trailing punctuation
+      expect(out.endsWith("?")).toBe(true);
+      expect(out.endsWith("??")).toBe(false);
+      expect((out.match(/\?/g) ?? []).length).toBe(1);
+    }
   });
 });
 

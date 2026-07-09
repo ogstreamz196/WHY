@@ -40,7 +40,29 @@ describe("quiz word-count helpers", () => {
   });
 });
 
-import { sanitizeQuizRow } from "@/lib/quiz.functions";
+import { sanitizeQuizRow, prettifyAnswer } from "@/lib/quiz.functions";
+
+describe("prettifyAnswer", () => {
+  it("capitalizes the first letter", () => {
+    expect(prettifyAnswer("blue whale")).toBe("Blue whale");
+  });
+  it("strips trailing sentence punctuation", () => {
+    expect(prettifyAnswer("gravity!")).toBe("Gravity");
+    expect(prettifyAnswer("the moon.")).toBe("The moon");
+    expect(prettifyAnswer("because...")).toBe("Because");
+  });
+  it("strips wrapping quotes", () => {
+    expect(prettifyAnswer('"hello there"')).toBe("Hello there");
+    expect(prettifyAnswer("“cool”")).toBe("Cool");
+  });
+  it("collapses inner whitespace", () => {
+    expect(prettifyAnswer("  too   many   spaces  ")).toBe("Too many spaces");
+  });
+  it("preserves ALLCAPS acronyms", () => {
+    expect(prettifyAnswer("NASA rockets")).toBe("NASA rockets");
+  });
+});
+
 
 describe("sanitizeQuizRow", () => {
   it("returns null when correct_answer resolves to empty", () => {
@@ -106,5 +128,20 @@ describe("sanitizeQuizRow", () => {
       fallbackAnswer: "one two",
     })!;
     expect(out.explanation.length).toBeLessThanOrEqual(300);
+  });
+
+  it("normalizes correct + distractors to consistent, capitalized, unpunctuated format", () => {
+    const out = sanitizeQuizRow({
+      correct_answer: "  the moon.  ",
+      distractors: ["a comet!", '"an asteroid"', "the sun..."],
+      difficulty: "easy",
+      fallbackAnswer: "the moon",
+    })!;
+    expect(out).not.toBeNull();
+    for (const s of [out.correct_answer, ...out.distractors]) {
+      expect(/^[A-Z0-9]/.test(s)).toBe(true);
+      expect(/[.!?…,;:]$/.test(s)).toBe(false);
+      expect(s.includes("  ")).toBe(false);
+    }
   });
 });
