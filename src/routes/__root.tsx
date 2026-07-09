@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestoneWatcher";
 import { TopSignInBar } from "@/components/TopSignInBar";
+import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { useBossTheme } from "@/lib/useBossTheme";
 
 
@@ -161,6 +162,7 @@ function RootComponent() {
       </div>
       <GlobalStreakMilestoneWatcher />
       <TopSignInBar />
+      <ThemeDebugger />
       <Toaster theme="dark" position="top-center" richColors closeButton />
     </QueryClientProvider>
   );

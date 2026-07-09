@@ -223,6 +223,42 @@
     0 0 24px -10px color-mix(in oklab, oklch(0.90 0.02 250) 40%, transparent) !important;
 }
 
+/* ============ Accessible focus rings (both themes) ============ */
+/* Global focus-visible: strong 2-layer ring using --ring token */
+:where(a, button, [role="button"], [role="tab"], [role="menuitem"], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring),
+    0 0 12px 2px color-mix(in oklab, var(--ring) 55%, transparent) !important;
+  border-radius: inherit;
+}
+
+/* Metallic chrome buttons in Boss theme: brighter contrast ring on dark chrome */
+.theme-boss button:not([data-no-chrome]):focus-visible,
+.theme-boss a[class*="rounded-full"]:not([data-no-chrome]):focus-visible,
+.theme-boss a[class*="rounded-2xl"]:not([data-no-chrome]):focus-visible,
+.theme-boss [role="button"]:not([data-no-chrome]):focus-visible {
+  box-shadow:
+    inset 0 0 0 2px oklch(1 0 0 / 0.95),
+    0 0 0 2px var(--background),
+    0 0 0 5px var(--ring),
+    0 0 16px 3px color-mix(in oklab, var(--ring) 70%, transparent) !important;
+}
+
+/* Bottom nav items: ring hugs the pill */
+nav[aria-label="Primary"] a:focus-visible,
+nav[aria-label="Primary"] button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ring),
+    0 0 14px 3px color-mix(in oklab, var(--ring) 65%, transparent) !important;
+  border-radius: 9999px;
+}
+
+
+
 
 
 @layer base {
