@@ -14,6 +14,8 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestoneWatcher";
 import { TopSignInBar } from "@/components/TopSignInBar";
+import { useBossTheme } from "@/lib/useBossTheme";
+
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
