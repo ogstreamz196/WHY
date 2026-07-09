@@ -194,19 +194,23 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <h2 className="mt-1 font-display text-base font-black leading-tight text-white">
                       {capitalize(fact.question)}
                     </h2>
-                    <div className="mt-3 grid gap-2">
+                    <div className="mt-3 grid gap-2" role="group" aria-label="Answer choices">
                       {mcq.choices.map((choice, i) => {
                         const isPicked = picked === i;
                         const isCorrect = i === mcq.correctIndex;
                         const showCorrect = picked !== null && isCorrect;
                         const showWrong = isPicked && !isCorrect;
+                        const letter = String.fromCharCode(65 + i);
+                        const status = showCorrect ? " (correct)" : showWrong ? " (incorrect)" : "";
                         return (
                           <button
                             key={i}
                             type="button"
                             disabled={picked !== null && (picked === mcq.correctIndex)}
                             onClick={() => answer(i)}
-                            className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left text-sm font-semibold transition ${
+                            aria-label={`Option ${letter}: ${choice}${status}`}
+                            aria-pressed={isPicked}
+                            className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                               showCorrect
                                 ? "border-emerald-400/60 bg-emerald-400/15 text-emerald-100"
                                 : showWrong
@@ -214,13 +218,13 @@ export function DailyChallenge({ onCompleted }: Props) {
                                   : "border-white/10 bg-white/[0.04] text-white/90 hover:bg-white/[0.08]"
                             }`}
                           >
-                            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[10px] font-black">
+                            <span aria-hidden className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[10px] font-black">
                               {showCorrect ? (
                                 <Check className="h-3.5 w-3.5" />
                               ) : showWrong ? (
                                 <X className="h-3.5 w-3.5" />
                               ) : (
-                                String.fromCharCode(65 + i)
+                                letter
                               )}
                             </span>
                             <span className="flex-1">{choice}</span>
@@ -228,6 +232,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                         );
                       })}
                     </div>
+
                     {phase === "result" && (
                       <motion.div
                         initial={{ opacity: 0, y: 6 }}
