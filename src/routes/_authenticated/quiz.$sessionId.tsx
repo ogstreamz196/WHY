@@ -173,8 +173,8 @@ function QuizPlayPage() {
           </div>
         </header>
 
-        {/* Timer */}
-        {!result && (
+        {/* Timer — only after reveal */}
+        {!result && revealed && (
           <div className="mb-3 h-1 w-full overflow-hidden rounded-full bg-white/5">
             <motion.div
               className="h-full rounded-full"
