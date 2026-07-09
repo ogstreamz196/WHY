@@ -1233,9 +1233,11 @@ function capitalize(s: string) {
 
 // Ensure the fact question reads as a full "Why…?" question.
 // Prepends "Why" (if missing) and appends a "?" (if missing).
-function asWhyQuestion(raw: string) {
+export function asWhyQuestion(raw: string) {
   if (!raw) return raw;
   let q = raw.trim().replace(/^(do you know\s+)/i, "");
+  // Collapse accidental repeated leading "why why ..."
+  q = q.replace(/^(why\s+)+/i, (m) => (m ? "why " : ""));
   const startsWithWhy = /^(why|how come|how|what makes|what causes)\b/i.test(q);
   if (!startsWithWhy) q = `Why ${q.charAt(0).toLowerCase() + q.slice(1)}`;
   else q = q.charAt(0).toUpperCase() + q.slice(1);
@@ -1243,6 +1245,7 @@ function asWhyQuestion(raw: string) {
   else if (/[.!]$/.test(q)) q = q.slice(0, -1) + "?";
   return q;
 }
+
 
 
 function GuestProgressCard({
