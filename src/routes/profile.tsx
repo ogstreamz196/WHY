@@ -108,6 +108,35 @@ function ProfilePage() {
     });
   };
 
+  const [collapsed, setCollapsed] = useState<{ achievements: boolean; discoveries: boolean }>({
+    achievements: false,
+    discoveries: false,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("profile:collapsed");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setCollapsed({
+          achievements: !!parsed.achievements,
+          discoveries: !!parsed.discoveries,
+        });
+      }
+    } catch {}
+  }, []);
+
+  const toggleCollapsed = (key: "achievements" | "discoveries") => {
+    setCollapsed((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("profile:collapsed", JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", search: { mode: "signin", redirect: "/profile" } });
   }, [user, loading, navigate]);
