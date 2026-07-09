@@ -487,7 +487,7 @@ function WhyApp() {
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
       <CosmicBackground />
 
-      <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:max-w-3xl lg:max-w-4xl lg:px-8">
         {/* ── GAMIFIED HEADER ─────────────────────────────── */}
         <header className="mb-3 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
