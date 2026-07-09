@@ -128,7 +128,7 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
+            className="mt-3 grid grid-cols-1 gap-2 sm:mt-4 sm:grid-cols-2 sm:gap-3 md:gap-4"
           >
             {TASKS.map((t, i) => {
               const isDone = done[i];
@@ -136,15 +136,15 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
               return (
                 <div
                   key={t.key}
-                  className={`flex items-center gap-3 rounded-2xl border px-3 py-2 transition ${
+                  className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition sm:gap-4 sm:px-4 sm:py-3 md:px-5 md:py-4 ${
                     isDone
                       ? "border-emerald-400/30 bg-emerald-500/10"
                       : "border-white/10 bg-white/[0.04]"
                   }`}
                 >
-                  <span className="text-lg">{t.icon}</span>
+                  <span className="shrink-0 text-lg sm:text-xl md:text-2xl">{t.icon}</span>
                   <div className="min-w-0 flex-1">
-                    <div className={`text-sm font-bold ${isDone ? "text-emerald-200 line-through" : "text-white"}`}>
+                    <div className={`text-sm font-bold leading-snug sm:text-[0.95rem] md:text-base ${isDone ? "text-emerald-200 line-through" : "text-white"}`}>
                       {t.label}
                       {isCategory && (
                         <span className="ml-1 font-normal text-white/50">
@@ -152,30 +152,31 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-white/50">{t.hint}</div>
+                    <div className="mt-0.5 text-[11px] leading-snug text-white/50 sm:text-xs md:text-sm">{t.hint}</div>
                   </div>
                   {isDone ? (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300 sm:h-7 sm:w-7"
                     >
-                      <Check className="h-3.5 w-3.5" />
+                      <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </motion.span>
                   ) : isCategory ? (
                     <button
                       type="button"
                       onClick={() => onOpenCategory(mission.category_key)}
-                      className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white/80 transition hover:bg-white/20"
+                      className="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white/80 transition hover:bg-white/20 sm:px-3 sm:py-1.5 sm:text-xs"
                     >
                       Go
                     </button>
                   ) : (
-                    <span className="text-white/20"><Lock className="h-3.5 w-3.5" /></span>
+                    <span className="shrink-0 text-white/20"><Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></span>
                   )}
                 </div>
               );
             })}
+
 
             {mission.completed && !mission.bonus_awarded && (
               <motion.button
