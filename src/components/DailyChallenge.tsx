@@ -169,7 +169,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                       ⚡ Quick fact
                     </p>
                     <h3 className="mt-1 font-display text-lg font-black leading-tight text-white">
-                      {capitalize(fact.question)}{" "}
+                      {asWhyQuestion(fact.question)}{" "}
                       <span aria-hidden>{emojiFor(fact.category)}</span>
                     </h3>
 
