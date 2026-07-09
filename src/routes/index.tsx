@@ -1465,3 +1465,126 @@ export function WelcomeOverlay({
     </AnimatePresence>
   );
 }
+
+function CategoryScroller({
+  categories,
+  activeKey,
+  onSelect,
+}: {
+  categories: typeof CATEGORIES;
+  activeKey: CategoryKey;
+  onSelect: (key: CategoryKey) => void;
+}) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const updateEdges = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    updateEdges();
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateEdges, { passive: true });
+    const ro = new ResizeObserver(updateEdges);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateEdges);
+      ro.disconnect();
+    };
+  }, [updateEdges]);
+
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative mt-5">
+      <div
+        ref={scrollerRef}
+        className="-mx-4 overflow-x-auto scroll-smooth px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <div className="flex gap-2.5 pb-1">
+          {categories.map((c) => {
+            const active = activeKey === c.key;
+            return (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => onSelect(c.key)}
+                className="group flex shrink-0 flex-col items-center gap-1"
+                style={{ width: "clamp(3rem, 12vw, 3.75rem)" }}
+              >
+                <span
+                  className={`flex aspect-square w-full items-center justify-center rounded-2xl shadow-lg transition ${
+                    active ? "scale-110 ring-2 ring-white/60" : "opacity-80 group-hover:opacity-100"
+                  }`}
+                  style={{
+                    background: c.gradient,
+                    boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined,
+                  }}
+                >
+                  <span className="leading-none" style={{ fontSize: "clamp(1.25rem, 5vw, 1.6rem)" }}>
+                    {c.emoji}
+                  </span>
+                </span>
+                <span
+                  className={`w-full truncate text-center text-[10px] font-bold leading-tight ${
+                    active ? "text-white" : "text-white/60"
+                  }`}
+                  title={c.label}
+                >
+                  {c.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Edge fades */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent transition-opacity ${
+          canLeft ? "opacity-100" : "opacity-0"
+        }`}
+      />
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent transition-opacity ${
+          canRight ? "opacity-100" : "opacity-0"
+        }`}
+      />
+
+      {/* Floating arrows — visible on hover-capable devices when overflow exists */}
+      <button
+        type="button"
+        aria-label="Scroll categories left"
+        onClick={() => scrollBy(-1)}
+        className={`absolute left-0 top-[1.5rem] hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-background/80 p-2 text-white shadow-lg backdrop-blur transition hover:scale-110 hover:bg-primary hover:text-primary-foreground sm:flex ${
+          canLeft ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Scroll categories right"
+        onClick={() => scrollBy(1)}
+        className={`absolute right-0 top-[1.5rem] hidden -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-background/80 p-2 text-white shadow-lg backdrop-blur transition hover:scale-110 hover:bg-primary hover:text-primary-foreground sm:flex ${
+          canRight ? "opacity-100 animate-pulse" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}
+
