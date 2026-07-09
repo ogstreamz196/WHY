@@ -172,9 +172,38 @@ Return STRICT JSON only, no prose, no markdown:
 
 export const generateAndStoreFact = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
-    z.object({ category: z.string().optional() }).parse(input ?? {}),
+    z
+      .object({
+        category: z.string().optional(),
+        seenIds: z.array(z.string().uuid()).max(5000).optional(),
+        force: z.boolean().optional(),
+      })
+      .parse(input ?? {}),
   )
   .handler(async ({ data }): Promise<Fact | null> => {
+    const supabase = getSupabase();
+    const skip = new Set<string>(data.seenIds ?? []);
+
+    // CYCLE FIRST: only generate a new fact when the caller has genuinely
+    // exhausted the existing pool for this scope. This keeps the sheets DB
+    // from growing until every entry has been served at least once.
+    if (!data.force) {
+      let poolQ = supabase.from("facts").select("id", { count: "exact", head: true });
+      if (data.category) poolQ = poolQ.eq("category", data.category);
+      const { count } = await poolQ;
+      if ((count ?? 0) > skip.size) {
+        // Unseen entries still remain → serve one instead of generating.
+        const { data: rows } = await (data.category
+          ? supabase.from("facts").select(FACT_COLS).eq("category", data.category)
+          : supabase.from("facts").select(FACT_COLS)
+        )
+          .order("created_at", { ascending: true })
+          .limit(500);
+        const unseen = (rows ?? []).find((r) => !skip.has((r as Fact).id));
+        if (unseen) return unseen as Fact;
+      }
+    }
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
     const admin = await getAdmin();
@@ -203,7 +232,6 @@ Question examples: "the sky is blue?", "flamingos stand on one leg?", "we get go
 Do NOT repeat or reword any of these recent questions:
 ${recentQs.slice(0, 30).map((q) => `- ${q}`).join("\n") || "(none)"}`;
 
-    // Try up to 3 candidates, each with quality gate.
     for (let attempt = 0; attempt < 3; attempt++) {
       const candidate = await callJson<GeneratedFact>(apiKey, genPrompt);
       if (!candidate?.question || !candidate.answer || !candidate.fun_fact) continue;
@@ -222,21 +250,33 @@ ${recentQs.slice(0, 30).map((q) => `- ${q}`).join("\n") || "(none)"}`;
           fun_fact: candidate.fun_fact.trim(),
           category,
         })
-        .select(FACT_COLS)
+        .select("id, question, answer, category, fun_fact, code, code_seq, created_at")
         .single();
 
-      if (!error && inserted) return inserted as Fact;
-      // duplicate unique index → try again
+      if (!error && inserted) {
+        // Fire-and-forget append to the Google Sheets library.
+        const { appendFactToSheet } = await import("@/lib/sheets.server");
+        void appendFactToSheet({
+          code: inserted.code as string,
+          code_seq: Number(inserted.code_seq ?? 0),
+          category: inserted.category as string | null,
+          question: inserted.question as string,
+          answer: inserted.answer as string,
+          fun_fact: (inserted.fun_fact as string | null) ?? null,
+          created_at: inserted.created_at as string | null,
+        });
+        return inserted as Fact;
+      }
     }
 
-    // Everything failed → return a random existing fact so UX doesn't stall.
-    const supabase = getSupabase();
+    // Fallback: return an unseen (or any) existing fact so UX doesn't stall.
     const { data: fallback } = await supabase
       .from("facts")
       .select(FACT_COLS)
       .order("created_at", { ascending: false })
-      .limit(1);
-    return (fallback?.[0] as Fact) ?? null;
+      .limit(50);
+    const pick = (fallback ?? []).find((r) => !skip.has((r as Fact).id)) ?? fallback?.[0];
+    return (pick as Fact) ?? null;
   });
 
 // -------------------- Search or generate --------------------
