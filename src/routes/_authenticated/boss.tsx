@@ -133,6 +133,7 @@ function BossDashboard() {
         </ul>
       </section>
 
+      <FactCodeDecoder />
       <AuditLogSection />
     </Shell>
   );
@@ -603,4 +604,54 @@ function DiffBlock({ title, value }: { title: string; value: any }) {
     </div>
   );
 }
+
+function FactCodeDecoder() {
+  const [code, setCode] = useState("");
+  const [result, setResult] = useState<unknown>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const onDecode = async () => {
+    setBusy(true); setErr(null); setResult(null);
+    try {
+      const { decodeFactCode } = await import("@/lib/facts.functions");
+      const r = await decodeFactCode({ data: { code: code.trim() } });
+      if (!r) setErr("No fact matches that code.");
+      else setResult(r);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to decode");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Shield className="h-4 w-4 text-emerald-300" />
+        <h2 className="text-lg font-black text-white">Fact code decoder</h2>
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="WHY-XXXXXX"
+          className="flex-1 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-mono uppercase tracking-wider text-white outline-none focus:border-emerald-400/40"
+        />
+        <button
+          onClick={onDecode}
+          disabled={busy || code.trim().length < 4}
+          className="rounded-full bg-emerald-500 px-4 py-2 text-sm font-black text-black disabled:opacity-40"
+        >
+          {busy ? "…" : "Decode"}
+        </button>
+      </div>
+      {err && <p className="mt-2 text-xs text-rose-300">{err}</p>}
+      {result != null && (
+        <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-white/10 bg-black/40 p-3 text-[11px] text-white/80">
+          {JSON.stringify(result, null, 2)}
+        </pre>
+      )}
+    </section>
+  );
+}
+
 
