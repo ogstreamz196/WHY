@@ -175,9 +175,9 @@ export const getLeaderboard = createServerFn({ method: "GET" })
       const { data: profs } = ids.length
         ? await context.supabase
             .from("profiles_public")
-            .select("id, username, display_name, avatar_id, age_band, favorite_category, leaderboard_opt_out")
+            .select("id, username, display_name, avatar_id, favorite_category, leaderboard_opt_out")
             .in("id", ids)
-        : { data: [] as Array<{ id: string; username: string | null; display_name: string | null; avatar_id: string | null; age_band: string | null; favorite_category: string | null; leaderboard_opt_out: boolean | null }> };
+        : { data: [] as Array<{ id: string; username: string | null; display_name: string | null; avatar_id: string | null; favorite_category: string | null; leaderboard_opt_out: boolean | null }> };
       const pmap = new Map((profs ?? []).map((p) => [p.id, p]));
       rows = stats
         .map((s) => {
@@ -188,7 +188,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
             username: p?.username ?? null,
             display_name: p?.display_name ?? null,
             avatar_id: p?.avatar_id ?? null,
-            age_band: p?.age_band ?? null,
+            age_band: null,
             favorite_category: p?.favorite_category ?? null,
             score: s.total_score ?? 0,
           } as LbRow;
