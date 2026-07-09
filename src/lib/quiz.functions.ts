@@ -426,7 +426,7 @@ export const submitAnswer = createServerFn({ method: "POST" })
         .select("correct_answer, explanation")
         .eq("fact_id", data.fact_id)
         .maybeSingle();
-      const { data: statsPrev } = await context.supabase
+      const { data: statsPrev } = await (await admin())
         .from("quiz_stats")
         .select("current_streak, best_streak")
         .eq("user_id", context.userId)
@@ -489,7 +489,7 @@ export const submitAnswer = createServerFn({ method: "POST" })
       .eq("id", session.id);
 
     // Update streaks in quiz_stats
-    const { data: prevStats } = await context.supabase
+    const { data: prevStats } = await (await admin())
       .from("quiz_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -578,7 +578,7 @@ export const finishQuiz = createServerFn({ method: "POST" })
     }
 
     // XP: award quiz score as XP into user_stats.total_points too.
-    const { data: prevStats } = await context.supabase
+    const { data: prevStats } = await (await admin())
       .from("quiz_stats")
       .select("total_score, best_score")
       .eq("user_id", context.userId)
@@ -595,14 +595,14 @@ export const finishQuiz = createServerFn({ method: "POST" })
       );
     }
 
-    const { data: userStats } = await context.supabase
+    const { data: userStats } = await (await admin())
       .from("user_stats")
       .select("total_points, current_streak, longest_streak, facts_seen, last_active_day")
       .eq("user_id", context.userId)
       .maybeSingle();
     const awardedFinalScore = await awardAmountForUser(context, finalScore);
     if (userStats) {
-      await context.supabase
+      await (await admin())
         .from("user_stats")
         .update({
           total_points: (userStats.total_points ?? 0) + awardedFinalScore,
@@ -638,7 +638,7 @@ type AuthContext = {
 };
 
 async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
-  const { data: stats } = await context.supabase
+  const { data: stats } = await (await admin())
     .from("quiz_stats")
     .select("*")
     .eq("user_id", context.userId)
@@ -677,7 +677,7 @@ async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
     .map(([id]) => id);
   if (candidates.length === 0) return [];
 
-  const { data: already } = await context.supabase
+  const { data: already } = await (await admin())
     .from("user_achievements")
     .select("achievement_id")
     .eq("user_id", context.userId)
@@ -685,7 +685,7 @@ async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
   const have = new Set((already ?? []).map((r) => r.achievement_id));
   const toInsert = candidates.filter((id) => !have.has(id));
   if (toInsert.length === 0) return [];
-  await context.supabase
+  await (await admin())
     .from("user_achievements")
     .insert(toInsert.map((id) => ({ user_id: context.userId, achievement_id: id })));
   return toInsert;
@@ -708,7 +708,7 @@ export type QuizStatsDTO = {
 export const getMyQuizStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<QuizStatsDTO> => {
-    const { data } = await context.supabase
+    const { data } = await (await admin())
       .from("quiz_stats")
       .select("*")
       .eq("user_id", context.userId)

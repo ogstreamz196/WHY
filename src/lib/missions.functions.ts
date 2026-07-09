@@ -145,7 +145,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
     if (!existing) return { awarded: false, points: 0, total_points: 0, newlyUnlocked: [] };
     const complete = existing.mystery_done && existing.surprise_done && existing.chain_done && existing.category_done;
     if (!complete || existing.bonus_awarded) {
-      const { data: s } = await context.supabase
+      const { data: s } = await (await admin())
         .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
       return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
     }
@@ -155,7 +155,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .eq("mission_date", t);
 
-    const { data: stats } = await context.supabase
+    const { data: stats } = await (await admin())
       .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
     const awardedPoints = await awardAmountForUser(context, BONUS_POINTS_BASE);
     const next = (stats?.total_points ?? 0) + awardedPoints;
@@ -199,12 +199,12 @@ export const getWeeklyRecap = createServerFn({ method: "GET" })
         .eq("user_id", context.userId)
         .gte("seen_at", startIso)
         .lte("seen_at", endIso),
-      context.supabase
+      (await admin())
         .from("user_stats")
         .select("total_points, current_streak, longest_streak")
         .eq("user_id", context.userId)
         .maybeSingle(),
-      context.supabase
+      (await admin())
         .from("user_achievements")
         .select("achievement_id, unlocked_at, achievements:achievement_id(name, emoji)")
         .eq("user_id", context.userId)
