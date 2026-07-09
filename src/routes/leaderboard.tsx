@@ -357,7 +357,7 @@ function ArenaPage() {
                 })}
               </AnimatePresence>
             </ol>
-          </>
+          </motion.div>
         )}
 
       </div>
