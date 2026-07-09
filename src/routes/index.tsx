@@ -1234,7 +1234,6 @@ function capitalize(s: string) {
 // Ensure the fact question reads as a full "Why…?" question.
 // Prepends "Why" (if missing) and appends a "?" (if missing).
 export { asWhyQuestion } from "@/lib/whyQuestion";
-import { asWhyQuestion as _asWhyQuestion } from "@/lib/whyQuestion";
 
 
 
