@@ -295,8 +295,8 @@ export type Database = {
         Insert: {
           answer: string
           category?: string | null
-          code: string
-          code_seq: number
+          code?: string
+          code_seq?: number
           created_at?: string
           fun_fact?: string | null
           id?: string
