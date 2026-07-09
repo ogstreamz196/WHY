@@ -110,6 +110,52 @@ export function trimToWords(s: string, n: number) {
   return words.slice(0, n).join(" ");
 }
 
+/**
+ * Server-side guarantee that a stored quiz row is consistent with the
+ * grading logic: non-empty correct_answer, capped to the difficulty's word
+ * budget; exactly 3 distinct distractors, same cap, none matching the
+ * correct answer (case-insensitive); safe explanation length.
+ */
+export function sanitizeQuizRow(input: {
+  correct_answer: unknown;
+  distractors: unknown;
+  explanation?: unknown;
+  difficulty: Difficulty;
+  fallbackAnswer: string;
+}): { correct_answer: string; distractors: string[]; explanation: string } | null {
+  const target = WORDS_FOR[input.difficulty];
+  const rawCorrect =
+    typeof input.correct_answer === "string" && input.correct_answer.trim()
+      ? input.correct_answer
+      : input.fallbackAnswer;
+  const correct = trimToWords(rawCorrect, target) || trimToWords(input.fallbackAnswer, target);
+  if (!correct || wordCount(correct) === 0) return null;
+
+  const lc = correct.toLowerCase();
+  const seen = new Set<string>([lc]);
+  const distractors: string[] = [];
+  if (Array.isArray(input.distractors)) {
+    for (const d of input.distractors) {
+      const t = trimToWords(String(d ?? ""), target);
+      const key = t.toLowerCase();
+      if (t && !seen.has(key)) {
+        seen.add(key);
+        distractors.push(t);
+        if (distractors.length === 3) break;
+      }
+    }
+  }
+  if (distractors.length !== 3) return null;
+
+  const explanation =
+    typeof input.explanation === "string" && input.explanation.trim()
+      ? input.explanation.trim().slice(0, 300)
+      : input.fallbackAnswer.slice(0, 300);
+
+  return { correct_answer: correct, distractors, explanation };
+}
+
+
 
 async function generateDistractors(
   ai: AiClient | null,
