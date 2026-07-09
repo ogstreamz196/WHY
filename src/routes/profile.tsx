@@ -337,28 +337,45 @@ function ProfilePage() {
         {/* Category interests */}
         {interests.data && interests.data.length > 0 && (
           <section className="mt-6">
-            <h2 className="mb-3 font-display text-lg font-black text-white">Your curiosity map</h2>
-            <div className="flex flex-wrap gap-2">
-              {interests.data.slice(0, 8).map((it) => (
-                <div key={it.category} className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85">
-                  <span>{emojiFor(it.category)}</span>
-                  <span className="capitalize">{it.category}</span>
-                  <span className="text-white/50">·{it.weight}</span>
-                </div>
-              ))}
-            </div>
+            <header className="mb-3 flex items-center justify-between">
+              <h2 className="font-display text-lg font-black text-white">Your curiosity map</h2>
+              <CollapseChevron
+                collapsed={collapsed.interests}
+                onToggle={() => toggleCollapsed("interests")}
+                label="curiosity map"
+              />
+            </header>
+            {!collapsed.interests && (
+              <div className="flex flex-wrap gap-2">
+                {interests.data.slice(0, 8).map((it) => (
+                  <div key={it.category} className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85">
+                    <span>{emojiFor(it.category)}</span>
+                    <span className="capitalize">{it.category}</span>
+                    <span className="text-white/50">·{it.weight}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
         {/* Saved chains */}
         <section className="mt-6">
-          <header className="mb-3 flex items-center justify-between">
+          <header className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
-            <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
-              View all →
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
+                View all →
+              </Link>
+              <CollapseChevron
+                collapsed={collapsed.chains}
+                onToggle={() => toggleCollapsed("chains")}
+                label="Saved chains"
+              />
+            </div>
           </header>
-          {(() => {
+          {!collapsed.chains && (() => {
+
             const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
             if (items.length === 0) {
               return (
