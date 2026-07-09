@@ -1,0 +1,338 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ArrowLeft, Crown, Search, Save, Shield, Coins, UserCog } from "lucide-react";
+import {
+  bossAmIBoss,
+  bossListUsers,
+  bossAdjustBalance,
+  bossSetVip,
+  bossGetPrivileges,
+  bossUpdatePrivileges,
+  type Privileges,
+} from "@/lib/boss.functions";
+
+export const Route = createFileRoute("/_authenticated/boss")({
+  head: () => ({ meta: [{ title: "Boss Dashboard" }, { name: "robots", content: "noindex" }] }),
+  component: BossDashboard,
+});
+
+function BossDashboard() {
+  const qc = useQueryClient();
+  const amIBoss = useServerFn(bossAmIBoss);
+  const listUsers = useServerFn(bossListUsers);
+  const adjust = useServerFn(bossAdjustBalance);
+  const setVip = useServerFn(bossSetVip);
+  const getPrivs = useServerFn(bossGetPrivileges);
+  const updatePrivs = useServerFn(bossUpdatePrivileges);
+
+  const boss = useQuery({ queryKey: ["boss:me"], queryFn: () => amIBoss() });
+  const [search, setSearch] = useState("");
+  const users = useQuery({
+    queryKey: ["boss:users", search],
+    queryFn: () => listUsers({ data: { search } }),
+    enabled: !!boss.data?.isBoss,
+  });
+  const privs = useQuery({
+    queryKey: ["boss:privileges"],
+    queryFn: () => getPrivs(),
+    enabled: !!boss.data?.isBoss,
+  });
+
+  const invalidateUsers = () => qc.invalidateQueries({ queryKey: ["boss:users"] });
+
+  const adjustMut = useMutation({
+    mutationFn: (v: { userId: string; delta?: number; setTo?: number }) => adjust({ data: v }),
+    onSuccess: () => {
+      toast.success("Balance updated");
+      invalidateUsers();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed"),
+  });
+  const vipMut = useMutation({
+    mutationFn: (v: { userId: string; grant: boolean; days?: number }) => setVip({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(v.grant ? "VIP granted" : "VIP revoked");
+      invalidateUsers();
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed"),
+  });
+  const privMut = useMutation({
+    mutationFn: (v: Privileges) => updatePrivs({ data: v }),
+    onSuccess: () => {
+      toast.success("Privileges saved");
+      qc.invalidateQueries({ queryKey: ["boss:privileges"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed"),
+  });
+
+  if (boss.isPending) {
+    return <Shell><p className="text-white/60">Loading…</p></Shell>;
+  }
+  if (!boss.data?.isBoss) {
+    return (
+      <Shell>
+        <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-6 text-center">
+          <Shield className="mx-auto mb-2 h-6 w-6 text-red-300" />
+          <p className="font-black text-white">Access denied</p>
+          <p className="mt-1 text-sm text-white/60">Boss account only.</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  return (
+    <Shell>
+      <PrivilegesEditor initial={privs.data ?? null} onSave={(v) => privMut.mutate(v)} saving={privMut.isPending} />
+
+      <section className="mt-6">
+        <div className="mb-3 flex items-center gap-2">
+          <UserCog className="h-4 w-4 text-sky-300" />
+          <h2 className="text-lg font-black text-white">User controls</h2>
+        </div>
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by email…"
+            className="w-full rounded-full border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white outline-none focus:border-sky-400/40"
+          />
+        </div>
+        <ul className="space-y-2">
+          {(users.data?.users ?? []).map((u) => (
+            <UserRow
+              key={u.id}
+              row={u}
+              onAdjust={(delta, setTo) => adjustMut.mutate({ userId: u.id, delta, setTo })}
+              onVip={(grant, days) => vipMut.mutate({ userId: u.id, grant, days })}
+              busy={adjustMut.isPending || vipMut.isPending}
+            />
+          ))}
+          {users.isSuccess && users.data.users.length === 0 && (
+            <li className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-sm text-white/60">
+              No users match.
+            </li>
+          )}
+        </ul>
+      </section>
+    </Shell>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="mx-auto min-h-dvh w-full max-w-2xl px-4 pb-24 pt-6">
+      <header className="mb-6 flex items-center gap-3">
+        <Link
+          to="/profile"
+          className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
+          aria-label="Back to profile"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <div className="flex-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300/80">Dev · Boss only</p>
+          <h1 className="flex items-center gap-2 font-display text-2xl font-black text-white">
+            <Crown className="h-5 w-5 fill-amber-400 text-amber-400" /> Boss Dashboard
+          </h1>
+        </div>
+      </header>
+      {children}
+    </main>
+  );
+}
+
+function UserRow({
+  row,
+  onAdjust,
+  onVip,
+  busy,
+}: {
+  row: { id: string; email: string | null; display_name: string | null; total_points: number; is_vip: boolean };
+  onAdjust: (delta?: number, setTo?: number) => void;
+  onVip: (grant: boolean, days?: number) => void;
+  busy: boolean;
+}) {
+  const [amount, setAmount] = useState("100");
+  const [setAmt, setSetAmt] = useState(String(row.total_points));
+  const n = parseInt(amount, 10) || 0;
+  const setN = parseInt(setAmt, 10);
+  return (
+    <li className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
+          {(row.display_name || row.email || "?").slice(0, 1).toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-black text-white">{row.display_name || row.email || row.id}</p>
+          <p className="truncate text-[11px] text-white/50">{row.email}</p>
+          <div className="mt-1 flex items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/25 bg-amber-400/10 px-2 py-0.5 font-black text-amber-100">
+              <Coins className="h-3 w-3" /> {row.total_points.toLocaleString()}
+            </span>
+            {row.is_vip && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-fuchsia-300/25 bg-fuchsia-400/10 px-2 py-0.5 font-black text-fuchsia-100">
+                <Crown className="h-3 w-3" /> VIP
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <div className="flex gap-1">
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            inputMode="numeric"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none"
+            aria-label="Delta amount"
+          />
+          <button
+            disabled={busy}
+            onClick={() => onAdjust(+n)}
+            className="rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-2 py-1.5 text-xs font-black text-emerald-100"
+          >
+            +
+          </button>
+          <button
+            disabled={busy}
+            onClick={() => onAdjust(-n)}
+            className="rounded-lg border border-red-400/30 bg-red-500/15 px-2 py-1.5 text-xs font-black text-red-100"
+          >
+            −
+          </button>
+        </div>
+        <div className="flex gap-1">
+          <input
+            value={setAmt}
+            onChange={(e) => setSetAmt(e.target.value)}
+            inputMode="numeric"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none"
+            aria-label="Set balance to"
+          />
+          <button
+            disabled={busy || Number.isNaN(setN)}
+            onClick={() => onAdjust(undefined, setN)}
+            className="rounded-lg border border-sky-400/30 bg-sky-500/15 px-2 py-1.5 text-xs font-black text-sky-100"
+          >
+            Set
+          </button>
+        </div>
+      </div>
+      <div className="mt-2 flex gap-2">
+        {row.is_vip ? (
+          <button
+            disabled={busy}
+            onClick={() => onVip(false)}
+            className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs font-black text-white/80"
+          >
+            Revoke VIP
+          </button>
+        ) : (
+          <>
+            <button
+              disabled={busy}
+              onClick={() => onVip(true, 30)}
+              className="flex-1 rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/15 px-2 py-1.5 text-xs font-black text-fuchsia-100"
+            >
+              Grant VIP · 30d
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => onVip(true, 365)}
+              className="flex-1 rounded-lg border border-fuchsia-400/30 bg-fuchsia-500/15 px-2 py-1.5 text-xs font-black text-fuchsia-100"
+            >
+              1 year
+            </button>
+          </>
+        )}
+      </div>
+    </li>
+  );
+}
+
+const DEFAULT_PRIVS: Privileges = {
+  free: { daily_facts_limit: 20, quiz_daily_limit: 3, coin_multiplier: 1, ads_enabled: true },
+  vip: { daily_facts_limit: 999, quiz_daily_limit: 999, coin_multiplier: 1.5, ads_enabled: false },
+};
+
+function PrivilegesEditor({
+  initial,
+  onSave,
+  saving,
+}: {
+  initial: Privileges | null;
+  onSave: (v: Privileges) => void;
+  saving: boolean;
+}) {
+  const seed = useMemo(() => initial ?? DEFAULT_PRIVS, [initial]);
+  const [free, setFree] = useState(seed.free);
+  const [vip, setVip] = useState(seed.vip);
+
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2">
+        <Shield className="h-4 w-4 text-amber-300" />
+        <h2 className="text-lg font-black text-white">Privileges</h2>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <TierEditor label="Free" tone="text-white/80" value={free} onChange={setFree} />
+        <TierEditor label="VIP" tone="text-fuchsia-200" value={vip} onChange={setVip} />
+      </div>
+      <button
+        onClick={() => onSave({ free, vip })}
+        disabled={saving}
+        className="mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-100 disabled:opacity-60"
+      >
+        <Save className="h-4 w-4" /> {saving ? "Saving…" : "Save privileges"}
+      </button>
+    </section>
+  );
+}
+
+function TierEditor({
+  label,
+  tone,
+  value,
+  onChange,
+}: {
+  label: string;
+  tone: string;
+  value: Privileges["free"];
+  onChange: (v: Privileges["free"]) => void;
+}) {
+  const num = (k: keyof Privileges["free"], step = 1) => (
+    <label className="flex items-center justify-between gap-2 text-xs text-white/70">
+      <span className="capitalize">{String(k).replace(/_/g, " ")}</span>
+      <input
+        type="number"
+        step={step}
+        value={value[k] as number}
+        onChange={(e) => onChange({ ...value, [k]: Number(e.target.value) })}
+        className="w-24 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs text-white outline-none"
+      />
+    </label>
+  );
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <p className={`mb-2 text-xs font-black uppercase tracking-widest ${tone}`}>{label}</p>
+      <div className="space-y-2">
+        {num("daily_facts_limit")}
+        {num("quiz_daily_limit")}
+        {num("coin_multiplier", 0.1)}
+        <label className="flex items-center justify-between gap-2 text-xs text-white/70">
+          <span>Ads enabled</span>
+          <input
+            type="checkbox"
+            checked={value.ads_enabled}
+            onChange={(e) => onChange({ ...value, ads_enabled: e.target.checked })}
+            className="h-4 w-4"
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
