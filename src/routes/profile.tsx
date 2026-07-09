@@ -335,72 +335,110 @@ function ProfilePage() {
           })()}
         </section>
 
-        {/* Achievements */}
-        <section className="mt-6">
-          <header className="mb-3 flex items-center justify-between">
-            <h2 className="inline-flex items-center gap-2 font-display text-xl font-black text-white">
-              <Trophy className="h-5 w-5 text-amber-300" /> Achievements
-            </h2>
-            <span className="text-xs font-bold text-white/50">
-              {unlockedCount}/{achievements.data?.length ?? 0}
-            </span>
-          </header>
-          <div className="grid grid-cols-3 gap-3">
-            {(achievements.data ?? []).map((a) => (
-              <AchievementTile key={a.id} a={a} />
-            ))}
-          </div>
-        </section>
-
-        {/* Discovery timeline */}
-        <section className="mt-6">
-          <h2 className="mb-3 inline-flex items-center gap-2 font-display text-lg font-black text-white">
-            <Clock className="h-4 w-4 text-white/70" /> Recent discoveries
-          </h2>
-          {(() => {
-            const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
-            if (entries.length === 0) {
-              return (
-                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
-                  Every fact you reveal shows up here.
-                </p>
-              );
-            }
-            return (
-              <>
-                <ol className="space-y-2">
-                  {entries.map((entry, i) => (
-                    <motion.li
-                      key={`${entry.fact.id}-${i}`}
-                      initial={{ opacity: 0, x: -4 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: Math.min(i, 10) * 0.02 }}
-                      className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                    >
-                      <span className="mt-0.5 text-base">{emojiFor(entry.fact.category)}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate text-sm text-white/90">{entry.fact.question}</div>
-                        <div className="text-[10px] text-white/40">
-                          {new Date(entry.seen_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                        </div>
-                      </div>
-                    </motion.li>
-                  ))}
-                </ol>
-                {timeline.hasNextPage && (
+        {(() => {
+          const achievementsSection = (
+            <section
+              key="achievements"
+              id="achievements"
+              aria-labelledby="achievements-heading"
+              className="mt-6 scroll-mt-24"
+            >
+              <header className="mb-3 flex items-center justify-between gap-2">
+                <h2
+                  id="achievements-heading"
+                  className="inline-flex items-center gap-2 font-display text-xl font-black text-white"
+                >
+                  <Trophy className="h-5 w-5 text-amber-300" aria-hidden="true" /> Achievements
+                </h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white/50">
+                    {unlockedCount}/{achievements.data?.length ?? 0}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => timeline.fetchNextPage()}
-                    disabled={timeline.isFetchingNextPage}
-                    className="mt-3 w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
+                    onClick={toggleSectionOrder}
+                    className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                    aria-label={
+                      sectionOrder === "achievements-first"
+                        ? "Show Recent discoveries above Achievements"
+                        : "Show Achievements above Recent discoveries"
+                    }
                   >
-                    {timeline.isFetchingNextPage ? "Loading…" : "Load more history"}
+                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" /> Swap
                   </button>
-                )}
-              </>
-            );
-          })()}
-        </section>
+                </div>
+              </header>
+              <div className="grid grid-cols-3 gap-3">
+                {(achievements.data ?? []).map((a) => (
+                  <AchievementTile key={a.id} a={a} />
+                ))}
+              </div>
+            </section>
+          );
+
+          const discoveriesSection = (
+            <section
+              key="recent-discoveries"
+              id="recent-discoveries"
+              aria-labelledby="recent-discoveries-heading"
+              className="mt-6 scroll-mt-24"
+            >
+              <h2
+                id="recent-discoveries-heading"
+                className="mb-3 inline-flex items-center gap-2 font-display text-lg font-black text-white"
+              >
+                <Clock className="h-4 w-4 text-white/70" aria-hidden="true" /> Recent discoveries
+              </h2>
+              {(() => {
+                const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
+                if (entries.length === 0) {
+                  return (
+                    <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+                      Every fact you reveal shows up here.
+                    </p>
+                  );
+                }
+                return (
+                  <>
+                    <ol className="space-y-2">
+                      {entries.map((entry, i) => (
+                        <motion.li
+                          key={`${entry.fact.id}-${i}`}
+                          initial={{ opacity: 0, x: -4 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: Math.min(i, 10) * 0.02 }}
+                          className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                        >
+                          <span className="mt-0.5 text-base">{emojiFor(entry.fact.category)}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate text-sm text-white/90">{entry.fact.question}</div>
+                            <div className="text-[10px] text-white/40">
+                              {new Date(entry.seen_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            </div>
+                          </div>
+                        </motion.li>
+                      ))}
+                    </ol>
+                    {timeline.hasNextPage && (
+                      <button
+                        type="button"
+                        onClick={() => timeline.fetchNextPage()}
+                        disabled={timeline.isFetchingNextPage}
+                        className="mt-3 w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
+                      >
+                        {timeline.isFetchingNextPage ? "Loading…" : "Load more history"}
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
+            </section>
+          );
+
+          return sectionOrder === "achievements-first"
+            ? [achievementsSection, discoveriesSection]
+            : [discoveriesSection, achievementsSection];
+        })()}
 
         <div className="mt-8 flex flex-wrap gap-2">
           <Link
