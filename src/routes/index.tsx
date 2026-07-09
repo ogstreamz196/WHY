@@ -642,23 +642,42 @@ function WhyApp() {
                 className="pointer-events-none absolute -inset-6 -z-10 rounded-[3rem] opacity-40 blur-3xl"
                 style={{ background: catGradient }}
               />
-              <article className="glass-strong relative overflow-hidden rounded-4xl p-5 shadow-[var(--shadow-card)] sm:p-6">
+              <div className="candy-rainbow-border">
+              <article className="glass-strong relative overflow-hidden p-5 shadow-[var(--shadow-card)] sm:p-6">
+                {/* Candy sprinkles falling behind content */}
+                <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                  {[
+                    { left: "8%",  delay: "0s",   color: "#ff5fa2" },
+                    { left: "22%", delay: "1.1s", color: "#ffd93d" },
+                    { left: "38%", delay: "2.3s", color: "#6bd968" },
+                    { left: "55%", delay: "0.6s", color: "#4ea8ff" },
+                    { left: "71%", delay: "1.8s", color: "#c471ff" },
+                    { left: "88%", delay: "2.9s", color: "#ff9a3c" },
+                  ].map((s, i) => (
+                    <span
+                      key={i}
+                      className="candy-sprinkle"
+                      style={{ left: s.left, background: s.color, animationDelay: s.delay, transform: `rotate(${i * 40}deg)` }}
+                    />
+                  ))}
+                </div>
                 {/* Speech-bubble tag */}
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="glass animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
-                    <span aria-hidden className="text-lg">🤔</span>
-                    <span className="text-base font-black uppercase tracking-widest text-white/85 sm:text-lg">
+                <div className="relative mb-4 flex items-center justify-between">
+                  <div className="candy-chip animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
+                    <span aria-hidden className="text-lg">🍭</span>
+                    <span className="text-base font-black uppercase tracking-widest sm:text-lg">
                       Do you know why…
                     </span>
                   </div>
                   <span
-                    className="animate-bounce-in inline-flex h-9 w-9 items-center justify-center rounded-2xl text-lg shadow-lg"
+                    className="animate-bounce-in inline-flex h-11 w-11 items-center justify-center rounded-2xl text-xl shadow-lg"
                     style={{ background: catGradient }}
                     aria-label={fact?.category ?? "category"}
                   >
                     {emojiFor(fact?.category)}
                   </span>
                 </div>
+
 
                 <AnimatePresence mode="wait" initial={false}>
                 {showSkeleton ? (
