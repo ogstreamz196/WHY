@@ -122,7 +122,9 @@ export const bossSetVip = createServerFn({ method: "POST" })
         {
           user_id: data.userId,
           paddle_subscription_id: `boss_grant_${data.userId}`,
+          paddle_customer_id: `boss_grant_${data.userId}`,
           product_id: "boss_grant",
+          price_id: "boss_grant",
           status: "active",
           current_period_start: new Date().toISOString(),
           current_period_end: periodEnd,
@@ -131,6 +133,7 @@ export const bossSetVip = createServerFn({ method: "POST" })
         },
         { onConflict: "paddle_subscription_id" },
       );
+
       if (error) throw new Error(error.message);
       return { ok: true, is_vip: true };
     }
