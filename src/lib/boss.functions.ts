@@ -233,7 +233,7 @@ export type AuditEntry = {
   actor_id: string;
   target_user_id: string | null;
   action: string;
-  details: Record<string, unknown>;
+  details: any;
   created_at: string;
   target_email: string | null;
 };
