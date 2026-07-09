@@ -8,9 +8,10 @@ import { BottomNav } from "@/components/BottomNav";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
-import { getLeaderboard, type LeaderboardKind, type LeaderboardResult } from "@/lib/leaderboard.functions";
+import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
+import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
 
-export const Route = createFileRoute("/_authenticated/leaderboard")({
+export const Route = createFileRoute("/leaderboard")({
   head: () => ({
     meta: [
       { title: "Curiosity Arena — Why?" },
@@ -84,7 +85,7 @@ function medalClass(rank: number): string {
 
 function ArenaPage() {
   const { user } = useCurrentUser();
-  const fetchBoard = useServerFn(getLeaderboard);
+  const fetchBoard = useServerFn(getLeaderboardPublic);
   const [tab, setTab] = useState<TabKey>("today");
   const [filter, setFilter] = useState<string | null>(null);
   const [result, setResult] = useState<LeaderboardResult | null>(null);
@@ -106,7 +107,7 @@ function ArenaPage() {
     setLoading(true);
     setRankDelta(null);
     const q = resolveQuery(tab, filter);
-    fetchBoard({ data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50 } })
+    fetchBoard({ data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50, userId: user?.id } })
       .then((r) => {
         if (!alive) return;
         setResult(r);
@@ -143,7 +144,7 @@ function ArenaPage() {
       .catch(() => { if (alive) setResult(null); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [tab, filter, fetchBoard]);
+  }, [tab, filter, fetchBoard, user?.id]);
 
   const chips = useMemo(() => {
     if (tab === "age")    return AGES;

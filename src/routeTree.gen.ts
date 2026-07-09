@@ -13,6 +13,7 @@ import { Route as StoreRouteImport } from './routes/store'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as ChainsRouteImport } from './routes/chains'
 import { Route as BadgesRouteImport } from './routes/badges'
@@ -23,7 +24,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChainIdRouteImport } from './routes/chain.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
-import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedImportGuestRouteImport } from './routes/_authenticated/import-guest'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedQuizIndexRouteImport } from './routes/_authenticated/quiz.index'
@@ -49,6 +49,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -100,12 +105,6 @@ const AuthenticatedRecapRoute = AuthenticatedRecapRouteImport.update({
   path: '/recap',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedLeaderboardRoute =
-  AuthenticatedLeaderboardRouteImport.update({
-    id: '/leaderboard',
-    path: '/leaderboard',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedImportGuestRoute =
   AuthenticatedImportGuestRouteImport.update({
     id: '/import-guest',
@@ -147,13 +146,13 @@ export interface FileRoutesByFullPath {
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/import-guest': typeof AuthenticatedImportGuestRoute
-  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
@@ -169,13 +168,13 @@ export interface FileRoutesByTo {
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/import-guest': typeof AuthenticatedImportGuestRoute
-  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
@@ -193,13 +192,13 @@ export interface FileRoutesById {
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/store': typeof StoreRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/import-guest': typeof AuthenticatedImportGuestRoute
-  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/recap': typeof AuthenticatedRecapRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
@@ -217,13 +216,13 @@ export interface FileRouteTypes {
     | '/badges'
     | '/chains'
     | '/favorites'
+    | '/leaderboard'
     | '/profile'
     | '/reset-password'
     | '/settings'
     | '/store'
     | '/history'
     | '/import-guest'
-    | '/leaderboard'
     | '/recap'
     | '/c/$slug'
     | '/chain/$id'
@@ -239,13 +238,13 @@ export interface FileRouteTypes {
     | '/badges'
     | '/chains'
     | '/favorites'
+    | '/leaderboard'
     | '/profile'
     | '/reset-password'
     | '/settings'
     | '/store'
     | '/history'
     | '/import-guest'
-    | '/leaderboard'
     | '/recap'
     | '/c/$slug'
     | '/chain/$id'
@@ -262,13 +261,13 @@ export interface FileRouteTypes {
     | '/badges'
     | '/chains'
     | '/favorites'
+    | '/leaderboard'
     | '/profile'
     | '/reset-password'
     | '/settings'
     | '/store'
     | '/_authenticated/history'
     | '/_authenticated/import-guest'
-    | '/_authenticated/leaderboard'
     | '/_authenticated/recap'
     | '/c/$slug'
     | '/chain/$id'
@@ -286,6 +285,7 @@ export interface RootRouteChildren {
   BadgesRoute: typeof BadgesRoute
   ChainsRoute: typeof ChainsRoute
   FavoritesRoute: typeof FavoritesRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
@@ -324,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -396,13 +403,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRecapRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/leaderboard': {
-      id: '/_authenticated/leaderboard'
-      path: '/leaderboard'
-      fullPath: '/leaderboard'
-      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/import-guest': {
       id: '/_authenticated/import-guest'
       path: '/import-guest'
@@ -451,7 +451,6 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedImportGuestRoute: typeof AuthenticatedImportGuestRoute
-  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedRecapRoute: typeof AuthenticatedRecapRoute
   AuthenticatedQuizSessionIdRoute: typeof AuthenticatedQuizSessionIdRoute
   AuthenticatedQuizIndexRoute: typeof AuthenticatedQuizIndexRoute
@@ -460,7 +459,6 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedImportGuestRoute: AuthenticatedImportGuestRoute,
-  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedRecapRoute: AuthenticatedRecapRoute,
   AuthenticatedQuizSessionIdRoute: AuthenticatedQuizSessionIdRoute,
   AuthenticatedQuizIndexRoute: AuthenticatedQuizIndexRoute,
@@ -477,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   BadgesRoute: BadgesRoute,
   ChainsRoute: ChainsRoute,
   FavoritesRoute: FavoritesRoute,
+  LeaderboardRoute: LeaderboardRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
