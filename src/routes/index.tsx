@@ -642,23 +642,42 @@ function WhyApp() {
                 className="pointer-events-none absolute -inset-6 -z-10 rounded-[3rem] opacity-40 blur-3xl"
                 style={{ background: catGradient }}
               />
-              <article className="glass-strong relative overflow-hidden rounded-4xl p-5 shadow-[var(--shadow-card)] sm:p-6">
+              <div className="candy-rainbow-border">
+              <article className="glass-strong relative overflow-hidden p-5 shadow-[var(--shadow-card)] sm:p-6">
+                {/* Candy sprinkles falling behind content */}
+                <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                  {[
+                    { left: "8%",  delay: "0s",   color: "#ff5fa2" },
+                    { left: "22%", delay: "1.1s", color: "#ffd93d" },
+                    { left: "38%", delay: "2.3s", color: "#6bd968" },
+                    { left: "55%", delay: "0.6s", color: "#4ea8ff" },
+                    { left: "71%", delay: "1.8s", color: "#c471ff" },
+                    { left: "88%", delay: "2.9s", color: "#ff9a3c" },
+                  ].map((s, i) => (
+                    <span
+                      key={i}
+                      className="candy-sprinkle"
+                      style={{ left: s.left, background: s.color, animationDelay: s.delay, transform: `rotate(${i * 40}deg)` }}
+                    />
+                  ))}
+                </div>
                 {/* Speech-bubble tag */}
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="glass animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
-                    <span aria-hidden className="text-lg">🤔</span>
-                    <span className="text-base font-black uppercase tracking-widest text-white/85 sm:text-lg">
+                <div className="relative mb-4 flex items-center justify-between">
+                  <div className="candy-chip animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
+                    <span aria-hidden className="text-lg">🍭</span>
+                    <span className="text-base font-black uppercase tracking-widest sm:text-lg">
                       Do you know why…
                     </span>
                   </div>
                   <span
-                    className="animate-bounce-in inline-flex h-9 w-9 items-center justify-center rounded-2xl text-lg shadow-lg"
+                    className="animate-bounce-in inline-flex h-11 w-11 items-center justify-center rounded-2xl text-xl shadow-lg"
                     style={{ background: catGradient }}
                     aria-label={fact?.category ?? "category"}
                   >
                     {emojiFor(fact?.category)}
                   </span>
                 </div>
+
 
                 <AnimatePresence mode="wait" initial={false}>
                 {showSkeleton ? (
@@ -704,11 +723,12 @@ function WhyApp() {
                           className="mt-6 flex flex-col items-center"
                         >
                           <motion.div
-                            initial={{ scale: 0.6, rotate: -8, opacity: 0 }}
+                            initial={{ scale: 0.4, rotate: -20, opacity: 0 }}
                             animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                            className="mb-3 flex h-32 w-32 items-center justify-center rounded-full text-6xl shadow-[0_10px_40px_rgba(124,58,237,0.5)] animate-float-slow"
-                            style={{ background: catGradient }}
+                            transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                            whileHover={{ scale: 1.08, rotate: 6 }}
+                            whileTap={{ scale: 0.92, rotate: -6 }}
+                            className="candy-emoji-orb mb-4 flex h-32 w-32 items-center justify-center rounded-full text-6xl cursor-grab active:cursor-grabbing"
                             aria-label={fact.category ?? "question icon"}
                           >
                             <span>{emojiFor(fact.category)}</span>
@@ -718,44 +738,50 @@ function WhyApp() {
                             onClick={reveal}
                             disabled={revealing}
                             layout
+                            whileHover={{ scale: 1.03, rotate: -1 }}
+                            whileTap={{ scale: 0.94 }}
                             animate={
                               revealing
-                                ? { scale: [1, 1.04, 0.9], borderRadius: "9999px" }
+                                ? { scale: [1, 1.06, 0.88, 1.02], rotate: [0, -2, 2, 0] }
                                 : { scale: 1 }
                             }
-                            transition={{ duration: 0.48, ease: [0.32, 0.72, 0, 1] }}
-                            className={`hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98] ${
-                              revealing ? "" : "animate-pulse-glow"
-                            }`}
-                            style={{ background: "var(--gradient-primary)" }}
+                            transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+                            className="candy-btn group relative w-full overflow-hidden rounded-full px-5 py-4 text-lg font-black uppercase tracking-wide text-white"
                           >
                             <span aria-hidden className="shine-sweep" />
-                            {/* Progress pulse fill during reveal */}
                             {revealing && (
                               <motion.span
                                 aria-hidden
                                 initial={{ x: "-100%" }}
                                 animate={{ x: "0%" }}
                                 transition={{ duration: 0.46, ease: "easeOut" }}
-                                className="absolute inset-0 bg-white/25"
+                                className="absolute inset-0 bg-white/30"
                               />
                             )}
                             <span className="relative z-10 inline-flex items-center gap-2">
                               <motion.span
                                 animate={
                                   revealing
-                                    ? { rotate: 360, scale: 1.3 }
-                                    : { rotate: 0, scale: 1 }
+                                    ? { rotate: 720, scale: 1.5 }
+                                    : { rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] }
                                 }
-                                transition={{ duration: 0.48, ease: "easeOut" }}
+                                transition={
+                                  revealing
+                                    ? { duration: 0.5, ease: "easeOut" }
+                                    : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+                                }
                                 className="inline-flex"
                               >
                                 <Sparkles className="h-5 w-5" />
                               </motion.span>
-                              {revealing ? "Revealing…" : "Reveal Answer"}
+                              {revealing ? "Unwrapping…" : "Reveal the Sweet Answer"}
+                              <span aria-hidden className="text-xl">🍬</span>
                             </span>
                           </motion.button>
-                          <p className="mt-3 text-xs text-white/50">Tap to discover the magic ↑</p>
+                          <p className="mt-3 text-xs font-bold text-white/70">
+                            <span aria-hidden>🎉</span> Tap the candy button — go on! <span aria-hidden>🎉</span>
+                          </p>
+
                         </motion.div>
                       ) : (
                         <motion.div
@@ -904,6 +930,8 @@ function WhyApp() {
                   <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
                 )}
               </article>
+              </div>
+
             </motion.div>
           </AnimatePresence>
 
