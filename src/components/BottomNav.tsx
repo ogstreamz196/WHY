@@ -1,5 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Home, Trophy, Store, User, Sparkles, Medal } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+const BOSS_EMAIL = "ogstreamz196@gmail.com";
 
 const items = [
   { to: "/",            label: "Home",   Icon: Home },
@@ -12,6 +16,18 @@ const items = [
 
 
 export function BottomNav() {
+  const [isBoss, setIsBoss] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (alive) setIsBoss(data.user?.email?.toLowerCase() === BOSS_EMAIL);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setIsBoss(session?.user?.email?.toLowerCase() === BOSS_EMAIL);
+    });
+    return () => { alive = false; sub.subscription.unsubscribe(); };
+  }, []);
+
   return (
     <nav
       aria-label="Primary"
