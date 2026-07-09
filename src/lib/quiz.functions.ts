@@ -93,60 +93,86 @@ function shuffle<T>(arr: T[]): T[] {
 
 type AiClient = ReturnType<typeof createLovableAiGatewayProvider>;
 
+/** Target word count for the correct answer + distractors, per difficulty. */
+const WORDS_FOR: Record<Difficulty, number> = {
+  easy: 2,
+  medium: 4,
+  hard: 6,
+  expert: 8,
+};
+
+function wordCount(s: string) {
+  return s.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function trimToWords(s: string, n: number) {
+  const words = s.trim().replace(/[.!?…]+$/g, "").split(/\s+/).filter(Boolean);
+  return words.slice(0, n).join(" ");
+}
+
 async function generateDistractors(
   ai: AiClient | null,
   fact: { question: string; answer: string; category: string | null },
-): Promise<{ distractors: string[]; explanation: string }> {
-  const fallback = () => ({
-    distractors: [
-      "None of the above",
-      "It just happens naturally",
-      "Scientists are still not sure",
-    ],
-    explanation: fact.answer,
-  });
+  difficulty: Difficulty,
+): Promise<{ answer: string; distractors: string[]; explanation: string }> {
+  const target = WORDS_FOR[difficulty];
+  const fallback = () => {
+    const short = trimToWords(fact.answer, target) || fact.answer;
+    return {
+      answer: short,
+      distractors: ["Not really", "Something else", "Nobody knows"].map((d) =>
+        trimToWords(d, target) || d,
+      ),
+      explanation: fact.answer,
+    };
+  };
   if (!ai) return fallback();
   try {
     const prompt =
-      `You are writing a fun trivia quiz for curious kids and adults.\n` +
+      `You are writing a fun multiple-choice trivia quiz for curious kids and adults.\n` +
       `Question: ${fact.question}\n` +
-      `Correct answer: ${fact.answer}\n` +
-      `Category: ${fact.category ?? "general"}\n\n` +
+      `Reference answer: ${fact.answer}\n` +
+      `Category: ${fact.category ?? "general"}\n` +
+      `Difficulty: ${difficulty} (target = EXACTLY ${target} words per choice)\n\n` +
       `Return ONLY valid JSON of the form:\n` +
-      `{"distractors":["A","B","C"],"explanation":"one-sentence explanation"}\n` +
+      `{"answer":"...","distractors":["A","B","C"],"explanation":"..."}\n` +
       `Rules:\n` +
-      `- 3 plausible but clearly WRONG short answers (max 8 words each).\n` +
-      `- Same tone/length as the correct answer.\n` +
-      `- Do NOT repeat or paraphrase the correct answer.\n` +
+      `- "answer" must be a correct, simplified version of the reference answer, EXACTLY ${target} words.\n` +
+      `- Each distractor must also be EXACTLY ${target} words, plausible but clearly WRONG.\n` +
+      `- All 4 choices should feel same tone/style/length (no punctuation at end).\n` +
+      `- Do NOT paraphrase the correct answer inside distractors.\n` +
       `- Explanation: 1-2 friendly sentences, no more than 220 chars.`;
     const { text } = await generateText({
       model: ai("google/gemini-2.5-flash-lite"),
       prompt,
       maxRetries: 1,
     });
-    const cleaned = text
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
+    const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
     const start = cleaned.indexOf("{");
     const end = cleaned.lastIndexOf("}");
     if (start === -1 || end === -1) return fallback();
     const parsed = JSON.parse(cleaned.slice(start, end + 1)) as {
+      answer?: unknown;
       distractors?: unknown;
       explanation?: unknown;
     };
+    const rawAnswer =
+      typeof parsed.answer === "string" && parsed.answer.trim()
+        ? parsed.answer.trim()
+        : fact.answer;
+    const answer = trimToWords(rawAnswer, target) || trimToWords(fact.answer, target) || fact.answer;
     const distractors = Array.isArray(parsed.distractors)
       ? parsed.distractors
-          .map((d) => String(d).trim())
-          .filter((d) => d && d.toLowerCase() !== fact.answer.toLowerCase())
+          .map((d) => trimToWords(String(d), target))
+          .filter((d) => d && d.toLowerCase() !== answer.toLowerCase())
           .slice(0, 3)
       : [];
-    if (distractors.length < 3) return fallback();
+    if (distractors.length < 3 || wordCount(answer) === 0) return fallback();
     const explanation =
       typeof parsed.explanation === "string" && parsed.explanation.trim()
         ? parsed.explanation.trim().slice(0, 300)
         : fact.answer;
-    return { distractors, explanation };
+    return { answer, distractors, explanation };
   } catch (err) {
     console.warn("[quiz] distractor gen failed:", err);
     return fallback();
