@@ -933,7 +933,7 @@ function WhyApp() {
                                   aria-hidden
                                   className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
                                 />
-                                <ChainStep index={0} question={capitalize(fact.question)} solved />
+                                <ChainStep index={0} question={asWhyQuestion(fact.question)} solved />
                                 {chain.map((layer, i) => (
                                   <ChainStep
                                     key={i}
