@@ -349,14 +349,15 @@ export const startQuiz = createServerFn({ method: "POST" })
     }
 
 
+    const finalFactIds = questions.map((q) => q.fact_id);
     const { data: session, error: sErr } = await context.supabase
       .from("quiz_sessions")
       .insert({
         user_id: context.userId,
         category: data.category === "all" ? null : data.category ?? null,
         difficulty,
-        question_count: length,
-        fact_ids: factIds,
+        question_count: questions.length,
+        fact_ids: finalFactIds,
         answer_order: answerOrder,
       })
       .select("id")
@@ -367,10 +368,11 @@ export const startQuiz = createServerFn({ method: "POST" })
       session_id: session.id as string,
       category: data.category ?? null,
       difficulty,
-      question_count: length,
+      question_count: questions.length,
       questions,
     };
   });
+
 
 // ---------------- submitAnswer ----------------
 
