@@ -144,7 +144,7 @@ function ArenaPage() {
       .catch(() => { if (alive) setResult(null); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [tab, filter, fetchBoard]);
+  }, [tab, filter, fetchBoard, user?.id]);
 
   const chips = useMemo(() => {
     if (tab === "age")    return AGES;
