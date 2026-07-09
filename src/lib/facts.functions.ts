@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 function getSupabase() {
   return createClient(
