@@ -197,28 +197,33 @@ async function generateDistractors(
     const short = trimToWords(fact.answer, target) || fact.answer;
     return {
       answer: short,
-      distractors: ["Not really", "Something else", "Nobody knows"].map((d) =>
-        trimToWords(d, target) || d,
-      ),
+      distractors: [
+        "Because of magic dust",
+        "Because nobody has decided",
+        "Because the moon says so",
+      ].map((d) => trimToWords(d, target) || d),
       explanation: fact.answer,
     };
   };
   if (!ai) return fallback();
   try {
     const prompt =
-      `You are writing a fun multiple-choice trivia quiz for curious kids and adults.\n` +
+      `You are writing a fun, friendly multiple-choice trivia quiz for curious kids and adults.\n` +
+      `Every question is a "Why ...?" question, so every choice MUST read like a reason ` +
+      `(imagine it following the word "Because"). Answers should make sense and be easy to understand.\n\n` +
       `Question: ${fact.question}\n` +
       `Reference answer: ${fact.answer}\n` +
       `Category: ${fact.category ?? "general"}\n` +
-      `Difficulty: ${difficulty} (target = EXACTLY ${target} words per choice)\n\n` +
+      `Difficulty: ${difficulty} (target = about ${target} words per choice, max ${target})\n\n` +
       `Return ONLY valid JSON of the form:\n` +
       `{"answer":"...","distractors":["A","B","C"],"explanation":"..."}\n` +
       `Rules:\n` +
-      `- "answer" must be a correct, simplified version of the reference answer, EXACTLY ${target} words.\n` +
-      `- Each distractor must also be EXACTLY ${target} words, plausible but clearly WRONG.\n` +
-      `- All 4 choices should feel same tone/style/length (no punctuation at end).\n` +
-      `- Do NOT paraphrase the correct answer inside distractors.\n` +
-      `- Explanation: 1-2 friendly sentences, no more than 220 chars.`;
+      `- "answer" is the correct reason, simple and clear, up to ${target} words. Do NOT start with "Because".\n` +
+      `- Each distractor is also a reason, up to ${target} words, plausible-sounding but clearly WRONG and a bit playful.\n` +
+      `- All 4 choices share the same tone, style and rough length. No trailing punctuation.\n` +
+      `- Do NOT paraphrase the correct answer inside the distractors.\n` +
+      `- Keep it kind and age-friendly. No scary, gross, or adult content.\n` +
+      `- Explanation: 1-2 friendly sentences, no more than 220 chars, explaining WHY the answer is right.`;
     const { text } = await generateText({
       model: ai("google/gemini-2.5-flash-lite"),
       prompt,
