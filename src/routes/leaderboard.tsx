@@ -428,112 +428,148 @@ function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string;
   const third = byRank(3);
 
   return (
-    <div className="mb-4 grid grid-cols-3 items-end gap-2 pt-6">
-      {second ? <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} /> : <div />}
-      {first ? <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} /> : <div />}
-      {third ? <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} /> : <div />}
+    <div className="relative mb-4 pt-14">
+      {/* Ambient gold halo behind #1 */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-4 mx-auto h-40 max-w-[220px] rounded-full bg-amber-400/10 blur-3xl"
+        aria-hidden="true"
+      />
+      <div className="relative flex items-end justify-center gap-2 sm:gap-4">
+        {second ? (
+          <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} />
+        ) : (
+          <div className="w-full max-w-[140px]" />
+        )}
+        {first ? (
+          <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} />
+        ) : (
+          <div className="w-full max-w-[180px]" />
+        )}
+        {third ? (
+          <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} />
+        ) : (
+          <div className="w-full max-w-[130px]" />
+        )}
+      </div>
     </div>
   );
 }
 
-function PodiumColumn({ entry, place, unit, isMe }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean }) {
-  const cfg = {
-    1: {
-      delay: 0.15,
-      avatar: "w-24 h-24 rounded-3xl",
-      ring: "bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-600 shadow-[0_0_40px_-8px_rgba(245,158,11,0.6)]",
-      inner: "rounded-[22px]",
-      textTone: "text-amber-300",
-      badge: "shimmer-gold text-black",
-      badgeSize: "w-9 h-9 text-xs",
-      pillar: "h-40 bg-gradient-to-t from-amber-900/40 to-amber-500/25 border-amber-400/50",
-      label: "text-sm tracking-[0.2em]",
-      score: "text-2xl",
-      crown: true,
-    },
-    2: {
-      delay: 0,
-      avatar: "w-16 h-16 rounded-2xl",
-      ring: "bg-gradient-to-br from-slate-200 to-slate-500 shadow-[0_0_24px_-8px_rgba(203,213,225,0.5)]",
-      inner: "rounded-[14px]",
-      textTone: "text-slate-300",
-      badge: "bg-slate-300 text-black",
-      badgeSize: "w-7 h-7 text-[10px]",
-      pillar: "h-24 bg-gradient-to-t from-slate-900/50 to-slate-400/25 border-slate-400/40",
-      label: "text-xs tracking-widest",
-      score: "text-lg",
-      crown: false,
-    },
-    3: {
-      delay: 0.3,
-      avatar: "w-16 h-16 rounded-2xl",
-      ring: "bg-gradient-to-br from-orange-500 to-stone-700 shadow-[0_0_20px_-8px_rgba(234,88,12,0.5)]",
-      inner: "rounded-[14px]",
-      textTone: "text-orange-400",
-      badge: "bg-orange-600 text-white",
-      badgeSize: "w-7 h-7 text-[10px]",
-      pillar: "h-16 bg-gradient-to-t from-orange-950/50 to-orange-700/20 border-orange-700/40",
-      label: "text-xs tracking-widest",
-      score: "text-lg",
-      crown: false,
-    },
-  }[place];
+const PODIUM_CFG = {
+  1: {
+    delay: 0.15,
+    wrap: "w-full max-w-[180px] z-10",
+    avatar: "w-24 h-24 sm:w-28 sm:h-28",
+    ring: "border-4 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.35)]",
+    chip: "w-10 h-10 bg-gradient-to-br from-amber-300 to-amber-600 border-amber-200 text-amber-950 text-base",
+    card: "h-64 sm:h-72 rounded-t-[2.25rem] border-t-2 border-x-2 border-amber-400/40 bg-gradient-to-b from-amber-500/12 to-transparent shadow-[0_-25px_60px_-15px_rgba(251,191,36,0.25)] podium-shimmer",
+    medal: "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.55)]",
+    medalSize: "h-9 w-9",
+    name: "text-white text-lg sm:text-xl font-black tracking-tight",
+    score: "text-amber-300 text-base font-black",
+    tier: "Grandmaster",
+    tierPill: "bg-amber-400/20 border-amber-400/40 text-amber-200",
+  },
+  2: {
+    delay: 0,
+    wrap: "w-full max-w-[140px]",
+    avatar: "w-16 h-16 sm:w-20 sm:h-20",
+    ring: "border-4 border-slate-400/50 shadow-lg",
+    chip: "w-8 h-8 bg-slate-200 border-slate-400 text-slate-900 text-sm",
+    card: "h-48 sm:h-56 rounded-t-3xl border-t border-x border-slate-400/25 bg-white/[0.03]",
+    medal: "text-slate-300",
+    medalSize: "h-7 w-7",
+    name: "text-white text-sm font-bold",
+    score: "text-slate-300 text-xs font-black",
+    tier: "Challenger",
+    tierPill: "bg-slate-400/10 border-slate-400/25 text-slate-300",
+  },
+  3: {
+    delay: 0.3,
+    wrap: "w-full max-w-[130px]",
+    avatar: "w-14 h-14 sm:w-16 sm:h-16",
+    ring: "border-4 border-orange-700/50 shadow-md",
+    chip: "w-7 h-7 bg-orange-700 border-orange-400 text-orange-50 text-xs",
+    card: "h-40 sm:h-48 rounded-t-3xl border-t border-x border-orange-700/25 bg-white/[0.02]",
+    medal: "text-orange-500/90",
+    medalSize: "h-6 w-6",
+    name: "text-white/90 text-sm font-bold",
+    score: "text-orange-300/90 text-xs font-black",
+    tier: "Veteran",
+    tierPill: "bg-orange-900/25 border-orange-700/30 text-orange-300",
+  },
+} as const;
 
+function PodiumColumn({ entry, place, unit, isMe }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean }) {
+  const cfg = PODIUM_CFG[place];
   const name = entry.display_name || entry.username || "Explorer";
   const initial = name.slice(0, 1).toUpperCase();
 
   return (
     <motion.div
-      className="flex flex-col items-center"
+      className={`relative flex flex-col items-center ${cfg.wrap}`}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: cfg.delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
     >
-      <motion.div
-        className="relative mb-3"
-        animate={{ y: [0, -6, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: cfg.delay }}
-      >
-        {cfg.crown && (
-          <motion.div
-            className="absolute -top-8 left-1/2 -translate-x-1/2"
-            animate={{ rotate: [-6, 6, -6] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Crown className="h-7 w-7 fill-amber-400 text-amber-400 drop-shadow-[0_2px_10px_rgba(251,191,36,0.7)]" />
-          </motion.div>
-        )}
-        <div className={`${cfg.avatar} ${cfg.ring} p-0.5`}>
-          <div className={`flex h-full w-full items-center justify-center overflow-hidden bg-neutral-950 ${cfg.inner}`}>
-            <span className={`font-black ${cfg.textTone} ${place === 1 ? "text-3xl" : "text-xl"}`}>{initial}</span>
+      {/* Floating crown on champion */}
+      {place === 1 && (
+        <motion.div
+          className="absolute -top-12 z-20"
+          animate={{ y: [0, -4, 0], rotate: [-4, 4, -4] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          aria-hidden="true"
+        >
+          <Crown className="h-10 w-10 fill-amber-400 text-amber-400 drop-shadow-[0_0_14px_rgba(251,191,36,0.7)]" />
+        </motion.div>
+      )}
+
+      {/* Avatar with rank chip */}
+      <div className="relative z-20 mb-3">
+        <div className={`relative ${cfg.avatar} rounded-full ${cfg.ring} bg-neutral-950 p-1.5`}>
+          <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-white/10 to-white/0">
+            <span className={`font-black text-white ${place === 1 ? "text-3xl" : "text-lg"}`}>{initial}</span>
           </div>
         </div>
         <div
-          className={`absolute -top-2 -right-2 flex items-center justify-center rounded-full border-[3px] border-[color:var(--background,#050505)] font-black shadow-lg ${cfg.badge} ${cfg.badgeSize}`}
+          className={`absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2 font-black shadow-xl ${cfg.chip}`}
+          aria-label={`Rank ${place}`}
         >
           {place}
         </div>
-      </motion.div>
-      <div className="mb-2 text-center">
-        <div className={`font-black uppercase ${cfg.label} ${place === 1 ? "text-amber-300" : cfg.textTone}`}>
-          {name}
-          {isMe && <span className="ml-1 text-[9px] text-fuchsia-300">YOU</span>}
-        </div>
-        <div className={`font-black text-white ${cfg.score}`}>
-          {entry.score.toLocaleString()}
-          <span className="ml-1 text-[9px] font-black uppercase tracking-widest text-white/50">{unit}</span>
-        </div>
       </div>
+
+      {/* Card / pillar */}
       <motion.div
-        className={`relative w-full overflow-hidden rounded-t-2xl border-x border-t ${cfg.pillar}`}
-        initial={{ scaleY: 0, transformOrigin: "bottom" }}
-        animate={{ scaleY: 1 }}
+        className={`relative flex w-full flex-col items-center overflow-hidden px-3 pb-5 pt-6 text-center backdrop-blur-xl transition-colors ${cfg.card}`}
+        initial={{ scaleY: 0.4, opacity: 0, transformOrigin: "bottom" }}
+        animate={{ scaleY: 1, opacity: 1 }}
         transition={{ delay: cfg.delay + 0.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
-        {place === 1 && <div className="absolute inset-0 animate-pulse bg-amber-400/5" />}
+        {/* Victory medal */}
+        <div className={`mb-3 ${cfg.medal}`} aria-hidden="true">
+          <Trophy className={cfg.medalSize} strokeWidth={2.2} />
+        </div>
+
+        <p className={`w-full truncate ${cfg.name}`}>
+          {name}
+          {isMe && <span className="ml-1 text-[9px] text-fuchsia-300">YOU</span>}
+        </p>
+        <p className={`mt-1 ${cfg.score}`}>
+          {entry.score.toLocaleString()}
+          <span className="ml-1 text-[9px] font-black uppercase tracking-widest text-white/45">{unit}</span>
+        </p>
+
+        <div className="mt-auto pt-3">
+          <span
+            className={`inline-block rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.22em] ${cfg.tierPill}`}
+          >
+            {cfg.tier}
+          </span>
+        </div>
       </motion.div>
     </motion.div>
   );
 }
+
 

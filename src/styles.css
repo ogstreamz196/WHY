@@ -409,3 +409,18 @@ nav[aria-label="Primary"] button:focus-visible {
   background-size: 200% auto;
   animation: shimmer-gold 3s linear infinite;
 }
+
+@keyframes podium-gold-sweep {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  40%, 100% { transform: translateX(260%) skewX(-20deg); }
+}
+.podium-shimmer { position: relative; }
+.podium-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(251,191,36,0.18), transparent);
+  animation: podium-gold-sweep 5s linear infinite;
+  pointer-events: none;
+}
