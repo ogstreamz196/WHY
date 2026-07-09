@@ -998,47 +998,12 @@ function WhyApp() {
           </AnimatePresence>
 
           {/* Category bubbles */}
-          <div className="-mx-4 mt-5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex gap-2.5 pb-1">
-              {CATEGORIES.map((c) => {
-                const active = category === c.key;
-                return (
-                  <button
-                    key={c.key}
-                    type="button"
-                    onClick={() => setCategory(c.key)}
-                    className="group flex shrink-0 flex-col items-center gap-1"
-                    style={{ width: "clamp(3rem, 12vw, 3.75rem)" }}
-                  >
-                    <span
-                      className={`flex aspect-square w-full items-center justify-center rounded-2xl shadow-lg transition ${
-                        active ? "scale-110 ring-2 ring-white/60" : "opacity-80 group-hover:opacity-100"
-                      }`}
-                      style={{
-                        background: c.gradient,
-                        boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined,
-                      }}
-                    >
-                      <span
-                        className="leading-none"
-                        style={{ fontSize: "clamp(1.25rem, 5vw, 1.6rem)" }}
-                      >
-                        {c.emoji}
-                      </span>
-                    </span>
-                    <span
-                      className={`w-full truncate text-center text-[10px] font-bold leading-tight ${
-                        active ? "text-white" : "text-white/60"
-                      }`}
-                      title={c.label}
-                    >
-                      {c.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <CategoryScroller
+            categories={CATEGORIES}
+            activeKey={category}
+            onSelect={setCategory}
+          />
+
         </section>
 
         {/* Giant Next button (sticky above bottom nav) */}
