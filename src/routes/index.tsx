@@ -1237,7 +1237,7 @@ export function asWhyQuestion(raw: string) {
   if (!raw) return raw;
   let q = raw.trim().replace(/^(do you know\s+)/i, "");
   // Collapse accidental repeated leading "why why ..."
-  q = q.replace(/^(why\s+)+/i, (m) => (m ? "why " : ""));
+  q = q.replace(/^(?:why\b[\s,?.!-]*)+/i, "why ").replace(/^why\s+(?=[?.!]|$)/i, "why");
   const startsWithWhy = /^(why|how come|how|what makes|what causes)\b/i.test(q);
   if (!startsWithWhy) q = `Why ${q.charAt(0).toLowerCase() + q.slice(1)}`;
   else q = q.charAt(0).toUpperCase() + q.slice(1);
