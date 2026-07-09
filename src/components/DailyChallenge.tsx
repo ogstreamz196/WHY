@@ -193,9 +193,10 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       🤔 Pick the real reason
                     </p>
-                    <h2 className="mt-1 font-display text-base font-black leading-tight text-white">
+                    <h3 className="mt-1 font-display text-base font-black leading-tight text-white">
                       {capitalize(fact.question)}
-                    </h2>
+                    </h3>
+
                     <div className="mt-3 grid gap-2" role="group" aria-label="Answer choices">
                       {mcq.choices.map((choice, i) => {
                         const isPicked = picked === i;
