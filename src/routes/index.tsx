@@ -317,7 +317,7 @@ function WhyApp() {
         // Always prefer an unseen fact from the DB. Only when the pool is
         // exhausted (or the user explicitly asked) do we generate a new one.
         if (!opts?.forceGenerate) {
-          next = await getRandom({ data: { excludeId: currentId, category: cat, seenIds: seen });
+          next = await getRandom({ data: { excludeId: currentId, category: cat, seenIds: seen } });
         }
         if (!next || opts?.forceGenerate) {
           try {
