@@ -153,6 +153,10 @@ export const bossSetVip = createServerFn({ method: "POST" })
       );
 
       if (error) throw new Error(error.message);
+      await writeAudit(supabaseAdmin, context.userId, "grant_vip", data.userId, {
+        days: data.days ?? 30,
+        period_end: periodEnd,
+      });
       return { ok: true, is_vip: true };
     }
     const { error } = await supabaseAdmin
@@ -161,6 +165,7 @@ export const bossSetVip = createServerFn({ method: "POST" })
       .eq("user_id", data.userId)
       .in("status", ["active", "trialing"]);
     if (error) throw new Error(error.message);
+    await writeAudit(supabaseAdmin, context.userId, "revoke_vip", data.userId, {});
     return { ok: true, is_vip: false };
   });
 
