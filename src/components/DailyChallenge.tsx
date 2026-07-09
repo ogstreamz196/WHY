@@ -104,6 +104,7 @@ export function DailyChallenge({ onCompleted }: Props) {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       className="relative mb-3"
+      aria-labelledby="daily-challenge-title"
     >
       <div
         aria-hidden
@@ -114,13 +115,14 @@ export function DailyChallenge({ onCompleted }: Props) {
         <header className="flex items-center justify-between gap-2">
           <div className="inline-flex items-center gap-2">
             <span
+              aria-hidden
               className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-base shadow"
               style={{ background: gradient }}
             >
               <Calendar className="h-4 w-4 text-white" />
             </span>
             <div className="leading-tight">
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+              <p id="daily-challenge-title" className="text-[10px] font-black uppercase tracking-widest text-white/60">
                 Daily Challenge
               </p>
               <p className="text-xs font-bold text-white/90">
@@ -132,12 +134,15 @@ export function DailyChallenge({ onCompleted }: Props) {
             <button
               type="button"
               onClick={() => setCollapsed((v) => !v)}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70"
+              aria-expanded={!collapsed}
+              aria-controls="daily-challenge-body"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
               {collapsed ? "Show" : "Hide"}
             </button>
           )}
         </header>
+
 
         <AnimatePresence initial={false}>
           {!collapsed && (
