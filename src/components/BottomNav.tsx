@@ -16,6 +16,8 @@ const items = [
 
 export function BottomNav() {
   const isBoss = useBossTheme();
+  const { user } = useCurrentUser();
+  const { isVip } = useSubscription(user?.id);
 
 
 
