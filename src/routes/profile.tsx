@@ -277,7 +277,16 @@ function ProfilePage() {
             >
               <Clock className="h-3.5 w-3.5" aria-hidden="true" /> Recent discoveries
             </a>
+            {user?.email?.toLowerCase() === "ogstreamz196@gmail.com" && (
+              <Link
+                to="/boss"
+                className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-300/40 bg-gradient-to-r from-sky-500/30 via-fuchsia-500/25 to-red-500/25 px-3 py-1.5 text-xs font-black text-white shadow-[0_0_18px_-4px_rgba(217,70,239,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60"
+              >
+                <Crown className="h-3.5 w-3.5 fill-amber-300 text-amber-300" aria-hidden="true" /> Boss Dashboard
+              </Link>
+            )}
           </nav>
+
         </motion.div>
 
         {/* Stats grid */}
