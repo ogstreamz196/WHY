@@ -925,9 +925,6 @@ function WhyApp() {
                           {/* ── ENDLESS "BUT… WHY?" CHAIN ── */}
                           {(chain.length > 0 || true) && (
                             <div className="pt-2">
-                              <p className="mb-3 text-center font-display text-lg font-black text-white">
-                                But… <span className="text-gradient">Why?</span> 🤯
-                              </p>
 
                               <ol className="relative space-y-3 pl-9">
                                 <span
@@ -953,18 +950,20 @@ function WhyApp() {
                                 )}
                               </ol>
 
-                              <button
+                              <motion.button
                                 type="button"
                                 onClick={askWhy}
                                 disabled={chainLoading || chain.length >= 6 || chain[chain.length - 1]?.terminal}
-                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-black text-white transition hover:bg-white/10 active:scale-[0.98] disabled:opacity-50"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.96 }}
+                                className="candy-btn mt-4 flex h-16 w-full items-center justify-center gap-3 rounded-full px-6 text-lg font-black uppercase tracking-wide text-white disabled:opacity-50"
                               >
                                 {chain.length >= 6
                                   ? "🌌 You've reached the bottom of the rabbit hole"
                                   : chainLoading
                                     ? "Diving deeper…"
-                                    : "🤔 But… Why?"}
-                              </button>
+                                    : <><span aria-hidden>🤔</span> But… Why?</>}
+                              </motion.button>
 
                               {chain.length > 0 && (
                                 <button
