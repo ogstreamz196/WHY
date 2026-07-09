@@ -381,6 +381,7 @@ export const decodeFactCode = createServerFn({ method: "POST" })
 // -------------------- "But… Why?" endless chain --------------------
 
 export const generateWhyLayer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
