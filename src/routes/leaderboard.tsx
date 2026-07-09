@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
 import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
 import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
+import { VipBadge } from "@/components/VipBadge";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
