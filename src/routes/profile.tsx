@@ -607,6 +607,34 @@ function ProfilePage() {
   );
 }
 
+function CollapseChevron({ collapsed, onToggle, label }: { collapsed: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={!collapsed}
+      aria-label={`${collapsed ? "Expand" : "Collapse"} ${label}`}
+      className="glass grid h-8 w-8 place-items-center rounded-full border border-white/10 text-white/70 transition hover:text-white"
+    >
+      <ChevronDown className={`h-4 w-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
+    </button>
+  );
+}
+
+function CollapsibleWrap({ collapsed, onToggle, label, children }: { collapsed: boolean; onToggle: () => void; label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-6">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[10px] font-black uppercase tracking-widest text-white/50">{label}</span>
+        <CollapseChevron collapsed={collapsed} onToggle={onToggle} label={label} />
+      </div>
+      {!collapsed && children}
+    </div>
+  );
+}
+
+
+
 function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
   return (
     <div className="glass rounded-3xl border border-white/10 p-4">
