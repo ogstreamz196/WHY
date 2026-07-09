@@ -92,7 +92,7 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
     <motion.section
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-fuchsia-500/15 p-4 shadow-[0_0_24px_rgba(139,92,246,0.15)]"
+      className="mb-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-fuchsia-500/15 p-4 shadow-[0_0_24px_rgba(139,92,246,0.15)] sm:p-5"
     >
       <button
         type="button"
