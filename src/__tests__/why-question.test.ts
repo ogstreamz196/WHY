@@ -35,4 +35,47 @@ describe("asWhyQuestion", () => {
       if (leading) expect(leading[0].trim().split(/\s+/).length).toBe(1);
     }
   });
+
+  it("random casing/punctuation variants never contain repeated 'why'", () => {
+    const bases = [
+      "do birds fly south",
+      "we sneeze",
+      "leaves fall in autumn",
+      "the moon glows",
+      "cats purr when happy",
+    ];
+    const prefixes = ["", "why ", "Why ", "WHY ", "why why ", "Why Why Why ", "wHy wHy ", "do you know why ", "Do You Know Why why "];
+    const puncts = ["", "?", "!", ".", "??", "?!"];
+    for (const base of bases) {
+      for (const pre of prefixes) {
+        for (const pun of puncts) {
+          const input = `${pre}${base}${pun}`;
+          const out = asWhyQuestion(input);
+          const lower = out.toLowerCase();
+
+          // No two consecutive "why" tokens anywhere in the string
+          expect(/\bwhy\s+why\b/i.test(out)).toBe(false);
+
+          // At most one "why" in the first two tokens
+          const firstTwo = lower.split(/\s+/).slice(0, 2);
+          const whyCount = firstTwo.filter((t) => t.replace(/[^a-z]/g, "") === "why").length;
+          expect(whyCount).toBeLessThanOrEqual(1);
+
+          // Ends in a single '?'
+          expect(/\?$/.test(out)).toBe(true);
+          expect(/[?!.]\?$/.test(out)).toBe(false);
+
+          // Starts with a capital
+          expect(/^[A-Z]/.test(out)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("mid-sentence 'why' is preserved (not falsely flagged as duplicate)", () => {
+    const out = asWhyQuestion("we ask why things happen");
+    expect(out).toBe("Why we ask why things happen?");
+    expect(/\bwhy\s+why\b/i.test(out)).toBe(false);
+  });
 });
+
