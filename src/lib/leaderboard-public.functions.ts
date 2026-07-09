@@ -71,30 +71,68 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<LeaderboardResult> => {
+    // In-memory TTL cache of the raw rows per (kind, filter). Keyed without
+    // userId so all viewers share the same cached rows; per-user ranking is
+    // computed on top after the cache lookup.
+    const cacheKey = `${data.kind}::${data.filter ?? ""}`;
+    const now = Date.now();
+    const cached = rowsCache.get(cacheKey);
+    let rows: LbRow[];
+    let windowLabel: string | null = null;
+
+    if (cached && now - cached.ts < ROWS_TTL_MS) {
+      rows = cached.rows;
+      windowLabel = cached.windowLabel;
+    } else {
+      const fetched = await fetchRows(data.kind, data.filter);
+      rows = fetched.rows;
+      windowLabel = fetched.windowLabel;
+      rowsCache.set(cacheKey, { rows, windowLabel, ts: now });
+    }
+
+    const me = data.userId ?? null;
+    const { entries, total, my_rank, my_score } = rank(rows, me, data.limit);
+    return {
+      kind: data.kind as LeaderboardKind,
+      filter: data.filter ?? null,
+      entries,
+      total_users: total,
+      my_rank,
+      my_score,
+      window_label: windowLabel,
+    };
+  });
+
+const ROWS_TTL_MS = 30_000;
+const rowsCache = new Map<string, { rows: LbRow[]; windowLabel: string | null; ts: number }>();
+
+async function fetchRows(
+  kind: string,
+  filter: string | undefined,
+): Promise<{ rows: LbRow[]; windowLabel: string | null }> {
     const url = process.env.SUPABASE_URL!;
     const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
     const supabase = createClient<Database>(url, key, {
       auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     });
 
-    const me = data.userId ?? null;
     let rows: LbRow[] = [];
     let windowLabel: string | null = null;
     const cols =
       "user_id, username, display_name, avatar_id, age_band, favorite_category, score";
 
-    if (data.kind === "global") {
+  if (kind === "global") {
       const { data: r } = await supabase.from("leaderboard_global").select(cols);
       rows = (r ?? []) as LbRow[];
-    } else if (data.kind === "age") {
-      const band = data.filter ?? "adult";
+  } else if (kind === "age") {
+    const band = filter ?? "adult";
       const { data: r } = await supabase
         .from("leaderboard_global")
         .select(cols)
         .eq("age_band", band);
       rows = (r ?? []) as LbRow[];
-    } else if (data.kind === "category") {
-      const cat = data.filter ?? "";
+  } else if (kind === "category") {
+    const cat = filter ?? "";
       const { data: r } = await supabase
         .from("leaderboard_category")
         .select("user_id, username, display_name, avatar_id, age_band, score")
@@ -104,8 +142,8 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
         favorite_category: null,
       }));
       windowLabel = cat;
-    } else if (data.kind === "window") {
-      const win = data.filter && WINDOW_DAYS[data.filter] ? data.filter : "weekly";
+  } else if (kind === "window") {
+    const win = filter && WINDOW_DAYS[filter] ? filter : "weekly";
       const days = WINDOW_DAYS[win];
       const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
       const { data: r } = await supabase
@@ -120,28 +158,19 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
       }
       rows = [...agg.values()];
       windowLabel = win;
-    } else if (data.kind === "rising") {
+  } else if (kind === "rising") {
       const { data: r } = await supabase.from("leaderboard_rising").select(cols);
       rows = (r ?? []) as LbRow[];
-    } else if (data.kind === "streaks") {
+  } else if (kind === "streaks") {
       const { data: r } = await supabase.from("leaderboard_streaks").select(cols);
       rows = (r ?? []) as LbRow[];
-    } else if (data.kind === "weekend") {
+  } else if (kind === "weekend") {
       const { data: r } = await supabase.from("leaderboard_weekend").select(cols);
       rows = (r ?? []) as LbRow[];
-    } else if (data.kind === "new") {
+  } else if (kind === "new") {
       const { data: r } = await supabase.from("leaderboard_new").select(cols);
       rows = (r ?? []) as LbRow[];
     }
 
-    const { entries, total, my_rank, my_score } = rank(rows, me, data.limit);
-    return {
-      kind: data.kind as LeaderboardKind,
-      filter: data.filter ?? null,
-      entries,
-      total_users: total,
-      my_rank,
-      my_score,
-      window_label: windowLabel,
-    };
-  });
+  return { rows, windowLabel };
+}
