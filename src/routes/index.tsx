@@ -770,8 +770,9 @@ function WhyApp() {
                     transition={{ duration: 0.25 }}
                   >
                     <h1 className="animate-fade-up stagger-1 font-display text-[2rem] font-black leading-[1.05] tracking-tight text-white sm:text-4xl">
-                      {capitalize(fact.question)}
+                      {asWhyQuestion(fact.question)}
                     </h1>
+
 
                     <AnimatePresence initial={false} mode="wait">
                       {!revealed ? (
