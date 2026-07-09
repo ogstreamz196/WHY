@@ -95,6 +95,30 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          created_at: string
+          emoji: string | null
+          key: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string | null
+          key: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          emoji?: string | null
+          key?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       category_interests: {
         Row: {
           category: string
@@ -257,6 +281,8 @@ export type Database = {
         Row: {
           answer: string
           category: string | null
+          code: string
+          code_seq: number
           created_at: string
           fun_fact: string | null
           id: string
@@ -269,6 +295,8 @@ export type Database = {
         Insert: {
           answer: string
           category?: string | null
+          code: string
+          code_seq: number
           created_at?: string
           fun_fact?: string | null
           id?: string
@@ -281,6 +309,8 @@ export type Database = {
         Update: {
           answer?: string
           category?: string | null
+          code?: string
+          code_seq?: number
           created_at?: string
           fun_fact?: string | null
           id?: string
@@ -966,6 +996,24 @@ export type Database = {
       }
     }
     Functions: {
+      boss_decode_fact_code: {
+        Args: { _code: string }
+        Returns: {
+          answer: string
+          category: string
+          code: string
+          code_seq: number
+          created_at: string
+          fun_fact: string
+          id: string
+          question: string
+          source: string
+        }[]
+      }
+      count_unseen_facts: {
+        Args: { _category?: string; _user: string }
+        Returns: number
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
