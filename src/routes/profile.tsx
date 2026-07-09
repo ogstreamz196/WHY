@@ -341,33 +341,40 @@ function ProfilePage() {
               key="achievements"
               id="achievements"
               aria-labelledby="achievements-heading"
-              className="mt-6 scroll-mt-24"
+              className="mt-8 scroll-mt-24 border-t border-white/10 pt-6"
             >
-              <header className="mb-3 flex items-center justify-between gap-2">
-                <h2
-                  id="achievements-heading"
-                  className="inline-flex items-center gap-2 font-display text-xl font-black text-white"
-                >
-                  <Trophy className="h-5 w-5 text-amber-300" aria-hidden="true" /> Achievements
-                </h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white/50">
-                    {unlockedCount}/{achievements.data?.length ?? 0}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={toggleSectionOrder}
-                    className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                    aria-label={
-                      sectionOrder === "achievements-first"
-                        ? "Show Recent discoveries above Achievements"
-                        : "Show Achievements above Recent discoveries"
-                    }
+              <div className="mb-4 flex items-center gap-3">
+                <span className="grid h-9 w-9 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 text-amber-200 shadow-[0_0_20px_-6px_rgba(251,191,36,0.6)]">
+                  <Trophy className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/70">
+                    Section
+                  </p>
+                  <h2
+                    id="achievements-heading"
+                    className="font-display text-xl font-black leading-tight text-white"
                   >
-                    <ArrowUpDown className="h-3 w-3" aria-hidden="true" /> Swap
-                  </button>
+                    Achievements
+                  </h2>
                 </div>
-              </header>
+                <span className="rounded-full border border-amber-300/25 bg-amber-400/10 px-2.5 py-1 text-xs font-black text-amber-100">
+                  {unlockedCount}/{achievements.data?.length ?? 0}
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleSectionOrder}
+                  data-no-chrome
+                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                  aria-label={
+                    sectionOrder === "achievements-first"
+                      ? "Show Recent discoveries above Achievements"
+                      : "Show Achievements above Recent discoveries"
+                  }
+                >
+                  <ArrowUpDown className="h-3 w-3" aria-hidden="true" /> Swap
+                </button>
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 {(achievements.data ?? []).map((a) => (
                   <AchievementTile key={a.id} a={a} />
@@ -381,14 +388,24 @@ function ProfilePage() {
               key="recent-discoveries"
               id="recent-discoveries"
               aria-labelledby="recent-discoveries-heading"
-              className="mt-6 scroll-mt-24"
+              className="mt-8 scroll-mt-24 border-t border-white/10 pt-6"
             >
-              <h2
-                id="recent-discoveries-heading"
-                className="mb-3 inline-flex items-center gap-2 font-display text-lg font-black text-white"
-              >
-                <Clock className="h-4 w-4 text-white/70" aria-hidden="true" /> Recent discoveries
-              </h2>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="grid h-9 w-9 place-items-center rounded-xl border border-sky-300/30 bg-sky-400/15 text-sky-200 shadow-[0_0_20px_-6px_rgba(56,189,248,0.55)]">
+                  <Clock className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div className="flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200/70">
+                    Section
+                  </p>
+                  <h2
+                    id="recent-discoveries-heading"
+                    className="font-display text-xl font-black leading-tight text-white"
+                  >
+                    Recent discoveries
+                  </h2>
+                </div>
+              </div>
               {(() => {
                 const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
                 if (entries.length === 0) {
