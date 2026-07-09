@@ -121,6 +121,7 @@ function QuizPlayPage() {
     setIdx((i) => i + 1);
     setPicked(null);
     setResult(null);
+    setRevealed(false);
   }
 
   if (!quiz || !current) {
