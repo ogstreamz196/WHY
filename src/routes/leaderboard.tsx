@@ -418,3 +418,122 @@ function ArenaPage() {
     </main>
   );
 }
+
+type PodiumEntry = LeaderboardResult["entries"][number];
+
+function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string; meId?: string }) {
+  const byRank = (n: number) => entries.find((e) => e.rank === n);
+  const first = byRank(1);
+  const second = byRank(2);
+  const third = byRank(3);
+
+  return (
+    <div className="mb-4 grid grid-cols-3 items-end gap-2 pt-6">
+      {second ? <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} /> : <div />}
+      {first ? <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} /> : <div />}
+      {third ? <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} /> : <div />}
+    </div>
+  );
+}
+
+function PodiumColumn({ entry, place, unit, isMe }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean }) {
+  const cfg = {
+    1: {
+      delay: 0.15,
+      avatar: "w-24 h-24 rounded-3xl",
+      ring: "bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-600 shadow-[0_0_40px_-8px_rgba(245,158,11,0.6)]",
+      inner: "rounded-[22px]",
+      textTone: "text-amber-300",
+      badge: "shimmer-gold text-black",
+      badgeSize: "w-9 h-9 text-xs",
+      pillar: "h-40 bg-gradient-to-t from-amber-900/40 to-amber-500/25 border-amber-400/50",
+      label: "text-sm tracking-[0.2em]",
+      score: "text-2xl",
+      crown: true,
+    },
+    2: {
+      delay: 0,
+      avatar: "w-16 h-16 rounded-2xl",
+      ring: "bg-gradient-to-br from-slate-200 to-slate-500 shadow-[0_0_24px_-8px_rgba(203,213,225,0.5)]",
+      inner: "rounded-[14px]",
+      textTone: "text-slate-300",
+      badge: "bg-slate-300 text-black",
+      badgeSize: "w-7 h-7 text-[10px]",
+      pillar: "h-24 bg-gradient-to-t from-slate-900/50 to-slate-400/25 border-slate-400/40",
+      label: "text-xs tracking-widest",
+      score: "text-lg",
+      crown: false,
+    },
+    3: {
+      delay: 0.3,
+      avatar: "w-16 h-16 rounded-2xl",
+      ring: "bg-gradient-to-br from-orange-500 to-stone-700 shadow-[0_0_20px_-8px_rgba(234,88,12,0.5)]",
+      inner: "rounded-[14px]",
+      textTone: "text-orange-400",
+      badge: "bg-orange-600 text-white",
+      badgeSize: "w-7 h-7 text-[10px]",
+      pillar: "h-16 bg-gradient-to-t from-orange-950/50 to-orange-700/20 border-orange-700/40",
+      label: "text-xs tracking-widest",
+      score: "text-lg",
+      crown: false,
+    },
+  }[place];
+
+  const name = entry.display_name || entry.username || "Explorer";
+  const initial = name.slice(0, 1).toUpperCase();
+
+  return (
+    <motion.div
+      className="flex flex-col items-center"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: cfg.delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <motion.div
+        className="relative mb-3"
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: cfg.delay }}
+      >
+        {cfg.crown && (
+          <motion.div
+            className="absolute -top-8 left-1/2 -translate-x-1/2"
+            animate={{ rotate: [-6, 6, -6] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Crown className="h-7 w-7 fill-amber-400 text-amber-400 drop-shadow-[0_2px_10px_rgba(251,191,36,0.7)]" />
+          </motion.div>
+        )}
+        <div className={`${cfg.avatar} ${cfg.ring} p-0.5`}>
+          <div className={`flex h-full w-full items-center justify-center overflow-hidden bg-neutral-950 ${cfg.inner}`}>
+            <span className={`font-black ${cfg.textTone} ${place === 1 ? "text-3xl" : "text-xl"}`}>{initial}</span>
+          </div>
+        </div>
+        <div
+          className={`absolute -top-2 -right-2 flex items-center justify-center rounded-full border-[3px] border-[color:var(--background,#050505)] font-black shadow-lg ${cfg.badge} ${cfg.badgeSize}`}
+        >
+          {place}
+        </div>
+      </motion.div>
+      <div className="mb-2 text-center">
+        <div className={`font-black uppercase ${cfg.label} ${place === 1 ? "text-amber-300" : cfg.textTone}`}>
+          {name}
+          {isMe && <span className="ml-1 text-[9px] text-fuchsia-300">YOU</span>}
+        </div>
+        <div className={`font-black text-white ${cfg.score}`}>
+          {entry.score.toLocaleString()}
+          <span className="ml-1 text-[9px] font-black uppercase tracking-widest text-white/50">{unit}</span>
+        </div>
+      </div>
+      <motion.div
+        className={`relative w-full overflow-hidden rounded-t-2xl border-x border-t ${cfg.pillar}`}
+        initial={{ scaleY: 0, transformOrigin: "bottom" }}
+        animate={{ scaleY: 1 }}
+        transition={{ delay: cfg.delay + 0.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
+        {place === 1 && <div className="absolute inset-0 animate-pulse bg-amber-400/5" />}
+      </motion.div>
+    </motion.div>
+  );
+}
+
