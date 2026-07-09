@@ -134,6 +134,14 @@ export const bossSetVip = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertBoss(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prevSubs } = await supabaseAdmin
+      .from("subscriptions")
+      .select("status, current_period_end")
+      .eq("user_id", data.userId)
+      .in("status", ["active", "trialing"])
+      .limit(1);
+    const wasVip = (prevSubs ?? []).length > 0;
+    const prevPeriodEnd = prevSubs?.[0]?.current_period_end ?? null;
     if (data.grant) {
       const periodEnd = new Date(Date.now() + (data.days ?? 30) * 24 * 60 * 60 * 1000).toISOString();
       const { error } = await supabaseAdmin.from("subscriptions").upsert(
@@ -154,8 +162,9 @@ export const bossSetVip = createServerFn({ method: "POST" })
 
       if (error) throw new Error(error.message);
       await writeAudit(supabaseAdmin, context.userId, "grant_vip", data.userId, {
+        previous: { is_vip: wasVip, period_end: prevPeriodEnd },
+        next: { is_vip: true, period_end: periodEnd },
         days: data.days ?? 30,
-        period_end: periodEnd,
       });
       return { ok: true, is_vip: true };
     }
@@ -165,9 +174,13 @@ export const bossSetVip = createServerFn({ method: "POST" })
       .eq("user_id", data.userId)
       .in("status", ["active", "trialing"]);
     if (error) throw new Error(error.message);
-    await writeAudit(supabaseAdmin, context.userId, "revoke_vip", data.userId, {});
+    await writeAudit(supabaseAdmin, context.userId, "revoke_vip", data.userId, {
+      previous: { is_vip: wasVip, period_end: prevPeriodEnd },
+      next: { is_vip: false },
+    });
     return { ok: true, is_vip: false };
   });
+
 
 export type Privileges = {
   free: { daily_facts_limit: number; quiz_daily_limit: number; coin_multiplier: number; ads_enabled: boolean };
