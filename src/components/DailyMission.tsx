@@ -92,7 +92,7 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
     <motion.section
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-fuchsia-500/15 p-4 shadow-[0_0_24px_rgba(139,92,246,0.15)]"
+      className="mb-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-fuchsia-500/15 p-4 shadow-[0_0_24px_rgba(139,92,246,0.15)] sm:p-5"
     >
       <button
         type="button"
@@ -127,7 +127,7 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="mt-3 space-y-1.5"
+            className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2"
           >
             {TASKS.map((t, i) => {
               const isDone = done[i];
@@ -185,12 +185,13 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60 sm:col-span-2"
                 style={{ background: "var(--gradient-primary)" }}
               >
                 {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : "🎁 Claim +50 XP bonus"}
               </motion.button>
             )}
+
           </motion.div>
         )}
       </AnimatePresence>

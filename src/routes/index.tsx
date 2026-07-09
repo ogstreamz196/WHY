@@ -487,21 +487,21 @@ function WhyApp() {
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
       <CosmicBackground />
 
-      <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:max-w-3xl lg:max-w-4xl lg:px-8">
         {/* ── GAMIFIED HEADER ─────────────────────────────── */}
         <header className="mb-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => setSearchOpen((v) => !v)}
               aria-label="Search"
-              className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-foreground/90 transition active:scale-95"
+              className="glass flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-foreground/90 transition active:scale-95"
             >
               {searchOpen ? <X className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
             </button>
 
-            <div className="flex items-center gap-1.5">
-              <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+              <div className="glass flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <Flame className="h-4 w-4 text-orange-400" />
                 <span className="text-sm font-black text-white">{streak}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">day</span>
@@ -509,7 +509,7 @@ function WhyApp() {
               <Link
                 to={user ? "/profile" : "/auth"}
                 aria-label={user ? "Open profile" : "Sign in"}
-                className="glass flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden active:scale-95 transition"
+                className="glass flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl overflow-hidden active:scale-95 transition"
               >
                 {user ? (
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl text-lg" style={{ background: "var(--gradient-primary)" }}>
@@ -519,7 +519,7 @@ function WhyApp() {
                   <img src={mascotImg} alt="" loading="lazy" decoding="async" className="h-10 w-10 object-contain animate-float-slow" />
                 )}
               </Link>
-              <div className="glass flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
+              <div className="glass flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <CoinIcon size={16} />
                 <motion.span key={points} initial={{ scale: 1.4, y: -4 }} animate={{ scale: 1, y: 0 }} className="text-sm font-black text-white">
                   {points}
@@ -527,6 +527,7 @@ function WhyApp() {
               </div>
             </div>
           </div>
+
 
           {/* XP bar */}
           <div className="flex items-center gap-2">
@@ -720,21 +721,22 @@ function WhyApp() {
                   ))}
                 </div>
                 {/* Speech-bubble tag */}
-                <div className="relative mb-4 flex items-center justify-between">
-                  <div className="candy-chip animate-fade-up inline-flex items-center gap-2 rounded-full px-4 py-2">
-                    <span aria-hidden className="text-lg">🍭</span>
-                    <span className="text-base font-black uppercase tracking-widest sm:text-lg">
+                <div className="relative mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                  <div className="candy-chip animate-fade-up inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 sm:px-4">
+                    <span aria-hidden className="shrink-0 text-lg">🍭</span>
+                    <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
                       Do you know why…
                     </span>
                   </div>
                   <span
-                    className="animate-bounce-in inline-flex h-11 w-11 items-center justify-center rounded-2xl text-xl shadow-lg"
+                    className="animate-bounce-in inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11"
                     style={{ background: catGradient }}
                     aria-label={fact?.category ?? "category"}
                   >
                     {emojiFor(fact?.category)}
                   </span>
                 </div>
+
 
 
                 <AnimatePresence mode="wait" initial={false}>
