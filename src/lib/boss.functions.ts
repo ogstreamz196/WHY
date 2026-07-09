@@ -238,32 +238,49 @@ export type AuditEntry = {
   target_email: string | null;
 };
 
+export type AuditEntryWithActor = AuditEntry & { actor_email: string | null };
+
 export const bossListAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { limit?: number }) => ({
-    limit: Math.min(Math.max(d.limit ?? 50, 1), 200),
+  .inputValidator((d: {
+    limit?: number;
+    action?: string;
+    email?: string;
+    from?: string;
+    to?: string;
+  }) => ({
+    limit: Math.min(Math.max(d.limit ?? 100, 1), 1000),
+    action: d.action?.trim() || undefined,
+    email: d.email?.trim().toLowerCase() || undefined,
+    from: d.from || undefined,
+    to: d.to || undefined,
   }))
   .handler(async ({ data, context }) => {
     await assertBoss(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("boss_audit_log")
       .select("id, actor_id, target_user_id, action, details, created_at")
       .order("created_at", { ascending: false })
       .limit(data.limit);
+    if (data.action) q = q.eq("action", data.action);
+    if (data.from) q = q.gte("created_at", data.from);
+    if (data.to) q = q.lte("created_at", data.to);
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const targetIds = Array.from(
-      new Set((rows ?? []).map((r: any) => r.target_user_id).filter(Boolean)),
-    ) as string[];
+
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
     const emailMap = new Map<string, string | null>();
-    if (targetIds.length > 0) {
-      const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-      for (const u of users?.users ?? []) emailMap.set(u.id, u.email ?? null);
+    for (const u of users?.users ?? []) emailMap.set(u.id, u.email ?? null);
+
+    let entries = (rows ?? []).map((r: any) => ({
+      ...r,
+      target_email: r.target_user_id ? emailMap.get(r.target_user_id) ?? null : null,
+      actor_email: emailMap.get(r.actor_id) ?? null,
+    })) as AuditEntryWithActor[];
+    if (data.email) {
+      entries = entries.filter((e) => (e.target_email ?? "").toLowerCase().includes(data.email!));
     }
-    return {
-      entries: (rows ?? []).map((r: any) => ({
-        ...r,
-        target_email: r.target_user_id ? emailMap.get(r.target_user_id) ?? null : null,
-      })) as AuditEntry[],
-    };
+    return { entries };
   });
+
