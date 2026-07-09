@@ -337,6 +337,7 @@ function ArenaPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-black text-white">
                           {r.display_name || r.username || "Explorer"}
+                          {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
                           {me && <span className="ml-1 text-[10px] font-black text-fuchsia-300">YOU</span>}
                         </p>
                         <p className="truncate text-[11px] text-white/60">
