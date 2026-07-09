@@ -168,10 +168,11 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       ⚡ Quick fact
                     </p>
-                    <h2 className="mt-1 font-display text-lg font-black leading-tight text-white">
+                    <h3 className="mt-1 font-display text-lg font-black leading-tight text-white">
                       {capitalize(fact.question)}{" "}
                       <span aria-hidden>{emojiFor(fact.category)}</span>
-                    </h2>
+                    </h3>
+
                     {fact.fun_fact && (
                       <p className="mt-2 text-xs italic text-yellow-200/90">
                         ⭐ {fact.fun_fact}
