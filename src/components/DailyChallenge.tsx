@@ -148,11 +148,13 @@ export function DailyChallenge({ onCompleted }: Props) {
           {!collapsed && (
             <motion.div
               key="body"
+              id="daily-challenge-body"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
+
               <div className="mt-3">
                 {loading ? (
                   <div className="h-24 animate-pulse rounded-2xl bg-white/5" />
