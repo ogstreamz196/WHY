@@ -92,6 +92,12 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
 
     const me = data.userId ?? null;
     const { entries, total, my_rank, my_score } = rank(rows, me, data.limit);
+
+    // Enrich with VIP status for shown entries.
+    const ids = entries.map((e) => e.user_id);
+    const vipSet = ids.length ? await fetchVipSet(ids) : new Set<string>();
+    for (const e of entries) e.is_vip = vipSet.has(e.user_id);
+
     return {
       kind: data.kind as LeaderboardKind,
       filter: data.filter ?? null,
@@ -102,6 +108,24 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
       window_label: windowLabel,
     };
   });
+
+async function fetchVipSet(userIds: string[]): Promise<Set<string>> {
+  const env = (process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "").startsWith("test_") ? "sandbox" : "live";
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabaseAdmin as any)
+    .from("subscriptions")
+    .select("user_id, status, current_period_end")
+    .in("user_id", userIds)
+    .eq("environment", env)
+    .in("status", ["active", "trialing"]);
+  const now = Date.now();
+  const set = new Set<string>();
+  for (const r of (data ?? []) as Array<{ user_id: string; current_period_end: string | null }>) {
+    if (!r.current_period_end || new Date(r.current_period_end).getTime() > now) set.add(r.user_id);
+  }
+  return set;
+}
 
 const ROWS_TTL_MS = 30_000;
 const rowsCache = new Map<string, { rows: LbRow[]; windowLabel: string | null; ts: number }>();

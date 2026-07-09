@@ -26,6 +26,8 @@ import { StreakBadges } from "@/components/StreakBadges";
 import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
+import { VipBadge } from "@/components/VipBadge";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -36,6 +38,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { user, loading } = useCurrentUser();
+  const { isVip } = useSubscription(user?.id);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -217,8 +220,9 @@ function ProfilePage() {
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-2 py-1 font-display text-xl font-black text-white outline-none"
                 />
               ) : (
-                <h1 className="font-display text-2xl font-black text-white">
-                  {profile.data?.display_name ?? "Curious explorer"}
+                <h1 className="font-display text-2xl font-black text-white flex items-center gap-2 flex-wrap">
+                  <span>{profile.data?.display_name ?? "Curious explorer"}</span>
+                  {isVip && <VipBadge size="md" />}
                 </h1>
               )}
               <p className="mt-0.5 text-xs text-white/50">{user.email}</p>

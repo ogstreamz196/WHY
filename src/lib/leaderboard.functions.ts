@@ -25,6 +25,7 @@ export type LeaderboardEntry = {
   score: number;
   rank: number;
   is_me: boolean;
+  is_vip?: boolean;
 };
 
 export type LeaderboardResult = {
