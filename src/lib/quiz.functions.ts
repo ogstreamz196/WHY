@@ -94,21 +94,22 @@ function shuffle<T>(arr: T[]): T[] {
 type AiClient = ReturnType<typeof createLovableAiGatewayProvider>;
 
 /** Target word count for the correct answer + distractors, per difficulty. */
-const WORDS_FOR: Record<Difficulty, number> = {
+export const WORDS_FOR: Record<Difficulty, number> = {
   easy: 2,
   medium: 4,
   hard: 6,
   expert: 8,
 };
 
-function wordCount(s: string) {
+export function wordCount(s: string) {
   return s.trim().split(/\s+/).filter(Boolean).length;
 }
 
-function trimToWords(s: string, n: number) {
+export function trimToWords(s: string, n: number) {
   const words = s.trim().replace(/[.!?…]+$/g, "").split(/\s+/).filter(Boolean);
   return words.slice(0, n).join(" ");
 }
+
 
 async function generateDistractors(
   ai: AiClient | null,
