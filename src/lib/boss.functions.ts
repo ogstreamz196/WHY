@@ -216,6 +216,8 @@ export const bossUpdatePrivileges = createServerFn({ method: "POST" })
         { onConflict: "key" },
       );
     if (error) throw new Error(error.message);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await writeAudit(supabaseAdmin, context.userId, "update_privileges", null, { privileges: data });
     return { ok: true };
   });
 
