@@ -723,11 +723,12 @@ function WhyApp() {
                           className="mt-6 flex flex-col items-center"
                         >
                           <motion.div
-                            initial={{ scale: 0.6, rotate: -8, opacity: 0 }}
+                            initial={{ scale: 0.4, rotate: -20, opacity: 0 }}
                             animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                            className="mb-3 flex h-32 w-32 items-center justify-center rounded-full text-6xl shadow-[0_10px_40px_rgba(124,58,237,0.5)] animate-float-slow"
-                            style={{ background: catGradient }}
+                            transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                            whileHover={{ scale: 1.08, rotate: 6 }}
+                            whileTap={{ scale: 0.92, rotate: -6 }}
+                            className="candy-emoji-orb mb-4 flex h-32 w-32 items-center justify-center rounded-full text-6xl cursor-grab active:cursor-grabbing"
                             aria-label={fact.category ?? "question icon"}
                           >
                             <span>{emojiFor(fact.category)}</span>
@@ -737,44 +738,50 @@ function WhyApp() {
                             onClick={reveal}
                             disabled={revealing}
                             layout
+                            whileHover={{ scale: 1.03, rotate: -1 }}
+                            whileTap={{ scale: 0.94 }}
                             animate={
                               revealing
-                                ? { scale: [1, 1.04, 0.9], borderRadius: "9999px" }
+                                ? { scale: [1, 1.06, 0.88, 1.02], rotate: [0, -2, 2, 0] }
                                 : { scale: 1 }
                             }
-                            transition={{ duration: 0.48, ease: [0.32, 0.72, 0, 1] }}
-                            className={`hover-lift group relative w-full overflow-hidden rounded-full px-5 py-4 text-base font-black text-white transition active:scale-[0.98] ${
-                              revealing ? "" : "animate-pulse-glow"
-                            }`}
-                            style={{ background: "var(--gradient-primary)" }}
+                            transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+                            className="candy-btn group relative w-full overflow-hidden rounded-full px-5 py-4 text-lg font-black uppercase tracking-wide text-white"
                           >
                             <span aria-hidden className="shine-sweep" />
-                            {/* Progress pulse fill during reveal */}
                             {revealing && (
                               <motion.span
                                 aria-hidden
                                 initial={{ x: "-100%" }}
                                 animate={{ x: "0%" }}
                                 transition={{ duration: 0.46, ease: "easeOut" }}
-                                className="absolute inset-0 bg-white/25"
+                                className="absolute inset-0 bg-white/30"
                               />
                             )}
                             <span className="relative z-10 inline-flex items-center gap-2">
                               <motion.span
                                 animate={
                                   revealing
-                                    ? { rotate: 360, scale: 1.3 }
-                                    : { rotate: 0, scale: 1 }
+                                    ? { rotate: 720, scale: 1.5 }
+                                    : { rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] }
                                 }
-                                transition={{ duration: 0.48, ease: "easeOut" }}
+                                transition={
+                                  revealing
+                                    ? { duration: 0.5, ease: "easeOut" }
+                                    : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+                                }
                                 className="inline-flex"
                               >
                                 <Sparkles className="h-5 w-5" />
                               </motion.span>
-                              {revealing ? "Revealing…" : "Reveal Answer"}
+                              {revealing ? "Unwrapping…" : "Reveal the Sweet Answer"}
+                              <span aria-hidden className="text-xl">🍬</span>
                             </span>
                           </motion.button>
-                          <p className="mt-3 text-xs text-white/50">Tap to discover the magic ↑</p>
+                          <p className="mt-3 text-xs font-bold text-white/70">
+                            <span aria-hidden>🎉</span> Tap the candy button — go on! <span aria-hidden>🎉</span>
+                          </p>
+
                         </motion.div>
                       ) : (
                         <motion.div
