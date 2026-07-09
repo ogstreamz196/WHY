@@ -217,32 +217,51 @@ function QuizPlayPage() {
 
             {!revealed ? (
               <div className="mt-5 space-y-3">
-                <p className="text-sm text-white/70">
+                <p id={`reveal-hint-${idx}`} className="text-sm text-white/70">
                   Take your time to read the question. When you're ready, reveal the answers — the timer starts then.
                 </p>
                 <button
+                  ref={revealBtnRef}
                   type="button"
                   onClick={() => setRevealed(true)}
-                  className="w-full rounded-full px-4 py-3 text-sm font-black text-white"
+                  aria-describedby={`reveal-hint-${idx}`}
+                  aria-label={`Reveal answers for question ${idx + 1} and start the timer`}
+                  className="w-full rounded-full px-4 py-3 text-sm font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                   style={{ background: "var(--gradient-primary)" }}
                 >
-                  Reveal answers & start timer
+                  Reveal answers &amp; start timer
                 </button>
               </div>
             ) : (
-              <div className="mt-4 space-y-2">
+              <div
+                className="mt-4 space-y-2"
+                role="radiogroup"
+                aria-label={`Answer choices for question ${idx + 1}`}
+              >
                 {current.choices.map((choice, i) => {
                   const isPicked = picked === i;
                   const isCorrect = result && result.correct_index === i;
                   const isWrongPick = result && isPicked && !result.correct;
+                  const letter = String.fromCharCode(65 + i);
+                  const stateLabel = isCorrect
+                    ? "correct answer"
+                    : isWrongPick
+                      ? "your answer, incorrect"
+                      : isPicked
+                        ? "selected"
+                        : "";
                   return (
                     <motion.button
                       key={i}
+                      ref={i === 0 ? firstChoiceRef : undefined}
                       type="button"
+                      role="radio"
+                      aria-checked={isPicked}
+                      aria-label={`Option ${letter}: ${choice}${stateLabel ? `, ${stateLabel}` : ""}`}
                       onClick={() => handlePick(i)}
                       disabled={answering || !!result}
                       whileTap={{ scale: 0.98 }}
-                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed ${
                         isCorrect
                           ? "border-emerald-400/50 bg-emerald-400/15"
                           : isWrongPick
@@ -252,17 +271,18 @@ function QuizPlayPage() {
                               : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
                       }`}
                     >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/80">
-                        {String.fromCharCode(65 + i)}
+                      <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/80">
+                        {letter}
                       </span>
                       <span className="flex-1 text-sm font-semibold text-white">{choice}</span>
-                      {isCorrect && <Check className="h-4 w-4 text-emerald-300" />}
-                      {isWrongPick && <X className="h-4 w-4 text-rose-300" />}
+                      {isCorrect && <Check aria-hidden="true" className="h-4 w-4 text-emerald-300" />}
+                      {isWrongPick && <X aria-hidden="true" className="h-4 w-4 text-rose-300" />}
                     </motion.button>
                   );
                 })}
               </div>
             )}
+
 
             <AnimatePresence>
               {result && (
