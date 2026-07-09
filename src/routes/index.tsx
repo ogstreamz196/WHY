@@ -9,6 +9,55 @@ function notifyAchievements(ids?: string[]) {
   }
 }
 
+const REVEAL_KEYWORDS: Array<{ match: RegExp; label: string; emoji: string }> = [
+  { match: /\b(thorn|spike|cactus|rose|prickl)/i, label: "Reveal the Spiky Secret", emoji: "🌵" },
+  { match: /\b(plant|flower|tree|leaf|forest|garden|seed)/i, label: "Grow the Answer", emoji: "🌱" },
+  { match: /\b(build|construct|bridge|tower|architect|crane|cement|brick)/i, label: "Build Me a Fact", emoji: "🏗️" },
+  { match: /\b(space|planet|star|galaxy|moon|rocket|astronaut|orbit)/i, label: "Launch the Answer", emoji: "🚀" },
+  { match: /\b(ocean|sea|fish|shark|whale|water|river|wave|underwater)/i, label: "Dive Into the Answer", emoji: "🌊" },
+  { match: /\b(fire|volcano|lava|flame|burn)/i, label: "Ignite the Answer", emoji: "🔥" },
+  { match: /\b(ice|snow|cold|frozen|glacier|arctic)/i, label: "Chill Out the Answer", emoji: "❄️" },
+  { match: /\b(dog|cat|animal|bird|lion|tiger|elephant|monkey|pet)/i, label: "Unleash the Answer", emoji: "🐾" },
+  { match: /\b(dinosaur|fossil|prehistoric|jurassic)/i, label: "Dig Up the Answer", emoji: "🦖" },
+  { match: /\b(food|eat|cook|recipe|pizza|bread|fruit|vegetable)/i, label: "Taste the Answer", emoji: "🍽️" },
+  { match: /\b(candy|sweet|sugar|chocolate|cake|dessert)/i, label: "Reveal the Sweet Answer", emoji: "🍬" },
+  { match: /\b(music|song|sound|instrument|guitar|piano)/i, label: "Play the Answer", emoji: "🎵" },
+  { match: /\b(sport|game|play|ball|team|race)/i, label: "Score the Answer", emoji: "⚽" },
+  { match: /\b(car|train|plane|vehicle|engine|road)/i, label: "Drive to the Answer", emoji: "🚗" },
+  { match: /\b(money|coin|dollar|economy|bank)/i, label: "Cash In the Answer", emoji: "💰" },
+  { match: /\b(brain|mind|think|memory|dream|sleep)/i, label: "Unlock the Answer", emoji: "🧠" },
+  { match: /\b(body|heart|blood|bone|muscle|health)/i, label: "Reveal the Heartbeat", emoji: "❤️" },
+  { match: /\b(book|read|story|word|language|write)/i, label: "Turn the Page", emoji: "📖" },
+  { match: /\b(computer|robot|tech|code|internet|phone|app)/i, label: "Boot Up the Answer", emoji: "🤖" },
+  { match: /\b(history|ancient|king|queen|war|empire)/i, label: "Unearth the Answer", emoji: "🏛️" },
+  { match: /\b(magic|wizard|dragon|myth|legend)/i, label: "Cast the Answer", emoji: "✨" },
+  { match: /\b(weather|rain|storm|cloud|wind|sun)/i, label: "Clear the Skies", emoji: "🌤️" },
+];
+
+const CATEGORY_REVEAL: Record<string, { label: string; emoji: string }> = {
+  science: { label: "Run the Experiment", emoji: "🧪" },
+  nature: { label: "Grow the Answer", emoji: "🌿" },
+  space: { label: "Launch the Answer", emoji: "🚀" },
+  history: { label: "Unearth the Answer", emoji: "🏛️" },
+  tech: { label: "Boot Up the Answer", emoji: "🤖" },
+  animals: { label: "Unleash the Answer", emoji: "🐾" },
+  food: { label: "Taste the Answer", emoji: "🍽️" },
+  sports: { label: "Score the Answer", emoji: "⚽" },
+  music: { label: "Play the Answer", emoji: "🎵" },
+  art: { label: "Paint the Answer", emoji: "🎨" },
+  geography: { label: "Chart the Answer", emoji: "🗺️" },
+  psychology: { label: "Read My Mind", emoji: "🧠" },
+};
+
+function getRevealLabel(question?: string, category?: string | null): { label: string; emoji: string } {
+  if (question) {
+    for (const k of REVEAL_KEYWORDS) if (k.match.test(question)) return { label: k.label, emoji: k.emoji };
+  }
+  if (category && CATEGORY_REVEAL[category]) return CATEGORY_REVEAL[category];
+  return { label: "Reveal the Answer", emoji: "✨" };
+}
+
+
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
