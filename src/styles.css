@@ -10,8 +10,8 @@
  */
 
 @theme inline {
-  --font-display: "Fraunces Variable", "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo Black", "Fraunces", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Hind", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 3px);
