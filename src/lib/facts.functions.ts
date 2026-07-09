@@ -361,12 +361,12 @@ If the question is inappropriate, unsafe, or nonsensical for kids, instead retur
 // -------------------- Boss: decode a fact code --------------------
 
 export const decodeFactCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z.object({ code: z.string().min(4).max(64) }).parse(input),
   )
-  .handler(async ({ data }) => {
-    const admin = await getAdmin();
-    const { data: rows, error } = await admin.rpc("boss_decode_fact_code", { _code: data.code });
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase.rpc("boss_decode_fact_code", { _code: data.code });
     if (error) throw error;
     const row = Array.isArray(rows) ? rows[0] : rows;
     return (row as {
