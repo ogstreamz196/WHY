@@ -8,7 +8,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
-import { getLeaderboard, type LeaderboardKind, type LeaderboardResult } from "@/lib/leaderboard.functions";
+import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
+import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -84,7 +85,7 @@ function medalClass(rank: number): string {
 
 function ArenaPage() {
   const { user } = useCurrentUser();
-  const fetchBoard = useServerFn(getLeaderboard);
+  const fetchBoard = useServerFn(getLeaderboardPublic);
   const [tab, setTab] = useState<TabKey>("today");
   const [filter, setFilter] = useState<string | null>(null);
   const [result, setResult] = useState<LeaderboardResult | null>(null);
