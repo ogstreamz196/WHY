@@ -134,6 +134,14 @@ export const bossSetVip = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertBoss(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prevSubs } = await supabaseAdmin
+      .from("subscriptions")
+      .select("status, current_period_end")
+      .eq("user_id", data.userId)
+      .in("status", ["active", "trialing"])
+      .limit(1);
+    const wasVip = (prevSubs ?? []).length > 0;
+    const prevPeriodEnd = prevSubs?.[0]?.current_period_end ?? null;
     if (data.grant) {
       const periodEnd = new Date(Date.now() + (data.days ?? 30) * 24 * 60 * 60 * 1000).toISOString();
       const { error } = await supabaseAdmin.from("subscriptions").upsert(
@@ -154,8 +162,9 @@ export const bossSetVip = createServerFn({ method: "POST" })
 
       if (error) throw new Error(error.message);
       await writeAudit(supabaseAdmin, context.userId, "grant_vip", data.userId, {
+        previous: { is_vip: wasVip, period_end: prevPeriodEnd },
+        next: { is_vip: true, period_end: periodEnd },
         days: data.days ?? 30,
-        period_end: periodEnd,
       });
       return { ok: true, is_vip: true };
     }
@@ -165,9 +174,13 @@ export const bossSetVip = createServerFn({ method: "POST" })
       .eq("user_id", data.userId)
       .in("status", ["active", "trialing"]);
     if (error) throw new Error(error.message);
-    await writeAudit(supabaseAdmin, context.userId, "revoke_vip", data.userId, {});
+    await writeAudit(supabaseAdmin, context.userId, "revoke_vip", data.userId, {
+      previous: { is_vip: wasVip, period_end: prevPeriodEnd },
+      next: { is_vip: false },
+    });
     return { ok: true, is_vip: false };
   });
+
 
 export type Privileges = {
   free: { daily_facts_limit: number; quiz_daily_limit: number; coin_multiplier: number; ads_enabled: boolean };
@@ -209,6 +222,11 @@ export const bossUpdatePrivileges = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertBoss(context);
+    const { data: prev } = await context.supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "privileges")
+      .maybeSingle();
     const { error } = await context.supabase
       .from("app_config")
       .upsert(
@@ -217,7 +235,10 @@ export const bossUpdatePrivileges = createServerFn({ method: "POST" })
       );
     if (error) throw new Error(error.message);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await writeAudit(supabaseAdmin, context.userId, "update_privileges", null, { privileges: data });
+    await writeAudit(supabaseAdmin, context.userId, "update_privileges", null, {
+      previous: prev?.value ?? null,
+      next: data,
+    });
     return { ok: true };
   });
 
@@ -238,32 +259,49 @@ export type AuditEntry = {
   target_email: string | null;
 };
 
+export type AuditEntryWithActor = AuditEntry & { actor_email: string | null };
+
 export const bossListAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { limit?: number }) => ({
-    limit: Math.min(Math.max(d.limit ?? 50, 1), 200),
+  .inputValidator((d: {
+    limit?: number;
+    action?: string;
+    email?: string;
+    from?: string;
+    to?: string;
+  }) => ({
+    limit: Math.min(Math.max(d.limit ?? 100, 1), 1000),
+    action: d.action?.trim() || undefined,
+    email: d.email?.trim().toLowerCase() || undefined,
+    from: d.from || undefined,
+    to: d.to || undefined,
   }))
   .handler(async ({ data, context }) => {
     await assertBoss(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rows, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("boss_audit_log")
       .select("id, actor_id, target_user_id, action, details, created_at")
       .order("created_at", { ascending: false })
       .limit(data.limit);
+    if (data.action) q = q.eq("action", data.action);
+    if (data.from) q = q.gte("created_at", data.from);
+    if (data.to) q = q.lte("created_at", data.to);
+    const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const targetIds = Array.from(
-      new Set((rows ?? []).map((r: any) => r.target_user_id).filter(Boolean)),
-    ) as string[];
+
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
     const emailMap = new Map<string, string | null>();
-    if (targetIds.length > 0) {
-      const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-      for (const u of users?.users ?? []) emailMap.set(u.id, u.email ?? null);
+    for (const u of users?.users ?? []) emailMap.set(u.id, u.email ?? null);
+
+    let entries = (rows ?? []).map((r: any) => ({
+      ...r,
+      target_email: r.target_user_id ? emailMap.get(r.target_user_id) ?? null : null,
+      actor_email: emailMap.get(r.actor_id) ?? null,
+    })) as AuditEntryWithActor[];
+    if (data.email) {
+      entries = entries.filter((e) => (e.target_email ?? "").toLowerCase().includes(data.email!));
     }
-    return {
-      entries: (rows ?? []).map((r: any) => ({
-        ...r,
-        target_email: r.target_user_id ? emailMap.get(r.target_user_id) ?? null : null,
-      })) as AuditEntry[],
-    };
+    return { entries };
   });
+

@@ -353,53 +353,254 @@ function TierEditor({
   );
 }
 
+const ACTION_OPTIONS = [
+  { value: "", label: "All actions" },
+  { value: "adjust_balance", label: "Adjust balance" },
+  { value: "grant_vip", label: "Grant VIP" },
+  { value: "revoke_vip", label: "Revoke VIP" },
+  { value: "update_privileges", label: "Update privileges" },
+];
+
+type AuditRow = {
+  id: string;
+  actor_id: string;
+  target_user_id: string | null;
+  action: string;
+  details: any;
+  created_at: string;
+  target_email: string | null;
+  actor_email: string | null;
+};
+
 function AuditLogSection() {
   const list = useServerFn(bossListAudit);
+  const [action, setAction] = useState("");
+  const [email, setEmail] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [selected, setSelected] = useState<AuditRow | null>(null);
+
+  const filters = useMemo(
+    () => ({
+      action: action || undefined,
+      email: email || undefined,
+      from: from ? new Date(from).toISOString() : undefined,
+      to: to ? new Date(to + "T23:59:59").toISOString() : undefined,
+      limit: 200,
+    }),
+    [action, email, from, to],
+  );
+
   const q = useQuery({
-    queryKey: ["boss:audit"],
-    queryFn: () => list({ data: { limit: 50 } }),
+    queryKey: ["boss:audit", filters],
+    queryFn: () => list({ data: filters }),
     refetchOnWindowFocus: false,
   });
-  const entries = q.data?.entries ?? [];
+  const entries = (q.data?.entries ?? []) as AuditRow[];
+
+  const download = (blob: Blob, name: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const exportJson = () => {
+    download(
+      new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" }),
+      `boss-audit-${new Date().toISOString().slice(0, 10)}.json`,
+    );
+  };
+  const exportCsv = () => {
+    const headers = ["created_at", "action", "actor_email", "target_email", "target_user_id", "details"];
+    const esc = (v: any) => {
+      const s = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+    const rows = entries.map((e) =>
+      [e.created_at, e.action, e.actor_email, e.target_email, e.target_user_id, e.details].map(esc).join(","),
+    );
+    download(
+      new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv" }),
+      `boss-audit-${new Date().toISOString().slice(0, 10)}.csv`,
+    );
+  };
+
   return (
     <section className="mt-8">
-      <div className="mb-3 flex items-center gap-2">
-        <ScrollText className="h-4 w-4 text-amber-300" />
-        <h2 className="text-lg font-black text-white">Audit log</h2>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <ScrollText className="h-4 w-4 text-amber-300" />
+          <h2 className="text-lg font-black text-white">Audit log</h2>
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            onClick={exportCsv}
+            disabled={entries.length === 0}
+            className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/80 disabled:opacity-40"
+          >
+            CSV
+          </button>
+          <button
+            onClick={exportJson}
+            disabled={entries.length === 0}
+            className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-black text-white/80 disabled:opacity-40"
+          >
+            JSON
+          </button>
+        </div>
       </div>
+
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <select
+          value={action}
+          onChange={(e) => setAction(e.target.value)}
+          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none"
+          aria-label="Filter by action"
+        >
+          {ACTION_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value} className="bg-neutral-900">
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Target email…"
+          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none"
+        />
+        <input
+          type="date"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none"
+          aria-label="From date"
+        />
+        <input
+          type="date"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none"
+          aria-label="To date"
+        />
+      </div>
+
       {q.isPending ? (
         <p className="text-xs text-white/50">Loading…</p>
       ) : entries.length === 0 ? (
         <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center text-xs text-white/60">
-          No admin actions recorded yet.
+          No admin actions match these filters.
         </p>
       ) : (
         <ul className="space-y-1.5">
           {entries.map((e) => (
-            <li
-              key={e.id}
-              className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-[11px] text-white/80"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-black uppercase tracking-wider text-amber-200">
-                  {e.action.replace(/_/g, " ")}
-                </span>
-                <span className="text-white/40">
-                  {new Date(e.created_at).toLocaleString()}
-                </span>
-              </div>
-              {e.target_email && (
-                <div className="mt-0.5 truncate text-white/60">→ {e.target_email}</div>
-              )}
-              {e.details && Object.keys(e.details).length > 0 && (
-                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-words text-[10px] text-white/50">
-                  {JSON.stringify(e.details)}
-                </pre>
-              )}
+            <li key={e.id}>
+              <button
+                onClick={() => setSelected(e)}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-[11px] text-white/80 hover:bg-white/[0.06]"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-black uppercase tracking-wider text-amber-200">
+                    {e.action.replace(/_/g, " ")}
+                  </span>
+                  <span className="text-white/40">{new Date(e.created_at).toLocaleString()}</span>
+                </div>
+                {e.target_email && <div className="mt-0.5 truncate text-white/60">→ {e.target_email}</div>}
+                <div className="mt-0.5 text-white/50">{summarize(e)}</div>
+              </button>
             </li>
           ))}
         </ul>
       )}
+
+      <AuditDetailDrawer entry={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }
+
+function summarize(e: AuditRow): string {
+  const d = e.details ?? {};
+  if (e.action === "adjust_balance") {
+    return `Balance ${d.previous ?? "?"} → ${d.next ?? "?"}`;
+  }
+  if (e.action === "grant_vip") {
+    const end = d.next?.period_end ? new Date(d.next.period_end).toLocaleDateString() : "";
+    return `VIP granted${d.days ? ` · ${d.days}d` : ""}${end ? ` · until ${end}` : ""}`;
+  }
+  if (e.action === "revoke_vip") return "VIP revoked";
+  if (e.action === "update_privileges") return "Free/VIP privileges updated";
+  return "";
+}
+
+function AuditDetailDrawer({ entry, onClose }: { entry: AuditRow | null; onClose: () => void }) {
+  if (!entry) return null;
+  const d = entry.details ?? {};
+  const prev = d.previous;
+  const next = d.next;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Audit entry details"
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-white/10 bg-neutral-950 p-5 sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-300/80">
+              {entry.action.replace(/_/g, " ")}
+            </p>
+            <p className="mt-0.5 text-xs text-white/60">{new Date(entry.created_at).toLocaleString()}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-black text-white/80"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="mb-3 space-y-1 text-xs text-white/70">
+          <div>
+            <span className="text-white/40">Actor:</span> {entry.actor_email ?? entry.actor_id}
+          </div>
+          {entry.target_email && (
+            <div>
+              <span className="text-white/40">Target:</span> {entry.target_email}
+            </div>
+          )}
+          <div className="text-white/80">{summarize(entry)}</div>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <DiffBlock title="Before" value={prev} />
+          <DiffBlock title="After" value={next} />
+        </div>
+
+        {(!prev && !next) && (
+          <div className="mt-3">
+            <DiffBlock title="Details" value={d} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DiffBlock({ title, value }: { title: string; value: any }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+      <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-white/50">{title}</p>
+      <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words text-[11px] text-white/80">
+        {value == null ? "—" : JSON.stringify(value, null, 2)}
+      </pre>
+    </div>
+  );
+}
+
