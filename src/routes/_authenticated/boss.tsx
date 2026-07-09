@@ -133,6 +133,7 @@ function BossDashboard() {
         </ul>
       </section>
 
+      <FactCodeDecoder />
       <AuditLogSection />
     </Shell>
   );
