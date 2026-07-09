@@ -40,6 +40,7 @@ function QuizPlayPage() {
   const [finalResult, setFinalResult] = useState<FinishResult | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [revealed, setRevealed] = useState(false);
   const startedAtRef = useRef<number>(Date.now());
   const [timeLeft, setTimeLeft] = useState<number>(0);
 
@@ -56,8 +57,9 @@ function QuizPlayPage() {
   const current = quiz?.questions[idx];
   const totalMs = current ? TIMER_MS[current.difficulty] ?? 12000 : 0;
 
+  // Timer only runs after user reveals the answers.
   useEffect(() => {
-    if (!current || result) return;
+    if (!current || result || !revealed) return;
     startedAtRef.current = Date.now();
     setTimeLeft(totalMs);
     const t = setInterval(() => {
@@ -65,13 +67,12 @@ function QuizPlayPage() {
       setTimeLeft(left);
       if (left <= 0) {
         clearInterval(t);
-        // Auto-submit as timeout (index 4 doesn't exist; pick 0 as wrong marker)
         void handlePick(-1);
       }
     }, 100);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, quiz]);
+  }, [idx, quiz, revealed]);
 
   async function handlePick(pickIndex: number) {
     if (!current || answering || result) return;
