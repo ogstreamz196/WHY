@@ -10,6 +10,18 @@ async function assertBoss(ctx: { supabase: any; userId: string }) {
   if (!data) throw new Error("Forbidden");
 }
 
+async function writeAudit(
+  admin: any,
+  actorId: string,
+  action: string,
+  targetUserId: string | null,
+  details: Record<string, unknown>,
+) {
+  await admin
+    .from("boss_audit_log")
+    .insert({ actor_id: actorId, action, target_user_id: targetUserId, details });
+}
+
 export type BossUserRow = {
   id: string;
   email: string | null;
