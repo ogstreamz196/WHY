@@ -603,6 +603,7 @@ function PodiumColumn({ entry, place, unit, isMe }: { entry: PodiumEntry; place:
 
         <p className={`w-full truncate ${cfg.name}`}>
           {name}
+          {entry.is_vip && <VipBadge size="xs" className="ml-1" />}
           {isMe && <span className="ml-1 text-[9px] text-fuchsia-300">YOU</span>}
         </p>
         <p className={`mt-1 ${cfg.score}`}>
