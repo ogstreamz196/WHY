@@ -186,7 +186,14 @@ function QuizPlayPage() {
 
         {/* Timer — only after reveal */}
         {!result && revealed && (
-          <div className="mb-3 h-1 w-full overflow-hidden rounded-full bg-white/5">
+          <div
+            className="mb-3 h-1 w-full overflow-hidden rounded-full bg-white/5"
+            role="progressbar"
+            aria-label="Time remaining"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(timerPct)}
+          >
             <motion.div
               className="h-full rounded-full"
               style={{
@@ -199,6 +206,15 @@ function QuizPlayPage() {
             />
           </div>
         )}
+
+        {/* Screen-reader-only live region for result changes */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {result
+            ? result.correct
+              ? `Correct. You earned ${result.points_awarded} points.`
+              : "Incorrect."
+            : ""}
+        </div>
 
         <AnimatePresence mode="wait">
           <motion.article
