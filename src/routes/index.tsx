@@ -63,6 +63,8 @@ import {
   ArrowRight,
   BookmarkPlus,
   BookmarkCheck,
+  ChevronLeft,
+  ChevronRight,
   Flame,
   Heart,
   Search as SearchIcon,
@@ -72,6 +74,7 @@ import {
   User as UserIcon,
   X,
 } from "lucide-react";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   generateAndStoreFact,
