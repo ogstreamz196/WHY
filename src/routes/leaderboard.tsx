@@ -288,12 +288,19 @@ function ArenaPage() {
             </Link>
           </div>
         ) : (
-          <>
+          <motion.div
+            key={tab + (filter ?? "")}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="arena-active"
+          >
             {/* Podium — top 3 */}
             {result.entries.length >= 1 && (
               <Podium entries={result.entries.slice(0, 3)} unit={tab === "streaks" ? "days" : "pts"} meId={user?.id} />
             )}
             <ol className="space-y-2">
+
               <AnimatePresence initial={false}>
                 {result.entries.slice(3).map((r) => {
                   const me = r.user_id === user?.id;
