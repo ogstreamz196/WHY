@@ -312,9 +312,22 @@ function ProfilePage() {
 
         <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
 
-        <QuizStatsSection />
+        <CollapsibleWrap
+          collapsed={collapsed.quiz}
+          onToggle={() => toggleCollapsed("quiz")}
+          label="Quiz stats"
+        >
+          <QuizStatsSection />
+        </CollapsibleWrap>
 
-        <MyRankingsSection />
+        <CollapsibleWrap
+          collapsed={collapsed.rankings}
+          onToggle={() => toggleCollapsed("rankings")}
+          label="Your Curiosity Rankings"
+        >
+          <MyRankingsSection />
+        </CollapsibleWrap>
+
 
 
 
