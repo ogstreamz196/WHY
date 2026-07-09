@@ -341,7 +341,6 @@ Return STRICT JSON only, no prose, no markdown:
 export const getDailyFact = createServerFn({ method: "GET" }).handler(
   async (): Promise<Fact | null> => {
     const supabase = getSupabase();
-    // Deterministic pick per calendar day (UTC) using count + day-of-year offset.
     const { count } = await supabase
       .from("facts")
       .select("id", { count: "exact", head: true });
@@ -356,5 +355,93 @@ export const getDailyFact = createServerFn({ method: "GET" }).handler(
       .order("created_at", { ascending: true })
       .range(offset, offset);
     return (data?.[0] as Fact) ?? null;
+  },
+);
+
+// -------------------- Daily multiple-choice challenge --------------------
+
+export type DailyMCQ = {
+  fact: Fact;
+  prompt: string;
+  choices: string[];
+  correctIndex: number;
+};
+
+const mcqCache = new Map<string, DailyMCQ>();
+
+function shuffleArr<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+export const getDailyChallengeMCQ = createServerFn({ method: "GET" }).handler(
+  async (): Promise<DailyMCQ | null> => {
+    const supabase = getSupabase();
+    const { count } = await supabase
+      .from("facts")
+      .select("id", { count: "exact", head: true });
+    if (!count) return null;
+    const now = new Date();
+    const start = Date.UTC(now.getUTCFullYear(), 0, 0);
+    const day = Math.floor((now.getTime() - start) / 86_400_000);
+    const offset = day % count;
+    const { data } = await supabase
+      .from("facts")
+      .select(FACT_COLS)
+      .order("created_at", { ascending: true })
+      .range(offset, offset);
+    const fact = (data?.[0] as Fact) ?? null;
+    if (!fact) return null;
+
+    const cacheKey = `${day}:${fact.id}`;
+    const cached = mcqCache.get(cacheKey);
+    if (cached) return cached;
+
+    const apiKey = process.env.LOVABLE_API_KEY;
+    let correct = "";
+    let distractors: string[] = [];
+
+    if (apiKey) {
+      const prompt = `${SAFETY_PROMPT}
+
+You are creating a multiple-choice question for kids based on this fact:
+Question: "Do you know why ${fact.question}"
+Real answer: ${fact.answer}
+
+Write:
+- ONE short correct answer (max 12 words, single plain sentence, no leading "Because").
+- THREE short WRONG-but-plausible distractor answers in the SAME format and length (max 12 words each). Clearly incorrect to an expert, tempting to a kid. No jokes, no "all of the above".
+
+Return STRICT JSON only:
+{"correct":"<short correct answer>","distractors":["<wrong 1>","<wrong 2>","<wrong 3>"]}`;
+      const res = await callJson<{ correct: string; distractors: string[] }>(apiKey, prompt);
+      if (res?.correct && Array.isArray(res.distractors) && res.distractors.length >= 3) {
+        correct = res.correct.trim();
+        distractors = res.distractors.slice(0, 3).map((d) => String(d).trim());
+      }
+    }
+
+    if (!correct) {
+      correct = (fact.answer.split(/(?<=[.!?])\s+/)[0] || fact.answer).slice(0, 140);
+      distractors = [
+        "It happens completely at random.",
+        "Nobody knows the real reason yet.",
+        "It's just a fun coincidence of nature.",
+      ];
+    }
+
+    const all = shuffleArr([correct, ...distractors]);
+    const mcq: DailyMCQ = {
+      fact,
+      prompt: `Do you know why ${fact.question}`,
+      choices: all,
+      correctIndex: all.indexOf(correct),
+    };
+    mcqCache.set(cacheKey, mcq);
+    return mcq;
   },
 );
