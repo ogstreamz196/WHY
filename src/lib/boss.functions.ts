@@ -227,3 +227,43 @@ export const bossAmIBoss = createServerFn({ method: "GET" })
     const { data } = await context.supabase.rpc("is_boss", { _uid: context.userId });
     return { isBoss: !!data };
   });
+
+export type AuditEntry = {
+  id: string;
+  actor_id: string;
+  target_user_id: string | null;
+  action: string;
+  details: Record<string, unknown>;
+  created_at: string;
+  target_email: string | null;
+};
+
+export const bossListAudit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { limit?: number }) => ({
+    limit: Math.min(Math.max(d.limit ?? 50, 1), 200),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertBoss(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
+      .from("boss_audit_log")
+      .select("id, actor_id, target_user_id, action, details, created_at")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    const targetIds = Array.from(
+      new Set((rows ?? []).map((r: any) => r.target_user_id).filter(Boolean)),
+    ) as string[];
+    const emailMap = new Map<string, string | null>();
+    if (targetIds.length > 0) {
+      const { data: users } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+      for (const u of users?.users ?? []) emailMap.set(u.id, u.email ?? null);
+    }
+    return {
+      entries: (rows ?? []).map((r: any) => ({
+        ...r,
+        target_email: r.target_user_id ? emailMap.get(r.target_user_id) ?? null : null,
+      })) as AuditEntry[],
+    };
+  });
