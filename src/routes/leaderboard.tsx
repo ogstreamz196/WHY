@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
 import { getLeaderboard, type LeaderboardKind, type LeaderboardResult } from "@/lib/leaderboard.functions";
 
-export const Route = createFileRoute("/_authenticated/leaderboard")({
+export const Route = createFileRoute("/leaderboard")({
   head: () => ({
     meta: [
       { title: "Curiosity Arena — Why?" },
