@@ -699,6 +699,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           adult_mode_enabled: boolean
@@ -1054,10 +1075,18 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_adult_verified: { Args: { _uid: string }; Returns: boolean }
       is_boss: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       quiz_difficulty: "easy" | "medium" | "hard" | "expert"
     }
     CompositeTypes: {
@@ -1186,6 +1215,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       quiz_difficulty: ["easy", "medium", "hard", "expert"],
     },
   },
