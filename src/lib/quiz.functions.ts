@@ -122,6 +122,21 @@ export function trimToWords(s: string, n: number) {
 }
 
 /**
+ * Prettify a short answer for consistent display:
+ * - collapse whitespace
+ * - strip wrapping quotes and trailing sentence punctuation
+ * - capitalize the first character (preserves ALLCAPS acronyms)
+ */
+export function prettifyAnswer(s: string) {
+  let t = s.trim().replace(/\s+/g, " ").replace(/^["'“”‘’]+|["'“”‘’]+$/g, "");
+  t = t.replace(/[.!?…,;:\s]+$/g, "");
+  if (!t) return t;
+  const first = t.charAt(0);
+  if (/[a-z]/.test(first)) t = first.toUpperCase() + t.slice(1);
+  return t;
+}
+
+/**
  * Server-side guarantee that a stored quiz row is consistent with the
  * grading logic: non-empty correct_answer, capped to the difficulty's word
  * budget; exactly 3 distinct distractors, same cap, none matching the
@@ -139,7 +154,9 @@ export function sanitizeQuizRow(input: {
     typeof input.correct_answer === "string" && input.correct_answer.trim()
       ? input.correct_answer
       : input.fallbackAnswer;
-  const correct = trimToWords(rawCorrect, target) || trimToWords(input.fallbackAnswer, target);
+  const correct = prettifyAnswer(
+    trimToWords(rawCorrect, target) || trimToWords(input.fallbackAnswer, target),
+  );
   if (!correct || wordCount(correct) === 0) return null;
 
   const lc = correct.toLowerCase();
@@ -147,7 +164,7 @@ export function sanitizeQuizRow(input: {
   const distractors: string[] = [];
   if (Array.isArray(input.distractors)) {
     for (const d of input.distractors) {
-      const t = trimToWords(String(d ?? ""), target);
+      const t = prettifyAnswer(trimToWords(String(d ?? ""), target));
       const key = t.toLowerCase();
       if (t && !seen.has(key)) {
         seen.add(key);
