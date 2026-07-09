@@ -92,22 +92,22 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
     <motion.section
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-fuchsia-500/15 p-4 shadow-[0_0_24px_rgba(139,92,246,0.15)] sm:p-5"
+      className="mb-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-indigo-500/15 via-violet-500/10 to-fuchsia-500/15 p-4 shadow-[0_0_24px_rgba(139,92,246,0.15)] sm:p-5 md:p-6 lg:p-7"
     >
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex w-full items-center gap-3 text-left"
+        className="flex w-full items-center gap-3 text-left sm:gap-4"
       >
         <ProgressRing pct={pct} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-            <h3 className="font-display text-sm font-black uppercase tracking-wider text-white">
+            <Sparkles className="h-3.5 w-3.5 text-amber-300 sm:h-4 sm:w-4" />
+            <h3 className="font-display text-sm font-black uppercase tracking-wider text-white sm:text-base md:text-lg">
               Today's mission
             </h3>
           </div>
-          <p className="mt-0.5 text-xs text-white/60">
+          <p className="mt-0.5 text-xs text-white/60 sm:text-sm md:text-[0.95rem]">
             {mission.completed
               ? mission.bonus_awarded ? "All complete — see you tomorrow ✨" : "All 4 done — claim your bonus!"
               : `${doneCount} of 4 complete · Category: ${emojiFor(mission.category_key)} ${mission.category_key}`}
@@ -118,6 +118,7 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
           className="text-white/40"
         >⌄</motion.span>
       </button>
+
 
       <AnimatePresence initial={false}>
         {expanded && (
