@@ -55,49 +55,50 @@
 :root {
   --radius: 1.25rem;
 
-  /* Default = dark (cosmic). Light mode overridden below. */
-  --background: oklch(0.13 0.04 285);
-  --foreground: oklch(0.98 0.005 260);
-  --card: oklch(0.20 0.055 285 / 0.75);
-  --card-foreground: oklch(0.98 0.005 260);
-  --popover: oklch(0.18 0.05 285);
-  --popover-foreground: oklch(0.98 0.005 260);
-  --primary: oklch(0.70 0.22 300);
+  /* Midnight Indigo palette
+     #0a0a1a bg · #141432 surface · #1e1e5a border · #4f46e5 accent */
+  --background: oklch(0.08 0.04 285);
+  --foreground: oklch(0.98 0.01 260);
+  --card: oklch(0.18 0.09 285 / 0.78);
+  --card-foreground: oklch(0.98 0.01 260);
+  --popover: oklch(0.16 0.08 285);
+  --popover-foreground: oklch(0.98 0.01 260);
+  --primary: oklch(0.55 0.24 275);          /* #4f46e5 */
   --primary-foreground: oklch(0.99 0.005 260);
-  --secondary: oklch(0.28 0.05 280);
-  --secondary-foreground: oklch(0.98 0.005 260);
-  --muted: oklch(0.24 0.04 285);
+  --secondary: oklch(0.24 0.14 275);         /* #1e1e5a */
+  --secondary-foreground: oklch(0.98 0.01 260);
+  --muted: oklch(0.18 0.08 285);
   --muted-foreground: oklch(0.75 0.03 285);
-  --accent: oklch(0.75 0.18 340);
-  --accent-foreground: oklch(0.15 0.02 285);
+  --accent: oklch(0.62 0.22 275);
+  --accent-foreground: oklch(0.99 0.005 260);
   --destructive: oklch(0.65 0.24 25);
   --destructive-foreground: oklch(0.98 0.005 260);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.70 0.22 300);
+  --border: oklch(0.55 0.20 275 / 22%);
+  --input: oklch(0.55 0.20 275 / 16%);
+  --ring: oklch(0.55 0.24 275);
 
-  /* Brand palette (semantic) */
-  --cosmos: oklch(0.13 0.04 285);        /* deep space bg */
-  --nebula: oklch(0.20 0.06 290);        /* card surface */
-  --aurora: oklch(0.72 0.20 195);        /* cyan */
-  --glow:   oklch(0.72 0.22 305);        /* violet */
-  --flame:  oklch(0.72 0.20 40);         /* orange fire */
-  --star:   oklch(0.85 0.18 90);         /* golden yellow */
-  --magic:  oklch(0.72 0.24 340);        /* pink/magenta */
-  --ocean:  oklch(0.70 0.16 230);        /* blue */
-  --leaf:   oklch(0.75 0.18 145);        /* green */
+  /* Brand palette (semantic) — mapped to Midnight Indigo */
+  --cosmos: oklch(0.08 0.04 285);
+  --nebula: oklch(0.15 0.08 285);
+  --aurora: oklch(0.72 0.20 235);
+  --glow:   oklch(0.55 0.24 275);
+  --flame:  oklch(0.72 0.20 40);
+  --star:   oklch(0.85 0.18 90);
+  --magic:  oklch(0.72 0.24 320);
+  --ocean:  oklch(0.70 0.16 250);
+  --leaf:   oklch(0.75 0.18 165);
 
-  /* Signature gradients */
-  --gradient-primary: linear-gradient(135deg, oklch(0.72 0.22 305) 0%, oklch(0.72 0.24 340) 50%, oklch(0.78 0.20 40) 100%);
-  --gradient-aurora:  linear-gradient(135deg, oklch(0.72 0.20 195) 0%, oklch(0.72 0.22 305) 100%);
-  --gradient-sunrise: linear-gradient(135deg, oklch(0.78 0.20 40) 0%, oklch(0.72 0.24 340) 100%);
-  --gradient-space:   radial-gradient(1200px 700px at 20% -10%, oklch(0.28 0.10 300 / 0.6) 0%, transparent 55%),
-                      radial-gradient(1000px 800px at 110% 10%, oklch(0.28 0.10 200 / 0.5) 0%, transparent 55%),
-                      radial-gradient(900px 900px at 50% 110%, oklch(0.25 0.12 340 / 0.5) 0%, transparent 60%),
-                      linear-gradient(180deg, oklch(0.11 0.04 285) 0%, oklch(0.09 0.04 285) 100%);
+  /* Signature gradients — indigo forward */
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.24 275) 0%, oklch(0.65 0.22 285) 55%, oklch(0.72 0.20 305) 100%);
+  --gradient-aurora:  linear-gradient(135deg, oklch(0.55 0.24 275) 0%, oklch(0.72 0.20 235) 100%);
+  --gradient-sunrise: linear-gradient(135deg, oklch(0.72 0.20 40) 0%, oklch(0.72 0.24 320) 100%);
+  --gradient-space:   radial-gradient(1200px 700px at 20% -10%, oklch(0.24 0.14 275 / 0.7) 0%, transparent 55%),
+                      radial-gradient(1000px 800px at 110% 10%, oklch(0.22 0.12 265 / 0.55) 0%, transparent 55%),
+                      radial-gradient(900px 900px at 50% 110%, oklch(0.28 0.16 285 / 0.45) 0%, transparent 60%),
+                      linear-gradient(180deg, oklch(0.08 0.04 285) 0%, oklch(0.06 0.03 285) 100%);
 
   /* Elevation */
-  --shadow-glow: 0 20px 60px -20px color-mix(in oklab, oklch(0.72 0.22 305) 60%, transparent);
+  --shadow-glow: 0 20px 60px -20px color-mix(in oklab, oklch(0.55 0.24 275) 65%, transparent);
   --shadow-card: 0 8px 30px -12px oklch(0 0 0 / 0.6), 0 2px 8px -2px oklch(0 0 0 / 0.4);
   --shadow-flame: 0 10px 30px -10px color-mix(in oklab, oklch(0.72 0.20 40) 55%, transparent);
 }
