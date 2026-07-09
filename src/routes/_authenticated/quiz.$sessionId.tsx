@@ -14,6 +14,7 @@ import {
   type QuizStartResult,
 } from "@/lib/quiz.functions";
 import { emojiFor } from "@/lib/categories";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/_authenticated/quiz/$sessionId")({
   component: QuizPlayPage,
@@ -228,7 +229,7 @@ function QuizPlayPage() {
               {emojiFor(current.category)} {current.category ?? "curiosity"}
             </p>
             <h2 className="mt-2 font-display text-xl font-black leading-tight text-white">
-              {current.question}
+              {asWhyQuestion(current.question)}
             </h2>
 
             {!revealed ? (

@@ -14,7 +14,7 @@ import {
   hasCompletedDailyChallenge,
 } from "@/lib/store";
 import { emojiFor, gradientFor } from "@/lib/categories";
-const capitalize = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 type Props = {
   onCompleted?: (result: { streak: number; points: number; pointsDelta: number }) => void;
@@ -169,7 +169,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                       ⚡ Quick fact
                     </p>
                     <h3 className="mt-1 font-display text-lg font-black leading-tight text-white">
-                      {capitalize(fact.question)}{" "}
+                      {asWhyQuestion(fact.question)}{" "}
                       <span aria-hidden>{emojiFor(fact.category)}</span>
                     </h3>
 
@@ -194,7 +194,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                       🤔 Pick the real reason
                     </p>
                     <h3 className="mt-1 font-display text-base font-black leading-tight text-white">
-                      {capitalize(fact.question)}
+                      {asWhyQuestion(fact.question)}
                     </h3>
 
                     <div className="mt-3 grid gap-2" role="group" aria-label="Answer choices">
