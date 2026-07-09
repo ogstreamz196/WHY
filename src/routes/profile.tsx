@@ -108,9 +108,20 @@ function ProfilePage() {
     });
   };
 
-  const [collapsed, setCollapsed] = useState<{ achievements: boolean; discoveries: boolean }>({
+  type CollapseKey =
+    | "achievements"
+    | "discoveries"
+    | "interests"
+    | "chains"
+    | "quiz"
+    | "rankings";
+  const [collapsed, setCollapsed] = useState<Record<CollapseKey, boolean>>({
     achievements: false,
     discoveries: false,
+    interests: false,
+    chains: false,
+    quiz: false,
+    rankings: false,
   });
 
   useEffect(() => {
@@ -119,15 +130,17 @@ function ProfilePage() {
       const raw = window.localStorage.getItem("profile:collapsed");
       if (raw) {
         const parsed = JSON.parse(raw);
-        setCollapsed({
-          achievements: !!parsed.achievements,
-          discoveries: !!parsed.discoveries,
-        });
+        setCollapsed((prev) => ({
+          ...prev,
+          ...Object.fromEntries(
+            Object.keys(prev).map((k) => [k, !!parsed[k]]),
+          ),
+        }));
       }
     } catch {}
   }, []);
 
-  const toggleCollapsed = (key: "achievements" | "discoveries") => {
+  const toggleCollapsed = (key: CollapseKey) => {
     setCollapsed((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       if (typeof window !== "undefined") {
