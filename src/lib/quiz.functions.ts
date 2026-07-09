@@ -104,12 +104,14 @@ function shuffle<T>(arr: T[]): T[] {
 
 type AiClient = ReturnType<typeof createLovableAiGatewayProvider>;
 
-/** Target word count for the correct answer + distractors, per difficulty. */
+/** Target word count for the correct answer + distractors, per difficulty.
+ *  Every question is a "Why …?" so answers need enough room to read as a
+ *  reason. Kept short & friendly, not brutally clipped. */
 export const WORDS_FOR: Record<Difficulty, number> = {
-  easy: 2,
-  medium: 4,
-  hard: 6,
-  expert: 8,
+  easy: 6,
+  medium: 8,
+  hard: 10,
+  expert: 12,
 };
 
 export function wordCount(s: string) {
