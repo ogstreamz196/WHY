@@ -1242,8 +1242,10 @@ export function asWhyQuestion(raw: string) {
   const startsWithWhy = /^(why|how come|how|what makes|what causes)\b/i.test(q);
   if (!startsWithWhy) q = `Why ${q.charAt(0).toLowerCase() + q.slice(1)}`;
   else q = q.charAt(0).toUpperCase() + q.slice(1);
-  if (!/[?!.]$/.test(q)) q += "?";
-  else if (/[.!]$/.test(q)) q = q.slice(0, -1) + "?";
+  // Normalize trailing punctuation to a single '?'
+  q = q.replace(/[?!.]+$/g, "");
+  q += "?";
+
   return q;
 }
 
