@@ -273,7 +273,7 @@ export const getPublicChain = createServerFn({ method: "GET" })
         .eq("chain_id", chain.id)
         .order("position", { ascending: true }),
       sb
-        .from("profiles")
+        .from("profiles_public")
         .select("display_name, avatar_id")
         .eq("id", chain.user_id)
         .maybeSingle(),
