@@ -1,9 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Home, Trophy, Store, User, Sparkles, Medal } from "lucide-react";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-
-const BOSS_EMAIL = "ogstreamz196@gmail.com";
+import { useBossTheme } from "@/lib/useBossTheme";
 
 const items = [
   { to: "/",            label: "Home",   Icon: Home },
@@ -16,22 +13,9 @@ const items = [
 
 
 export function BottomNav() {
-  const [isBoss, setIsBoss] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    const apply = (boss: boolean) => {
-      if (!alive) return;
-      setIsBoss(boss);
-      document.documentElement.classList.toggle("theme-boss", boss);
-    };
-    supabase.auth.getUser().then(({ data }) => {
-      apply(data.user?.email?.toLowerCase() === BOSS_EMAIL);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      apply(session?.user?.email?.toLowerCase() === BOSS_EMAIL);
-    });
-    return () => { alive = false; sub.subscription.unsubscribe(); };
-  }, []);
+  const isBoss = useBossTheme();
+
+
 
 
   return (

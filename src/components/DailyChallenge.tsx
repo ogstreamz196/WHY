@@ -122,13 +122,14 @@ export function DailyChallenge({ onCompleted }: Props) {
               <Calendar className="h-4 w-4 text-white" />
             </span>
             <div className="leading-tight">
-              <p id="daily-challenge-title" className="text-[10px] font-black uppercase tracking-widest text-white/60">
+              <h2 id="daily-challenge-title" className="text-[10px] font-black uppercase tracking-widest text-white/60">
                 Daily Challenge
-              </p>
+              </h2>
               <p className="text-xs font-bold text-white/90">
                 {done ? "Streak locked in ✓" : "Quick fact + 1 question · +25 pts"}
               </p>
             </div>
+
           </div>
           {done && (
             <button
@@ -167,10 +168,11 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       ⚡ Quick fact
                     </p>
-                    <h2 className="mt-1 font-display text-lg font-black leading-tight text-white">
+                    <h3 className="mt-1 font-display text-lg font-black leading-tight text-white">
                       {capitalize(fact.question)}{" "}
                       <span aria-hidden>{emojiFor(fact.category)}</span>
-                    </h2>
+                    </h3>
+
                     {fact.fun_fact && (
                       <p className="mt-2 text-xs italic text-yellow-200/90">
                         ⭐ {fact.fun_fact}
@@ -191,9 +193,10 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       🤔 Pick the real reason
                     </p>
-                    <h2 className="mt-1 font-display text-base font-black leading-tight text-white">
+                    <h3 className="mt-1 font-display text-base font-black leading-tight text-white">
                       {capitalize(fact.question)}
-                    </h2>
+                    </h3>
+
                     <div className="mt-3 grid gap-2" role="group" aria-label="Answer choices">
                       {mcq.choices.map((choice, i) => {
                         const isPicked = picked === i;
