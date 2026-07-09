@@ -110,14 +110,10 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
   });
 
 async function fetchVipSet(userIds: string[]): Promise<Set<string>> {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
   const env = (process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "").startsWith("test_") ? "sandbox" : "live";
-  const supabase = createClient<Database>(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any)
+  const { data } = await (supabaseAdmin as any)
     .from("subscriptions")
     .select("user_id, status, current_period_end")
     .in("user_id", userIds)
