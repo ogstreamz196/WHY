@@ -38,6 +38,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { user, loading } = useCurrentUser();
+  const { isVip } = useSubscription(user?.id);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
