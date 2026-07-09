@@ -725,8 +725,9 @@ function WhyApp() {
                   <div className="candy-chip animate-fade-up inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 sm:px-4">
                     <span aria-hidden className="shrink-0 text-lg">🍭</span>
                     <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
-                      Do you know why…
+                      Curious?
                     </span>
+
                   </div>
                   <span
                     className="animate-bounce-in inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11"
