@@ -77,6 +77,14 @@ function QuizPlayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, quiz, revealed]);
 
+  // Focus management: reveal button on new question, first choice on reveal.
+  useEffect(() => {
+    if (!current || result) return;
+    if (!revealed) revealBtnRef.current?.focus();
+    else firstChoiceRef.current?.focus();
+  }, [idx, revealed, current, result]);
+
+
   async function handlePick(pickIndex: number) {
     if (!current || answering || result) return;
     setAnswering(true);
