@@ -122,13 +122,14 @@ export function DailyChallenge({ onCompleted }: Props) {
               <Calendar className="h-4 w-4 text-white" />
             </span>
             <div className="leading-tight">
-              <p id="daily-challenge-title" className="text-[10px] font-black uppercase tracking-widest text-white/60">
+              <h2 id="daily-challenge-title" className="text-[10px] font-black uppercase tracking-widest text-white/60">
                 Daily Challenge
-              </p>
+              </h2>
               <p className="text-xs font-bold text-white/90">
                 {done ? "Streak locked in ✓" : "Quick fact + 1 question · +25 pts"}
               </p>
             </div>
+
           </div>
           {done && (
             <button
