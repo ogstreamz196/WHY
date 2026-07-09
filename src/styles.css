@@ -586,43 +586,35 @@ nav[aria-label="Primary"] button:focus-visible {
 html { font-size: clamp(15px, 0.9rem + 0.25vw, 17px); -webkit-text-size-adjust: 100%; }
 body { text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 
-/* Section rhythm */
-main { padding-inline: clamp(1rem, 3vw, 2rem); }
-main > * + * { margin-top: clamp(1.25rem, 2.5vw, 2rem); }
+/* Section rhythm — opt-in via .stack, so existing layouts aren't disturbed */
+.stack > * + * { margin-top: clamp(1rem, 2vw, 1.5rem); }
 
 /* Headings feel confident but never crushed on mobile */
 h1 { font-size: clamp(1.75rem, 1.2rem + 2.5vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; }
 h2 { font-size: clamp(1.35rem, 1rem + 1.5vw, 2rem); line-height: 1.1;  letter-spacing: -0.015em; }
 h3 { font-size: clamp(1.1rem,  0.95rem + 0.8vw, 1.5rem); line-height: 1.15; }
 
-/* Friendly, visible focus for everyone — keyboard + switch users */
+/* Friendly, visible focus — no forced border-radius so component shape is preserved */
 :where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
   outline: 3px solid color-mix(in oklab, var(--primary) 85%, white);
-  outline-offset: 3px;
-  border-radius: 10px;
-  transition: outline-offset 0.15s ease;
+  outline-offset: 2px;
 }
 
-/* Kid-friendly tap targets */
+/* Kid-friendly tap targets on touch devices (skip inputs that need natural size) */
 @media (pointer: coarse) {
-  :where(button, a, [role="button"], input[type="checkbox"], input[type="radio"]) {
+  :where(button, a[role="button"], [role="button"]) {
     min-height: 44px;
+    min-width: 44px;
   }
-  :where(button, [role="button"]) { min-width: 44px; }
 }
 
-/* Playful press feedback on any button-like element */
-:where(button, [role="button"], a.btn, .btn) {
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.2s ease;
-  will-change: transform;
+/* Playful press feedback — opt-in only, so nav/icon/dropdown buttons don't jiggle */
+.btn-pop {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
 }
-:where(button, [role="button"], a.btn, .btn):hover:not(:disabled) {
-  transform: translateY(-1px) scale(1.02);
-  filter: saturate(1.08);
-}
-:where(button, [role="button"], a.btn, .btn):active:not(:disabled) {
-  transform: translateY(1px) scale(0.97);
-}
+.btn-pop:hover:not(:disabled)  { transform: translateY(-1px) scale(1.02); filter: saturate(1.08); }
+.btn-pop:active:not(:disabled) { transform: translateY(1px) scale(0.97); }
+
 
 /* Cards lift a little on hover — invites interaction */
 :where([data-card], .card-lift) {
