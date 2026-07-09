@@ -702,7 +702,7 @@ function WhyApp() {
                 style={{ background: catGradient }}
               />
               <div className="candy-rainbow-border">
-              <article className="glass-strong relative overflow-hidden p-5 shadow-[var(--shadow-card)] sm:p-6">
+              <article className="glass-strong relative overflow-hidden p-5 shadow-[var(--shadow-card)] sm:p-6 md:p-8 lg:p-10">
                 {/* Candy sprinkles falling behind content */}
                 <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                   {[
@@ -721,22 +721,22 @@ function WhyApp() {
                   ))}
                 </div>
                 {/* Speech-bubble tag */}
-                <div className="relative mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                  <div className="candy-chip animate-fade-up inline-flex min-w-0 items-center gap-2 rounded-full px-3 py-2 sm:px-4">
+                <div className="relative mb-4 flex flex-wrap items-center gap-3 sm:mb-5">
+                  <div className="candy-chip animate-fade-up inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-2.5">
                     <span aria-hidden className="shrink-0 text-lg">🍭</span>
                     <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
                       Curious?
                     </span>
-
                   </div>
                   <span
-                    className="animate-bounce-in inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11"
+                    className="animate-bounce-in ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11 md:h-12 md:w-12 md:text-2xl"
                     style={{ background: catGradient }}
                     aria-label={fact?.category ?? "category"}
                   >
                     {emojiFor(fact?.category)}
                   </span>
                 </div>
+
 
 
 
