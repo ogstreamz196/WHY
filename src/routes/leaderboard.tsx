@@ -472,10 +472,11 @@ const PODIUM_CFG = {
     card: "h-64 sm:h-72 rounded-t-[2.25rem] border-t-2 border-x-2 border-amber-400/40 bg-gradient-to-b from-amber-500/12 to-transparent shadow-[0_-25px_60px_-15px_rgba(251,191,36,0.25)] podium-shimmer",
     medal: "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.55)]",
     medalSize: "h-9 w-9",
-    name: "text-white text-lg sm:text-xl font-black tracking-tight",
+    name: "shimmer-gold-text text-lg sm:text-xl font-black tracking-tight",
     score: "text-amber-300 text-base font-black",
     tier: "Grandmaster",
-    tierPill: "bg-amber-400/20 border-amber-400/40 text-amber-200",
+    tierPill: "shimmer-gold-text bg-amber-400/15 border border-amber-400/40",
+
   },
   2: {
     delay: 0,
