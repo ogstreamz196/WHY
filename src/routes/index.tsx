@@ -438,7 +438,7 @@ function WhyApp() {
   const handleShare = async () => {
     if (!fact) return;
     const url = typeof window !== "undefined" ? window.location.origin : "https://why.app";
-    const text = `🤔 WHY?\n\nDo you know why ${fact.question}\n\nTap to discover.\n${url}`;
+    const text = `🤔 WHY?\n\n${asWhyQuestion(fact.question)}\n\nTap to discover.\n${url}`;
     try {
       if (navigator.share) await navigator.share({ title: "Why?", text, url });
       else { await navigator.clipboard.writeText(text); alert("Copied to clipboard!"); }
