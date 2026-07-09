@@ -107,8 +107,21 @@ function BossDashboard() {
             <UserRow
               key={u.id}
               row={u}
-              onAdjust={(delta, setTo) => adjustMut.mutate({ userId: u.id, delta, setTo })}
-              onVip={(grant, days) => vipMut.mutate({ userId: u.id, grant, days })}
+              onAdjust={(delta, setTo) => {
+                const label =
+                  setTo !== undefined
+                    ? `set balance to ${setTo.toLocaleString()}`
+                    : `${(delta ?? 0) >= 0 ? "add" : "remove"} ${Math.abs(delta ?? 0).toLocaleString()} coins`;
+                if (!window.confirm(`Confirm: ${label} for ${u.email ?? u.id}?`)) return;
+                adjustMut.mutate({ userId: u.id, delta, setTo });
+              }}
+              onVip={(grant, days) => {
+                const label = grant
+                  ? `grant VIP for ${days ?? 30} days to ${u.email ?? u.id}`
+                  : `revoke VIP from ${u.email ?? u.id}`;
+                if (!window.confirm(`Confirm: ${label}?`)) return;
+                vipMut.mutate({ userId: u.id, grant, days });
+              }}
               busy={adjustMut.isPending || vipMut.isPending}
             />
           ))}
@@ -119,6 +132,8 @@ function BossDashboard() {
           )}
         </ul>
       </section>
+
+      <AuditLogSection />
     </Shell>
   );
 }
