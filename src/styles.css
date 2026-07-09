@@ -170,6 +170,58 @@
               0 0 0 1px color-mix(in oklab, oklch(0.88 0.02 250) 18%, transparent);
 }
 
+/* Boss: metallic blue + silver chrome buttons with blue/silver/red aura */
+.theme-boss button:not([data-no-chrome]):not([aria-label="Save"]):not([aria-label="Edit profile"]),
+.theme-boss a[class*="rounded-full"]:not([data-no-chrome]),
+.theme-boss a[class*="rounded-2xl"]:not([data-no-chrome]),
+.theme-boss [role="button"]:not([data-no-chrome]) {
+  background-image:
+    linear-gradient(180deg,
+      color-mix(in oklab, oklch(0.92 0.03 250) 55%, transparent) 0%,
+      transparent 42%,
+      color-mix(in oklab, oklch(0.05 0.02 250) 30%, transparent) 100%),
+    linear-gradient(135deg,
+      oklch(0.55 0.18 250) 0%,
+      oklch(0.78 0.14 245) 32%,
+      oklch(0.90 0.02 250) 52%,
+      oklch(0.62 0.20 250) 78%,
+      oklch(0.32 0.12 250) 100%) !important;
+  background-blend-mode: screen, normal;
+  border-color: color-mix(in oklab, oklch(0.90 0.02 250) 55%, transparent) !important;
+  color: oklch(0.98 0.01 250) !important;
+  text-shadow: 0 1px 0 oklch(0 0 0 / 0.35);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.35),
+    inset 0 -1px 0 oklch(0 0 0 / 0.35),
+    0 0 0 1px color-mix(in oklab, oklch(0.90 0.02 250) 30%, transparent),
+    0 6px 18px -8px color-mix(in oklab, oklch(0.72 0.24 250) 70%, transparent),
+    0 10px 28px -14px color-mix(in oklab, oklch(0.66 0.25 25) 55%, transparent),
+    0 0 22px -6px color-mix(in oklab, oklch(0.90 0.02 250) 45%, transparent) !important;
+}
+
+.theme-boss button:not([data-no-chrome]):hover,
+.theme-boss a[class*="rounded-full"]:not([data-no-chrome]):hover,
+.theme-boss a[class*="rounded-2xl"]:not([data-no-chrome]):hover {
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.45),
+    inset 0 -1px 0 oklch(0 0 0 / 0.4),
+    0 0 0 1px color-mix(in oklab, oklch(0.90 0.02 250) 45%, transparent),
+    0 10px 26px -8px color-mix(in oklab, oklch(0.72 0.24 250) 85%, transparent),
+    0 14px 34px -14px color-mix(in oklab, oklch(0.66 0.25 25) 70%, transparent),
+    0 0 30px -6px color-mix(in oklab, oklch(0.90 0.02 250) 60%, transparent) !important;
+}
+
+/* Boss: tri-color aura (blue / silver / red) around cards */
+.theme-boss .glass,
+.theme-boss .glass-strong {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, oklch(0.90 0.02 250) 22%, transparent),
+    0 8px 26px -14px color-mix(in oklab, oklch(0.72 0.24 250) 55%, transparent),
+    0 14px 40px -18px color-mix(in oklab, oklch(0.66 0.25 25) 45%, transparent),
+    0 0 24px -10px color-mix(in oklab, oklch(0.90 0.02 250) 40%, transparent) !important;
+}
+
 
 
 @layer base {
