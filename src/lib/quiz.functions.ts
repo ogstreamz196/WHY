@@ -110,6 +110,52 @@ export function trimToWords(s: string, n: number) {
   return words.slice(0, n).join(" ");
 }
 
+/**
+ * Server-side guarantee that a stored quiz row is consistent with the
+ * grading logic: non-empty correct_answer, capped to the difficulty's word
+ * budget; exactly 3 distinct distractors, same cap, none matching the
+ * correct answer (case-insensitive); safe explanation length.
+ */
+export function sanitizeQuizRow(input: {
+  correct_answer: unknown;
+  distractors: unknown;
+  explanation?: unknown;
+  difficulty: Difficulty;
+  fallbackAnswer: string;
+}): { correct_answer: string; distractors: string[]; explanation: string } | null {
+  const target = WORDS_FOR[input.difficulty];
+  const rawCorrect =
+    typeof input.correct_answer === "string" && input.correct_answer.trim()
+      ? input.correct_answer
+      : input.fallbackAnswer;
+  const correct = trimToWords(rawCorrect, target) || trimToWords(input.fallbackAnswer, target);
+  if (!correct || wordCount(correct) === 0) return null;
+
+  const lc = correct.toLowerCase();
+  const seen = new Set<string>([lc]);
+  const distractors: string[] = [];
+  if (Array.isArray(input.distractors)) {
+    for (const d of input.distractors) {
+      const t = trimToWords(String(d ?? ""), target);
+      const key = t.toLowerCase();
+      if (t && !seen.has(key)) {
+        seen.add(key);
+        distractors.push(t);
+        if (distractors.length === 3) break;
+      }
+    }
+  }
+  if (distractors.length !== 3) return null;
+
+  const explanation =
+    typeof input.explanation === "string" && input.explanation.trim()
+      ? input.explanation.trim().slice(0, 300)
+      : input.fallbackAnswer.slice(0, 300);
+
+  return { correct_answer: correct, distractors, explanation };
+}
+
+
 
 async function generateDistractors(
   ai: AiClient | null,
@@ -242,14 +288,26 @@ export const startQuiz = createServerFn({ method: "POST" })
           return { fact: f, factDifficulty, ...gen };
         }),
       );
-      const rowsToInsert = results.map(({ fact, factDifficulty, answer, distractors, explanation }) => ({
-        fact_id: fact.id,
-        category: fact.category,
-        difficulty: factDifficulty,
-        correct_answer: answer,
-        distractors,
-        explanation,
-      }));
+      const rowsToInsert = results
+        .map(({ fact, factDifficulty, answer, distractors, explanation }) => {
+          const clean = sanitizeQuizRow({
+            correct_answer: answer,
+            distractors,
+            explanation,
+            difficulty: factDifficulty,
+            fallbackAnswer: fact.answer ?? "",
+          });
+          if (!clean) return null;
+          return {
+            fact_id: fact.id,
+            category: fact.category,
+            difficulty: factDifficulty,
+            correct_answer: clean.correct_answer,
+            distractors: clean.distractors,
+            explanation: clean.explanation,
+          };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
       if (rowsToInsert.length > 0) {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         await supabaseAdmin.from("quiz_questions").upsert(rowsToInsert, { onConflict: "fact_id" });
@@ -261,30 +319,45 @@ export const startQuiz = createServerFn({ method: "POST" })
 
     // Build public questions (shuffle choices, remember order per-question).
     const answerOrder: number[] = []; // 0..3 index of correct answer per question, in question order
-    const questions: QuizQuestionPublic[] = picked.map((f) => {
-      const q = cacheMap.get(f.id)!;
-      const correct = q.correct_answer as string;
-      const distractors = (q.distractors as string[]).slice(0, 3);
-      const choices = shuffle([correct, ...distractors]);
-      answerOrder.push(choices.indexOf(correct));
-      return {
+    const questions: QuizQuestionPublic[] = [];
+    for (const f of picked) {
+      const q = cacheMap.get(f.id);
+      if (!q) continue;
+      const qDifficulty = (q.difficulty as Difficulty) ?? difficulty;
+      // Re-validate cached rows so historical bad data can't break grading.
+      const clean = sanitizeQuizRow({
+        correct_answer: q.correct_answer,
+        distractors: q.distractors,
+        explanation: (q as { explanation?: unknown }).explanation,
+        difficulty: qDifficulty,
+        fallbackAnswer: f.answer ?? "",
+      });
+      if (!clean) continue;
+      const choices = shuffle([clean.correct_answer, ...clean.distractors]);
+      answerOrder.push(choices.indexOf(clean.correct_answer));
+      questions.push({
         fact_id: f.id,
         category: f.category,
-        difficulty: (q.difficulty as Difficulty) ?? difficulty,
+        difficulty: qDifficulty,
         question: f.question,
         choices,
         fun_fact: f.fun_fact,
-      };
-    });
+      });
+    }
+    if (questions.length === 0) {
+      throw new Error("No valid quiz questions could be prepared. Please try again.");
+    }
 
+
+    const finalFactIds = questions.map((q) => q.fact_id);
     const { data: session, error: sErr } = await context.supabase
       .from("quiz_sessions")
       .insert({
         user_id: context.userId,
         category: data.category === "all" ? null : data.category ?? null,
         difficulty,
-        question_count: length,
-        fact_ids: factIds,
+        question_count: questions.length,
+        fact_ids: finalFactIds,
         answer_order: answerOrder,
       })
       .select("id")
@@ -295,10 +368,11 @@ export const startQuiz = createServerFn({ method: "POST" })
       session_id: session.id as string,
       category: data.category ?? null,
       difficulty,
-      question_count: length,
+      question_count: questions.length,
       questions,
     };
   });
+
 
 // ---------------- submitAnswer ----------------
 
