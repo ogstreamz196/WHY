@@ -368,9 +368,16 @@ export const decodeFactCode = createServerFn({ method: "POST" })
     z.object({ code: z.string().min(4).max(64) }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: rows, error } = await context.supabase.rpc("boss_decode_fact_code", { _code: data.code });
+    // Re-check the caller is an admin/boss before executing the definer RPC via service role.
+    const { data: bossOk } = await context.supabase.rpc("is_boss", { _uid: context.userId });
+    if (!bossOk) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("facts")
+      .select("id, code, code_seq, category, question, answer, fun_fact, source, created_at")
+      .eq("code", data.code)
+      .maybeSingle();
     if (error) throw error;
-    const row = Array.isArray(rows) ? rows[0] : rows;
     return (row as {
       id: string; code: string; code_seq: number; category: string | null;
       question: string; answer: string; fun_fact: string | null;
@@ -381,6 +388,7 @@ export const decodeFactCode = createServerFn({ method: "POST" })
 // -------------------- "But… Why?" endless chain --------------------
 
 export const generateWhyLayer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({

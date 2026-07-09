@@ -5,6 +5,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { awardAmountForUser } from "./vipStatus";
 
+let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
+async function loadAdmin() {
+  const m = await import("@/integrations/supabase/client.server");
+  return m.supabaseAdmin;
+}
+async function admin() {
+  if (!_admin) _admin = await loadAdmin();
+  return _admin;
+}
+
+
 const DAILY_POINTS = 25;
 const LOGIN_BONUS_BASE = 10;
 const LOGIN_BONUS_STREAK_STEP = 2;
@@ -95,7 +106,7 @@ export type XpSource = "quiz" | "discovery" | "daily" | "streak" | "achievement"
 /** Record an XP award in the append-only ledger. Safe to call after `total_points` is bumped. */
 export async function awardXp(ctx: AuthCtx, source: XpSource, points: number, category?: string | null): Promise<void> {
   if (!points || points <= 0) return;
-  await ctx.supabase.from("xp_events").insert({
+  await (await admin()).from("xp_events").insert({
     user_id: ctx.userId,
     source,
     points,
@@ -119,7 +130,7 @@ export type StatsDTO = {
 export const getMyStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StatsDTO> => {
-    const { data, error } = await context.supabase
+    const { data, error } = await (await admin())
       .from("user_stats")
       .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
       .eq("user_id", context.userId)
@@ -145,7 +156,7 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
     const t = today();
     const y = yesterday();
 
-    const { data: existing } = await context.supabase
+    const { data: existing } = await (await admin())
       .from("user_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -170,7 +181,7 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
       last_active_day: t,
       last_daily_challenge_day: t,
     };
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (await admin())
       .from("user_stats")
       .upsert(patch, { onConflict: "user_id" })
       .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
@@ -192,7 +203,7 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       .insert({ user_id: context.userId, fact_id: data.fact_id });
 
     const [{ data: existing }, { data: fact }] = await Promise.all([
-      context.supabase.from("user_stats").select("*").eq("user_id", context.userId).maybeSingle(),
+      (await admin()).from("user_stats").select("*").eq("user_id", context.userId).maybeSingle(),
       context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle(),
     ]);
 
@@ -207,7 +218,7 @@ export const recordDiscovery = createServerFn({ method: "POST" })
       last_active_day: today(),
       last_daily_challenge_day: existing?.last_daily_challenge_day ?? null,
     };
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (await admin())
       .from("user_stats")
       .upsert(patch, { onConflict: "user_id" })
       .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
@@ -318,7 +329,7 @@ export const listAchievements = createServerFn({ method: "GET" })
         .from("achievements")
         .select("id, name, description, emoji, threshold, category, sort_order")
         .order("sort_order", { ascending: true }),
-      context.supabase
+      (await admin())
         .from("user_achievements")
         .select("achievement_id, unlocked_at")
         .eq("user_id", context.userId),
@@ -428,7 +439,7 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
     .map(([id]) => id);
   if (candidates.length === 0) return [];
 
-  const { data: already } = await context.supabase
+  const { data: already } = await (await admin())
     .from("user_achievements")
     .select("achievement_id")
     .eq("user_id", context.userId)
@@ -436,14 +447,14 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
   const have = new Set((already ?? []).map((r) => r.achievement_id));
   const toInsert = candidates.filter((id) => !have.has(id));
   if (toInsert.length === 0) return [];
-  await context.supabase
+  await (await admin())
     .from("user_achievements")
     .insert(toInsert.map((id) => ({ user_id: context.userId, achievement_id: id })));
   return toInsert;
 }
 
 export async function runAchievementCheckForUser(context: AuthContext): Promise<string[]> {
-  const { data: row } = await context.supabase
+  const { data: row } = await (await admin())
     .from("user_stats")
     .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
     .eq("user_id", context.userId)
@@ -470,14 +481,14 @@ export const migrateGuestData = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: true; imported_favorites: number }> => {
     // Ensure a user_stats row exists but never bump points/streak from guest input.
-    const { data: existing } = await context.supabase
+    const { data: existing } = await (await admin())
       .from("user_stats")
       .select("*")
       .eq("user_id", context.userId)
       .maybeSingle();
 
     if (!existing) {
-      await context.supabase
+      await (await admin())
         .from("user_stats")
         .upsert(
           {
@@ -532,7 +543,7 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     tomorrow.setUTCHours(0, 0, 0, 0);
     const nextAvailable = tomorrow.toISOString();
 
-    const { data: existing } = await context.supabase
+    const { data: existing } = await (await admin())
       .from("user_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -564,7 +575,7 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     const currentStreak = existing?.current_streak ?? 0;
     const longest = Math.max(existing?.longest_streak ?? 0, currentStreak);
 
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (await admin())
       .from("user_stats")
       .upsert(
         {
