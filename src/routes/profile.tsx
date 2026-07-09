@@ -86,6 +86,27 @@ function ProfilePage() {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sectionOrder, setSectionOrder] = useState<"achievements-first" | "discoveries-first">(
+    "achievements-first",
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("profile:sectionOrder");
+    if (saved === "achievements-first" || saved === "discoveries-first") {
+      setSectionOrder(saved);
+    }
+  }, []);
+
+  const toggleSectionOrder = () => {
+    setSectionOrder((prev) => {
+      const next = prev === "achievements-first" ? "discoveries-first" : "achievements-first";
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("profile:sectionOrder", next);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", search: { mode: "signin", redirect: "/profile" } });
