@@ -177,19 +177,19 @@
 .theme-boss [role="button"]:not([data-no-chrome]) {
   background-image:
     linear-gradient(180deg,
-      color-mix(in oklab, oklch(0.92 0.03 250) 55%, transparent) 0%,
-      transparent 42%,
-      color-mix(in oklab, oklch(0.05 0.02 250) 30%, transparent) 100%),
+      color-mix(in oklab, oklch(0.72 0.10 250) 45%, transparent) 0%,
+      transparent 45%,
+      color-mix(in oklab, oklch(0.05 0.02 250) 40%, transparent) 100%),
     linear-gradient(135deg,
-      oklch(0.55 0.18 250) 0%,
-      oklch(0.78 0.14 245) 32%,
-      oklch(0.90 0.02 250) 52%,
-      oklch(0.62 0.20 250) 78%,
-      oklch(0.32 0.12 250) 100%) !important;
+      oklch(0.38 0.16 250) 0%,
+      oklch(0.48 0.18 248) 30%,
+      oklch(0.58 0.18 248) 52%,
+      oklch(0.44 0.18 250) 78%,
+      oklch(0.28 0.14 250) 100%) !important;
   background-blend-mode: screen, normal;
   border-color: color-mix(in oklab, oklch(0.90 0.02 250) 55%, transparent) !important;
-  color: oklch(0.98 0.01 250) !important;
-  text-shadow: 0 1px 0 oklch(0 0 0 / 0.35);
+  color: oklch(0.99 0.01 250) !important;
+  text-shadow: 0 1px 2px oklch(0 0 0 / 0.55);
   box-shadow:
     inset 0 1px 0 oklch(1 0 0 / 0.35),
     inset 0 -1px 0 oklch(0 0 0 / 0.35),
