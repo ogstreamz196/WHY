@@ -46,8 +46,11 @@ export function useSubscription(userId: string | null | undefined) {
     setLoading(true);
     fetchSub();
     if (!userId) return;
+    // Unique topic per mount avoids reusing an already-subscribed channel
+    // in React StrictMode (which throws "cannot add postgres_changes … after subscribe()").
+    const topic = `subscriptions:${userId}:${Math.random().toString(36).slice(2, 10)}`;
     const channel = supabase
-      .channel(`subscriptions:${userId}`)
+      .channel(topic)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` },
