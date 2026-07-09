@@ -48,7 +48,18 @@ export function BottomNav() {
                 style={{ background: "var(--gradient-primary)" }}
               />
               <Icon className="h-5 w-5 transition-transform duration-300 group-data-[active=true]:scale-110 group-hover:rotate-[-6deg]" strokeWidth={2.2} />
-              <span className="text-[10px] font-semibold tracking-wide">{label === "You" && isBoss ? "Boss" : label}</span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wide">
+                {label === "You" && isBoss ? "Boss" : label}
+                {label === "You" && isVip && (
+                  <span
+                    aria-label="VIP"
+                    title="VIP member"
+                    className="inline-flex items-center rounded-full border border-amber-300/70 bg-gradient-to-br from-amber-300 to-yellow-500 px-1 py-[1px] text-[7px] font-black text-amber-950 shadow-[0_0_6px_rgba(251,191,36,0.55)]"
+                  >
+                    <Crown className="h-2 w-2" strokeWidth={2.5} />
+                  </span>
+                )}
+              </span>
             </Link>
           ))}
         </div>
