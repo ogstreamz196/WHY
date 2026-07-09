@@ -462,7 +462,7 @@ const PODIUM_CFG = {
     avatar: "w-24 h-24 sm:w-28 sm:h-28",
     ring: "border-4 border-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.35)]",
     chip: "w-10 h-10 bg-gradient-to-br from-amber-300 to-amber-600 border-amber-200 text-amber-950 text-base",
-    card: "h-64 sm:h-72 rounded-t-[2.25rem] border-t-2 border-x-2 border-amber-400/40 bg-gradient-to-b from-amber-500/12 to-transparent shadow-[0_-25px_60px_-15px_rgba(251,191,36,0.25)] shimmer-gold",
+    card: "h-64 sm:h-72 rounded-t-[2.25rem] border-t-2 border-x-2 border-amber-400/40 bg-gradient-to-b from-amber-500/12 to-transparent shadow-[0_-25px_60px_-15px_rgba(251,191,36,0.25)] podium-shimmer",
     medal: "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.55)]",
     medalSize: "h-9 w-9",
     name: "text-white text-lg sm:text-xl font-black tracking-tight",
