@@ -43,6 +43,9 @@ function QuizPlayPage() {
   const [revealed, setRevealed] = useState(false);
   const startedAtRef = useRef<number>(Date.now());
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const revealBtnRef = useRef<HTMLButtonElement | null>(null);
+  const firstChoiceRef = useRef<HTMLButtonElement | null>(null);
+
 
   useEffect(() => {
     const raw = sessionStorage.getItem(`quiz:${sessionId}`);
