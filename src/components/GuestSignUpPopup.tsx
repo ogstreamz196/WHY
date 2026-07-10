@@ -119,14 +119,14 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
             <div className="mt-4 flex flex-wrap gap-2">
               <Link
                 to="/auth"
-                search={{ mode: "signup", redirect: "/" }}
+                search={{ mode: "signup" }}
                 className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-black text-purple-700 shadow hover:scale-[1.02] active:scale-95 transition"
               >
                 <UserPlus className="h-4 w-4" /> Create free account
               </Link>
               <Link
                 to="/auth"
-                search={{ mode: "signin", redirect: "/" }}
+                search={{ mode: "signin" }}
                 className="inline-flex items-center rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/20"
               >
                 Sign in
