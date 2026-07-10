@@ -192,6 +192,15 @@ function WhyApp() {
   const [bonusClaiming, setBonusClaiming] = useState(false);
   const [welcome, setWelcome] = useState(false);
   const [levelUp, setLevelUp] = useState<null | { level: number; title: string }>(null);
+  const [guestPopup, setGuestPopup] = useState(false);
+  const guestFactCount = useRef(0);
+  const guestPromptCfg = useQuery({
+    queryKey: ["guest-prompt-seconds"],
+    queryFn: () => getGuestPromptSeconds(),
+    staleTime: 5 * 60_000,
+    enabled: !user,
+  });
+  const guestPromptSeconds = guestPromptCfg.data?.seconds ?? 5;
   const missionMarkerRef = useRef<null | ((t: MissionTask) => void)>(null);
   const markMissionServer = useServerFn(markMissionTask);
   const markMission = useCallback((t: MissionTask) => {
