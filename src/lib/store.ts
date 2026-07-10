@@ -427,6 +427,7 @@ export type PurchaseResult =
 export function purchaseItem(id: string): PurchaseResult {
   const item = STORE_CATALOG.find((i) => i.id === id);
   if (!item) return { ok: false, reason: "not_found" };
+  if (item.vipOnly) return { ok: false, reason: "not_found" }; // VIP-only, never coin-purchasable
   if (ownsItem(id)) return { ok: false, reason: "already_owned" };
   const balance = getPoints();
   if (balance < item.cost) return { ok: false, reason: "insufficient_coins" };
