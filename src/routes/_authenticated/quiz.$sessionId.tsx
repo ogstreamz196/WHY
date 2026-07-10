@@ -44,11 +44,13 @@ function QuizPlayPage() {
   const [finalResult, setFinalResult] = useState<FinishResult | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [scoreBefore, setScoreBefore] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(0);
   const startedAtRef = useRef<number>(Date.now());
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const revealBtnRef = useRef<HTMLButtonElement | null>(null);
-  const firstChoiceRef = useRef<HTMLButtonElement | null>(null);
+  const choiceRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
 
   useEffect(() => {
