@@ -139,7 +139,7 @@ export function AnswerSummary({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="relative mt-2 text-xs italic text-yellow-200/90"
+          className="relative mt-2 font-fun text-[clamp(0.9rem,2.2vw,1.05rem)] italic text-yellow-100"
         >
           ⭐ {funFact}
         </motion.p>
