@@ -173,11 +173,20 @@ function StorePage() {
   };
 
 
-  const equip = (item: StoreItem) => {
+  const equip = async (item: StoreItem) => {
     if (item.category !== "avatar" && item.category !== "theme") return;
     setEquipped({ [item.category]: item.id });
     refresh();
     flash(`${item.emoji} equipped`);
+    if (userId && item.category === "avatar") {
+      try {
+        await doUpdateProfile({ data: { avatar_id: item.id } });
+        qc.invalidateQueries({ queryKey: ["profile"] });
+        qc.invalidateQueries({ queryKey: ["player-profile"] });
+      } catch (e) {
+        console.error("Failed to sync avatar to profile", e);
+      }
+    }
   };
 
   const items = STORE_CATALOG.filter((i) => tab !== "vip" && i.category === tab);
