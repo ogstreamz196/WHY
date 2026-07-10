@@ -268,7 +268,7 @@ function WhyApp() {
         // Open the nickname overlay whenever ?welcome=1 was passed (post-OAuth)
         // OR the user genuinely has no nickname yet. Users with a real nickname
         // never see it again.
-        if (search.welcome || !hasRealNickname) {
+        if (routeSearch.welcome || !hasRealNickname) {
           setWelcome(true);
         }
 
