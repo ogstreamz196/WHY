@@ -104,6 +104,7 @@ import { Celebration } from "@/components/Celebration";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
+import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
 import { GuestSignUpPopup } from "@/components/GuestSignUpPopup";
 import { getGuestPromptSeconds } from "@/lib/boss.functions";
 import { useQuery } from "@tanstack/react-query";
@@ -534,6 +535,7 @@ function WhyApp() {
       <CosmicBackground />
 
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:max-w-3xl lg:max-w-4xl lg:px-8">
+        <LinkGoogleBanner />
         {/* ── GAMIFIED HEADER ─────────────────────────────── */}
         <header className="mb-3 flex flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
