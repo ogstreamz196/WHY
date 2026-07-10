@@ -1,11 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, Loader2, Sparkles, Trophy, X } from "lucide-react";
 import { toast } from "sonner";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { Celebration } from "@/components/Celebration";
+import { AnswerSummary } from "@/components/AnswerSummary";
+import { FeedbackToggles } from "@/components/FeedbackToggles";
+import { feedback } from "@/lib/feedback";
 import {
   finishQuiz,
   submitAnswer,
