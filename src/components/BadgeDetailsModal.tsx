@@ -153,6 +153,12 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
   const rotateY = useSpring(ry, { stiffness: 180, damping: 14 });
   const glareX = useTransform(ry, [-14, 14], ["25%", "75%"]);
   const glareY = useTransform(rx, [-14, 14], ["75%", "25%"]);
+  const glareBg = useTransform(
+    [glareX, glareY],
+    ([x, y]) =>
+      `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.55), transparent 55%)`,
+  );
+
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
