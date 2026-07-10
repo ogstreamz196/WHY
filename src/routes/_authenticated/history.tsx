@@ -10,6 +10,7 @@ import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { useUnlockWatcher } from "@/lib/unlock-watch";
 import { listMyDiscoveries } from "@/lib/account.functions";
 import { emojiFor, gradientFor } from "@/lib/categories";
+import { SkeletonBlock, EmptyState } from "@/components/FunStates";
 
 export const Route = createFileRoute("/_authenticated/history")({
   head: () => ({
