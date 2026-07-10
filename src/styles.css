@@ -335,6 +335,93 @@ nav[aria-label="Primary"] button:focus-visible {
 
 }
 
+/* ===== Global focus, hover & active states (accessibility) ============== */
+@layer base {
+  :where(a, button, [role="button"], [role="link"], [role="tab"],
+         [role="menuitem"], [role="option"], [role="radio"], [role="checkbox"],
+         summary, label[for], input, select, textarea, [tabindex]:not([tabindex="-1"])) {
+    outline: none;
+  }
+  :where(a, button, [role="button"], [role="link"], [role="tab"],
+         [role="menuitem"], [role="option"], [role="radio"], [role="checkbox"],
+         summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 3px solid color-mix(in oklab, var(--glow, #7c9bff) 90%, white);
+    outline-offset: 3px;
+    border-radius: 12px;
+    box-shadow:
+      0 0 0 4px color-mix(in oklab, var(--glow, #7c9bff) 35%, transparent),
+      0 0 24px color-mix(in oklab, var(--glow, #7c9bff) 45%, transparent);
+    transition: outline-offset 120ms ease, box-shadow 160ms ease;
+  }
+  :where(input, select, textarea):focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--glow, #7c9bff) 90%, white);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--glow, #7c9bff) 25%, transparent);
+  }
+  /* Tactile feedback on primary interactive elements */
+  :where(button, [role="button"], a):not(:disabled):hover {
+    filter: brightness(1.06) saturate(1.05);
+  }
+  :where(button, [role="button"], a):not(:disabled):active {
+    transform: translateY(1px) scale(0.985);
+    transition: transform 60ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :where(button, [role="button"], a):not(:disabled):active { transform: none; }
+  }
+}
+
+/* ===== Fun skeleton + empty state utilities ============================ */
+@utility skeleton-fun {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--nebula) 60%, transparent) 20%,
+    color-mix(in oklab, var(--glow) 25%, transparent) 45%,
+    color-mix(in oklab, var(--nebula) 60%, transparent) 70%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  min-height: 1rem;
+}
+@utility empty-fun {
+  display: grid;
+  place-items: center;
+  gap: 0.75rem;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+  border-radius: 1.5rem;
+  border: 1px dashed color-mix(in oklab, var(--glow) 45%, transparent);
+  background: color-mix(in oklab, var(--nebula) 40%, transparent);
+  text-align: center;
+  font-family: var(--font-fun);
+}
+
+/* ===== Responsive card + typography spacing ============================ */
+@utility card-fun {
+  padding: clamp(1rem, 3.5vw, 1.75rem);
+  border-radius: clamp(1rem, 2.4vw, 1.5rem);
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+}
+@utility stack-fun {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2.4vw, 1.5rem);
+}
+@utility grid-fun {
+  display: grid;
+  gap: clamp(0.75rem, 2.4vw, 1.5rem);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .grid-fun { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .grid-fun { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+
 @utility glass {
   background: color-mix(in oklab, var(--nebula) 65%, transparent);
   backdrop-filter: blur(20px) saturate(140%);
