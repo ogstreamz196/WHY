@@ -31,6 +31,22 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
   const googleRef = useRef<HTMLButtonElement | null>(null);
   const oopsId = useRef(0);
 
+  // Detect Apple devices (iOS, iPadOS, macOS) to prefer Apple Sign In.
+  const [isApple, setIsApple] = useState(false);
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const ua = navigator.userAgent || "";
+    const platform = (navigator as Navigator & { platform?: string }).platform || "";
+    const iOS = /iPad|iPhone|iPod/.test(ua) || /iPad|iPhone|iPod/.test(platform);
+    const iPadOS = platform === "MacIntel" && (navigator.maxTouchPoints ?? 0) > 1;
+    const mac = /Macintosh|Mac OS X/.test(ua);
+    setIsApple(iOS || iPadOS || mac);
+  }, []);
+
+  const provider: "apple" | "google" = isApple ? "apple" : "google";
+  const providerLabel = isApple ? "Apple" : "Google";
+
+
   useEffect(() => {
     if (!open) return;
     setRemaining(seconds);
