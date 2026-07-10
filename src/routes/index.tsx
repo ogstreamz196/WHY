@@ -472,8 +472,10 @@ function WhyApp() {
           return next;
         });
         setSavedChainId(null); // dirty
-        grantPoints(3);
+        // Coins deferred to the 3s dwell timer (see effect above) so users
+        // can't farm by mashing "But… Why?" — reward only on actual reading.
       }
+
     } catch (e) { console.warn(e); }
     finally { setChainLoading(false); }
   };
