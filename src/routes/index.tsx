@@ -241,7 +241,6 @@ function WhyApp() {
     (async () => {
       try {
         const migratedKey = `why:migrated:${user.id}`;
-        const welcomedKey = `why:welcomed:${user.id}`;
         if (typeof window !== "undefined" && !localStorage.getItem(migratedKey)) {
           const favs = getFavorites();
           await migrateGuest({
@@ -253,17 +252,24 @@ function WhyApp() {
           }).catch((e) => console.warn("guest migration failed", e));
           localStorage.setItem(migratedKey, "1");
         }
-        if (typeof window !== "undefined" && !localStorage.getItem(welcomedKey)) {
-          setWelcome(true);
-          localStorage.setItem(welcomedKey, "1");
-        }
         const [profile, stats, last] = await Promise.all([
           fetchProfile(),
           fetchStats(),
           fetchLastChain().catch(() => null),
         ]);
         if (cancelled) return;
-        setDisplayName(profile?.display_name ?? user.email?.split("@")[0] ?? null);
+        const emailPrefix = user.email?.split("@")[0] ?? null;
+        const rawName = profile?.display_name?.trim() ?? "";
+        const hasRealNickname =
+          rawName.length > 0 && rawName.toLowerCase() !== (emailPrefix ?? "").toLowerCase();
+        setDisplayName(rawName || emailPrefix);
+        // Open the nickname overlay whenever ?welcome=1 was passed (post-OAuth)
+        // OR the user genuinely has no nickname yet. Users with a real nickname
+        // never see it again.
+        if (search.welcome || !hasRealNickname) {
+          setWelcome(true);
+        }
+
         setPoints(stats.total_points);
         setStreak(stats.current_streak);
         setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
