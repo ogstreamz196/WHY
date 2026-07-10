@@ -25,6 +25,8 @@ import {
   type StoreItem,
 } from "@/lib/store";
 import { previewTheme } from "@/lib/useEquippedTheme";
+import { AnimatedAvatar } from "@/components/AnimatedAvatar";
+import { useRef } from "react";
 
 
 export const Route = createFileRoute("/store")({
