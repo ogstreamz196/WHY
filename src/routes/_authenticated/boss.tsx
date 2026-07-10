@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Crown, Search, Save, Shield, Coins, UserCog, ScrollText } from "lucide-react";
 import {
@@ -667,10 +667,8 @@ function GuestPromptEditor() {
   const cur = useQuery({ queryKey: ["boss:guest-prompt"], queryFn: () => get() });
   const [seconds, setSeconds] = useState<number>(5);
   const loaded = cur.data?.seconds;
-  // sync local when loaded
-  useMemo(() => {
+  useEffect(() => {
     if (typeof loaded === "number") setSeconds(loaded);
-    return null;
   }, [loaded]);
   const mut = useMutation({
     mutationFn: (v: number) => set({ data: { seconds: v } }),
