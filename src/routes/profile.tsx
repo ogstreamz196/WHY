@@ -282,14 +282,17 @@ function ProfilePage() {
             className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-40 blur-3xl"
             style={{ background: "var(--gradient-primary)" }}
           />
-          <div className="flex items-center gap-4">
-            <div
-              className="flex h-20 w-20 items-center justify-center rounded-3xl text-4xl shadow-[var(--shadow-glow)]"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <span>{avatar?.emoji ?? "🌱"}</span>
+          <div className="flex items-start gap-5">
+            <div className="relative shrink-0 h-24 w-24 sm:h-28 sm:w-28">
+              <ProfileAvatar
+                avatarId={profile.data?.avatar_id}
+                isVip={isVip}
+                statusMessage={profile.data?.status_message}
+                className="h-full w-full"
+                emojiClassName="text-6xl sm:text-7xl"
+              />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               {editing ? (
                 <input
                   value={name}
@@ -299,11 +302,16 @@ function ProfilePage() {
                 />
               ) : (
                 <h1 className="font-display text-2xl font-black text-white flex items-center gap-2 flex-wrap">
-                  <span>{profile.data?.display_name ?? "Curious explorer"}</span>
+                  <span className="truncate">{profile.data?.display_name ?? "Curious explorer"}</span>
                   {isVip && <VipBadge size="md" />}
                 </h1>
               )}
-              <p className="mt-0.5 text-xs text-white/50">{user.email}</p>
+              <p className="mt-0.5 text-xs text-white/50 truncate">{user.email}</p>
+              {!editing && isVip && profile.data?.status_message && (
+                <p className="mt-1 text-xs font-black uppercase tracking-wider text-amber-200/90">
+                  💬 {profile.data.status_message}
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -317,14 +325,30 @@ function ProfilePage() {
           </div>
 
           {editing && (
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell the world what makes you curious…"
-              maxLength={280}
-              rows={2}
-              className="mt-3 w-full rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white outline-none"
-            />
+            <>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Tell the world what makes you curious…"
+                maxLength={280}
+                rows={2}
+                className="mt-3 w-full rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white outline-none"
+              />
+              {isVip && (
+                <label className="mt-3 block">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-200/80">
+                    VIP status · speech bubble
+                  </span>
+                  <input
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    maxLength={60}
+                    placeholder="On fire today 🔥"
+                    className="mt-1 w-full rounded-2xl border border-amber-300/30 bg-amber-400/5 px-3 py-2 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+                  />
+                </label>
+              )}
+            </>
           )}
           {!editing && profile.data?.bio && (
             <p className="mt-3 text-sm italic text-white/70">"{profile.data.bio}"</p>
