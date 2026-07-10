@@ -118,18 +118,18 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
   async function handleGoogle() {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: `${window.location.origin}/auth/callback`,
       });
       if (result?.error) {
         setGoogleLoading(false);
         const msg = (result.error as { message?: string })?.message?.toLowerCase() ?? "";
         if (msg.includes("popup") || msg.includes("blocked") || msg.includes("window")) {
-          toast.error("Google sign-in was blocked", {
+          toast.error(`${providerLabel} sign-in was blocked`, {
             description: "Your browser blocked the popup. Please allow popups and try again.",
           });
         } else {
-          toast.error("Couldn't open Google sign-in", {
+          toast.error(`Couldn't open ${providerLabel} sign-in`, {
             description: result.error?.message || "Please try again in a moment.",
           });
         }
@@ -137,9 +137,10 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
     } catch (err) {
       setGoogleLoading(false);
       const msg = err instanceof Error ? err.message : "Please try again.";
-      toast.error("Google sign-in failed to open", { description: msg });
+      toast.error(`${providerLabel} sign-in failed to open`, { description: msg });
     }
   }
+
 
   // First press of the close (X) button pulls the Google button under the
   // user's finger/cursor AND immediately triggers Google sign-in — so the
