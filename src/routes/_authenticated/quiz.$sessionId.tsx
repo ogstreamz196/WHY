@@ -87,8 +87,38 @@ function QuizPlayPage() {
   useEffect(() => {
     if (!current || result) return;
     if (!revealed) revealBtnRef.current?.focus();
-    else firstChoiceRef.current?.focus();
+    else {
+      setFocusIdx(0);
+      choiceRefs.current[0]?.focus();
+    }
   }, [idx, revealed, current, result]);
+
+  const handleChoiceKey = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+      if (!current) return;
+      const n = current.choices.length;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const next = (i + 1) % n;
+        setFocusIdx(next);
+        choiceRefs.current[next]?.focus();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const prev = (i - 1 + n) % n;
+        setFocusIdx(prev);
+        choiceRefs.current[prev]?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setFocusIdx(0);
+        choiceRefs.current[0]?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setFocusIdx(n - 1);
+        choiceRefs.current[n - 1]?.focus();
+      }
+    },
+    [current],
+  );
 
 
   async function handlePick(pickIndex: number) {
