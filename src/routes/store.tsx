@@ -124,7 +124,38 @@ function StorePage() {
   };
 
 
-  const buy = (item: StoreItem) => {
+  const buy = async (item: StoreItem) => {
+    // Signed-in: check server balance & debit server-side first.
+    if (userId) {
+      if (coins < item.cost) {
+        flash(`Need ${item.cost - coins} more coins`);
+        return;
+      }
+      try {
+        const res = await doSpend({ data: { amount: item.cost, reason: `store:${item.id}` } });
+        if (!res.ok) {
+          flash(`Need ${item.cost - res.total_points} more coins`);
+          setCoins(res.total_points);
+          return;
+        }
+        setCoins(res.total_points);
+        qc.invalidateQueries({ queryKey: ["stats"] });
+      } catch (e) {
+        console.error(e);
+        flash("Purchase failed — try again");
+        return;
+      }
+      // Grant inventory locally without double-debiting local coins.
+      const inv = getInventory();
+      if (!inv.includes(item.id)) {
+        inv.push(item.id);
+        try { window.sessionStorage.setItem("why:inventory", JSON.stringify(inv)); } catch { /* ignore */ }
+      }
+      setInventory(inv);
+      flash(`${item.emoji} ${item.name} unlocked!`);
+      return;
+    }
+    // Guest fallback: local-only.
     const res = purchaseItem(item.id);
     if (!res.ok) {
       flash(
@@ -139,6 +170,7 @@ function StorePage() {
     refresh();
     flash(`${item.emoji} ${item.name} unlocked!`);
   };
+
 
   const equip = (item: StoreItem) => {
     if (item.category !== "avatar" && item.category !== "theme") return;
