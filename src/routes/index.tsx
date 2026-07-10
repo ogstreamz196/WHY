@@ -971,7 +971,7 @@ function WhyApp() {
                                 disabled={chainLoading || chain.length >= 6 || chain[chain.length - 1]?.terminal}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.96 }}
-                                className="candy-btn mt-4 flex h-16 w-full items-center justify-center gap-3 rounded-full px-6 text-lg font-black uppercase tracking-wide text-white disabled:opacity-50"
+                                className="candy-btn font-fun mt-4 flex min-h-16 w-full items-center justify-center gap-3 rounded-full px-6 py-3 text-[clamp(1.15rem,3vw,1.5rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
                               >
                                 {chain.length >= 6
                                   ? "🌌 You've reached the bottom of the rabbit hole"
@@ -1174,9 +1174,9 @@ function ChainStep({
         {solved ? "✓" : index}
       </span>
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-        <p className="text-sm font-bold leading-snug text-white">{question}</p>
+        <p className="font-fun font-semibold text-white text-[clamp(1.05rem,2.6vw,1.3rem)]">{question}</p>
         {answer && (
-          <p className="mt-1.5 text-xs leading-relaxed text-white/70">{answer}</p>
+          <p className="mt-1.5 font-fun text-white/85 text-[clamp(0.95rem,2.3vw,1.15rem)]">{answer}</p>
         )}
       </div>
     </motion.li>

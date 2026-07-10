@@ -292,6 +292,19 @@ nav[aria-label="Primary"] button:focus-visible {
   html, body { background-color: var(--background); color: var(--foreground); }
   body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
   h1, h2, h3, .font-display { font-family: var(--font-display); font-optical-sizing: auto; }
+  .font-fun {
+    font-family: var(--font-fun);
+    font-optical-sizing: auto;
+    letter-spacing: -0.005em;
+    line-height: 1.25;
+    text-wrap: pretty;
+    word-break: normal;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (min-width: 640px) {
+    .font-fun { line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+  }
 }
 
 @utility glass {
