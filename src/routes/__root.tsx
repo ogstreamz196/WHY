@@ -137,6 +137,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useBossTheme();
+  useEquippedTheme();
 
 
   useEffect(() => {
