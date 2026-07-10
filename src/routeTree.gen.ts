@@ -23,6 +23,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChainIdRouteImport } from './routes/chain.$id'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
 import { Route as AuthenticatedImportGuestRouteImport } from './routes/_authenticated/import-guest'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
@@ -101,6 +102,11 @@ const CSlugRoute = CSlugRouteImport.update({
   path: '/c/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthenticatedRecapRoute = AuthenticatedRecapRouteImport.update({
   id: '/recap',
   path: '/recap',
@@ -148,7 +154,7 @@ const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/adult': typeof AdultRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof AuthenticatedHistoryRoute
   '/import-guest': typeof AuthenticatedImportGuestRoute
   '/recap': typeof AuthenticatedRecapRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
@@ -171,7 +178,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/adult': typeof AdultRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/history': typeof AuthenticatedHistoryRoute
   '/import-guest': typeof AuthenticatedImportGuestRoute
   '/recap': typeof AuthenticatedRecapRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
@@ -196,7 +204,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/adult': typeof AdultRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
   '/favorites': typeof FavoritesRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/import-guest': typeof AuthenticatedImportGuestRoute
   '/_authenticated/recap': typeof AuthenticatedRecapRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/_authenticated/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/import-guest'
     | '/recap'
+    | '/auth/callback'
     | '/c/$slug'
     | '/chain/$id'
     | '/quiz/$sessionId'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/import-guest'
     | '/recap'
+    | '/auth/callback'
     | '/c/$slug'
     | '/chain/$id'
     | '/quiz/$sessionId'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/_authenticated/history'
     | '/_authenticated/import-guest'
     | '/_authenticated/recap'
+    | '/auth/callback'
     | '/c/$slug'
     | '/chain/$id'
     | '/_authenticated/quiz/$sessionId'
@@ -293,7 +305,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdultRoute: typeof AdultRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   BadgesRoute: typeof BadgesRoute
   ChainsRoute: typeof ChainsRoute
   FavoritesRoute: typeof FavoritesRoute
@@ -408,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_authenticated/recap': {
       id: '/_authenticated/recap'
       path: '/recap'
@@ -488,11 +507,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdultRoute: AdultRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   BadgesRoute: BadgesRoute,
   ChainsRoute: ChainsRoute,
   FavoritesRoute: FavoritesRoute,
