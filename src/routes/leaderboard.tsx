@@ -89,7 +89,7 @@ const INTERACTIVE_PLAYER =
 function ArenaPage() {
   const { user } = useCurrentUser();
   const fetchBoard = useServerFn(getLeaderboardPublic);
-  const [tab, setTab] = useState<TabKey>("today");
+  const [tab, setTab] = useState<TabKey>("alltime");
   const [filter, setFilter] = useState<string | null>(null);
   const [result, setResult] = useState<LeaderboardResult | null>(null);
   const [loading, setLoading] = useState(true);
