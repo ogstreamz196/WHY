@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, UserPlus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { lovable } from "@/integrations/lovable";
+import { toast } from "sonner";
 
 type Props = {
   open: boolean;
