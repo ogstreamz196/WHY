@@ -338,12 +338,8 @@ function WhyApp() {
         showFact(next);
         if (next?.id) markSeen(next.id);
         bumpSeen();
-        grantPoints(1);
-        if (user && next?.id) {
-          recordDiscoveryServer({ data: { fact_id: next.id } })
-            .then((r) => notifyAchievements(r?.newlyUnlocked))
-            .catch((e) => console.warn(e));
-        }
+        // Coin + discovery credit is deferred to a 4s dwell timer (see effect
+        // below) so users can't farm by mashing "But… Why?".
       } catch (err) {
         console.error(err);
         const cached = getCachedRandomFact(currentId);
@@ -353,8 +349,25 @@ function WhyApp() {
         setLoading(false);
       }
     },
-    [category, generateNew, getRandom, showFact, grantPoints, user, recordDiscoveryServer],
+    [category, generateNew, getRandom, showFact],
   );
+
+  // Dwell reward: only award the coin (and record the discovery server-side)
+  // after the user stays on the fact for ≥4 seconds. Switching facts or
+  // unmounting before then cancels the reward.
+  useEffect(() => {
+    const id = fact?.id;
+    if (!id) return;
+    const t = window.setTimeout(() => {
+      grantPoints(1);
+      if (user) {
+        recordDiscoveryServer({ data: { fact_id: id } })
+          .then((r) => notifyAchievements(r?.newlyUnlocked))
+          .catch((e) => console.warn(e));
+      }
+    }, 4000);
+    return () => window.clearTimeout(t);
+  }, [fact?.id, user, grantPoints, recordDiscoveryServer]);
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
   useEffect(() => {
