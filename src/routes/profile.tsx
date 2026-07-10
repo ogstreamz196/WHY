@@ -33,6 +33,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
 import { VipBadge } from "@/components/VipBadge";
+import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { useSubscription } from "@/hooks/useSubscription";
 
 const MILESTONES = [
