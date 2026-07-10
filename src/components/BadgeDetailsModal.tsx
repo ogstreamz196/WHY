@@ -358,13 +358,12 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
               >
                 <span style={{ transform: "translateZ(24px)" }}>{badge.emoji}</span>
                 {/* Glare highlight follows the tilt */}
-                {badge.unlocked && (
+                {badge.unlocked && heavyFx && (
                   <motion.span
                     aria-hidden
                     className="pointer-events-none absolute inset-0 mix-blend-overlay"
                     style={{ background: glareBg }}
                   />
-
                 )}
                 {!badge.unlocked && (
                   <span className="absolute -bottom-1 -right-1 rounded-full bg-black/70 p-1.5">
