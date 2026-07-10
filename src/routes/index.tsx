@@ -880,7 +880,7 @@ function WhyApp() {
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
                               ✨ Answer
                             </p>
-                            <p className="mt-2 text-lg leading-relaxed text-white sm:text-xl">
+                            <p className="mt-2 font-fun font-medium leading-snug text-white text-[clamp(1.35rem,3.6vw,1.9rem)]">
                               <TalkingWords text={fact.answer} />
                             </p>
                           </div>
