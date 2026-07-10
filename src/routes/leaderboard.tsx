@@ -13,6 +13,7 @@ import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
 import { avatarEmojiFor } from "@/lib/store";
 import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
+import { ChampionCrown } from "@/components/ChampionCrown";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -187,6 +188,10 @@ function ArenaPage() {
             <p className="text-xs text-white/60">{TAB_TAGLINE[tab]}</p>
           </div>
         </header>
+
+        <ChampionCrown />
+
+
 
         {/* Tab strip */}
         <div className="glass-strong mb-3 flex gap-1 overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

@@ -203,6 +203,66 @@ export type Database = {
         }
         Relationships: []
       }
+      champion_title_history: {
+        Row: {
+          claimed_at: string
+          holder_user_id: string | null
+          id: string
+          previous_holder_user_id: string | null
+          previous_record_value: number
+          record_value: number
+          reference_id: string | null
+          title_key: string
+        }
+        Insert: {
+          claimed_at?: string
+          holder_user_id?: string | null
+          id?: string
+          previous_holder_user_id?: string | null
+          previous_record_value?: number
+          record_value: number
+          reference_id?: string | null
+          title_key: string
+        }
+        Update: {
+          claimed_at?: string
+          holder_user_id?: string | null
+          id?: string
+          previous_holder_user_id?: string | null
+          previous_record_value?: number
+          record_value?: number
+          reference_id?: string | null
+          title_key?: string
+        }
+        Relationships: []
+      }
+      champion_titles: {
+        Row: {
+          claimed_at: string
+          holder_user_id: string | null
+          record_value: number
+          reference_id: string | null
+          title_key: string
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string
+          holder_user_id?: string | null
+          record_value?: number
+          reference_id?: string | null
+          title_key: string
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string
+          holder_user_id?: string | null
+          record_value?: number
+          reference_id?: string | null
+          title_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_missions: {
         Row: {
           bonus_awarded: boolean
@@ -1089,6 +1149,15 @@ export type Database = {
           id: string
           question: string
           source: string
+        }[]
+      }
+      claim_champion_title: {
+        Args: { _ref: string; _title: string; _user: string; _value: number }
+        Returns: {
+          claimed: boolean
+          current_value: number
+          previous_holder: string
+          previous_value: number
         }[]
       }
       count_unseen_facts: {
