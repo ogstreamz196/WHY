@@ -105,8 +105,9 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
-import { GuestSignUpPopup } from "@/components/GuestSignUpPopup";
-import { getGuestPromptSeconds } from "@/lib/boss.functions";
+import { lovable } from "@/integrations/lovable";
+
+
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth";
 import { useThrottledFlag } from "@/lib/useThrottledFlag";
@@ -199,15 +200,8 @@ function WhyApp() {
   const [bonusClaiming, setBonusClaiming] = useState(false);
   const [welcome, setWelcome] = useState(false);
   const [levelUp, setLevelUp] = useState<null | { level: number; title: string }>(null);
-  const [guestPopup, setGuestPopup] = useState(false);
   const guestFactCount = useRef(0);
-  const guestPromptCfg = useQuery({
-    queryKey: ["guest-prompt-seconds"],
-    queryFn: () => getGuestPromptSeconds(),
-    staleTime: 5 * 60_000,
-    enabled: !user,
-  });
-  const guestPromptSeconds = guestPromptCfg.data?.seconds ?? 5;
+
   const missionMarkerRef = useRef<null | ((t: MissionTask) => void)>(null);
   const markMissionServer = useServerFn(markMissionTask);
   const markMission = useCallback((t: MissionTask) => {
@@ -419,21 +413,48 @@ function WhyApp() {
 
 
 
-  // Guest nudge: show automatically once on first fact. If dismissed, re-prompt
-  // every few minutes so the user can pick Google or Apple when they're ready.
+  // Guest auto sign-in: instead of nagging with a prompt, kick off OAuth
+  // automatically (Apple on Apple devices, Google otherwise). We only try
+  // once per browser session and re-attempt every few minutes if dismissed.
+  const autoSignInAttempted = useRef(false);
+  const triggerAutoSignIn = useCallback(async () => {
+    if (autoSignInAttempted.current) return;
+    autoSignInAttempted.current = true;
+    try {
+      const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+      const platform =
+        typeof navigator !== "undefined"
+          ? (navigator as Navigator & { platform?: string }).platform || ""
+          : "";
+      const iOS = /iPad|iPhone|iPod/.test(ua) || /iPad|iPhone|iPod/.test(platform);
+      const iPadOS = platform === "MacIntel" && (navigator?.maxTouchPoints ?? 0) > 1;
+      const mac = /Macintosh|Mac OS X/.test(ua);
+      const provider: "apple" | "google" = iOS || iPadOS || mac ? "apple" : "google";
+      await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: `${window.location.origin}/auth/callback`,
+      });
+    } catch {
+      // Silent — user can still sign in via the top bar.
+    }
+  }, []);
+
+
+  // automatically (Apple on Apple devices, Google otherwise). We only try
+  // once per browser session and re-attempt every few minutes if dismissed.
   useEffect(() => {
-    if (user) { setGuestPopup(false); return; }
+    if (user) return;
     if (!fact?.id) return;
     guestFactCount.current += 1;
-    if (guestFactCount.current === 1) setGuestPopup(true);
+    if (guestFactCount.current === 1) void triggerAutoSignIn();
   }, [fact?.id, user]);
 
   useEffect(() => {
-    if (user || guestPopup) return;
+    if (user) return;
     const REPROMPT_MS = 3 * 60_000;
-    const t = window.setTimeout(() => setGuestPopup(true), REPROMPT_MS);
+    const t = window.setTimeout(() => { void triggerAutoSignIn(); }, REPROMPT_MS);
     return () => window.clearTimeout(t);
-  }, [user, guestPopup]);
+  }, [user]);
+
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
   useEffect(() => {
@@ -1204,11 +1225,6 @@ function WhyApp() {
         level={levelUp?.level ?? 1}
         title={levelUp?.title ?? ""}
         onClose={() => setLevelUp(null)}
-      />
-      <GuestSignUpPopup
-        open={guestPopup && !user}
-        seconds={guestPromptSeconds}
-        onClose={() => setGuestPopup(false)}
       />
     </main>
   );
