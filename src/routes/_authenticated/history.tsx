@@ -65,23 +65,26 @@ function HistoryPage() {
         </header>
 
         {q.isLoading ? (
-          <div className="space-y-2">
+          <div className="space-y-2" role="status" aria-live="polite" aria-label="Loading your discoveries">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-20 animate-pulse rounded-2xl bg-white/5" />
+              <SkeletonBlock key={i} height="5rem" className="rounded-2xl" />
             ))}
           </div>
         ) : items.length === 0 ? (
-          <div className="glass-strong rounded-3xl p-8 text-center">
-            <Sparkles className="mx-auto mb-2 h-8 w-8 text-fuchsia-300" />
-            <p className="text-sm text-white/80">No discoveries yet — tap Next on a fact to start your history.</p>
-            <Link
-              to="/"
-              className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-black text-white"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              Discover a fact
-            </Link>
-          </div>
+          <EmptyState
+            emoji="✨"
+            title="No discoveries yet"
+            hint="Tap Next on a fact to start your curiosity trail."
+            action={
+              <Link
+                to="/"
+                className="inline-block rounded-full px-4 py-2 text-xs font-black text-white"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                Discover a fact
+              </Link>
+            }
+          />
         ) : (
           <ol className="space-y-2">
             {items.map((entry, i) => {
