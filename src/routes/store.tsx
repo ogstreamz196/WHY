@@ -325,14 +325,27 @@ function StorePage() {
                 (item.category === "avatar" && equipped.avatar === item.id) ||
                 (item.category === "theme" && equipped.theme === item.id);
               const canAfford = coins >= item.cost;
+              const themePreviewHandlers =
+                item.category === "theme"
+                  ? {
+                      onMouseEnter: () => previewTheme(item.id),
+                      onMouseLeave: () => previewTheme(null),
+                      onFocus: () => previewTheme(item.id),
+                      onBlur: () => previewTheme(null),
+                    }
+                  : {};
               return (
                 <motion.article
                   key={item.id}
                   whileTap={{ scale: 0.97 }}
-                  className={`glass-strong relative overflow-hidden rounded-3xl p-3 ${
+                  tabIndex={item.category === "theme" ? 0 : undefined}
+                  aria-label={item.category === "theme" ? `Preview ${item.name} theme` : undefined}
+                  {...themePreviewHandlers}
+                  className={`glass-strong relative overflow-hidden rounded-3xl p-3 outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                     isEquipped ? "ring-2 ring-emerald-400/70" : ""
                   }`}
                 >
+
                   <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0 -z-10 opacity-40"
