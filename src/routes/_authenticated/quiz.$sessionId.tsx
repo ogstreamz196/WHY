@@ -168,24 +168,6 @@ function QuizPlayPage() {
     setFocusIdx(0);
   }
 
-  async function next() {
-    if (!quiz) return;
-    if (idx + 1 >= quiz.questions.length) {
-      try {
-        const f = await finish({ data: { session_id: sessionId } });
-        setFinalResult(f);
-        sessionStorage.removeItem(`quiz:${sessionId}`);
-        setCelebrate(true);
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Could not finish quiz");
-      }
-      return;
-    }
-    setIdx((i) => i + 1);
-    setPicked(null);
-    setResult(null);
-    setRevealed(false);
-  }
 
   if (!quiz || !current) {
     return (
