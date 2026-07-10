@@ -352,45 +352,27 @@ function StorePage() {
                 (item.category === "avatar" && equipped.avatar === item.id) ||
                 (item.category === "theme" && equipped.theme === item.id);
               const canAfford = coins >= item.cost;
-              const themePreviewHandlers =
-                item.category === "theme"
-                  ? {
-                      onMouseEnter: () => previewTheme(item.id),
-                      onMouseLeave: () => previewTheme(null),
-                      onPointerCancel: () => previewTheme(null),
-                      onFocus: () => previewTheme(item.id),
-                      onBlur: () => previewTheme(null),
-                    }
-                  : {};
-              const cardAriaLabel =
-                item.category === "theme"
-                  ? isEquipped
-                    ? `${item.name} theme — current theme. Focus to preview.`
-                    : `Preview ${item.name} theme`
-                  : undefined;
-              const openPreview = () => setPreview(item);
-              const closePreview = () => setPreview((p) => (p?.id === item.id ? null : p));
+              const isTheme = item.category === "theme";
+              const cardAriaLabel = isTheme
+                ? isEquipped
+                  ? `${item.name} theme — current theme. Focus to preview.`
+                  : `Preview ${item.name} theme`
+                : `Preview ${item.name}`;
+              const openPreview = () => {
+                setPreview(item);
+                if (isTheme) previewTheme(item.id);
+              };
+              const closePreview = () => {
+                setPreview((p) => (p?.id === item.id ? null : p));
+                if (isTheme) previewTheme(null);
+              };
               const previewHandlers = {
-                onMouseEnter: () => {
-                  openPreview();
-                  themePreviewHandlers.onMouseEnter?.();
-                },
-                onMouseLeave: () => {
-                  closePreview();
-                  themePreviewHandlers.onMouseLeave?.();
-                },
-                onFocus: () => {
-                  openPreview();
-                  themePreviewHandlers.onFocus?.();
-                },
-                onBlur: () => {
-                  closePreview();
-                  themePreviewHandlers.onBlur?.();
-                },
+                onMouseEnter: openPreview,
+                onMouseLeave: closePreview,
+                onFocus: openPreview,
+                onBlur: closePreview,
                 onPointerDown: (e: React.PointerEvent) => {
                   if (e.pointerType === "touch") {
-                    // Instant preview on touch — fires before the browser's
-                    // long-press context menu (~500ms) so it feels immediate.
                     if (longPressRef.current) window.clearTimeout(longPressRef.current);
                     longPressRef.current = window.setTimeout(openPreview, 120);
                   }
@@ -400,7 +382,7 @@ function StorePage() {
                 },
                 onPointerCancel: () => {
                   if (longPressRef.current) window.clearTimeout(longPressRef.current);
-                  themePreviewHandlers.onPointerCancel?.();
+                  closePreview();
                 },
               };
               return (
