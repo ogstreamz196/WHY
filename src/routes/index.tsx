@@ -1246,12 +1246,14 @@ function SignalBtn({
 }
 
 function ChainStep({
-  index, question, answer, solved,
+  index, question, answer, solved, counting, rewarded,
 }: {
   index: number;
   question: string;
   answer?: string;
   solved?: boolean;
+  counting?: boolean;
+  rewarded?: boolean;
 }) {
   return (
     <motion.li
@@ -1273,10 +1275,37 @@ function ChainStep({
         {answer && (
           <p className="mt-1.5 font-fun text-white/85 text-[clamp(0.95rem,2.3vw,1.15rem)]">{answer}</p>
         )}
+        {answer && (counting || rewarded) && (
+          <div className="mt-2.5" aria-live="polite">
+            {rewarded ? (
+              <div className="flex items-center gap-1.5 text-[11px] font-black text-amber-300">
+                <span aria-hidden>🪙</span>
+                <span>Coin earned!</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-white/60">
+                  <span>Keep reading…</span>
+                  <span>+1 🪙 in 3s</span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <motion.div
+                    key={`${index}-progress`}
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 3, ease: "linear" }}
+                    className="h-full rounded-full bg-gradient-to-r from-amber-300 via-fuchsia-400 to-violet-500"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </motion.li>
   );
 }
+
 
 function ShimmerBar({ className = "" }: { className?: string }) {
   return (
