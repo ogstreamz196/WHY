@@ -419,21 +419,23 @@ function WhyApp() {
 
 
 
-  // Guest nudge: show automatically once on first fact. If dismissed, re-prompt
-  // every few minutes so the user can pick Google or Apple when they're ready.
+  // Guest auto sign-in: instead of nagging with a prompt, kick off OAuth
+  // automatically (Apple on Apple devices, Google otherwise). We only try
+  // once per browser session and re-attempt every few minutes if dismissed.
   useEffect(() => {
     if (user) { setGuestPopup(false); return; }
     if (!fact?.id) return;
     guestFactCount.current += 1;
-    if (guestFactCount.current === 1) setGuestPopup(true);
+    if (guestFactCount.current === 1) void triggerAutoSignIn();
   }, [fact?.id, user]);
 
   useEffect(() => {
-    if (user || guestPopup) return;
+    if (user) return;
     const REPROMPT_MS = 3 * 60_000;
-    const t = window.setTimeout(() => setGuestPopup(true), REPROMPT_MS);
+    const t = window.setTimeout(() => { void triggerAutoSignIn(); }, REPROMPT_MS);
     return () => window.clearTimeout(t);
-  }, [user, guestPopup]);
+  }, [user]);
+
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
   useEffect(() => {
