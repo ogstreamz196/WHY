@@ -253,7 +253,13 @@ function ProfilePage() {
   async function save() {
     setSaving(true);
     try {
-      await doUpdate({ data: { display_name: name.trim() || undefined, bio: bio.trim() || undefined } });
+      await doUpdate({
+        data: {
+          display_name: name.trim() || undefined,
+          bio: bio.trim() || undefined,
+          ...(isVip ? { status_message: status.trim() ? status.trim() : null } : {}),
+        },
+      });
       await qc.invalidateQueries({ queryKey: ["profile"] });
       setEditing(false);
     } finally {
