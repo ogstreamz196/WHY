@@ -395,6 +395,19 @@ function WhyApp() {
     return () => window.clearTimeout(t);
   }, [fact?.id, revealed, user, grantPoints, recordDiscoveryServer]);
 
+  // Same 3-second dwell reward for each "But… Why?" chain layer.
+  // The user must stay on the latest chain answer for ≥3s to earn a coin.
+  useEffect(() => {
+    if (chain.length === 0) return;
+    const last = chain[chain.length - 1];
+    if (!last?.answer) return;
+    const t = window.setTimeout(() => {
+      grantPoints(3);
+    }, 3000);
+    return () => window.clearTimeout(t);
+  }, [chain.length, grantPoints]);
+
+
 
   // Guest-only nudge: every 2 facts, show a friendly sign-up popup.
   useEffect(() => {
