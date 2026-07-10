@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, UserPlus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { lovable } from "@/integrations/lovable";
+import { toast } from "sonner";
 
 type Props = {
   open: boolean;
@@ -104,11 +105,23 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: `${window.location.origin}/auth/callback`,
       });
-      if (result.error) {
+      if (result?.error) {
         setGoogleLoading(false);
+        const msg = (result.error as { message?: string })?.message?.toLowerCase() ?? "";
+        if (msg.includes("popup") || msg.includes("blocked") || msg.includes("window")) {
+          toast.error("Google sign-in was blocked", {
+            description: "Your browser blocked the popup. Please allow popups and try again.",
+          });
+        } else {
+          toast.error("Couldn't open Google sign-in", {
+            description: result.error?.message || "Please try again in a moment.",
+          });
+        }
       }
-    } catch {
+    } catch (err) {
       setGoogleLoading(false);
+      const msg = err instanceof Error ? err.message : "Please try again.";
+      toast.error("Google sign-in failed to open", { description: msg });
     }
   }
 
@@ -127,16 +140,20 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
     const cx = e.clientX || rect.left + rect.width / 2;
     const cy = e.clientY || rect.top + rect.height / 2;
     slideGoogleUnder(cx, cy, false);
-    // First the popup glides so the Google button lands where they clicked,
-    // then the button itself plays a little "click" animation, and only
-    // then does Google sign-in open.
-    window.setTimeout(() => setGoogleClicking(true), 280);
+    // Timing tuned so the ~280ms ripple animation completes just before the
+    // OAuth window opens on both iOS Safari and Android Chrome, which can
+    // throttle frames when a new tab is about to steal focus:
+    //   • 240ms → popup finishes its glide, ripple starts
+    //   • 520ms → ripple animation ends (240 + 280ms)
+    //   • 600ms → small buffer, then OAuth opens
+    window.setTimeout(() => setGoogleClicking(true), 240);
     window.setTimeout(() => {
       void handleGoogle();
-    }, 560);
+    }, 600);
     // Fallback: if OAuth doesn't take over, still auto-close after 5s.
     setCancelCountdown(5);
   }
+
 
 
 
