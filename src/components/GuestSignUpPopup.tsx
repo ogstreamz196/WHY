@@ -127,11 +127,13 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
     const cx = e.clientX || rect.left + rect.width / 2;
     const cy = e.clientY || rect.top + rect.height / 2;
     slideGoogleUnder(cx, cy, false);
-    // Small delay so the user visibly sees the popup glide into position
-    // (Google button lands where they clicked) BEFORE OAuth opens.
+    // First the popup glides so the Google button lands where they clicked,
+    // then the button itself plays a little "click" animation, and only
+    // then does Google sign-in open.
+    window.setTimeout(() => setGoogleClicking(true), 280);
     window.setTimeout(() => {
       void handleGoogle();
-    }, 550);
+    }, 560);
     // Fallback: if OAuth doesn't take over, still auto-close after 5s.
     setCancelCountdown(5);
   }
