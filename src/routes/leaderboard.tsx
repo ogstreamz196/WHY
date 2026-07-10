@@ -390,6 +390,14 @@ function ArenaPage() {
       </div>
       <BottomNav />
       <ConfettiBurst trigger={confettiTick} duration={2200} />
+      <PlayerProfileModal
+        userId={selected?.userId ?? null}
+        rank={selected?.rank ?? null}
+        totalUsers={result?.total_users ?? null}
+        boardLabel={TABS.find((t) => t.key === tab)?.label}
+        isMe={!!selected && selected.userId === user?.id}
+        onClose={() => setSelected(null)}
+      />
       <AnimatePresence>
         {celebrate && (
           <motion.div
