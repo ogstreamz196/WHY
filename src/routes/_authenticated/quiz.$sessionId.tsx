@@ -69,7 +69,7 @@ function QuizPlayPage() {
 
   // Timer only runs after user reveals the answers.
   useEffect(() => {
-    if (!current || result || !revealed) return;
+    if (!current || result || !revealed || picked !== null) return;
     startedAtRef.current = Date.now();
     setTimeLeft(totalMs);
     const t = setInterval(() => {
@@ -82,7 +82,8 @@ function QuizPlayPage() {
     }, 100);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, quiz, revealed]);
+  }, [idx, quiz, revealed, result, picked]);
+
 
   // Focus management: reveal button on new question, first choice on reveal.
   useEffect(() => {
