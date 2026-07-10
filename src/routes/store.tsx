@@ -258,9 +258,7 @@ function StorePage() {
                 </button>
               )}
             </div>
-          </section>
-        ) : tab === "coins" ? (
-          <section className="space-y-3">
+
             <div className="glass-strong rounded-3xl p-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Earn free coins</p>
               <p className="mt-1 text-sm text-white/90">
@@ -298,6 +296,7 @@ function StorePage() {
             </p>
           </section>
         ) : (
+
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {items.map((item) => {
               const owned = inventory.includes(item.id);
