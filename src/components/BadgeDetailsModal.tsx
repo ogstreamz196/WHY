@@ -1,6 +1,52 @@
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { X, Lock, Check, Sparkles, Calendar, Trophy } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+/**
+ * Detects low-power / constrained environments where heavy motion should be
+ * suppressed: prefers-reduced-motion, save-data, low deviceMemory, few CPU
+ * cores, or throttled network.
+ */
+function detectLowPower(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return true;
+    const nav = navigator as Navigator & {
+      deviceMemory?: number;
+      connection?: { saveData?: boolean; effectiveType?: string };
+    };
+    if (nav.connection?.saveData) return true;
+    if (typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2) return true;
+    if (typeof nav.hardwareConcurrency === "number" && nav.hardwareConcurrency > 0 && nav.hardwareConcurrency <= 2) return true;
+    const et = nav.connection?.effectiveType;
+    if (et === "slow-2g" || et === "2g") return true;
+  } catch {
+    /* noop */
+  }
+  return false;
+}
+
+function usePerfMode() {
+  const [lowPower, setLowPower] = useState(false);
+  const [visible, setVisible] = useState(
+    typeof document === "undefined" ? true : document.visibilityState !== "hidden",
+  );
+
+  useEffect(() => {
+    setLowPower(detectLowPower());
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const onMq = () => setLowPower(detectLowPower());
+    mq?.addEventListener?.("change", onMq);
+    const onVis = () => setVisible(document.visibilityState !== "hidden");
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      mq?.removeEventListener?.("change", onMq);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
+  return { lowPower, visible, heavyFx: !lowPower && visible };
+}
 
 export type BadgeDetail = {
   id: string;
@@ -76,6 +122,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const initialFocusRef = useRef<HTMLButtonElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const { heavyFx } = usePerfMode();
 
   // ---- Focus management: save + restore, initial focus, Esc + Tab trap ----
   useEffect(() => {
@@ -162,13 +209,14 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!heavyFx) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const px = (e.clientX - rect.left) / rect.width - 0.5;
       const py = (e.clientY - rect.top) / rect.height - 0.5;
       ry.set(px * 20);
       rx.set(-py * 20);
     },
-    [rx, ry],
+    [rx, ry, heavyFx],
   );
   const resetTilt = useCallback(() => {
     rx.set(0);
@@ -199,21 +247,23 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
             transition={{ type: "spring", stiffness: 280, damping: 24 }}
             className="glass-strong relative w-full max-w-sm overflow-hidden rounded-4xl border border-white/10 p-6 text-center text-white outline-none focus-visible:ring-2 focus-visible:ring-white/30"
           >
-            {/* Animated aurora backdrop */}
-            <motion.div
-              aria-hidden
-              className="pointer-events-none absolute -inset-24 opacity-40"
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-              style={{
-                background:
-                  "conic-gradient(from 0deg, transparent, rgba(168,85,247,0.35), transparent, rgba(236,72,153,0.35), transparent, rgba(56,189,248,0.35), transparent)",
-                filter: "blur(40px)",
-              }}
-            />
+            {/* Animated aurora backdrop — disabled on low-power devices / hidden tabs */}
+            {heavyFx && (
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute -inset-24 opacity-40"
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                style={{
+                  background:
+                    "conic-gradient(from 0deg, transparent, rgba(168,85,247,0.35), transparent, rgba(236,72,153,0.35), transparent, rgba(56,189,248,0.35), transparent)",
+                  filter: "blur(40px)",
+                }}
+              />
+            )}
 
-            {/* Confetti burst on unlock */}
-            {badge.unlocked && (
+            {/* Confetti burst on unlock — skipped when low-power/hidden */}
+            {badge.unlocked && heavyFx && (
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                 {Array.from({ length: 14 }).map((_, i) => {
                   const angle = (i / 14) * Math.PI * 2;
@@ -251,10 +301,10 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
             {/* Emoji medallion with pointer tilt */}
             <div
               className="relative mx-auto mb-3 flex h-28 w-28 items-center justify-center [perspective:600px]"
-              onPointerMove={handlePointerMove}
-              onPointerLeave={resetTilt}
+              onPointerMove={heavyFx ? handlePointerMove : undefined}
+              onPointerLeave={heavyFx ? resetTilt : undefined}
             >
-              {badge.unlocked && (
+              {badge.unlocked && heavyFx && (
                 <>
                   <motion.span
                     aria-hidden
@@ -308,13 +358,12 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
               >
                 <span style={{ transform: "translateZ(24px)" }}>{badge.emoji}</span>
                 {/* Glare highlight follows the tilt */}
-                {badge.unlocked && (
+                {badge.unlocked && heavyFx && (
                   <motion.span
                     aria-hidden
                     className="pointer-events-none absolute inset-0 mix-blend-overlay"
                     style={{ background: glareBg }}
                   />
-
                 )}
                 {!badge.unlocked && (
                   <span className="absolute -bottom-1 -right-1 rounded-full bg-black/70 p-1.5">
