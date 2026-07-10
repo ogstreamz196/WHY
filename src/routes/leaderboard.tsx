@@ -179,8 +179,8 @@ function ArenaPage() {
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
-          <Link to="/quiz" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90">
-            <ArrowLeft className="h-5 w-5" />
+          <Link to="/quiz" aria-label="Back to Curiosity Challenge" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90">
+            <ArrowLeft aria-hidden="true" className="h-5 w-5" />
           </Link>
           <div className="flex-1">
             <h1 className="font-display text-2xl font-black text-white">Curiosity Arena</h1>
@@ -247,7 +247,7 @@ function ArenaPage() {
             className={`glass-strong mb-3 flex w-full items-center justify-between rounded-2xl border border-fuchsia-300/40 bg-fuchsia-500/10 p-3 text-left ring-2 ring-fuchsia-300/40 hover:bg-fuchsia-500/15 ${INTERACTIVE_PLAYER}`}
           >
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200">Your rank</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-100">Your rank</p>
               <p className="font-display text-xl font-black text-white">
                 #{result.my_rank.toLocaleString()}
                 <span className="ml-2 text-xs font-bold text-white/60">of {result.total_users.toLocaleString()}</span>
@@ -370,7 +370,7 @@ function ArenaPage() {
                           <p className="truncate text-sm font-black text-white">
                             {r.display_name || r.username || "Explorer"}
                             {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
-                            {me && <span className="ml-1 text-[10px] font-black text-fuchsia-200">YOU</span>}
+                            {me && <span className="ml-1 text-[10px] font-black text-fuchsia-100">YOU</span>}
                           </p>
                           <p className="truncate text-[11px] text-white/60">
                             {honor.cheer}
@@ -485,7 +485,7 @@ function honorFor(rank: number, topPct: number): { label: string; cheer: string;
   if (topPct <= 5) return {
     label: `Top ${topPct}%`,
     cheer: "Absolute powerhouse — the podium is within striking distance! ⚡",
-    tone: "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-200",
+    tone: "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100",
   };
   if (topPct <= 10) return {
     label: `Top ${topPct}%`,
