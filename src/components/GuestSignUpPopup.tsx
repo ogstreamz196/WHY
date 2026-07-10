@@ -25,6 +25,7 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
   const [oops, setOops] = useState<{ id: number; x: number; y: number } | null>(null);
   const [cancelCountdown, setCancelCountdown] = useState<number | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleClicking, setGoogleClicking] = useState(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const googleRef = useRef<HTMLButtonElement | null>(null);
   const oopsId = useRef(0);
