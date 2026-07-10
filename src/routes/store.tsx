@@ -37,13 +37,13 @@ export const Route = createFileRoute("/store")({
   component: StorePage,
 });
 
-type Tab = StoreCategory | "coins" | "vip";
+type Tab = StoreCategory | "vip";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: "vip",    label: "VIP",     emoji: "👑" },
-  { id: "avatar", label: "Avatars", emoji: "🧑‍🚀" },
-  { id: "theme",  label: "Themes",  emoji: "🎨" },
-  { id: "coins",  label: "Coins",   emoji: "💰" },
+  { id: "vip",    label: "VIP & Coins", emoji: "👑" },
+  { id: "avatar", label: "Avatars",     emoji: "🧑‍🚀" },
+  { id: "theme",  label: "Themes",      emoji: "🎨" },
 ];
+
 
 function StorePage() {
   const [tab, setTab] = useState<Tab>("vip");
@@ -179,7 +179,7 @@ function StorePage() {
     flash(`${item.emoji} equipped`);
   };
 
-  const items = STORE_CATALOG.filter((i) => tab !== "coins" && tab !== "vip" && i.category === tab);
+  const items = STORE_CATALOG.filter((i) => tab !== "vip" && i.category === tab);
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
@@ -201,7 +201,7 @@ function StorePage() {
         </header>
 
         {/* Tabs */}
-        <div className="mb-4 grid grid-cols-4 gap-2">
+        <div className="mb-4 grid grid-cols-3 gap-2">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -258,9 +258,7 @@ function StorePage() {
                 </button>
               )}
             </div>
-          </section>
-        ) : tab === "coins" ? (
-          <section className="space-y-3">
+
             <div className="glass-strong rounded-3xl p-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Earn free coins</p>
               <p className="mt-1 text-sm text-white/90">
@@ -298,6 +296,7 @@ function StorePage() {
             </p>
           </section>
         ) : (
+
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {items.map((item) => {
               const owned = inventory.includes(item.id);
