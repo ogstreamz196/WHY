@@ -93,8 +93,7 @@ function ArenaPage() {
   const [result, setResult] = useState<LeaderboardResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [rankDelta, setRankDelta] = useState<number | null>(null);
-
-  // Reset filter when tab changes
+  const [selected, setSelected] = useState<{ userId: string; rank: number } | null>(null);
   useEffect(() => {
     if (tab === "age") setFilter("adult");
     else if (tab === "category") setFilter(CATEGORIES[1]?.key ?? "animals");
