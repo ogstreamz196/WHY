@@ -197,7 +197,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                       {asWhyQuestion(fact.question)}
                     </h3>
 
-                    <div className="mt-3 grid gap-2" role="group" aria-label="Answer choices">
+                    <div className="mt-4 grid gap-3" role="group" aria-label="Answer choices">
                       {mcq.choices.map((choice, i) => {
                         const isPicked = picked === i;
                         const isCorrect = i === mcq.correctIndex;
@@ -206,32 +206,70 @@ export function DailyChallenge({ onCompleted }: Props) {
                         const letter = String.fromCharCode(65 + i);
                         const status = showCorrect ? " (correct)" : showWrong ? " (incorrect)" : "";
                         return (
-                          <button
+                          <motion.button
                             key={i}
                             type="button"
-                            disabled={picked !== null && (picked === mcq.correctIndex)}
+                            disabled={picked !== null && picked === mcq.correctIndex}
                             onClick={() => answer(i)}
                             aria-label={`Option ${letter}: ${choice}${status}`}
                             aria-pressed={isPicked}
-                            className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-left text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
+                            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                            animate={
+                              showWrong
+                                ? { opacity: 1, y: 0, scale: 1, x: [0, -8, 8, -6, 6, -3, 3, 0] }
+                                : showCorrect
+                                  ? { opacity: 1, y: 0, scale: [1, 1.06, 1] }
+                                  : { opacity: 1, y: 0, scale: 1 }
+                            }
+                            transition={{
+                              delay: picked === null ? i * 0.06 : 0,
+                              duration: showWrong ? 0.5 : showCorrect ? 0.45 : 0.25,
+                            }}
+                            whileHover={picked === null ? { scale: 1.02, y: -2 } : undefined}
+                            whileTap={picked === null ? { scale: 0.97 } : undefined}
+                            className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left text-base font-bold leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                               showCorrect
-                                ? "border-emerald-400/60 bg-emerald-400/15 text-emerald-100"
+                                ? "border-emerald-400 bg-gradient-to-br from-emerald-400/25 to-emerald-500/10 text-emerald-50 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
                                 : showWrong
-                                  ? "border-rose-400/60 bg-rose-400/15 text-rose-100"
-                                  : "border-white/10 bg-white/[0.04] text-white/90 hover:bg-white/[0.08]"
+                                  ? "border-rose-400 bg-gradient-to-br from-rose-400/25 to-rose-500/10 text-rose-50"
+                                  : "border-white/10 bg-white/[0.06] text-white hover:border-white/30 hover:bg-white/[0.12] active:bg-white/[0.16]"
                             }`}
                           >
-                            <span aria-hidden className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[10px] font-black">
+                            {showCorrect && (
+                              <motion.span
+                                aria-hidden
+                                className="pointer-events-none absolute inset-0"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 0.7, 0] }}
+                                transition={{ duration: 0.9 }}
+                                style={{
+                                  background:
+                                    "radial-gradient(circle at 30% 50%, rgba(16,185,129,0.45), transparent 60%)",
+                                }}
+                              />
+                            )}
+                            <motion.span
+                              aria-hidden
+                              className={`relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-black shadow-sm ${
+                                showCorrect
+                                  ? "border-emerald-300 bg-emerald-400 text-emerald-950"
+                                  : showWrong
+                                    ? "border-rose-300 bg-rose-400 text-rose-950"
+                                    : "border-white/20 bg-white/10 text-white group-hover:border-white/40 group-hover:bg-white/20"
+                              }`}
+                              animate={showCorrect ? { rotate: [0, -12, 12, 0] } : undefined}
+                              transition={{ duration: 0.5 }}
+                            >
                               {showCorrect ? (
-                                <Check className="h-3.5 w-3.5" />
+                                <Check className="h-5 w-5" strokeWidth={3} />
                               ) : showWrong ? (
-                                <X className="h-3.5 w-3.5" />
+                                <X className="h-5 w-5" strokeWidth={3} />
                               ) : (
                                 letter
                               )}
-                            </span>
-                            <span className="flex-1">{choice}</span>
-                          </button>
+                            </motion.span>
+                            <span className="relative flex-1">{choice}</span>
+                          </motion.button>
                         );
                       })}
                     </div>
