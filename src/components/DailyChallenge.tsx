@@ -219,11 +219,14 @@ export function DailyChallenge({ onCompleted }: Props) {
                     )}
                     <button
                       type="button"
-                      onClick={() => setPhase("quiz")}
-                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white active:scale-[0.98]"
+                      onClick={() => {
+                        feedback("reveal");
+                        setPhase("quiz");
+                      }}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                       style={{ background: "var(--gradient-primary)" }}
                     >
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-4 w-4" aria-hidden />
                       {done ? "Replay the question" : "Take the challenge"}
                     </button>
                   </>
