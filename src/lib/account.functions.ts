@@ -149,6 +149,31 @@ export const getMyStats = createServerFn({ method: "GET" })
     );
   });
 
+/** Debit Y-coins from the signed-in user's balance. Server-authoritative. */
+export const spendCoins = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ amount: z.number().int().positive(), reason: z.string().max(64).optional() }).parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: true; total_points: number } | { ok: false; reason: "insufficient_coins"; total_points: number }> => {
+    const db = await admin();
+    const { data: existing, error: readErr } = await db
+      .from("user_stats")
+      .select("total_points")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    const current = existing?.total_points ?? 0;
+    if (current < data.amount) return { ok: false, reason: "insufficient_coins", total_points: current };
+    const next = current - data.amount;
+    const { error: updErr } = await db
+      .from("user_stats")
+      .upsert({ user_id: context.userId, total_points: next }, { onConflict: "user_id" });
+    if (updErr) throw new Error(updErr.message);
+    return { ok: true, total_points: next };
+  });
+
+
 /** Record that the user completed today's Daily Challenge. Idempotent per day. */
 export const recordDailyChallenge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
