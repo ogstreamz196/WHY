@@ -233,7 +233,7 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
               </button>
             </div>
 
-            {/* Big primary Google button — the popup dodges the cursor toward here. */}
+            {/* Big primary auth button — Apple on Apple devices, Google otherwise. */}
             <motion.button
               ref={googleRef}
               type="button"
@@ -245,16 +245,27 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
                   : {}
               }
               transition={{ duration: 0.28 }}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-800 shadow hover:scale-[1.02] active:scale-95 transition disabled:opacity-70"
+              className={
+                isApple
+                  ? "mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-black px-4 py-3 text-sm font-black text-white shadow hover:scale-[1.02] active:scale-95 transition disabled:opacity-70"
+                  : "mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-800 shadow hover:scale-[1.02] active:scale-95 transition disabled:opacity-70"
+              }
             >
-              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.4 29.4 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.3-3.5z"/>
-                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.7 19 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/>
-                <path fill="#4CAF50" d="M24 43.5c5 0 9.6-1.7 13.2-4.7l-6.1-5c-2 1.4-4.4 2.2-7.1 2.2-5.4 0-9.9-3.5-11.5-8.4l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/>
-                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5c-.4.3 6.3-4.6 6.3-14.6 0-1.2-.1-2.4-.3-3.5z"/>
-              </svg>
-              {googleLoading ? "Opening Google…" : "Sign in with Google"}
+              {isApple ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                  <path d="M16.365 1.43c0 1.14-.42 2.23-1.24 3.03-.83.83-2.17 1.47-3.28 1.38-.13-1.1.42-2.24 1.19-3.02.83-.84 2.24-1.47 3.33-1.39zM20.5 17.1c-.56 1.29-.83 1.86-1.55 3-1 1.62-2.42 3.63-4.18 3.65-1.56.02-1.96-1.02-4.08-1.01-2.12.01-2.56 1.03-4.12 1.01-1.76-.03-3.1-1.85-4.1-3.47C.3 16.62-.16 11.6 1.8 8.94c1.4-1.9 3.6-3.02 5.67-3.02 2.11 0 3.44 1.16 5.18 1.16 1.69 0 2.72-1.16 5.16-1.16 1.84 0 3.79 1 5.19 2.73-4.56 2.5-3.82 9.02-.5 8.45z"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                  <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.4 29.4 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.3-3.5z"/>
+                  <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.7 19 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/>
+                  <path fill="#4CAF50" d="M24 43.5c5 0 9.6-1.7 13.2-4.7l-6.1-5c-2 1.4-4.4 2.2-7.1 2.2-5.4 0-9.9-3.5-11.5-8.4l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/>
+                  <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5c-.4.3 6.3-4.6 6.3-14.6 0-1.2-.1-2.4-.3-3.5z"/>
+                </svg>
+              )}
+              {googleLoading ? `Opening ${providerLabel}…` : `Sign in with ${providerLabel}`}
             </motion.button>
+
 
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
