@@ -419,15 +419,21 @@ function WhyApp() {
 
 
 
-  // Guest-only nudge: every 2 facts, show a friendly sign-up popup.
+  // Guest nudge: show automatically once on first fact. If dismissed, re-prompt
+  // every few minutes so the user can pick Google or Apple when they're ready.
   useEffect(() => {
+    if (user) { setGuestPopup(false); return; }
     if (!fact?.id) return;
-    if (user) return;
     guestFactCount.current += 1;
-    if (guestFactCount.current >= 2 && guestFactCount.current % 2 === 0) {
-      setGuestPopup(true);
-    }
+    if (guestFactCount.current === 1) setGuestPopup(true);
   }, [fact?.id, user]);
+
+  useEffect(() => {
+    if (user || guestPopup) return;
+    const REPROMPT_MS = 3 * 60_000;
+    const t = window.setTimeout(() => setGuestPopup(true), REPROMPT_MS);
+    return () => window.clearTimeout(t);
+  }, [user, guestPopup]);
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
   useEffect(() => {
