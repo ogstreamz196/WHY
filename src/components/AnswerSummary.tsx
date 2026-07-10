@@ -130,7 +130,7 @@ export function AnswerSummary({
           <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
             Here's why
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-white/95">{explanation}</p>
+          <p className="mt-1 font-fun text-[clamp(1rem,2.4vw,1.2rem)] font-medium leading-snug text-white">{explanation}</p>
         </motion.div>
       )}
 
