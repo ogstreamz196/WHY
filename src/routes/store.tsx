@@ -477,6 +477,46 @@ function StorePage() {
         )}
       </AnimatePresence>
 
+      {/* Instant hover / touch-hold preview popover */}
+      <AnimatePresence>
+        {preview && (
+          <motion.div
+            key={preview.id}
+            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: 20 }}
+            transition={{ type: "spring", stiffness: 320, damping: 24 }}
+            className="pointer-events-none fixed inset-x-0 bottom-32 z-40 mx-auto flex w-fit max-w-[min(92vw,22rem)] flex-col items-center gap-3 rounded-3xl border border-white/15 bg-black/70 p-5 shadow-2xl backdrop-blur-xl"
+            role="dialog"
+            aria-label={`${preview.name} preview`}
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -z-10 rounded-3xl opacity-60"
+              style={{
+                background:
+                  preview.gradient ??
+                  "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15), transparent 60%)",
+              }}
+            />
+            <div className="flex h-32 w-32 items-center justify-center">
+              {preview.category === "avatar" ? (
+                <AnimatedAvatar avatarId={preview.id} className="text-8xl" />
+              ) : (
+                <span className="text-8xl" aria-hidden>{preview.emoji}</span>
+              )}
+            </div>
+            <div className="text-center">
+              <p className="flex items-center justify-center gap-1.5 font-display text-lg font-black text-white">
+                {preview.vipOnly && <Crown className="h-4 w-4 text-amber-300" aria-hidden />}
+                {preview.name}
+              </p>
+              <p className="mt-1 text-xs text-white/70">{preview.description}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <ConfettiBurst trigger={confetti} />
       <BottomNav />
     </main>
