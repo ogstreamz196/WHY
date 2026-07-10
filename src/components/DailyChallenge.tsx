@@ -1,6 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, Check, Sparkles, X } from "lucide-react";
+import { Calendar, Check, Flame, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { CoinIcon } from "@/components/CoinIcon";
 import { AnswerSummary } from "@/components/AnswerSummary";
