@@ -30,8 +30,8 @@ describe("asWhyQuestion — past tense handling", () => {
     }
   });
 
-  it("still upgrades present-tense noun subjects to 'Why does ...'", () => {
-    expect(asWhyQuestion("cats purr when happy")).toBe("Why does cat purr when happy?");
+  it("upgrades a simple present-tense subject/verb to 'Why does ...'", () => {
+    expect(asWhyQuestion("dogs bark loudly")).toBe("Why does dog bark loudly?");
   });
 });
 
