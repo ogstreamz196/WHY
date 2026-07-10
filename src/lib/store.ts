@@ -385,7 +385,19 @@ export const getEquipped = (): Equipped => ({ ...defaultEquipped, ...read<Equipp
 export const setEquipped = (patch: Equipped) => {
   const next = { ...getEquipped(), ...patch };
   write(KEY_EQUIPPED, next);
+  if (isBrowser()) {
+    try {
+      window.dispatchEvent(new CustomEvent("why:equipped-change", { detail: next }));
+    } catch { /* ignore */ }
+  }
   return next;
+};
+
+/** Lookup a theme's gradient by id (returns undefined for missing/non-theme). */
+export const themeGradientFor = (themeId: string | null | undefined): string | undefined => {
+  if (!themeId) return undefined;
+  const item = STORE_CATALOG.find((i) => i.id === themeId && i.category === "theme");
+  return item?.gradient;
 };
 
 export type PurchaseResult =
