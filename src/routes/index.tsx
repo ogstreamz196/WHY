@@ -1174,9 +1174,9 @@ function ChainStep({
         {solved ? "✓" : index}
       </span>
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-        <p className="text-sm font-bold leading-snug text-white">{question}</p>
+        <p className="font-fun font-semibold text-white text-[clamp(1.05rem,2.6vw,1.3rem)]">{question}</p>
         {answer && (
-          <p className="mt-1.5 text-xs leading-relaxed text-white/70">{answer}</p>
+          <p className="mt-1.5 font-fun text-white/85 text-[clamp(0.95rem,2.3vw,1.15rem)]">{answer}</p>
         )}
       </div>
     </motion.li>
