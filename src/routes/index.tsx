@@ -465,6 +465,15 @@ function WhyApp() {
       });
       setSavedChainId(res.id);
       grantPoints(5);
+      if (res.champion?.claimed) {
+        const prev = res.champion.previous_holder_name;
+        toast.success(
+          prev
+            ? `👑 You stole the Longest Chain crown from ${prev}! ${res.champion.value} whys.`
+            : `👑 You claimed the Longest Chain crown with ${res.champion.value} whys!`,
+          { duration: 6000 },
+        );
+      }
     } catch (e) {
       console.warn(e);
     } finally {
