@@ -200,11 +200,17 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
             </div>
 
             {/* Big primary Google button — the popup dodges the cursor toward here. */}
-            <button
+            <motion.button
               ref={googleRef}
               type="button"
               onClick={handleGoogle}
               disabled={googleLoading}
+              animate={
+                googleClicking
+                  ? { scale: [1, 0.9, 1.06, 1], boxShadow: ["0 4px 6px rgba(0,0,0,0.1)", "0 0 0 8px rgba(255,255,255,0.45)", "0 4px 6px rgba(0,0,0,0.1)"] }
+                  : {}
+              }
+              transition={{ duration: 0.28 }}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-800 shadow hover:scale-[1.02] active:scale-95 transition disabled:opacity-70"
             >
               <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -214,7 +220,7 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5c-.4.3 6.3-4.6 6.3-14.6 0-1.2-.1-2.4-.3-3.5z"/>
               </svg>
               {googleLoading ? "Opening Google…" : "Sign in with Google"}
-            </button>
+            </motion.button>
 
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
