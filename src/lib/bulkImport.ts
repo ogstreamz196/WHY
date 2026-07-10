@@ -89,15 +89,7 @@ export function parseBulkImportRows(
  * `admin` is the supabase admin (or any client with .from().select().ilike()).
  */
 export async function dedupeAgainstExisting(
-  admin: {
-    from: (t: string) => {
-      select: (c: string) => {
-        ilike: (col: string, v: string) => {
-          limit: (n: number) => { maybeSingle: () => Promise<{ data: { id: string } | null }> };
-        };
-      };
-    };
-  },
+  admin: any,
   candidates: BulkImportCandidate[],
 ): Promise<{ toInsert: BulkImportCandidate[]; dupes: number }> {
   const toInsert: BulkImportCandidate[] = [];
