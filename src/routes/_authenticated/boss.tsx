@@ -713,3 +713,89 @@ function GuestPromptEditor() {
   );
 }
 
+
+function BulkImportSheet() {
+  const [spreadsheetId, setSpreadsheetId] = useState("");
+  const [range, setRange] = useState("Sheet1!A1:D1000");
+  const [defaultCategory, setDefaultCategory] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ inserted: number; skipped: number; errors: { row: number; reason: string }[] } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = async (dryRun: boolean) => {
+    setBusy(true); setErr(null); setResult(null);
+    try {
+      const { bossBulkImportFromSheet } = await import("@/lib/boss.functions");
+      const r = await bossBulkImportFromSheet({
+        data: { spreadsheetId: spreadsheetId.trim() || undefined, range, defaultCategory: defaultCategory.trim() || undefined, dryRun },
+      });
+      setResult(r);
+      toast.success(dryRun ? `Preview: ${r.inserted} to import` : `Imported ${r.inserted} facts`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Import failed");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <ScrollText className="h-4 w-4 text-sky-300" />
+        <h2 className="text-lg font-black text-white">Bulk import from Google Sheet</h2>
+      </div>
+      <p className="mb-3 text-xs text-white/60">
+        Sheet must have header row with columns: <code>question</code>, <code>answer</code>, optional <code>fun_fact</code>, optional <code>category</code>. Leave Spreadsheet ID blank to use the default library sheet.
+      </p>
+      <div className="grid gap-2">
+        <input
+          value={spreadsheetId}
+          onChange={(e) => setSpreadsheetId(e.target.value)}
+          placeholder="Spreadsheet ID (blank = default)"
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            value={range}
+            onChange={(e) => setRange(e.target.value)}
+            placeholder="Sheet1!A1:D1000"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none"
+          />
+          <input
+            value={defaultCategory}
+            onChange={(e) => setDefaultCategory(e.target.value)}
+            placeholder="Default category (optional)"
+            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => run(true)}
+            disabled={busy}
+            className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-black text-white/90 disabled:opacity-40"
+          >
+            {busy ? "…" : "Preview"}
+          </button>
+          <button
+            onClick={() => run(false)}
+            disabled={busy}
+            className="flex-1 rounded-full bg-sky-500 px-4 py-2 text-sm font-black text-black disabled:opacity-40"
+          >
+            {busy ? "Importing…" : "Import"}
+          </button>
+        </div>
+      </div>
+      {err && <p className="mt-2 text-xs text-rose-300">{err}</p>}
+      {result && (
+        <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white/80">
+          <p><span className="font-black text-emerald-300">{result.inserted}</span> inserted · <span className="font-black text-amber-300">{result.skipped}</span> skipped · <span className="font-black text-rose-300">{result.errors.length}</span> errors</p>
+          {result.errors.length > 0 && (
+            <ul className="max-h-40 overflow-auto space-y-1">
+              {result.errors.slice(0, 20).map((e, i) => (
+                <li key={i} className="font-mono text-[11px] text-rose-200/80">row {e.row}: {e.reason}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
