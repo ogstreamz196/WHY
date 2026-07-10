@@ -74,13 +74,16 @@ export function DailyChallenge({ onCompleted }: Props) {
       setPicked(idx);
       const isCorrect = idx === mcq.correctIndex;
       if (!isCorrect) {
+        feedback("wrong");
         setTimeout(() => setPicked(null), 900);
         return;
       }
+      feedback("correct");
       setPhase("result");
       const result = completeDailyChallenge();
       if (result.awarded) {
         setDone(true);
+        setPointsAwarded(result.pointsDelta);
         setAwardedFlash({ streak: result.streak, delta: result.pointsDelta });
         onCompleted?.({
           streak: result.streak,
@@ -100,6 +103,33 @@ export function DailyChallenge({ onCompleted }: Props) {
       }
     },
     [mcq, picked, onCompleted],
+  );
+
+  const handleChoiceKey = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+      if (!mcq) return;
+      const n = mcq.choices.length;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const next = (i + 1) % n;
+        setFocusIdx(next);
+        choiceRefs.current[next]?.focus();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const prev = (i - 1 + n) % n;
+        setFocusIdx(prev);
+        choiceRefs.current[prev]?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setFocusIdx(0);
+        choiceRefs.current[0]?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setFocusIdx(n - 1);
+        choiceRefs.current[n - 1]?.focus();
+      }
+    },
+    [mcq],
   );
 
   const gradient = gradientFor(fact?.category);
