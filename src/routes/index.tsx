@@ -785,7 +785,7 @@ function WhyApp() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.25 }}
                   >
-                    <h1 className="animate-fade-up stagger-1 font-display font-black leading-[1.08] tracking-tight text-white text-[clamp(1.75rem,6vw,3.25rem)] [text-wrap:balance] break-words hyphens-auto">
+                    <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(2rem,7vw,4rem)] [text-wrap:balance] break-words hyphens-auto">
                       {asWhyQuestion(fact.question)}
                     </h1>
 
