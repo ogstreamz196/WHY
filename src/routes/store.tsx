@@ -57,6 +57,8 @@ function StorePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [confetti, setConfetti] = useState(0);
+  const [preview, setPreview] = useState<StoreItem | null>(null);
+  const longPressRef = useRef<number | null>(null);
   const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const { isVip, subscription } = useSubscription(userId);
   const qc = useQueryClient();
