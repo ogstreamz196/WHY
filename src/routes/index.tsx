@@ -174,6 +174,8 @@ function WhyApp() {
 
   const { user, isGuest } = useCurrentUser();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
