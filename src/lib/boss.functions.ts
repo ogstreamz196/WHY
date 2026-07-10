@@ -305,3 +305,56 @@ export const bossListAudit = createServerFn({ method: "POST" })
     return { entries };
   });
 
+// ---------- Guest sign-up popup timer ----------
+
+const GUEST_PROMPT_KEY = "guest_prompt_seconds";
+const GUEST_PROMPT_DEFAULT = 5;
+
+/**
+ * Public read: returns how long (in seconds) the guest sign-up popup should
+ * lock its close button. Falls back to the default if unset. No auth so
+ * anonymous visitors can fetch the current value.
+ */
+export const getGuestPromptSeconds = createServerFn({ method: "GET" })
+  .handler(async () => {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data } = await supabaseAdmin
+        .from("app_config")
+        .select("value")
+        .eq("key", GUEST_PROMPT_KEY)
+        .maybeSingle();
+      const raw = (data?.value as { seconds?: number } | null)?.seconds;
+      const n = typeof raw === "number" && Number.isFinite(raw) ? raw : GUEST_PROMPT_DEFAULT;
+      return { seconds: Math.max(0, Math.min(60, Math.round(n))) };
+    } catch {
+      return { seconds: GUEST_PROMPT_DEFAULT };
+    }
+  });
+
+export const bossSetGuestPromptSeconds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { seconds: number }) =>
+    z.object({ seconds: z.number().int().min(0).max(60) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertBoss(context);
+    const { error } = await context.supabase
+      .from("app_config")
+      .upsert(
+        {
+          key: GUEST_PROMPT_KEY,
+          value: { seconds: data.seconds },
+          updated_at: new Date().toISOString(),
+          updated_by: context.userId,
+        },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await writeAudit(supabaseAdmin, context.userId, "update_guest_prompt", null, {
+      seconds: data.seconds,
+    });
+    return { ok: true };
+  });
+
