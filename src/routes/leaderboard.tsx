@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Calendar, CalendarDays, Crown, Flame, Rocket, Sparkles, Star, Sun, Trophy, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, Crown, Flame, Rocket, Sparkles, Star, Sun, Trophy, Users } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
@@ -17,14 +17,14 @@ export const Route = createFileRoute("/leaderboard")({
   head: () => ({
     meta: [
       { title: "Curiosity Arena — Why?" },
-      { name: "description", content: "Rank on global, weekly, age, category and activity boards." },
+      { name: "description", content: "Rank on global, age, category and activity boards." },
     ],
   }),
   component: ArenaPage,
 });
 
 type TabKey =
-  | "today" | "week" | "month" | "alltime"
+  | "alltime"
   | "rising" | "category" | "age" | "streaks" | "weekend" | "new";
 
 type Tab = {
@@ -34,9 +34,6 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { key: "today",    label: "Today",    icon: Calendar },
-  { key: "week",     label: "Week",     icon: CalendarDays },
-  { key: "month",    label: "Month",    icon: TrendingUp },
   { key: "alltime",  label: "All Time", icon: Trophy },
   { key: "rising",   label: "Rising",   icon: Rocket },
   { key: "category", label: "Category", icon: Sparkles },
@@ -48,13 +45,8 @@ const TABS: Tab[] = [
 
 // Map UI tab -> server (kind, filter)
 function resolveQuery(tab: TabKey, filter: string | null): { kind: LeaderboardKind; filter: string | null } {
-  switch (tab) {
-    case "today":   return { kind: "window", filter: "daily" };
-    case "week":    return { kind: "window", filter: "weekly" };
-    case "month":   return { kind: "window", filter: "monthly" };
-    case "alltime": return { kind: "global", filter: null };
-    default:        return { kind: tab as LeaderboardKind, filter };
-  }
+  if (tab === "alltime") return { kind: "global", filter: null };
+  return { kind: tab as LeaderboardKind, filter };
 }
 
 const AGES: Array<{ key: string; label: string }> = [
@@ -66,9 +58,6 @@ const AGES: Array<{ key: string; label: string }> = [
 
 // Fun label under the tabs
 const TAB_TAGLINE: Record<TabKey, string> = {
-  today:    "Today's top explorers · resets at midnight",
-  week:     "Rolling 7 days · new week, new climb",
-  month:    "This month's champions",
   alltime:  "Lifetime Curiosity Score",
   rising:   "Biggest climbers right now",
   category: "Category legends",
@@ -100,7 +89,7 @@ const INTERACTIVE_PLAYER =
 function ArenaPage() {
   const { user } = useCurrentUser();
   const fetchBoard = useServerFn(getLeaderboardPublic);
-  const [tab, setTab] = useState<TabKey>("today");
+  const [tab, setTab] = useState<TabKey>("alltime");
   const [filter, setFilter] = useState<string | null>(null);
   const [result, setResult] = useState<LeaderboardResult | null>(null);
   const [loading, setLoading] = useState(true);
