@@ -11,6 +11,7 @@ import { CATEGORIES, emojiFor } from "@/lib/categories";
 import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
 import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
 import { VipBadge } from "@/components/VipBadge";
+import { PlayerProfileModal } from "@/components/PlayerProfileModal";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
