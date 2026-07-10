@@ -695,6 +695,14 @@ function ProfilePage() {
           </button>
         </div>
       </div>
+      <ConfettiBurst trigger={confettiTrigger} />
+      <LevelUpCelebration
+        open={!!levelUp}
+        level={levelUp?.level ?? 0}
+        title={levelUp?.title ?? ""}
+        onClose={dismissLevelUp}
+      />
+      <BadgeDetailsModal badge={selectedBadge} onClose={() => setSelectedBadge(null)} />
       <BottomNav />
     </main>
   );
