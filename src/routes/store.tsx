@@ -75,6 +75,26 @@ function StorePage() {
   };
   useEffect(() => { refresh(); }, []);
 
+  // Robust preview reset: clear whenever the store unmounts, the tab
+  // switches away from Themes, the window loses focus, or the tab is
+  // hidden. Without this the preview can get "stuck" if a hover/focus
+  // event never receives its matching leave/blur (e.g. drag-scroll,
+  // keyboard tab into a different section, alt-tab).
+  useEffect(() => {
+    if (tab !== "theme") {
+      previewTheme(null);
+      return;
+    }
+    const reset = () => previewTheme(null);
+    window.addEventListener("blur", reset);
+    document.addEventListener("visibilitychange", reset);
+    return () => {
+      window.removeEventListener("blur", reset);
+      document.removeEventListener("visibilitychange", reset);
+      previewTheme(null);
+    };
+  }, [tab]);
+
   // When signed in, mirror server balance into the local display.
   useEffect(() => {
     if (userId && serverStats.data) setCoins(serverStats.data.total_points);
@@ -318,7 +338,10 @@ function StorePage() {
           </section>
         ) : (
 
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <section
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+            onPointerLeave={tab === "theme" ? () => previewTheme(null) : undefined}
+          >
             {items.map((item) => {
               const owned = inventory.includes(item.id);
               const isEquipped =
@@ -330,22 +353,38 @@ function StorePage() {
                   ? {
                       onMouseEnter: () => previewTheme(item.id),
                       onMouseLeave: () => previewTheme(null),
+                      onPointerCancel: () => previewTheme(null),
                       onFocus: () => previewTheme(item.id),
                       onBlur: () => previewTheme(null),
                     }
                   : {};
+              const cardAriaLabel =
+                item.category === "theme"
+                  ? isEquipped
+                    ? `${item.name} theme — current theme. Focus to preview.`
+                    : `Preview ${item.name} theme`
+                  : undefined;
               return (
                 <motion.article
                   key={item.id}
                   whileTap={{ scale: 0.97 }}
                   tabIndex={item.category === "theme" ? 0 : undefined}
-                  aria-label={item.category === "theme" ? `Preview ${item.name} theme` : undefined}
+                  aria-label={cardAriaLabel}
+                  aria-pressed={item.category === "theme" ? isEquipped : undefined}
                   {...themePreviewHandlers}
                   className={`glass-strong relative overflow-hidden rounded-3xl p-3 outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                     isEquipped ? "ring-2 ring-emerald-400/70" : ""
                   }`}
                 >
-
+                  {isEquipped && (
+                    <span
+                      className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-emerald-400/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-950 shadow"
+                      aria-label="Current theme"
+                    >
+                      <Check className="h-2.5 w-2.5" aria-hidden />
+                      Current
+                    </span>
+                  )}
                   <div
                     aria-hidden
                     className="pointer-events-none absolute inset-0 -z-10 opacity-40"
