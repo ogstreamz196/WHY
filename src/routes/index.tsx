@@ -1234,11 +1234,6 @@ function WhyApp() {
         title={levelUp?.title ?? ""}
         onClose={() => setLevelUp(null)}
       />
-      <GuestSignUpPopup
-        open={guestPopup && !user}
-        seconds={guestPromptSeconds}
-        onClose={() => setGuestPopup(false)}
-      />
     </main>
   );
 }
