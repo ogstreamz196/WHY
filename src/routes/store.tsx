@@ -59,6 +59,7 @@ function StorePage() {
   const qc = useQueryClient();
   const fetchStats = useServerFn(getMyStats);
   const doSpend = useServerFn(spendCoins);
+  const doUpdateProfile = useServerFn(updateMyProfile);
 
   const serverStats = useQuery({
     queryKey: ["stats"],
