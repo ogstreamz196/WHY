@@ -189,6 +189,10 @@ function ArenaPage() {
           </div>
         </header>
 
+        <ChampionCrown />
+
+
+
         {/* Tab strip */}
         <div className="glass-strong mb-3 flex gap-1 overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => {
