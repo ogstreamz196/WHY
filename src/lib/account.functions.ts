@@ -37,6 +37,7 @@ export type ProfileDTO = {
   display_name: string | null;
   username: string | null;
   avatar_id: string;
+  avatar_url: string | null;
   bio: string | null;
   created_at: string;
   age_band: string | null;
@@ -47,7 +48,7 @@ export type ProfileDTO = {
 };
 
 const PROFILE_COLS =
-  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public, status_message";
+  "id, display_name, username, avatar_id, avatar_url, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public, status_message";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
