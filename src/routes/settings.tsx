@@ -14,6 +14,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyProfile, updateMyProfile } from "@/lib/account.functions";
+import { LinkedAccounts } from "@/components/LinkedAccounts";
 import { CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/settings")({
@@ -112,6 +113,9 @@ function SettingsPage() {
             </div>
           )}
         </section>
+
+        {user && <LinkedAccounts />}
+
 
         <section className="mb-6 space-y-2 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <Toggle
