@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Flame, LogOut, Sparkles, Trophy, Zap, Pencil, Loader2, Check, Clock, ArrowRight, ArrowUpDown, ChevronDown, Crown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getMyProfile,
@@ -23,11 +23,23 @@ import { CoinIcon } from "@/components/CoinIcon";
 import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
 import { StreakBadges } from "@/components/StreakBadges";
+import { BadgeDetailsModal } from "@/components/BadgeDetailsModal";
+import { LevelProgressWidget } from "@/components/LevelProgressWidget";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { useUnlockWatcher } from "@/lib/unlock-watch";
+import { getBadges, getPoints, getSeen, getStreak, type Badge } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
 import { VipBadge } from "@/components/VipBadge";
 import { useSubscription } from "@/hooks/useSubscription";
+
+const MILESTONES = [
+  { key: "seen",   label: "Facts discovered", steps: [10, 50, 100, 250, 500, 1000] },
+  { key: "streak", label: "Day streak",       steps: [3, 7, 14, 30, 60, 100] },
+  { key: "points", label: "Curiosity points", steps: [100, 500, 1000, 5000, 10000, 25000] },
+] as const;
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -92,6 +104,30 @@ function ProfilePage() {
   const [sectionOrder, setSectionOrder] = useState<"achievements-first" | "discoveries-first">(
     "achievements-first",
   );
+
+  // Local (client-side) badges + progress — merged in from the old /badges page.
+  const [localBadges, setLocalBadges] = useState<Badge[]>([]);
+  const [localPoints, setLocalPoints] = useState(0);
+  const [localStreak, setLocalStreak] = useState(0);
+  const [localSeen, setLocalSeen] = useState(0);
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  useEffect(() => {
+    setLocalBadges(getBadges());
+    setLocalPoints(getPoints());
+    setLocalStreak(getStreak());
+    setLocalSeen(getSeen());
+  }, []);
+  const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(localBadges);
+  const widgetMilestones = useMemo(() => {
+    const stats: Record<string, number> = { seen: localSeen, streak: localStreak, points: localPoints };
+    return MILESTONES.map((m) => {
+      const current = stats[m.key] ?? 0;
+      const nextIdx = m.steps.findIndex((s) => current < s);
+      const next = nextIdx === -1 ? m.steps[m.steps.length - 1] : m.steps[nextIdx];
+      return { label: m.label, value: current, next };
+    });
+  }, [localSeen, localStreak, localPoints]);
+  const localUnlocked = localBadges.filter((b) => b.unlocked).length;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -479,10 +515,63 @@ function ProfilePage() {
                 </button>
               </div>
               {!collapsed.achievements && (
-                <div id="achievements-body" className="grid grid-cols-3 gap-3">
-                  {(achievements.data ?? []).map((a) => (
-                    <AchievementTile key={a.id} a={a} />
-                  ))}
+                <div id="achievements-body" className="space-y-6">
+                  <LevelProgressWidget xp={localPoints} milestones={widgetMilestones} />
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {(achievements.data ?? []).map((a) => (
+                      <AchievementTile key={a.id} a={a} />
+                    ))}
+                  </div>
+
+                  {localBadges.length > 0 && (
+                    <div>
+                      <p className="mb-3 text-xs text-white/60">
+                        Explorer badges · unlocked{" "}
+                        <span className="font-black text-white">{localUnlocked}</span> of{" "}
+                        {localBadges.length}
+                        <span className="ml-2 text-white/40">· tap for details</span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {localBadges.map((b, i) => (
+                          <motion.button
+                            type="button"
+                            onClick={() => setSelectedBadge(b)}
+                            key={b.id}
+                            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            whileHover={{ scale: b.unlocked ? 1.05 : 1.02 }}
+                            whileTap={{ scale: 0.96 }}
+                            transition={{ delay: Math.min(i, 12) * 0.03 }}
+                            className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition ${
+                              b.unlocked ? "" : "opacity-50 grayscale hover:opacity-80"
+                            }`}
+                          >
+                            {b.unlocked && (
+                              <motion.span
+                                aria-hidden
+                                className="absolute inset-0 rounded-3xl"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 0.4, 0] }}
+                                transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.15 }}
+                                style={{ boxShadow: "0 0 30px 4px rgba(168,85,247,0.35) inset" }}
+                              />
+                            )}
+                            <div
+                              className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-lg"
+                              style={{ background: b.unlocked ? "var(--gradient-primary)" : "oklch(0.25 0.02 285)" }}
+                            >
+                              {b.emoji}
+                            </div>
+                            <p className="text-sm font-black text-white">{b.label}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                              {b.unlocked ? "Unlocked" : "Locked"}
+                            </p>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
@@ -606,6 +695,14 @@ function ProfilePage() {
           </button>
         </div>
       </div>
+      <ConfettiBurst trigger={confettiTrigger} />
+      <LevelUpCelebration
+        open={!!levelUp}
+        level={levelUp?.level ?? 0}
+        title={levelUp?.title ?? ""}
+        onClose={dismissLevelUp}
+      />
+      <BadgeDetailsModal badge={selectedBadge} onClose={() => setSelectedBadge(null)} />
       <BottomNav />
     </main>
   );

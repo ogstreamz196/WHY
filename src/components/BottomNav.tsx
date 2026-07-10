@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Trophy, Store, User, Sparkles, Medal, Crown } from "lucide-react";
+import { Home, Store, User, Sparkles, Medal, Crown } from "lucide-react";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useCurrentUser } from "@/lib/auth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -9,7 +9,6 @@ const items = [
   { to: "/chains",      label: "Chains", Icon: Sparkles },
   { to: "/leaderboard", label: "Ranks",  Icon: Medal },
   { to: "/store",       label: "Store",  Icon: Store },
-  { to: "/badges",      label: "Badges", Icon: Trophy },
   { to: "/profile",     label: "You",    Icon: User },
 ] as const;
 
