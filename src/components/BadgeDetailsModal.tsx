@@ -1,13 +1,25 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Lock, Check, Sparkles } from "lucide-react";
-import type { Badge } from "@/lib/store";
+import { X, Lock, Check, Sparkles, Calendar } from "lucide-react";
+
+export type BadgeDetail = {
+  id: string;
+  label: string;
+  emoji: string;
+  unlocked: boolean;
+  /** Optional description shown when no BADGE_META entry exists (e.g. server achievements). */
+  description?: string | null;
+  /** Optional ISO date string of when it was unlocked. */
+  unlockedAt?: string | null;
+  /** Optional progress towards unlocking. */
+  progress?: { current: number; target: number } | null;
+};
 
 type Props = {
-  badge: Badge | null;
+  badge: BadgeDetail | null;
   onClose: () => void;
 };
 
-// Per-badge unlock guidance. Keep close to how each badge is actually earned.
+// Per-badge unlock guidance for local (client-side) explorer badges.
 const BADGE_META: Record<string, { requirement: string; examples: string[] }> = {
   curious:   { requirement: "Discover 5 facts.",         examples: ["Tap “New fact” 5 times", "Answer one daily challenge"] },
   explorer:  { requirement: "Discover 25 facts.",        examples: ["Explore a new category", "Chain 3 whys in a row"] },
@@ -31,11 +43,33 @@ const BADGE_META: Record<string, { requirement: string; examples: string[] }> = 
   points25k:  { requirement: "Earn 25,000 Y-Coins.",     examples: ["Become a Curiosity Champion"] },
 };
 
+function formatUnlockDate(iso: string) {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export function BadgeDetailsModal({ badge, onClose }: Props) {
+  const meta = badge ? BADGE_META[badge.id] : undefined;
+  const requirement =
+    meta?.requirement ??
+    badge?.description ??
+    "Keep exploring to unlock.";
+  const examples = meta?.examples ?? [];
+
   return (
     <AnimatePresence>
       {badge && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="badge-details-title"
           className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 backdrop-blur-md sm:items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -120,24 +154,60 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50">
               {badge.unlocked ? "Unlocked" : "Locked"}
             </p>
-            <h3 className="mt-1 font-display text-2xl font-black">{badge.label}</h3>
+            <h3 id="badge-details-title" className="mt-1 font-display text-2xl font-black">
+              {badge.label}
+            </h3>
+
+            {badge.unlocked && badge.unlockedAt && (
+              <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/60">
+                <Calendar className="h-3 w-3" aria-hidden="true" />
+                Unlocked {formatUnlockDate(badge.unlockedAt)}
+              </p>
+            )}
 
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-left text-sm">
               <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-white/50">
                 <Sparkles className="h-3 w-3" /> Requirement
               </div>
-              <p className="mt-1 text-sm text-white/90">
-                {BADGE_META[badge.id]?.requirement ?? "Keep exploring to unlock."}
-              </p>
+              <p className="mt-1 text-sm text-white/90">{requirement}</p>
             </div>
 
-            {BADGE_META[badge.id]?.examples?.length ? (
+            {!badge.unlocked && badge.progress && badge.progress.target > 0 && (
+              <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left">
+                <div className="mb-1 flex items-center justify-between text-[11px] font-black uppercase tracking-widest text-white/50">
+                  <span>Progress</span>
+                  <span className="text-white/80">
+                    {Math.min(badge.progress.current, badge.progress.target).toLocaleString()} /{" "}
+                    {badge.progress.target.toLocaleString()}
+                  </span>
+                </div>
+                <div
+                  className="h-2 w-full overflow-hidden rounded-full bg-white/10"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={badge.progress.target}
+                  aria-valuenow={Math.min(badge.progress.current, badge.progress.target)}
+                >
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: "var(--gradient-primary)" }}
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: `${Math.min(100, Math.max(0, (badge.progress.current / badge.progress.target) * 100))}%`,
+                    }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {examples.length > 0 && (
               <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left text-sm">
                 <div className="text-[11px] font-black uppercase tracking-widest text-white/50">
                   How to earn it
                 </div>
                 <ul className="mt-1.5 space-y-1">
-                  {BADGE_META[badge.id].examples.map((ex) => (
+                  {examples.map((ex) => (
                     <li key={ex} className="flex items-start gap-2 text-sm text-white/85">
                       <Check className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-emerald-300" />
                       <span>{ex}</span>
@@ -145,7 +215,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
                   ))}
                 </ul>
               </div>
-            ) : null}
+            )}
 
             <button
               onClick={onClose}

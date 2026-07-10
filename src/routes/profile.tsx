@@ -23,7 +23,7 @@ import { CoinIcon } from "@/components/CoinIcon";
 import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
 import { StreakBadges } from "@/components/StreakBadges";
-import { BadgeDetailsModal } from "@/components/BadgeDetailsModal";
+import { BadgeDetailsModal, type BadgeDetail } from "@/components/BadgeDetailsModal";
 import { LevelProgressWidget } from "@/components/LevelProgressWidget";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
@@ -40,6 +40,29 @@ const MILESTONES = [
   { key: "streak", label: "Day streak",       steps: [3, 7, 14, 30, 60, 100] },
   { key: "points", label: "Curiosity points", steps: [100, 500, 1000, 5000, 10000, 25000] },
 ] as const;
+
+// Maps local (explorer) badge id → which live stat + numeric target it tracks.
+// Used to render an accurate progress bar in the details modal.
+const LOCAL_BADGE_TARGETS: Record<string, { stat: "seen" | "streak" | "points"; target: number }> = {
+  curious:    { stat: "seen",   target: 5 },
+  explorer:   { stat: "seen",   target: 25 },
+  scientist:  { stat: "seen",   target: 100 },
+  sage:       { stat: "seen",   target: 250 },
+  polymath:   { stat: "seen",   target: 500 },
+  oracle:     { stat: "seen",   target: 1000 },
+  streak3:    { stat: "streak", target: 3 },
+  streak7:    { stat: "streak", target: 7 },
+  streak14:   { stat: "streak", target: 14 },
+  streak30:   { stat: "streak", target: 30 },
+  streak60:   { stat: "streak", target: 60 },
+  streak100:  { stat: "streak", target: 100 },
+  points100:  { stat: "points", target: 100 },
+  points500:  { stat: "points", target: 500 },
+  points1k:   { stat: "points", target: 1000 },
+  points5k:   { stat: "points", target: 5000 },
+  points10k:  { stat: "points", target: 10000 },
+  points25k:  { stat: "points", target: 25000 },
+};
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -110,12 +133,14 @@ function ProfilePage() {
   const [localPoints, setLocalPoints] = useState(0);
   const [localStreak, setLocalStreak] = useState(0);
   const [localSeen, setLocalSeen] = useState(0);
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  const [localHydrated, setLocalHydrated] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<BadgeDetail | null>(null);
   useEffect(() => {
     setLocalBadges(getBadges());
     setLocalPoints(getPoints());
     setLocalStreak(getStreak());
     setLocalSeen(getSeen());
+    setLocalHydrated(true);
   }, []);
   const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(localBadges);
   const widgetMilestones = useMemo(() => {
@@ -128,6 +153,14 @@ function ProfilePage() {
     });
   }, [localSeen, localStreak, localPoints]);
   const localUnlocked = localBadges.filter((b) => b.unlocked).length;
+
+  const localProgressFor = (id: string): { current: number; target: number } | null => {
+    const t = LOCAL_BADGE_TARGETS[id];
+    if (!t) return null;
+    const current =
+      t.stat === "seen" ? localSeen : t.stat === "streak" ? localStreak : localPoints;
+    return { current, target: t.target };
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -518,13 +551,68 @@ function ProfilePage() {
                 <div id="achievements-body" className="space-y-6">
                   <LevelProgressWidget xp={localPoints} milestones={widgetMilestones} />
 
-                  <div className="grid grid-cols-3 gap-3">
-                    {(achievements.data ?? []).map((a) => (
-                      <AchievementTile key={a.id} a={a} />
-                    ))}
-                  </div>
+                  {/* Server achievements: loading → skeleton, empty → empty state, else grid */}
+                  {achievements.isLoading && !achievements.data ? (
+                    <div className="grid grid-cols-3 gap-3" aria-busy="true" aria-live="polite">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-[104px] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
+                        />
+                      ))}
+                      <span className="sr-only">Loading achievements…</span>
+                    </div>
+                  ) : (achievements.data ?? []).length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
+                      <div className="text-3xl">🏆</div>
+                      <p className="mt-2 text-sm font-black text-white">No achievements yet</p>
+                      <p className="mt-1 text-xs text-white/60">
+                        Discover facts, keep a streak going, or take a quiz to start unlocking trophies.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-3">
+                      {(achievements.data ?? []).map((a) => (
+                        <AchievementTile
+                          key={a.id}
+                          a={a}
+                          onSelect={() =>
+                            setSelectedBadge({
+                              id: `achievement:${a.id}`,
+                              label: a.name,
+                              emoji: a.emoji,
+                              unlocked: !!a.unlocked_at,
+                              description: a.description,
+                              unlockedAt: a.unlocked_at,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
 
-                  {localBadges.length > 0 && (
+                  {/* Explorer badges: loading skeleton until localStorage read, then grid or empty state */}
+                  {!localHydrated ? (
+                    <div>
+                      <div className="mb-3 h-3 w-40 animate-pulse rounded bg-white/10" />
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy="true">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="h-[132px] animate-pulse rounded-3xl border border-white/10 bg-white/[0.04]"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : localBadges.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
+                      <div className="text-3xl">✨</div>
+                      <p className="mt-2 text-sm font-black text-white">Explorer badges appear here</p>
+                      <p className="mt-1 text-xs text-white/60">
+                        Explore facts on the home screen to earn your first explorer badge.
+                      </p>
+                    </div>
+                  ) : (
                     <div>
                       <p className="mb-3 text-xs text-white/60">
                         Explorer badges · unlocked{" "}
@@ -536,14 +624,23 @@ function ProfilePage() {
                         {localBadges.map((b, i) => (
                           <motion.button
                             type="button"
-                            onClick={() => setSelectedBadge(b)}
+                            onClick={() =>
+                              setSelectedBadge({
+                                id: b.id,
+                                label: b.label,
+                                emoji: b.emoji,
+                                unlocked: b.unlocked,
+                                progress: localProgressFor(b.id),
+                              })
+                            }
                             key={b.id}
                             initial={{ opacity: 0, y: 10, scale: 0.9 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             whileHover={{ scale: b.unlocked ? 1.05 : 1.02 }}
                             whileTap={{ scale: 0.96 }}
                             transition={{ delay: Math.min(i, 12) * 0.03 }}
-                            className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition ${
+                            aria-label={`${b.label} — ${b.unlocked ? "unlocked" : "locked"}. View details`}
+                            className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60 ${
                               b.unlocked ? "" : "opacity-50 grayscale hover:opacity-80"
                             }`}
                           >
@@ -745,23 +842,28 @@ function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-function AchievementTile({ a }: { a: Achievement }) {
+function AchievementTile({ a, onSelect }: { a: Achievement; onSelect: () => void }) {
   const unlocked = !!a.unlocked_at;
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={onSelect}
       whileHover={{ scale: 1.03 }}
-      className={`relative rounded-2xl border p-3 text-center text-xs ${
+      whileTap={{ scale: 0.97 }}
+      aria-label={`${a.name} — ${unlocked ? "unlocked" : "locked"}. View details`}
+      className={`relative rounded-2xl border p-3 text-center text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60 ${
         unlocked
           ? "border-amber-300/30 bg-amber-400/10 text-white"
-          : "border-white/10 bg-white/[0.03] text-white/40"
+          : "border-white/10 bg-white/[0.03] text-white/40 hover:bg-white/[0.06]"
       }`}
     >
       <div className={`text-3xl ${unlocked ? "" : "grayscale opacity-40"}`}>{a.emoji}</div>
       <div className="mt-1 font-black leading-tight">{a.name}</div>
       <div className="mt-1 text-[10px] font-medium text-white/50 leading-tight">{a.description}</div>
-    </motion.div>
+    </motion.button>
   );
 }
+
 
 function QuizStatsSection() {
   const fetchQuiz = useServerFn(getMyQuizStats);
