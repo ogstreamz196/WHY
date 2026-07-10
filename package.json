@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "prebuild": "node scripts/check-fun-contrast.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "check:a11y-contrast": "node scripts/check-fun-contrast.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.5",
