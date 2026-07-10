@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
