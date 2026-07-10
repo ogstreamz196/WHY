@@ -109,6 +109,7 @@ import { useThrottledFlag } from "@/lib/useThrottledFlag";
 import { levelFor } from "@/lib/levels";
 import { DailyMission } from "@/components/DailyMission";
 import { asWhyQuestion } from "@/lib/whyQuestion";
+import { TalkingWords } from "@/components/TalkingWords";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { markMissionTask, type MissionTask } from "@/lib/missions.functions";
 import {
