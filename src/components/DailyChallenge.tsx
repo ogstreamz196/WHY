@@ -3,11 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, Check, Flame, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { CoinIcon } from "@/components/CoinIcon";
+import { AnswerSummary } from "@/components/AnswerSummary";
+import { FeedbackToggles } from "@/components/FeedbackToggles";
+import { feedback } from "@/lib/feedback";
 import { newlyReachedMilestone, type StreakMilestone } from "@/components/StreakBadges";
 import { StreakMilestoneCelebration } from "@/components/StreakMilestoneCelebration";
 import { analytics } from "@/lib/analytics";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getDailyChallengeMCQ, type DailyMCQ } from "@/lib/facts.functions";
 import {
   completeDailyChallenge,
@@ -39,6 +42,9 @@ export function DailyChallenge({ onCompleted }: Props) {
     delta: number;
   }>(null);
   const [milestoneBurst, setMilestoneBurst] = useState<StreakMilestone | null>(null);
+  const [pointsAwarded, setPointsAwarded] = useState(0);
+  const [focusIdx, setFocusIdx] = useState(0);
+  const choiceRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,13 +74,16 @@ export function DailyChallenge({ onCompleted }: Props) {
       setPicked(idx);
       const isCorrect = idx === mcq.correctIndex;
       if (!isCorrect) {
+        feedback("wrong");
         setTimeout(() => setPicked(null), 900);
         return;
       }
+      feedback("correct");
       setPhase("result");
       const result = completeDailyChallenge();
       if (result.awarded) {
         setDone(true);
+        setPointsAwarded(result.pointsDelta);
         setAwardedFlash({ streak: result.streak, delta: result.pointsDelta });
         onCompleted?.({
           streak: result.streak,
@@ -94,6 +103,33 @@ export function DailyChallenge({ onCompleted }: Props) {
       }
     },
     [mcq, picked, onCompleted],
+  );
+
+  const handleChoiceKey = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+      if (!mcq) return;
+      const n = mcq.choices.length;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const next = (i + 1) % n;
+        setFocusIdx(next);
+        choiceRefs.current[next]?.focus();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const prev = (i - 1 + n) % n;
+        setFocusIdx(prev);
+        choiceRefs.current[prev]?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setFocusIdx(0);
+        choiceRefs.current[0]?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setFocusIdx(n - 1);
+        choiceRefs.current[n - 1]?.focus();
+      }
+    },
+    [mcq],
   );
 
   const gradient = gradientFor(fact?.category);
@@ -131,17 +167,20 @@ export function DailyChallenge({ onCompleted }: Props) {
             </div>
 
           </div>
-          {done && (
-            <button
-              type="button"
-              onClick={() => setCollapsed((v) => !v)}
-              aria-expanded={!collapsed}
-              aria-controls="daily-challenge-body"
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-            >
-              {collapsed ? "Show" : "Hide"}
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            <FeedbackToggles />
+            {done && (
+              <button
+                type="button"
+                onClick={() => setCollapsed((v) => !v)}
+                aria-expanded={!collapsed}
+                aria-controls="daily-challenge-body"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                {collapsed ? "Show" : "Hide"}
+              </button>
+            )}
+          </div>
         </header>
 
 
@@ -180,11 +219,14 @@ export function DailyChallenge({ onCompleted }: Props) {
                     )}
                     <button
                       type="button"
-                      onClick={() => setPhase("quiz")}
-                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white active:scale-[0.98]"
+                      onClick={() => {
+                        feedback("reveal");
+                        setPhase("quiz");
+                      }}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                       style={{ background: "var(--gradient-primary)" }}
                     >
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-4 w-4" aria-hidden />
                       {done ? "Replay the question" : "Take the challenge"}
                     </button>
                   </>
@@ -197,7 +239,11 @@ export function DailyChallenge({ onCompleted }: Props) {
                       {asWhyQuestion(fact.question)}
                     </h3>
 
-                    <div className="mt-4 grid gap-3" role="group" aria-label="Answer choices">
+                    <div
+                      className="mt-4 grid gap-3"
+                      role="radiogroup"
+                      aria-label="Answer choices"
+                    >
                       {mcq.choices.map((choice, i) => {
                         const isPicked = picked === i;
                         const isCorrect = i === mcq.correctIndex;
@@ -205,14 +251,25 @@ export function DailyChallenge({ onCompleted }: Props) {
                         const showWrong = isPicked && !isCorrect;
                         const letter = String.fromCharCode(65 + i);
                         const status = showCorrect ? " (correct)" : showWrong ? " (incorrect)" : "";
+                        const isTabStop = focusIdx === i;
                         return (
                           <motion.button
                             key={i}
+                            ref={(el) => {
+                              choiceRefs.current[i] = el;
+                            }}
                             type="button"
+                            role="radio"
+                            aria-checked={isPicked}
+                            tabIndex={isTabStop ? 0 : -1}
                             disabled={picked !== null && picked === mcq.correctIndex}
-                            onClick={() => answer(i)}
+                            onClick={() => {
+                              setFocusIdx(i);
+                              answer(i);
+                            }}
+                            onFocus={() => setFocusIdx(i)}
+                            onKeyDown={(e) => handleChoiceKey(e, i)}
                             aria-label={`Option ${letter}: ${choice}${status}`}
-                            aria-pressed={isPicked}
                             initial={{ opacity: 0, y: 12, scale: 0.96 }}
                             animate={
                               showWrong
@@ -227,7 +284,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                             }}
                             whileHover={picked === null ? { scale: 1.02, y: -2 } : undefined}
                             whileTap={picked === null ? { scale: 0.97 } : undefined}
-                            className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left text-base font-bold leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
+                            className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left text-base font-bold leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                               showCorrect
                                 ? "border-emerald-400 bg-gradient-to-br from-emerald-400/25 to-emerald-500/10 text-emerald-50 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
                                 : showWrong
@@ -274,22 +331,21 @@ export function DailyChallenge({ onCompleted }: Props) {
                       })}
                     </div>
 
-                    {phase === "result" && (
-                      <motion.div
-                        role="status"
-                        aria-live="polite"
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3"
-                      >
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                          The full story
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-white/95">
-                          {fact.answer}
-                        </p>
-                      </motion.div>
-                    )}
+                    <AnimatePresence>
+                      {phase === "result" && (
+                        <AnswerSummary
+                          correct
+                          explanation={fact.answer}
+                          funFact={fact.fun_fact}
+                          points={pointsAwarded}
+                          scoreBefore={0}
+                          scoreAfter={pointsAwarded}
+                          streak={awardedFlash?.streak}
+                          actionLabel="Nice — keep exploring"
+                          autoFocusAction={false}
+                        />
+                      )}
+                    </AnimatePresence>
 
                   </>
                 )}

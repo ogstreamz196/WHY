@@ -1,11 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Check, Loader2, Sparkles, Trophy, X } from "lucide-react";
 import { toast } from "sonner";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { Celebration } from "@/components/Celebration";
+import { AnswerSummary } from "@/components/AnswerSummary";
+import { FeedbackToggles } from "@/components/FeedbackToggles";
+import { feedback } from "@/lib/feedback";
 import {
   finishQuiz,
   submitAnswer,
@@ -41,11 +44,13 @@ function QuizPlayPage() {
   const [finalResult, setFinalResult] = useState<FinishResult | null>(null);
   const [celebrate, setCelebrate] = useState(false);
   const [totalPoints, setTotalPoints] = useState(0);
+  const [scoreBefore, setScoreBefore] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(0);
   const startedAtRef = useRef<number>(Date.now());
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const revealBtnRef = useRef<HTMLButtonElement | null>(null);
-  const firstChoiceRef = useRef<HTMLButtonElement | null>(null);
+  const choiceRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
 
   useEffect(() => {
@@ -82,14 +87,45 @@ function QuizPlayPage() {
   useEffect(() => {
     if (!current || result) return;
     if (!revealed) revealBtnRef.current?.focus();
-    else firstChoiceRef.current?.focus();
+    else {
+      setFocusIdx(0);
+      choiceRefs.current[0]?.focus();
+    }
   }, [idx, revealed, current, result]);
+
+  const handleChoiceKey = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+      if (!current) return;
+      const n = current.choices.length;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const next = (i + 1) % n;
+        setFocusIdx(next);
+        choiceRefs.current[next]?.focus();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const prev = (i - 1 + n) % n;
+        setFocusIdx(prev);
+        choiceRefs.current[prev]?.focus();
+      } else if (e.key === "Home") {
+        e.preventDefault();
+        setFocusIdx(0);
+        choiceRefs.current[0]?.focus();
+      } else if (e.key === "End") {
+        e.preventDefault();
+        setFocusIdx(n - 1);
+        choiceRefs.current[n - 1]?.focus();
+      }
+    },
+    [current],
+  );
 
 
   async function handlePick(pickIndex: number) {
     if (!current || answering || result) return;
     setAnswering(true);
     setPicked(pickIndex);
+    setScoreBefore(totalPoints);
     try {
       const msTaken = Date.now() - startedAtRef.current;
       const res = await submit({
@@ -100,16 +136,11 @@ function QuizPlayPage() {
           ms_taken: msTaken,
         },
       });
-      // Force wrong when timed out even if index 0 happens to match
-      if (pickIndex < 0) {
-        setResult({ ...res, correct: false, points_awarded: 0 });
-      } else {
-        setResult(res);
-      }
-      setTotalPoints((p) => p + (pickIndex < 0 ? 0 : res.points_awarded));
-      if (pickIndex >= 0 && res.correct && typeof navigator !== "undefined" && "vibrate" in navigator) {
-        navigator.vibrate?.(40);
-      }
+      const timedOut = pickIndex < 0;
+      const effective = timedOut ? { ...res, correct: false, points_awarded: 0 } : res;
+      setResult(effective);
+      if (!timedOut) setTotalPoints((p) => p + res.points_awarded);
+      feedback(effective.correct ? "correct" : "wrong");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Answer failed");
     } finally {
@@ -134,7 +165,9 @@ function QuizPlayPage() {
     setPicked(null);
     setResult(null);
     setRevealed(false);
+    setFocusIdx(0);
   }
+
 
   if (!quiz || !current) {
     return (
@@ -183,6 +216,8 @@ function QuizPlayPage() {
           <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-amber-300">
             {totalPoints} pts
           </div>
+          <FeedbackToggles />
+
         </header>
 
         {/* Timer — only after reveal */}
@@ -240,7 +275,10 @@ function QuizPlayPage() {
                 <button
                   ref={revealBtnRef}
                   type="button"
-                  onClick={() => setRevealed(true)}
+                  onClick={() => {
+                    feedback("reveal");
+                    setRevealed(true);
+                  }}
                   aria-describedby={`reveal-hint-${idx}`}
                   aria-label={`Reveal answers for question ${idx + 1} and start the timer`}
                   className="w-full rounded-full px-4 py-3 text-sm font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
@@ -267,16 +305,26 @@ function QuizPlayPage() {
                       : isPicked
                         ? "selected"
                         : "";
+                  const isTabStop = focusIdx === i;
                   return (
                     <motion.button
                       key={i}
-                      ref={i === 0 ? firstChoiceRef : undefined}
+                      ref={(el) => {
+                        choiceRefs.current[i] = el;
+                      }}
                       type="button"
                       role="radio"
                       aria-checked={isPicked}
+                      tabIndex={isTabStop ? 0 : -1}
                       aria-label={`Option ${letter}: ${choice}${stateLabel ? `, ${stateLabel}` : ""}`}
-                      onClick={() => handlePick(i)}
+                      onClick={() => {
+                        setFocusIdx(i);
+                        void handlePick(i);
+                      }}
+                      onFocus={() => setFocusIdx(i)}
+                      onKeyDown={(e) => handleChoiceKey(e, i)}
                       disabled={answering || !!result}
+                      whileHover={!result && !answering ? { scale: 1.01, y: -1 } : undefined}
                       whileTap={{ scale: 0.98 }}
                       className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed ${
                         isCorrect
@@ -303,33 +351,16 @@ function QuizPlayPage() {
 
             <AnimatePresence>
               {result && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`mt-4 rounded-2xl border p-3 ${
-                    result.correct
-                      ? "border-emerald-400/30 bg-emerald-400/10"
-                      : "border-rose-400/30 bg-rose-400/10"
-                  }`}
-                >
-                  <p className="text-sm font-black text-white">
-                    {result.correct ? `✅ +${result.points_awarded} points` : "❌ Not quite"}
-                  </p>
-                  {result.explanation && (
-                    <p className="mt-1 text-xs leading-relaxed text-white/80">{result.explanation}</p>
-                  )}
-                  {current.fun_fact && (
-                    <p className="mt-2 text-xs italic text-yellow-200/90">⭐ {current.fun_fact}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={next}
-                    className="mt-3 w-full rounded-full px-4 py-2.5 text-sm font-black text-white"
-                    style={{ background: "var(--gradient-primary)" }}
-                  >
-                    {idx + 1 >= quiz.questions.length ? "See results" : "Next question →"}
-                  </button>
-                </motion.div>
+                <AnswerSummary
+                  correct={result.correct}
+                  explanation={result.explanation ?? undefined}
+                  funFact={current.fun_fact ?? undefined}
+                  points={result.correct ? result.points_awarded : 0}
+                  scoreBefore={scoreBefore}
+                  scoreAfter={totalPoints}
+                  onAction={next}
+                  actionLabel={idx + 1 >= quiz.questions.length ? "See results" : "Next question →"}
+                />
               )}
             </AnimatePresence>
           </motion.article>
