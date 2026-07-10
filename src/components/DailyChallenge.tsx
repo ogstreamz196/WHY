@@ -207,13 +207,13 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       ⚡ Quick fact
                     </p>
-                    <h3 className="mt-1 font-display text-lg font-black leading-tight text-white">
+                    <h3 className="mt-1 font-fun text-[clamp(1.15rem,3vw,1.5rem)] font-bold leading-snug text-white">
                       {asWhyQuestion(fact.question)}{" "}
                       <span aria-hidden>{emojiFor(fact.category)}</span>
                     </h3>
 
                     {fact.fun_fact && (
-                      <p className="mt-2 text-xs italic text-yellow-200/90">
+                      <p className="mt-2 font-fun text-[clamp(0.95rem,2.4vw,1.15rem)] italic text-yellow-100">
                         ⭐ {fact.fun_fact}
                       </p>
                     )}
