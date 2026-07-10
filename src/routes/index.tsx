@@ -109,6 +109,7 @@ import { useThrottledFlag } from "@/lib/useThrottledFlag";
 import { levelFor } from "@/lib/levels";
 import { DailyMission } from "@/components/DailyMission";
 import { asWhyQuestion } from "@/lib/whyQuestion";
+import { TalkingWords } from "@/components/TalkingWords";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { markMissionTask, type MissionTask } from "@/lib/missions.functions";
 import {
@@ -875,12 +876,12 @@ function WhyApp() {
                           transition={{ duration: 0.4 }}
                           className="mt-5 space-y-4"
                         >
-                          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
                               ✨ Answer
                             </p>
                             <p className="mt-2 text-lg leading-relaxed text-white sm:text-xl">
-                              {fact.answer}
+                              <TalkingWords text={fact.answer} />
                             </p>
                           </div>
 
