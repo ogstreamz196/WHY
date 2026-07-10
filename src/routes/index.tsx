@@ -398,16 +398,24 @@ function WhyApp() {
   }, [fact?.id, revealed, user, grantPoints, recordDiscoveryServer]);
 
   // Same 3-second dwell reward for each "But… Why?" chain layer.
-  // The user must stay on the latest chain answer for ≥3s to earn a coin.
+  // Guarded by chainRewardedRef so a single dwell session can only award once
+  // per chain layer, even if the effect re-runs.
   useEffect(() => {
-    if (chain.length === 0) return;
+    if (chain.length === 0) { setChainDwellKey(null); return; }
     const last = chain[chain.length - 1];
-    if (!last?.answer) return;
+    if (!last?.answer) { setChainDwellKey(null); return; }
+    const key = `${fact?.id ?? "x"}::${chain.length}`;
+    if (chainRewardedRef.current.has(key)) { setChainDwellKey(null); return; }
+    setChainDwellKey(key);
     const t = window.setTimeout(() => {
+      if (chainRewardedRef.current.has(key)) return;
+      chainRewardedRef.current.add(key);
       grantPoints(3);
+      setChainDwellKey(null);
     }, 3000);
     return () => window.clearTimeout(t);
-  }, [chain.length, grantPoints]);
+  }, [chain.length, chain, fact?.id, grantPoints]);
+
 
 
 
