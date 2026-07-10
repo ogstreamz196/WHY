@@ -11,6 +11,7 @@ import { CATEGORIES, emojiFor } from "@/lib/categories";
 import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
 import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
 import { VipBadge } from "@/components/VipBadge";
+import { PlayerProfileModal } from "@/components/PlayerProfileModal";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -92,8 +93,7 @@ function ArenaPage() {
   const [result, setResult] = useState<LeaderboardResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [rankDelta, setRankDelta] = useState<number | null>(null);
-
-  // Reset filter when tab changes
+  const [selected, setSelected] = useState<{ userId: string; rank: number } | null>(null);
   useEffect(() => {
     if (tab === "age") setFilter("adult");
     else if (tab === "category") setFilter(CATEGORIES[1]?.key ?? "animals");
@@ -234,11 +234,15 @@ function ArenaPage() {
 
         {/* My rank banner */}
         {result?.my_rank && (
-          <motion.div
+          <motion.button
+            type="button"
             key={`${tab}-${filter}-me`}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-strong mb-3 flex items-center justify-between rounded-2xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-3"
+            onClick={() => user?.id && setSelected({ userId: user.id, rank: result.my_rank! })}
+            disabled={!user?.id}
+            aria-label="View your player profile"
+            className="glass-strong mb-3 flex w-full items-center justify-between rounded-2xl border border-fuchsia-300/40 bg-fuchsia-500/10 p-3 text-left ring-2 ring-fuchsia-300/40 transition hover:-translate-y-0.5 hover:bg-fuchsia-500/15 focus-visible:outline-none focus-visible:ring-fuchsia-300/70 active:scale-[0.99] disabled:cursor-default disabled:opacity-100 disabled:hover:translate-y-0"
           >
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200">Your rank</p>
@@ -267,7 +271,7 @@ function ArenaPage() {
                 {percentileLabel}
               </motion.span>
             )}
-          </motion.div>
+          </motion.button>
         )}
 
         {/* Rows */}
@@ -298,7 +302,12 @@ function ArenaPage() {
           >
             {/* Podium — top 3 */}
             {result.entries.length >= 1 && (
-              <Podium entries={result.entries.slice(0, 3)} unit={tab === "streaks" ? "days" : "pts"} meId={user?.id} />
+              <Podium
+                entries={result.entries.slice(0, 3)}
+                unit={tab === "streaks" ? "days" : "pts"}
+                meId={user?.id}
+                onOpen={(userId, rank) => setSelected({ userId, rank })}
+              />
             )}
             <ol className="space-y-2">
 
@@ -320,46 +329,60 @@ function ArenaPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ type: "spring", stiffness: 320, damping: 26 }}
-                      className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 transition ${
-                        me
-                          ? "border-fuchsia-300/40 bg-fuchsia-500/10"
-                          : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
-                      }`}
                     >
-                      <div className="flex w-14 shrink-0 flex-col items-center gap-0.5">
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}>
-                          {honor.label}
-                        </span>
-                        <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
-                        {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-black text-white">
-                          {r.display_name || r.username || "Explorer"}
-                          {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
-                          {me && <span className="ml-1 text-[10px] font-black text-fuchsia-300">YOU</span>}
-                        </p>
-                        <p className="truncate text-[11px] text-white/60">
-                          {honor.cheer}
-                        </p>
-                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                            className="h-full rounded-full"
-                            style={{ background: barGradient }}
+                      <button
+                        type="button"
+                        onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
+                        aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
+                        className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.995] ${
+                          me
+                            ? "border-fuchsia-300/60 bg-fuchsia-500/15 shadow-[0_0_28px_rgba(217,70,239,0.28)] ring-2 ring-fuchsia-300/40"
+                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+                        }`}
+                      >
+                        {me && (
+                          <motion.span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-fuchsia-300/60"
+                            animate={{ opacity: [0.35, 0.9, 0.35] }}
+                            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                           />
+                        )}
+                        <div className="relative flex w-14 shrink-0 flex-col items-center gap-0.5">
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}>
+                            {honor.label}
+                          </span>
+                          <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
-                          {tab === "streaks" ? "days" : "pts"}
-                        </p>
-                      </div>
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
+                          {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
+                        </div>
+                        <div className="relative min-w-0 flex-1">
+                          <p className="truncate text-sm font-black text-white">
+                            {r.display_name || r.username || "Explorer"}
+                            {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
+                            {me && <span className="ml-1 text-[10px] font-black text-fuchsia-200">YOU</span>}
+                          </p>
+                          <p className="truncate text-[11px] text-white/60">
+                            {honor.cheer}
+                          </p>
+                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${pct}%` }}
+                              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                              className="h-full rounded-full"
+                              style={{ background: barGradient }}
+                            />
+                          </div>
+                        </div>
+                        <div className="relative text-right">
+                          <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
+                            {tab === "streaks" ? "days" : "pts"}
+                          </p>
+                        </div>
+                      </button>
                     </motion.li>
                   );
                 })}
@@ -371,6 +394,14 @@ function ArenaPage() {
       </div>
       <BottomNav />
       <ConfettiBurst trigger={confettiTick} duration={2200} />
+      <PlayerProfileModal
+        userId={selected?.userId ?? null}
+        rank={selected?.rank ?? null}
+        totalUsers={result?.total_users ?? null}
+        boardLabel={TABS.find((t) => t.key === tab)?.label}
+        isMe={!!selected && selected.userId === user?.id}
+        onClose={() => setSelected(null)}
+      />
       <AnimatePresence>
         {celebrate && (
           <motion.div
@@ -470,7 +501,7 @@ function honorFor(rank: number, topPct: number): { label: string; cheer: string;
 }
 
 
-function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string; meId?: string }) {
+function Podium({ entries, unit, meId, onOpen }: { entries: PodiumEntry[]; unit: string; meId?: string; onOpen: (userId: string, rank: number) => void }) {
   const byRank = (n: number) => entries.find((e) => e.rank === n);
   const first = byRank(1);
   const second = byRank(2);
@@ -485,17 +516,17 @@ function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string;
       />
       <div className="relative flex items-end justify-center gap-2 sm:gap-4">
         {second ? (
-          <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} />
+          <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} onOpen={onOpen} />
         ) : (
           <div className="w-full max-w-[140px]" />
         )}
         {first ? (
-          <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} />
+          <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} onOpen={onOpen} />
         ) : (
           <div className="w-full max-w-[180px]" />
         )}
         {third ? (
-          <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} />
+          <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} onOpen={onOpen} />
         ) : (
           <div className="w-full max-w-[130px]" />
         )}
@@ -550,14 +581,17 @@ const PODIUM_CFG = {
   },
 } as const;
 
-function PodiumColumn({ entry, place, unit, isMe }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean }) {
+function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean; onOpen: (userId: string, rank: number) => void }) {
   const cfg = PODIUM_CFG[place];
   const name = entry.display_name || entry.username || "Explorer";
   const initial = name.slice(0, 1).toUpperCase();
 
   return (
-    <motion.div
-      className={`relative flex flex-col items-center ${cfg.wrap}`}
+    <motion.button
+      type="button"
+      onClick={() => onOpen(entry.user_id, entry.rank)}
+      aria-label={`View ${name}'s profile, rank ${place}`}
+      className={`relative flex flex-col items-center ${cfg.wrap} cursor-pointer rounded-t-[2rem] transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70 active:scale-[0.98]`}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: cfg.delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -619,7 +653,7 @@ function PodiumColumn({ entry, place, unit, isMe }: { entry: PodiumEntry; place:
           </span>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.button>
   );
 }
 
