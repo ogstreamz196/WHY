@@ -489,7 +489,7 @@ function honorFor(rank: number, topPct: number): { label: string; cheer: string;
 }
 
 
-function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string; meId?: string }) {
+function Podium({ entries, unit, meId, onOpen }: { entries: PodiumEntry[]; unit: string; meId?: string; onOpen: (userId: string, rank: number) => void }) {
   const byRank = (n: number) => entries.find((e) => e.rank === n);
   const first = byRank(1);
   const second = byRank(2);
@@ -504,17 +504,17 @@ function Podium({ entries, unit, meId }: { entries: PodiumEntry[]; unit: string;
       />
       <div className="relative flex items-end justify-center gap-2 sm:gap-4">
         {second ? (
-          <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} />
+          <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} onOpen={onOpen} />
         ) : (
           <div className="w-full max-w-[140px]" />
         )}
         {first ? (
-          <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} />
+          <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} onOpen={onOpen} />
         ) : (
           <div className="w-full max-w-[180px]" />
         )}
         {third ? (
-          <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} />
+          <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} onOpen={onOpen} />
         ) : (
           <div className="w-full max-w-[130px]" />
         )}
