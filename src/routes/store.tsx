@@ -179,12 +179,22 @@ function StorePage() {
     refresh();
     flash(`${item.emoji} equipped`);
     if (userId && item.category === "avatar") {
+      // Optimistic: patch the cached profile immediately so avatar swaps
+      // everywhere (profile page, leaderboard modal) before the server confirms.
+      const prev = qc.getQueryData<{ avatar_id: string | null } | undefined>(["profile"]);
+      qc.setQueryData(["profile"], (old: Record<string, unknown> | undefined) =>
+        old ? { ...old, avatar_id: item.id } : old,
+      );
       try {
         await doUpdateProfile({ data: { avatar_id: item.id } });
         qc.invalidateQueries({ queryKey: ["profile"] });
         qc.invalidateQueries({ queryKey: ["player-profile"] });
+        qc.invalidateQueries({ queryKey: ["leaderboard"] });
       } catch (e) {
+        // Roll back the optimistic update on failure.
+        qc.setQueryData(["profile"], prev);
         console.error("Failed to sync avatar to profile", e);
+        flash("Couldn't sync avatar — try again");
       }
     }
   };
