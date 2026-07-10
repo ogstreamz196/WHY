@@ -3,56 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
+import { shouldShow, markShown, markDismissed } from "@/lib/linkGoogleCadence";
 
 // Occasionally prompt Gmail-address users (who signed up with email/password)
 // to link their Google account. Linking merges identities on the same
 // auth.users row, so all app data stays attached to the same user_id.
-//
-// Cadence rules (kept intentionally gentle):
-//  - only if email ends with @gmail.com / @googlemail.com
-//  - only if the user has no `google` identity yet
-//  - dismissed → hidden for 14 days
-//  - shown at most once every 3 app opens, capped at 5 total prompts
-
-const DISMISS_DAYS = 14;
-const OPENS_BETWEEN = 3;
-const MAX_PROMPTS = 5;
-
-function keyFor(uid: string, k: string) {
-  return `why:linkgoogle:${uid}:${k}`;
-}
-
-function shouldShow(uid: string): boolean {
-  try {
-    const dismissedAt = Number(localStorage.getItem(keyFor(uid, "dismissedAt")) || 0);
-    if (dismissedAt && Date.now() - dismissedAt < DISMISS_DAYS * 86400_000) return false;
-    const shown = Number(localStorage.getItem(keyFor(uid, "shown")) || 0);
-    if (shown >= MAX_PROMPTS) return false;
-    const opens = Number(localStorage.getItem(keyFor(uid, "opens")) || 0) + 1;
-    localStorage.setItem(keyFor(uid, "opens"), String(opens));
-    if (opens % OPENS_BETWEEN !== 0) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function markShown(uid: string) {
-  try {
-    const shown = Number(localStorage.getItem(keyFor(uid, "shown")) || 0) + 1;
-    localStorage.setItem(keyFor(uid, "shown"), String(shown));
-  } catch {
-    /* noop */
-  }
-}
-
-function markDismissed(uid: string) {
-  try {
-    localStorage.setItem(keyFor(uid, "dismissedAt"), String(Date.now()));
-  } catch {
-    /* noop */
-  }
-}
+// Cadence & cap logic lives in `linkGoogleCadence.ts` (unit tested).
 
 export function LinkGoogleBanner() {
   const { user } = useCurrentUser();
@@ -61,14 +17,14 @@ export function LinkGoogleBanner() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || typeof window === "undefined") return;
     const email = (user.email ?? "").toLowerCase();
     const isGmail = email.endsWith("@gmail.com") || email.endsWith("@googlemail.com");
     if (!isGmail) return;
     const hasGoogle = (user.identities ?? []).some((i) => i.provider === "google");
     if (hasGoogle) return;
-    if (!shouldShow(user.id)) return;
-    markShown(user.id);
+    if (!shouldShow(user.id, window.localStorage)) return;
+    markShown(user.id, window.localStorage);
     setVisible(true);
   }, [user]);
 
@@ -93,9 +49,10 @@ export function LinkGoogleBanner() {
   }
 
   function onDismiss() {
-    if (user) markDismissed(user.id);
+    if (user && typeof window !== "undefined") markDismissed(user.id, window.localStorage);
     setVisible(false);
   }
+
 
   return (
     <AnimatePresence>

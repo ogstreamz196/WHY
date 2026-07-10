@@ -22,6 +22,7 @@ import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestone
 import { TopSignInBar } from "@/components/TopSignInBar";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { FloatingEditToggle } from "@/components/FloatingEditToggle";
+import { GoogleIdentitySync } from "@/components/GoogleIdentitySync";
 import { EditModeProvider } from "@/lib/editMode";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useEquippedTheme } from "@/lib/useEquippedTheme";
@@ -173,6 +174,7 @@ function RootComponent() {
         </div>
         <GlobalStreakMilestoneWatcher />
         <TopSignInBar />
+        <GoogleIdentitySync />
         <FloatingEditToggle />
         <ThemeDebugger />
         <Toaster theme="dark" position="top-center" richColors closeButton />

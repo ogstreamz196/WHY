@@ -37,6 +37,7 @@ export type ProfileDTO = {
   display_name: string | null;
   username: string | null;
   avatar_id: string;
+  avatar_url: string | null;
   bio: string | null;
   created_at: string;
   age_band: string | null;
@@ -47,7 +48,7 @@ export type ProfileDTO = {
 };
 
 const PROFILE_COLS =
-  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public, status_message";
+  "id, display_name, username, avatar_id, avatar_url, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public, status_message";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -107,7 +108,72 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     return row as ProfileDTO;
   });
 
+// -------------------- Linked identities --------------------
+
+export type LinkedIdentityDTO = {
+  provider: string;
+  email: string | null;
+  linked_at: string | null;
+};
+
+/** List OAuth providers currently linked to the caller's auth user. */
+export const listMyLinkedIdentities = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<LinkedIdentityDTO[]> => {
+    const db = await admin();
+    const { data, error } = await db.auth.admin.getUserById(context.userId);
+    if (error) throw new Error(error.message);
+    const ids = data.user?.identities ?? [];
+    return ids.map((i) => ({
+      provider: i.provider,
+      email: (i.identity_data?.email as string | undefined) ?? null,
+      linked_at: i.created_at ?? null,
+    }));
+  });
+
+/**
+ * Copy the linked Google identity's name & avatar into the local profile.
+ * - `avatar_url` is always refreshed from Google.
+ * - `display_name` is only set when the profile has none yet (preserves any
+ *   nickname the user already chose).
+ * Safe to call on every sign-in — no-op when the user has no Google identity.
+ */
+export const syncGoogleIdentityToProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ synced: boolean; patch: { display_name?: string; avatar_url?: string } }> => {
+    const db = await admin();
+    const { data, error } = await db.auth.admin.getUserById(context.userId);
+    if (error) throw new Error(error.message);
+    const google = (data.user?.identities ?? []).find((i) => i.provider === "google");
+    if (!google) return { synced: false, patch: {} };
+
+    const meta = (google.identity_data ?? {}) as Record<string, unknown>;
+    const rawName = (meta.full_name ?? meta.name ?? meta.given_name) as string | undefined;
+    const rawAvatar = (meta.avatar_url ?? meta.picture) as string | undefined;
+
+    const patch: { display_name?: string; avatar_url?: string } = {};
+    if (rawAvatar && typeof rawAvatar === "string") patch.avatar_url = rawAvatar;
+
+    const { data: existing } = await db
+      .from("profiles")
+      .select("display_name")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const hasName = !!existing?.display_name && existing.display_name.trim().length > 0;
+    if (!hasName && rawName && typeof rawName === "string") patch.display_name = rawName.trim().slice(0, 60);
+
+    if (Object.keys(patch).length === 0) return { synced: false, patch: {} };
+
+    const { error: updErr } = await db
+      .from("profiles")
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq("id", context.userId);
+    if (updErr) throw new Error(updErr.message);
+    return { synced: true, patch };
+  });
+
 // -------------------- XP ledger --------------------
+
 
 type AuthCtx = {
   supabase: import("@supabase/supabase-js").SupabaseClient;
