@@ -201,7 +201,7 @@ function StorePage() {
         </header>
 
         {/* Tabs */}
-        <div className="mb-4 grid grid-cols-4 gap-2">
+        <div className="mb-4 grid grid-cols-3 gap-2">
           {TABS.map((t) => (
             <button
               key={t.id}
