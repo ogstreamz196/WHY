@@ -12,6 +12,8 @@ import {
   bossGetPrivileges,
   bossUpdatePrivileges,
   bossListAudit,
+  getGuestPromptSeconds,
+  bossSetGuestPromptSeconds,
   type Privileges,
 } from "@/lib/boss.functions";
 
