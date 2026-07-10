@@ -53,46 +53,48 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
 
   const locked = remaining > 0;
 
-  // Dodge only DOWN and RIGHT so the cursor is nudged toward the Google button.
-  const dodge = (clientX: number, clientY: number) => {
-    if (!locked) return;
+  // Move the popup so the Google button lands directly under the given point.
+  // Used both for hover-dodge (desktop) and the close-button bait-and-switch.
+  const slideGoogleUnder = (clientX: number, clientY: number, showOops = true) => {
     const el = boxRef.current;
     const gbtn = googleRef.current;
     if (!el) return;
 
-    let nx = 0;
-    let ny = 0;
+    let nx = offset.x;
+    let ny = offset.y;
     if (gbtn) {
-      // Move the popup so the Google button lands under the cursor.
       const gr = gbtn.getBoundingClientRect();
       const gcx = gr.left + gr.width / 2;
       const gcy = gr.top + gr.height / 2;
       nx = offset.x + (clientX - gcx);
       ny = offset.y + (clientY - gcy);
-    } else {
-      const r = el.getBoundingClientRect();
-      nx = offset.x + (r.right - clientX);
-      ny = offset.y + (r.bottom - clientY);
     }
 
-    // Never allow leftward or upward motion — only down/right drift.
-    nx = Math.max(offset.x, nx);
-    ny = Math.max(offset.y, ny);
-
-    // Clamp so popup stays on-screen.
+    // Clamp so popup stays fully on-screen (works on mobile too).
     const r = el.getBoundingClientRect();
-    const maxRight = window.innerWidth - r.right + offset.x - 8;
-    const maxBottom = window.innerHeight - r.bottom + offset.y - 8;
-    nx = Math.min(nx, Math.max(0, maxRight));
-    ny = Math.min(ny, Math.max(0, maxBottom));
+    const pad = 8;
+    const minX = offset.x - (r.left - pad);
+    const maxX = offset.x + (window.innerWidth - r.right - pad);
+    const minY = offset.y - (r.top - pad);
+    const maxY = offset.y + (window.innerHeight - r.bottom - pad);
+    nx = Math.min(Math.max(nx, minX), maxX);
+    ny = Math.min(Math.max(ny, minY), maxY);
 
     setOffset({ x: nx, y: ny });
-    oopsId.current += 1;
-    const id = oopsId.current;
-    setOops({ id, x: clientX, y: clientY });
-    window.setTimeout(() => {
-      setOops((o) => (o && o.id === id ? null : o));
-    }, 900);
+
+    if (showOops) {
+      oopsId.current += 1;
+      const id = oopsId.current;
+      setOops({ id, x: clientX, y: clientY });
+      window.setTimeout(() => {
+        setOops((o) => (o && o.id === id ? null : o));
+      }, 900);
+    }
+  };
+
+  const dodge = (clientX: number, clientY: number) => {
+    if (!locked) return;
+    slideGoogleUnder(clientX, clientY, true);
   };
 
   async function handleGoogle() {
@@ -109,15 +111,28 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
     }
   }
 
-  function handleCloseClick() {
+  // First press of the close (X) button pulls the Google button under the
+  // user's finger/cursor AND immediately triggers Google sign-in — so the
+  // action they see is the Google OAuth flow opening, exactly as if they
+  // had tapped the Google button.
+  function handleCloseClick(e: React.MouseEvent<HTMLButtonElement>) {
     if (locked) return;
-    if (cancelCountdown === null) {
-      setCancelCountdown(5);
-    } else {
-      // Second press cancels the cancel — user changed their mind
+    if (cancelCountdown !== null) {
+      // Countdown already running → this press cancels it (Keep open).
       setCancelCountdown(null);
+      return;
     }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const cx = e.clientX || rect.left + rect.width / 2;
+    const cy = e.clientY || rect.top + rect.height / 2;
+    slideGoogleUnder(cx, cy, false);
+    // Fire Google sign-in on the same gesture so the browser treats it as
+    // a user-initiated OAuth popup (no popup-blocker issues).
+    void handleGoogle();
+    // Fallback: if OAuth doesn't take over, still auto-close after 5s.
+    setCancelCountdown(5);
   }
+
 
   return (
     <AnimatePresence>
