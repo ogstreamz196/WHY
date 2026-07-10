@@ -800,3 +800,84 @@ function BulkImportSheet() {
     </section>
   );
 }
+
+
+function NormalizeBackfill() {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{
+    scanned: number; updated: number; unchanged: number;
+    invalid: { id: string; question: string; reason: string }[];
+    changes: { id: string; before: string; after: string }[];
+  } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = async (dryRun: boolean) => {
+    setBusy(true); setErr(null); setResult(null);
+    try {
+      const { bossBackfillNormalizeQuestions } = await import("@/lib/boss.functions");
+      const r = await bossBackfillNormalizeQuestions({ data: { dryRun, limit: 1000 } });
+      setResult(r);
+      toast.success(dryRun ? `Preview: ${r.changes.length} would change` : `Normalized ${r.updated} questions`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Backfill failed");
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Shield className="h-4 w-4 text-emerald-300" />
+        <h2 className="text-lg font-black text-white">Normalize existing questions</h2>
+      </div>
+      <p className="mb-3 text-xs text-white/60">
+        Re-runs the grammar normalizer on every saved fact. Original text is preserved in <code>original_question</code>.
+      </p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => run(true)}
+          disabled={busy}
+          className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-black text-white/90 disabled:opacity-40"
+        >
+          {busy ? "…" : "Preview"}
+        </button>
+        <button
+          onClick={() => run(false)}
+          disabled={busy}
+          className="flex-1 rounded-full bg-emerald-500 px-4 py-2 text-sm font-black text-black disabled:opacity-40"
+        >
+          {busy ? "Running…" : "Run backfill"}
+        </button>
+      </div>
+      {err && <p className="mt-2 text-xs text-rose-300">{err}</p>}
+      {result && (
+        <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white/80">
+          <p>
+            <span className="font-black text-white">{result.scanned}</span> scanned ·{" "}
+            <span className="font-black text-emerald-300">{result.updated}</span> updated ·{" "}
+            <span className="font-black text-white/70">{result.unchanged}</span> unchanged ·{" "}
+            <span className="font-black text-rose-300">{result.invalid.length}</span> invalid
+          </p>
+          {result.changes.length > 0 && (
+            <ul className="max-h-40 overflow-auto space-y-1">
+              {result.changes.slice(0, 20).map((c) => (
+                <li key={c.id} className="font-mono text-[11px] text-white/70">
+                  <span className="text-rose-200/70 line-through">{c.before}</span>{" → "}
+                  <span className="text-emerald-200">{c.after}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {result.invalid.length > 0 && (
+            <ul className="max-h-40 overflow-auto space-y-1 border-t border-white/10 pt-2">
+              {result.invalid.slice(0, 20).map((e) => (
+                <li key={e.id} className="font-mono text-[11px] text-rose-200/80">
+                  {e.question} — {e.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
