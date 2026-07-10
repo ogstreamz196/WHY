@@ -43,10 +43,11 @@ export type ProfileDTO = {
   favorite_category: string | null;
   leaderboard_opt_out: boolean;
   hide_from_public: boolean;
+  status_message: string | null;
 };
 
 const PROFILE_COLS =
-  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public";
+  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public, status_message";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -80,6 +81,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         favorite_category: z.string().max(40).optional(),
         leaderboard_opt_out: z.boolean().optional(),
         hide_from_public: z.boolean().optional(),
+        status_message: z.string().trim().max(60).nullable().optional(),
       })
       .parse(input),
   )
