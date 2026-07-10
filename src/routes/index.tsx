@@ -105,10 +105,9 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
-import { GuestSignUpPopup } from "@/components/GuestSignUpPopup";
 import { lovable } from "@/integrations/lovable";
 
-import { getGuestPromptSeconds } from "@/lib/boss.functions";
+
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth";
 import { useThrottledFlag } from "@/lib/useThrottledFlag";
