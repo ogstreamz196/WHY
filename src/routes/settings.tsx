@@ -365,7 +365,7 @@ function ArenaPreferences() {
         />
         <Toggle
           label="Hide profile from public pages"
-          hint="Chains and shared links stop showing your name."
+          hint="Favourites and shared links stop showing your name."
           checked={!!profile?.hide_from_public}
           onChange={(v) => save({ hide_from_public: v })}
         />

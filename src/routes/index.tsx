@@ -446,7 +446,7 @@ function WhyApp() {
     if (isGuest) {
       setSignInPrompt({
         title: "Save this trail",
-        message: "Sign up to keep your Why chains, share them, and pick up where you left off.",
+        message: "Sign up to keep your Favourites, share them, and pick up where you left off.",
       });
       return;
     }
@@ -668,7 +668,7 @@ function WhyApp() {
           </motion.button>
         )}
 
-        {/* Continue last Why chain */}
+        {/* Continue last favourite */}
         {user && lastChain && lastChain.step_count > 1 && (
           <Link
             to="/chain/$id"
@@ -679,9 +679,9 @@ function WhyApp() {
               🧵
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">Continue your chain</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">Continue your favourite</div>
               <div className="truncate text-sm font-bold text-white">
-                {lastChain.title ?? lastChain.last_question ?? "Pick up where you left off"}
+                {lastChain.title ?? lastChain.last_question ?? "Pick up your favourite where you left off"}
               </div>
               <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
             </div>
@@ -1009,7 +1009,7 @@ function WhyApp() {
                                   disabled={savingChain || !!savedChainId}
                                   className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-3 text-xs font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-60"
                                 >
-                                  {savedChainId ? "✓ Saved to your chains" : savingChain ? "Saving…" : "🧵 Save this chain"}
+                                  {savedChainId ? "✓ Saved to Favourites" : savingChain ? "Saving…" : "💖 Save to Favourites"}
                                 </button>
                               )}
                             </div>
