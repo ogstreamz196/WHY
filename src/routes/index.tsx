@@ -387,8 +387,7 @@ function WhyApp() {
     if (!fact?.id) return;
     if (user) return;
     guestFactCount.current += 1;
-    if (guestFactCount.current > 1 && guestFactCount.current % 2 === 1) {
-      // trigger after the 2nd, 4th, 6th… fact view (count is 1-indexed on load)
+    if (guestFactCount.current >= 2 && guestFactCount.current % 2 === 0) {
       setGuestPopup(true);
     }
   }, [fact?.id, user]);
