@@ -18,7 +18,13 @@ export function CosmicBackground() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div className="absolute inset-0" style={{ background: "var(--gradient-space)" }} />
-      {/* Drifting nebulae blobs */}
+      {/* Equipped theme tint — sits above space bg, below nebulae */}
+      <div
+        aria-hidden
+        className="absolute inset-0 transition-opacity duration-500"
+        style={{ background: "var(--theme-gradient, transparent)", opacity: 0.35, mixBlendMode: "soft-light" }}
+      />
+
       <div
         className="absolute -left-40 top-20 h-96 w-96 rounded-full opacity-30 blur-3xl animate-float-slow"
         style={{ background: "radial-gradient(circle, oklch(0.72 0.24 305), transparent 70%)" }}
