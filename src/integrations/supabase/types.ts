@@ -676,6 +676,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ui_overrides: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       user_achievements: {
         Row: {
           achievement_id: string
