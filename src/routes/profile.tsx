@@ -842,23 +842,28 @@ function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-function AchievementTile({ a }: { a: Achievement }) {
+function AchievementTile({ a, onSelect }: { a: Achievement; onSelect: () => void }) {
   const unlocked = !!a.unlocked_at;
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={onSelect}
       whileHover={{ scale: 1.03 }}
-      className={`relative rounded-2xl border p-3 text-center text-xs ${
+      whileTap={{ scale: 0.97 }}
+      aria-label={`${a.name} — ${unlocked ? "unlocked" : "locked"}. View details`}
+      className={`relative rounded-2xl border p-3 text-center text-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60 ${
         unlocked
           ? "border-amber-300/30 bg-amber-400/10 text-white"
-          : "border-white/10 bg-white/[0.03] text-white/40"
+          : "border-white/10 bg-white/[0.03] text-white/40 hover:bg-white/[0.06]"
       }`}
     >
       <div className={`text-3xl ${unlocked ? "" : "grayscale opacity-40"}`}>{a.emoji}</div>
       <div className="mt-1 font-black leading-tight">{a.name}</div>
       <div className="mt-1 text-[10px] font-medium text-white/50 leading-tight">{a.description}</div>
-    </motion.div>
+    </motion.button>
   );
 }
+
 
 function QuizStatsSection() {
   const fetchQuiz = useServerFn(getMyQuizStats);
