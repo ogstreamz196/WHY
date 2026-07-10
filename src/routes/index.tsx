@@ -899,7 +899,7 @@ function WhyApp() {
                               <p className="text-[10px] font-black uppercase tracking-widest text-yellow-300">
                                 ⭐ Fun fact
                               </p>
-                              <p className="mt-1.5 text-sm leading-relaxed text-white/90">
+                              <p className="mt-1.5 font-fun font-medium leading-snug text-white/95 text-[clamp(1.1rem,2.8vw,1.4rem)]">
                                 {fact.fun_fact}
                               </p>
                             </motion.div>
