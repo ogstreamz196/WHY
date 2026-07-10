@@ -90,6 +90,9 @@ function BossDashboard() {
     <Shell>
       <PrivilegesEditor initial={privs.data ?? null} onSave={(v) => privMut.mutate(v)} saving={privMut.isPending} />
 
+      <GuestPromptEditor />
+
+
       <section className="mt-6">
         <div className="mb-3 flex items-center gap-2">
           <UserCog className="h-4 w-4 text-sky-300" />
