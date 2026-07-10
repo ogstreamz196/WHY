@@ -35,8 +35,9 @@ async function readProviders(supabase: import("@supabase/supabase-js").SupabaseC
 export const getAdultStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdultStatus> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: profile }, { data: settings }] = await Promise.all([
-      context.supabase
+      supabaseAdmin
         .from("profiles")
         .select("adult_verified_at, adult_provider")
         .eq("id", context.userId)
@@ -71,7 +72,8 @@ export const verifyAdult = createServerFn({ method: "POST" })
       );
     }
     const now = new Date().toISOString();
-    const { error } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("profiles")
       .update({ adult_verified_at: now, adult_provider: matched })
       .eq("id", context.userId);
