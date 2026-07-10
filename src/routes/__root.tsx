@@ -21,6 +21,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestoneWatcher";
 import { TopSignInBar } from "@/components/TopSignInBar";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
+import { FloatingEditToggle } from "@/components/FloatingEditToggle";
+import { EditModeProvider } from "@/lib/editMode";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useEquippedTheme } from "@/lib/useEquippedTheme";
 
@@ -159,19 +161,22 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-black"
-      >
-        Skip to content
-      </a>
-      <div id="main" tabIndex={-1}>
-        <Outlet />
-      </div>
-      <GlobalStreakMilestoneWatcher />
-      <TopSignInBar />
-      <ThemeDebugger />
-      <Toaster theme="dark" position="top-center" richColors closeButton />
+      <EditModeProvider>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-black"
+        >
+          Skip to content
+        </a>
+        <div id="main" tabIndex={-1}>
+          <Outlet />
+        </div>
+        <GlobalStreakMilestoneWatcher />
+        <TopSignInBar />
+        <FloatingEditToggle />
+        <ThemeDebugger />
+        <Toaster theme="dark" position="top-center" richColors closeButton />
+      </EditModeProvider>
     </QueryClientProvider>
   );
 }
