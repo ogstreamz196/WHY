@@ -368,25 +368,66 @@ function StorePage() {
                     ? `${item.name} theme — current theme. Focus to preview.`
                     : `Preview ${item.name} theme`
                   : undefined;
+              const openPreview = () => setPreview(item);
+              const closePreview = () => setPreview((p) => (p?.id === item.id ? null : p));
+              const previewHandlers = {
+                onMouseEnter: () => {
+                  openPreview();
+                  themePreviewHandlers.onMouseEnter?.();
+                },
+                onMouseLeave: () => {
+                  closePreview();
+                  themePreviewHandlers.onMouseLeave?.();
+                },
+                onFocus: () => {
+                  openPreview();
+                  themePreviewHandlers.onFocus?.();
+                },
+                onBlur: () => {
+                  closePreview();
+                  themePreviewHandlers.onBlur?.();
+                },
+                onPointerDown: (e: React.PointerEvent) => {
+                  if (e.pointerType === "touch") {
+                    // Instant preview on touch — fires before the browser's
+                    // long-press context menu (~500ms) so it feels immediate.
+                    if (longPressRef.current) window.clearTimeout(longPressRef.current);
+                    longPressRef.current = window.setTimeout(openPreview, 120);
+                  }
+                },
+                onPointerUp: () => {
+                  if (longPressRef.current) window.clearTimeout(longPressRef.current);
+                },
+                onPointerCancel: () => {
+                  if (longPressRef.current) window.clearTimeout(longPressRef.current);
+                  themePreviewHandlers.onPointerCancel?.();
+                },
+              };
               return (
                 <motion.article
                   key={item.id}
                   whileTap={{ scale: 0.97 }}
-                  tabIndex={item.category === "theme" ? 0 : undefined}
-                  aria-label={cardAriaLabel}
+                  tabIndex={0}
+                  aria-label={cardAriaLabel ?? `Preview ${item.name}`}
                   aria-pressed={item.category === "theme" ? isEquipped : undefined}
-                  {...themePreviewHandlers}
+                  {...previewHandlers}
                   className={`glass-strong relative overflow-hidden rounded-3xl p-3 outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                     isEquipped ? "ring-2 ring-emerald-400/70" : ""
-                  }`}
+                  } ${item.vipOnly ? "ring-1 ring-amber-300/60" : ""}`}
                 >
                   {isEquipped && (
                     <span
                       className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-emerald-400/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-950 shadow"
-                      aria-label="Current theme"
+                      aria-label="Current"
                     >
                       <Check className="h-2.5 w-2.5" aria-hidden />
                       Current
+                    </span>
+                  )}
+                  {item.vipOnly && !isEquipped && (
+                    <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-950 shadow">
+                      <Crown className="h-2.5 w-2.5" aria-hidden />
+                      VIP
                     </span>
                   )}
                   <div
@@ -398,8 +439,12 @@ function StorePage() {
                         "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15), transparent 60%)",
                     }}
                   />
-                  <div className="flex h-20 items-center justify-center text-5xl drop-shadow">
-                    <span aria-hidden>{item.emoji}</span>
+                  <div className="flex h-20 items-center justify-center drop-shadow">
+                    {item.category === "avatar" ? (
+                      <AnimatedAvatar avatarId={item.id} className="text-5xl" />
+                    ) : (
+                      <span className="text-5xl" aria-hidden>{item.emoji}</span>
+                    )}
                   </div>
                   <p className="mt-1 truncate font-display text-sm font-black text-white">{item.name}</p>
                   <p className="line-clamp-2 min-h-8 text-[10px] leading-tight text-white/70">{item.description}</p>
