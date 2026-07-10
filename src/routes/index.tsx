@@ -221,6 +221,8 @@ function WhyApp() {
 
   const [chain, setChain] = useState<{ question: string; answer: string; terminal?: boolean }[]>([]);
   const [chainLoading, setChainLoading] = useState(false);
+  const [chainDwellKey, setChainDwellKey] = useState<string | null>(null);
+  const chainRewardedRef = useRef<Set<string>>(new Set());
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -396,16 +398,24 @@ function WhyApp() {
   }, [fact?.id, revealed, user, grantPoints, recordDiscoveryServer]);
 
   // Same 3-second dwell reward for each "But… Why?" chain layer.
-  // The user must stay on the latest chain answer for ≥3s to earn a coin.
+  // Guarded by chainRewardedRef so a single dwell session can only award once
+  // per chain layer, even if the effect re-runs.
   useEffect(() => {
-    if (chain.length === 0) return;
+    if (chain.length === 0) { setChainDwellKey(null); return; }
     const last = chain[chain.length - 1];
-    if (!last?.answer) return;
+    if (!last?.answer) { setChainDwellKey(null); return; }
+    const key = `${fact?.id ?? "x"}::${chain.length}`;
+    if (chainRewardedRef.current.has(key)) { setChainDwellKey(null); return; }
+    setChainDwellKey(key);
     const t = window.setTimeout(() => {
+      if (chainRewardedRef.current.has(key)) return;
+      chainRewardedRef.current.add(key);
       grantPoints(3);
+      setChainDwellKey(null);
     }, 3000);
     return () => window.clearTimeout(t);
-  }, [chain.length, grantPoints]);
+  }, [chain.length, chain, fact?.id, grantPoints]);
+
 
 
 
@@ -462,8 +472,10 @@ function WhyApp() {
           return next;
         });
         setSavedChainId(null); // dirty
-        grantPoints(3);
+        // Coins deferred to the 3s dwell timer (see effect above) so users
+        // can't farm by mashing "But… Why?" — reward only on actual reading.
       }
+
     } catch (e) { console.warn(e); }
     finally { setChainLoading(false); }
   };
@@ -1016,14 +1028,23 @@ function WhyApp() {
                                   className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
                                 />
                                 <ChainStep index={0} question={asWhyQuestion(fact.question)} solved />
-                                {chain.map((layer, i) => (
-                                  <ChainStep
-                                    key={i}
-                                    index={i + 1}
-                                    question={layer.question}
-                                    answer={layer.answer}
-                                  />
-                                ))}
+                                {chain.map((layer, i) => {
+                                  const isLast = i === chain.length - 1;
+                                  const key = `${fact?.id ?? "x"}::${i + 1}`;
+                                  const rewarded = chainRewardedRef.current.has(key);
+                                  const counting = isLast && chainDwellKey === key;
+                                  return (
+                                    <ChainStep
+                                      key={i}
+                                      index={i + 1}
+                                      question={layer.question}
+                                      answer={layer.answer}
+                                      counting={counting}
+                                      rewarded={rewarded}
+                                    />
+                                  );
+                                })}
+
                                 {chainLoading && (
                                   <li className="relative">
                                     <span className="absolute -left-9 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/60">
@@ -1225,12 +1246,14 @@ function SignalBtn({
 }
 
 function ChainStep({
-  index, question, answer, solved,
+  index, question, answer, solved, counting, rewarded,
 }: {
   index: number;
   question: string;
   answer?: string;
   solved?: boolean;
+  counting?: boolean;
+  rewarded?: boolean;
 }) {
   return (
     <motion.li
@@ -1252,10 +1275,37 @@ function ChainStep({
         {answer && (
           <p className="mt-1.5 font-fun text-white/85 text-[clamp(0.95rem,2.3vw,1.15rem)]">{answer}</p>
         )}
+        {answer && (counting || rewarded) && (
+          <div className="mt-2.5" aria-live="polite">
+            {rewarded ? (
+              <div className="flex items-center gap-1.5 text-[11px] font-black text-amber-300">
+                <span aria-hidden>🪙</span>
+                <span>Coin earned!</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-white/60">
+                  <span>Keep reading…</span>
+                  <span>+1 🪙 in 3s</span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <motion.div
+                    key={`${index}-progress`}
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 3, ease: "linear" }}
+                    className="h-full rounded-full bg-gradient-to-r from-amber-300 via-fuchsia-400 to-violet-500"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </motion.li>
   );
 }
+
 
 function ShimmerBar({ className = "" }: { className?: string }) {
   return (
