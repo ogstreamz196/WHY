@@ -85,6 +85,18 @@ function medalClass(rank: number): string {
   return "bg-white/5 text-white/70";
 }
 
+// Shared tap / focus / hover behaviour for every clickable player surface
+// (podium columns, leaderboard rows, "Your rank" banner) so keyboard, mouse
+// and touch all get the same affordances.
+const INTERACTIVE_PLAYER =
+  "min-h-11 cursor-pointer transition-transform transition-shadow duration-200 " +
+  "hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] " +
+  "focus:outline-none focus-visible:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-fuchsia-300/70 focus-visible:ring-offset-2 " +
+  "focus-visible:ring-offset-transparent " +
+  "disabled:cursor-default disabled:opacity-100 disabled:hover:translate-y-0 disabled:hover:shadow-none";
+
+
 function ArenaPage() {
   const { user } = useCurrentUser();
   const fetchBoard = useServerFn(getLeaderboardPublic);
