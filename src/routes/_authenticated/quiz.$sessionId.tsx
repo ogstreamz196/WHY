@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, Loader2, Sparkles, Trophy, X } from "lucide-react";
+import { ArrowLeft, Check, Sparkles, Trophy, X } from "lucide-react";
 import { toast } from "sonner";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { Celebration } from "@/components/Celebration";
