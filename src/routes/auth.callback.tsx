@@ -14,7 +14,7 @@ export const Route = createFileRoute("/auth/callback")({
   component: AuthCallback,
 });
 
-function nextDestination(): string {
+function baseDestination(): string {
   try {
     const store = typeof window !== "undefined" ? window.sessionStorage : null;
     const hasGuest =
@@ -22,11 +22,32 @@ function nextDestination(): string {
       ((Number(store.getItem("why:points")) || 0) > 0 ||
         (Number(store.getItem("why:streak")) || 0) > 0 ||
         (JSON.parse(store.getItem("why:favorites") ?? "[]") as unknown[]).length > 0);
-    if (hasGuest) return `/import-guest?redirect=${encodeURIComponent("/")}`;
+    if (hasGuest) return `/import-guest?redirect=${encodeURIComponent("/?welcome=1")}`;
   } catch {
     // ignore
   }
   return "/";
+}
+
+async function destinationFor(userId: string, email: string | null | undefined): Promise<string> {
+  const base = baseDestination();
+  // Guest import flow already carries the welcome flag; don't double-decide.
+  if (base.startsWith("/import-guest")) return base;
+  try {
+    const { data } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", userId)
+      .maybeSingle();
+    const name = data?.display_name?.trim() ?? "";
+    const emailPrefix = (email ?? "").split("@")[0]?.trim() ?? "";
+    const hasRealNickname = name.length > 0 && name.toLowerCase() !== emailPrefix.toLowerCase();
+    return hasRealNickname ? "/" : "/?welcome=1";
+  } catch {
+    // If profile lookup fails, fall through to home — the overlay on `/` still
+    // opens for missing nicknames as a safety net.
+    return "/";
+  }
 }
 
 function AuthCallback() {
@@ -38,22 +59,23 @@ function AuthCallback() {
     let cancelled = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
 
-    const go = () => {
+    const go = async (userId: string, email: string | null | undefined) => {
       if (cancelled) return;
-      window.location.replace(nextDestination());
+      const dest = await destinationFor(userId, email);
+      if (cancelled) return;
+      window.location.replace(dest);
     };
 
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
       if (data.session) {
-        go();
+        void go(data.session.user.id, data.session.user.email);
         return;
       }
-      // Wait briefly for the OAuth response to hydrate the session.
       const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
         if (session || event === "SIGNED_IN") {
           sub.subscription.unsubscribe();
-          go();
+          if (session) void go(session.user.id, session.user.email);
         }
       });
       timeout = setTimeout(() => {
@@ -69,6 +91,7 @@ function AuthCallback() {
       if (timeout) clearTimeout(timeout);
     };
   }, [navigate]);
+
 
   return (
     <main className="relative flex min-h-[100dvh] items-center justify-center px-4">
