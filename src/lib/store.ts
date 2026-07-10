@@ -375,12 +375,22 @@ export const STORE_CATALOG: StoreItem[] = [
     gradient: "linear-gradient(135deg, #000000 0%, #003b00 50%, #00ff41 100%)" },
 
   // ===== VIP-exclusive avatars (never purchasable — unlocked with VIP) =====
-  { id: "avatar-vip-diamond", category: "avatar", name: "Diamond VIP", emoji: "💎", description: "VIP exclusive. Sparkles under every light.", cost: 0, vipOnly: true },
-  { id: "avatar-vip-phoenix", category: "avatar", name: "Ember Lord",  emoji: "🔥", description: "VIP exclusive. Wreathed in eternal flame.", cost: 0, vipOnly: true },
-  { id: "avatar-vip-crown",   category: "avatar", name: "Crown Bearer",emoji: "👑", description: "VIP exclusive. Royalty of curiosity.",     cost: 0, vipOnly: true },
-  { id: "avatar-vip-star",    category: "avatar", name: "Supernova",   emoji: "🌟", description: "VIP exclusive. Outshines the galaxy.",     cost: 0, vipOnly: true },
-  { id: "avatar-vip-comet",   category: "avatar", name: "Comet Rider", emoji: "☄️", description: "VIP exclusive. Rides the tail of wonder.",  cost: 0, vipOnly: true },
-  { id: "avatar-vip-medal",   category: "avatar", name: "Gold Medal",  emoji: "🥇", description: "VIP exclusive. Champion of curiosity.",    cost: 0, vipOnly: true },
+  { id: "avatar-vip-diamond", category: "avatar", name: "Diamond VIP", emoji: "💎", description: "VIP exclusive. Sparkles under every light.", cost: 0, vipOnly: true, animation: "spin-sparkle" },
+  { id: "avatar-vip-phoenix", category: "avatar", name: "Ember Lord",  emoji: "🔥", description: "VIP exclusive. Wreathed in eternal flame.", cost: 0, vipOnly: true, animation: "flame-swirl" },
+  { id: "avatar-vip-crown",   category: "avatar", name: "Crown Bearer",emoji: "👑", description: "VIP exclusive. Royalty of curiosity.",     cost: 0, vipOnly: true, animation: "orbit-stars" },
+  { id: "avatar-vip-star",    category: "avatar", name: "Supernova",   emoji: "🌟", description: "VIP exclusive. Outshines the galaxy.",     cost: 0, vipOnly: true, animation: "rainbow-halo" },
+  { id: "avatar-vip-comet",   category: "avatar", name: "Comet Rider", emoji: "☄️", description: "VIP exclusive. Rides the tail of wonder.",  cost: 0, vipOnly: true, animation: "comet-trail" },
+  { id: "avatar-vip-medal",   category: "avatar", name: "Gold Medal",  emoji: "🥇", description: "VIP exclusive. Champion of curiosity.",    cost: 0, vipOnly: true, animation: "bounce-glow" },
+
+  // ===== VIP-exclusive ANIMATED avatars — moving characters with FX =====
+  { id: "avatar-vip-galaxy",  category: "avatar", name: "Galaxy Wisp", emoji: "🌌", description: "VIP exclusive. A drifting galaxy with orbiting stars.", cost: 0, vipOnly: true, animation: "orbit-stars" },
+  { id: "avatar-vip-unicorn", category: "avatar", name: "Sky Unicorn", emoji: "🦄", description: "VIP exclusive. Prances through a rainbow halo.",       cost: 0, vipOnly: true, animation: "rainbow-halo" },
+  { id: "avatar-vip-dragon",  category: "avatar", name: "Storm Dragon",emoji: "🐉", description: "VIP exclusive. Crackles with electric energy.",         cost: 0, vipOnly: true, animation: "lightning" },
+  { id: "avatar-vip-heart",   category: "avatar", name: "Cupid Bear",  emoji: "🧸", description: "VIP exclusive. Bursts with love particles.",            cost: 0, vipOnly: true, animation: "heart-burst" },
+  { id: "avatar-vip-ninja",   category: "avatar", name: "Blade Ninja", emoji: "🥷", description: "VIP exclusive. Dashes with a shadow trail.",            cost: 0, vipOnly: true, animation: "comet-trail" },
+  { id: "avatar-vip-robot",   category: "avatar", name: "Mecha Prime", emoji: "🤖", description: "VIP exclusive. Bounces with a plasma glow.",            cost: 0, vipOnly: true, animation: "bounce-glow" },
+  { id: "avatar-vip-alien",   category: "avatar", name: "Cosmic Alien",emoji: "👽", description: "VIP exclusive. Wobbles between dimensions.",            cost: 0, vipOnly: true, animation: "wobble" },
+  { id: "avatar-vip-panda",   category: "avatar", name: "Mystic Panda",emoji: "🐼", description: "VIP exclusive. Circled by wisdom sparkles.",            cost: 0, vipOnly: true, animation: "spin-sparkle" },
 
   // ===== VIP-exclusive themes =====
   { id: "theme-vip-obsidian", category: "theme", name: "Obsidian VIP", emoji: "🖤", description: "VIP exclusive. Molten black with amber veins.", cost: 0, vipOnly: true,
