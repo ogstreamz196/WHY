@@ -36,15 +36,11 @@ function insertDoes(afterWhy: string): string {
   const firstBare = tokens[0].toLowerCase().replace(/[^a-z]/g, "");
   if (AUX_OR_WH.has(firstBare) || BLOCKERS.has(firstBare)) return afterWhy;
 
-  // Pronoun subject → use "do"/"does" with the base verb, don't singularize.
+  // Pronoun subjects tend to introduce clauses ("we ask why ...") — leave alone.
   if (PRONOUNS_PLURAL.has(firstBare) || PRONOUNS_SINGULAR.has(firstBare)) {
-    const t1 = tokens[1].toLowerCase().replace(/[^a-z]/g, "");
-    if (!t1 || AUX_OR_WH.has(t1) || BLOCKERS.has(t1)) return afterWhy;
-    // Only if second token looks like a bare verb (no trailing -s / -ing / -ed)
-    if (/(s|ing|ed)$/i.test(t1) && !/ss$/i.test(t1)) return afterWhy;
-    const aux = PRONOUNS_SINGULAR.has(firstBare) ? "does" : "do";
-    return [aux, tokens[0], ...tokens.slice(1)].join(" ");
+    return afterWhy;
   }
+
 
   // Scan a short subject window for a present-tense -s verb.
   const maxScan = Math.min(tokens.length, 3);
