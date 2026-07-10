@@ -263,7 +263,7 @@ function QuizPlayPage() {
             <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
               {emojiFor(current.category)} {current.category ?? "curiosity"}
             </p>
-            <h2 className="mt-2 font-display text-xl font-black leading-tight text-white">
+            <h2 className="mt-2 font-fun text-[clamp(1.25rem,3.4vw,1.75rem)] font-bold leading-snug text-white">
               {asWhyQuestion(current.question)}
             </h2>
 

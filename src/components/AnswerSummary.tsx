@@ -130,7 +130,7 @@ export function AnswerSummary({
           <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
             Here's why
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-white/95">{explanation}</p>
+          <p className="mt-1 font-fun text-[clamp(1rem,2.4vw,1.2rem)] font-medium leading-snug text-white">{explanation}</p>
         </motion.div>
       )}
 
@@ -139,7 +139,7 @@ export function AnswerSummary({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="relative mt-2 text-xs italic text-yellow-200/90"
+          className="relative mt-2 font-fun text-[clamp(0.9rem,2.2vw,1.05rem)] italic text-yellow-100"
         >
           ⭐ {funFact}
         </motion.p>

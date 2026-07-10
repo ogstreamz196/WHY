@@ -207,13 +207,13 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       ⚡ Quick fact
                     </p>
-                    <h3 className="mt-1 font-display text-lg font-black leading-tight text-white">
+                    <h3 className="mt-1 font-fun text-[clamp(1.15rem,3vw,1.5rem)] font-bold leading-snug text-white">
                       {asWhyQuestion(fact.question)}{" "}
                       <span aria-hidden>{emojiFor(fact.category)}</span>
                     </h3>
 
                     {fact.fun_fact && (
-                      <p className="mt-2 text-xs italic text-yellow-200/90">
+                      <p className="mt-2 font-fun text-[clamp(0.95rem,2.4vw,1.15rem)] italic text-yellow-100">
                         ⭐ {fact.fun_fact}
                       </p>
                     )}
@@ -235,7 +235,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       🤔 Pick the real reason
                     </p>
-                    <h3 className="mt-1 font-display text-base font-black leading-tight text-white">
+                    <h3 className="mt-1 font-fun text-[clamp(1.1rem,2.9vw,1.4rem)] font-bold leading-snug text-white">
                       {asWhyQuestion(fact.question)}
                     </h3>
 
@@ -284,7 +284,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                             }}
                             whileHover={picked === null ? { scale: 1.02, y: -2 } : undefined}
                             whileTap={picked === null ? { scale: 0.97 } : undefined}
-                            className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left text-base font-bold leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
+                            className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left font-fun text-[clamp(1rem,2.6vw,1.2rem)] font-semibold leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                               showCorrect
                                 ? "border-emerald-400 bg-gradient-to-br from-emerald-400/25 to-emerald-500/10 text-emerald-50 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
                                 : showWrong
