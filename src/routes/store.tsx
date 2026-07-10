@@ -12,7 +12,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyStats, spendCoins } from "@/lib/account.functions";
+import { getMyStats, spendCoins, updateMyProfile } from "@/lib/account.functions";
 import {
   COIN_PACKS,
   STORE_CATALOG,
