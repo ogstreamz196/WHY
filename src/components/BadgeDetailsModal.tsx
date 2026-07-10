@@ -312,14 +312,9 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
                   <motion.span
                     aria-hidden
                     className="pointer-events-none absolute inset-0 mix-blend-overlay"
-                    style={{
-                      background: useTransform(
-                        [glareX, glareY],
-                        ([x, y]) =>
-                          `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.55), transparent 55%)`,
-                      ),
-                    }}
+                    style={{ background: glareBg }}
                   />
+
                 )}
                 {!badge.unlocked && (
                   <span className="absolute -bottom-1 -right-1 rounded-full bg-black/70 p-1.5">
