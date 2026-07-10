@@ -104,6 +104,9 @@ import { Celebration } from "@/components/Celebration";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
+import { GuestSignUpPopup } from "@/components/GuestSignUpPopup";
+import { getGuestPromptSeconds } from "@/lib/boss.functions";
+import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth";
 import { useThrottledFlag } from "@/lib/useThrottledFlag";
 import { levelFor } from "@/lib/levels";
@@ -189,6 +192,15 @@ function WhyApp() {
   const [bonusClaiming, setBonusClaiming] = useState(false);
   const [welcome, setWelcome] = useState(false);
   const [levelUp, setLevelUp] = useState<null | { level: number; title: string }>(null);
+  const [guestPopup, setGuestPopup] = useState(false);
+  const guestFactCount = useRef(0);
+  const guestPromptCfg = useQuery({
+    queryKey: ["guest-prompt-seconds"],
+    queryFn: () => getGuestPromptSeconds(),
+    staleTime: 5 * 60_000,
+    enabled: !user,
+  });
+  const guestPromptSeconds = guestPromptCfg.data?.seconds ?? 5;
   const missionMarkerRef = useRef<null | ((t: MissionTask) => void)>(null);
   const markMissionServer = useServerFn(markMissionTask);
   const markMission = useCallback((t: MissionTask) => {
@@ -369,6 +381,16 @@ function WhyApp() {
     }, 4000);
     return () => window.clearTimeout(t);
   }, [fact?.id, user, grantPoints, recordDiscoveryServer]);
+
+  // Guest-only nudge: every 2 facts, show a friendly sign-up popup.
+  useEffect(() => {
+    if (!fact?.id) return;
+    if (user) return;
+    guestFactCount.current += 1;
+    if (guestFactCount.current >= 2 && guestFactCount.current % 2 === 0) {
+      setGuestPopup(true);
+    }
+  }, [fact?.id, user]);
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
   useEffect(() => {
@@ -1108,6 +1130,11 @@ function WhyApp() {
         level={levelUp?.level ?? 1}
         title={levelUp?.title ?? ""}
         onClose={() => setLevelUp(null)}
+      />
+      <GuestSignUpPopup
+        open={guestPopup && !user}
+        seconds={guestPromptSeconds}
+        onClose={() => setGuestPopup(false)}
       />
     </main>
   );

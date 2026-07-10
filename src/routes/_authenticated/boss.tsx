@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Crown, Search, Save, Shield, Coins, UserCog, ScrollText } from "lucide-react";
 import {
@@ -12,6 +12,8 @@ import {
   bossGetPrivileges,
   bossUpdatePrivileges,
   bossListAudit,
+  getGuestPromptSeconds,
+  bossSetGuestPromptSeconds,
   type Privileges,
 } from "@/lib/boss.functions";
 
@@ -87,6 +89,9 @@ function BossDashboard() {
   return (
     <Shell>
       <PrivilegesEditor initial={privs.data ?? null} onSave={(v) => privMut.mutate(v)} saving={privMut.isPending} />
+
+      <GuestPromptEditor />
+
 
       <section className="mt-6">
         <div className="mb-3 flex items-center gap-2">
@@ -654,4 +659,56 @@ function FactCodeDecoder() {
   );
 }
 
+
+function GuestPromptEditor() {
+  const qc = useQueryClient();
+  const get = useServerFn(getGuestPromptSeconds);
+  const set = useServerFn(bossSetGuestPromptSeconds);
+  const cur = useQuery({ queryKey: ["boss:guest-prompt"], queryFn: () => get() });
+  const [seconds, setSeconds] = useState<number>(5);
+  const loaded = cur.data?.seconds;
+  useEffect(() => {
+    if (typeof loaded === "number") setSeconds(loaded);
+  }, [loaded]);
+  const mut = useMutation({
+    mutationFn: (v: number) => set({ data: { seconds: v } }),
+    onSuccess: () => {
+      toast.success("Guest prompt timer saved");
+      qc.invalidateQueries({ queryKey: ["boss:guest-prompt"] });
+      qc.invalidateQueries({ queryKey: ["guest-prompt-seconds"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Failed"),
+  });
+  return (
+    <section className="mt-6">
+      <div className="mb-3 flex items-center gap-2">
+        <Shield className="h-4 w-4 text-fuchsia-300" />
+        <h2 className="text-lg font-black text-white">Guest sign-up popup</h2>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        <label className="flex items-center gap-2 text-sm text-white/80">
+          Countdown seconds
+          <input
+            type="number"
+            min={0}
+            max={60}
+            value={seconds}
+            onChange={(e) => setSeconds(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
+            className="w-20 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-sm text-white outline-none"
+          />
+        </label>
+        <button
+          onClick={() => mut.mutate(seconds)}
+          disabled={mut.isPending}
+          className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-100 disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" /> {mut.isPending ? "Saving…" : "Save"}
+        </button>
+        <p className="text-xs text-white/50">
+          Guests see the popup every 2 facts. The close button dodges the cursor for this many seconds.
+        </p>
+      </div>
+    </section>
+  );
+}
 
