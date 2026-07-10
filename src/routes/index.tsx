@@ -221,6 +221,8 @@ function WhyApp() {
 
   const [chain, setChain] = useState<{ question: string; answer: string; terminal?: boolean }[]>([]);
   const [chainLoading, setChainLoading] = useState(false);
+  const [chainDwellKey, setChainDwellKey] = useState<string | null>(null);
+  const chainRewardedRef = useRef<Set<string>>(new Set());
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
