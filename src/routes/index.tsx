@@ -338,12 +338,8 @@ function WhyApp() {
         showFact(next);
         if (next?.id) markSeen(next.id);
         bumpSeen();
-        grantPoints(1);
-        if (user && next?.id) {
-          recordDiscoveryServer({ data: { fact_id: next.id } })
-            .then((r) => notifyAchievements(r?.newlyUnlocked))
-            .catch((e) => console.warn(e));
-        }
+        // Coin + discovery credit is deferred to a 4s dwell timer (see effect
+        // below) so users can't farm by mashing "But… Why?".
       } catch (err) {
         console.error(err);
         const cached = getCachedRandomFact(currentId);
@@ -353,7 +349,7 @@ function WhyApp() {
         setLoading(false);
       }
     },
-    [category, generateNew, getRandom, showFact, grantPoints, user, recordDiscoveryServer],
+    [category, generateNew, getRandom, showFact],
   );
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
