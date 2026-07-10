@@ -275,7 +275,10 @@ function QuizPlayPage() {
                 <button
                   ref={revealBtnRef}
                   type="button"
-                  onClick={() => setRevealed(true)}
+                  onClick={() => {
+                    feedback("reveal");
+                    setRevealed(true);
+                  }}
                   aria-describedby={`reveal-hint-${idx}`}
                   aria-label={`Reveal answers for question ${idx + 1} and start the timer`}
                   className="w-full rounded-full px-4 py-3 text-sm font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
