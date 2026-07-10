@@ -515,10 +515,63 @@ function ProfilePage() {
                 </button>
               </div>
               {!collapsed.achievements && (
-                <div id="achievements-body" className="grid grid-cols-3 gap-3">
-                  {(achievements.data ?? []).map((a) => (
-                    <AchievementTile key={a.id} a={a} />
-                  ))}
+                <div id="achievements-body" className="space-y-6">
+                  <LevelProgressWidget xp={localPoints} milestones={widgetMilestones} />
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {(achievements.data ?? []).map((a) => (
+                      <AchievementTile key={a.id} a={a} />
+                    ))}
+                  </div>
+
+                  {localBadges.length > 0 && (
+                    <div>
+                      <p className="mb-3 text-xs text-white/60">
+                        Explorer badges · unlocked{" "}
+                        <span className="font-black text-white">{localUnlocked}</span> of{" "}
+                        {localBadges.length}
+                        <span className="ml-2 text-white/40">· tap for details</span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {localBadges.map((b, i) => (
+                          <motion.button
+                            type="button"
+                            onClick={() => setSelectedBadge(b)}
+                            key={b.id}
+                            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            whileHover={{ scale: b.unlocked ? 1.05 : 1.02 }}
+                            whileTap={{ scale: 0.96 }}
+                            transition={{ delay: Math.min(i, 12) * 0.03 }}
+                            className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition ${
+                              b.unlocked ? "" : "opacity-50 grayscale hover:opacity-80"
+                            }`}
+                          >
+                            {b.unlocked && (
+                              <motion.span
+                                aria-hidden
+                                className="absolute inset-0 rounded-3xl"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 0.4, 0] }}
+                                transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.15 }}
+                                style={{ boxShadow: "0 0 30px 4px rgba(168,85,247,0.35) inset" }}
+                              />
+                            )}
+                            <div
+                              className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-lg"
+                              style={{ background: b.unlocked ? "var(--gradient-primary)" : "oklch(0.25 0.02 285)" }}
+                            >
+                              {b.emoji}
+                            </div>
+                            <p className="text-sm font-black text-white">{b.label}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                              {b.unlocked ? "Unlocked" : "Locked"}
+                            </p>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
