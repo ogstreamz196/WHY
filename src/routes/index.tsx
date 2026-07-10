@@ -366,22 +366,23 @@ function WhyApp() {
     [category, generateNew, getRandom, showFact],
   );
 
-  // Dwell reward: only award the coin (and record the discovery server-side)
-  // after the user stays on the fact for ≥4 seconds. Switching facts or
-  // unmounting before then cancels the reward.
+  // Dwell reward: only award coins (and record the discovery server-side)
+  // after the user reveals the answer AND stays on it for ≥3 seconds.
+  // Switching facts, collapsing, or unmounting before then cancels the reward.
   useEffect(() => {
     const id = fact?.id;
-    if (!id) return;
+    if (!id || !revealed) return;
     const t = window.setTimeout(() => {
-      grantPoints(1);
+      grantPoints(3);
       if (user) {
         recordDiscoveryServer({ data: { fact_id: id } })
           .then((r) => notifyAchievements(r?.newlyUnlocked))
           .catch((e) => console.warn(e));
       }
-    }, 4000);
+    }, 3000);
     return () => window.clearTimeout(t);
-  }, [fact?.id, user, grantPoints, recordDiscoveryServer]);
+  }, [fact?.id, revealed, user, grantPoints, recordDiscoveryServer]);
+
 
   // Guest-only nudge: every 2 facts, show a friendly sign-up popup.
   useEffect(() => {
