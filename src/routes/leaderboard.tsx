@@ -179,8 +179,8 @@ function ArenaPage() {
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
-          <Link to="/quiz" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90">
-            <ArrowLeft className="h-5 w-5" />
+          <Link to="/quiz" aria-label="Back to Curiosity Challenge" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90">
+            <ArrowLeft aria-hidden="true" className="h-5 w-5" />
           </Link>
           <div className="flex-1">
             <h1 className="font-display text-2xl font-black text-white">Curiosity Arena</h1>
