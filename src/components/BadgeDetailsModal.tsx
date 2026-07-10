@@ -247,21 +247,23 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
             transition={{ type: "spring", stiffness: 280, damping: 24 }}
             className="glass-strong relative w-full max-w-sm overflow-hidden rounded-4xl border border-white/10 p-6 text-center text-white outline-none focus-visible:ring-2 focus-visible:ring-white/30"
           >
-            {/* Animated aurora backdrop */}
-            <motion.div
-              aria-hidden
-              className="pointer-events-none absolute -inset-24 opacity-40"
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-              style={{
-                background:
-                  "conic-gradient(from 0deg, transparent, rgba(168,85,247,0.35), transparent, rgba(236,72,153,0.35), transparent, rgba(56,189,248,0.35), transparent)",
-                filter: "blur(40px)",
-              }}
-            />
+            {/* Animated aurora backdrop — disabled on low-power devices / hidden tabs */}
+            {heavyFx && (
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute -inset-24 opacity-40"
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                style={{
+                  background:
+                    "conic-gradient(from 0deg, transparent, rgba(168,85,247,0.35), transparent, rgba(236,72,153,0.35), transparent, rgba(56,189,248,0.35), transparent)",
+                  filter: "blur(40px)",
+                }}
+              />
+            )}
 
-            {/* Confetti burst on unlock */}
-            {badge.unlocked && (
+            {/* Confetti burst on unlock — skipped when low-power/hidden */}
+            {badge.unlocked && heavyFx && (
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
                 {Array.from({ length: 14 }).map((_, i) => {
                   const angle = (i / 14) * Math.PI * 2;
