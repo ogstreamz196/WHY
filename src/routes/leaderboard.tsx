@@ -13,6 +13,7 @@ import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
 import { avatarEmojiFor } from "@/lib/store";
 import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
+import { ChampionCrown } from "@/components/ChampionCrown";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
