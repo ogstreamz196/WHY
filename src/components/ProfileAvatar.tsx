@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { avatarEmojiFor } from "@/lib/store";
+import { AnimatedAvatar } from "@/components/AnimatedAvatar";
 
 type Props = {
   avatarId: string | null | undefined;
