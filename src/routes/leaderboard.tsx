@@ -357,8 +357,14 @@ function ArenaPage() {
                           </span>
                           <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
                         </div>
-                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
-                          {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xl">
+                          {r.avatar_id ? (
+                            <span aria-hidden>{avatarEmojiFor(r.avatar_id)}</span>
+                          ) : (
+                            <span className="text-sm font-black text-white/80">
+                              {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div className="relative min-w-0 flex-1">
                           <p className="truncate text-sm font-black text-white">
