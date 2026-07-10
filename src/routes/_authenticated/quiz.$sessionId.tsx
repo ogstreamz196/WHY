@@ -125,6 +125,7 @@ function QuizPlayPage() {
     if (!current || answering || result) return;
     setAnswering(true);
     setPicked(pickIndex);
+    setScoreBefore(totalPoints);
     try {
       const msTaken = Date.now() - startedAtRef.current;
       const res = await submit({
@@ -135,21 +136,36 @@ function QuizPlayPage() {
           ms_taken: msTaken,
         },
       });
-      // Force wrong when timed out even if index 0 happens to match
-      if (pickIndex < 0) {
-        setResult({ ...res, correct: false, points_awarded: 0 });
-      } else {
-        setResult(res);
-      }
-      setTotalPoints((p) => p + (pickIndex < 0 ? 0 : res.points_awarded));
-      if (pickIndex >= 0 && res.correct && typeof navigator !== "undefined" && "vibrate" in navigator) {
-        navigator.vibrate?.(40);
-      }
+      const timedOut = pickIndex < 0;
+      const effective = timedOut ? { ...res, correct: false, points_awarded: 0 } : res;
+      setResult(effective);
+      if (!timedOut) setTotalPoints((p) => p + res.points_awarded);
+      feedback(effective.correct ? "correct" : "wrong");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Answer failed");
     } finally {
       setAnswering(false);
     }
+  }
+
+  async function next() {
+    if (!quiz) return;
+    if (idx + 1 >= quiz.questions.length) {
+      try {
+        const f = await finish({ data: { session_id: sessionId } });
+        setFinalResult(f);
+        sessionStorage.removeItem(`quiz:${sessionId}`);
+        setCelebrate(true);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Could not finish quiz");
+      }
+      return;
+    }
+    setIdx((i) => i + 1);
+    setPicked(null);
+    setResult(null);
+    setRevealed(false);
+    setFocusIdx(0);
   }
 
   async function next() {
