@@ -5,6 +5,7 @@ import "@fontsource/hind/600.css";
 import "@fontsource/hind/700.css";
 import "@fontsource-variable/fraunces/index.css";
 import "@fontsource-variable/plus-jakarta-sans/index.css";
+import "@fontsource-variable/fredoka/index.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {

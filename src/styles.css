@@ -12,6 +12,7 @@
 @theme inline {
   --font-display: "Archivo Black", "Fraunces", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Hind", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-fun: "Fredoka Variable", "Fredoka", "Baloo 2", ui-rounded, "Comic Sans MS", system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 3px);

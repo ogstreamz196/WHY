@@ -785,7 +785,7 @@ function WhyApp() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.25 }}
                   >
-                    <h1 className="animate-fade-up stagger-1 font-display font-black leading-[1.08] tracking-tight text-white text-[clamp(1.75rem,6vw,3.25rem)] [text-wrap:balance] break-words hyphens-auto">
+                    <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(2rem,7vw,4rem)] [text-wrap:balance] break-words hyphens-auto">
                       {asWhyQuestion(fact.question)}
                     </h1>
 
@@ -880,7 +880,7 @@ function WhyApp() {
                             <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
                               ✨ Answer
                             </p>
-                            <p className="mt-2 text-lg leading-relaxed text-white sm:text-xl">
+                            <p className="mt-2 font-fun font-medium leading-snug text-white text-[clamp(1.35rem,3.6vw,1.9rem)]">
                               <TalkingWords text={fact.answer} />
                             </p>
                           </div>
@@ -899,7 +899,7 @@ function WhyApp() {
                               <p className="text-[10px] font-black uppercase tracking-widest text-yellow-300">
                                 ⭐ Fun fact
                               </p>
-                              <p className="mt-1.5 text-sm leading-relaxed text-white/90">
+                              <p className="mt-1.5 font-fun font-medium leading-snug text-white/95 text-[clamp(1.1rem,2.8vw,1.4rem)]">
                                 {fact.fun_fact}
                               </p>
                             </motion.div>
