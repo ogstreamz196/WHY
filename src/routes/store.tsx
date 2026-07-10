@@ -37,13 +37,13 @@ export const Route = createFileRoute("/store")({
   component: StorePage,
 });
 
-type Tab = StoreCategory | "coins" | "vip";
+type Tab = StoreCategory | "vip";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: "vip",    label: "VIP",     emoji: "👑" },
-  { id: "avatar", label: "Avatars", emoji: "🧑‍🚀" },
-  { id: "theme",  label: "Themes",  emoji: "🎨" },
-  { id: "coins",  label: "Coins",   emoji: "💰" },
+  { id: "vip",    label: "VIP & Coins", emoji: "👑" },
+  { id: "avatar", label: "Avatars",     emoji: "🧑‍🚀" },
+  { id: "theme",  label: "Themes",      emoji: "🎨" },
 ];
+
 
 function StorePage() {
   const [tab, setTab] = useState<Tab>("vip");
