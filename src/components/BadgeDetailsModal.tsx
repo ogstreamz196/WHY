@@ -122,6 +122,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const initialFocusRef = useRef<HTMLButtonElement | null>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const { heavyFx } = usePerfMode();
 
   // ---- Focus management: save + restore, initial focus, Esc + Tab trap ----
   useEffect(() => {
