@@ -424,6 +424,31 @@ function WhyApp() {
   // Guest auto sign-in: instead of nagging with a prompt, kick off OAuth
   // automatically (Apple on Apple devices, Google otherwise). We only try
   // once per browser session and re-attempt every few minutes if dismissed.
+  const autoSignInAttempted = useRef(false);
+  const triggerAutoSignIn = useCallback(async () => {
+    if (autoSignInAttempted.current) return;
+    autoSignInAttempted.current = true;
+    try {
+      const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+      const platform =
+        typeof navigator !== "undefined"
+          ? (navigator as Navigator & { platform?: string }).platform || ""
+          : "";
+      const iOS = /iPad|iPhone|iPod/.test(ua) || /iPad|iPhone|iPod/.test(platform);
+      const iPadOS = platform === "MacIntel" && (navigator?.maxTouchPoints ?? 0) > 1;
+      const mac = /Macintosh|Mac OS X/.test(ua);
+      const provider: "apple" | "google" = iOS || iPadOS || mac ? "apple" : "google";
+      await lovable.auth.signInWithOAuth(provider, {
+        redirect_uri: `${window.location.origin}/auth/callback`,
+      });
+    } catch {
+      // Silent — user can still sign in via the top bar.
+    }
+  }, []);
+
+
+  // automatically (Apple on Apple devices, Google otherwise). We only try
+  // once per browser session and re-attempt every few minutes if dismissed.
   useEffect(() => {
     if (user) { setGuestPopup(false); return; }
     if (!fact?.id) return;
