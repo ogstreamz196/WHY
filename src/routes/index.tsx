@@ -799,17 +799,27 @@ function WhyApp() {
                   >
                     <FactSkeleton />
                   </motion.div>
-                ) : error && !fact ? (
-                  <motion.p
-                    key="err"
+                ) : !fact ? (
+                  <motion.div
+                    key="empty"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="text-center text-lg text-rose-300"
+                    className="text-center space-y-4"
                   >
-                    {error}
-                  </motion.p>
+                    <p className="text-lg text-white/80">
+                      {error ?? "No fact yet — let's find one for you."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void loadNext(undefined, { forceGenerate: false })}
+                      className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-white hover:bg-white/20 transition"
+                    >
+                      Try again
+                    </button>
+                  </motion.div>
+
                 ) : fact ? (
                   <motion.div
                     key={`fact-${fact.id}`}
