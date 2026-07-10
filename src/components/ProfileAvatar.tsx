@@ -22,7 +22,9 @@ export function ProfileAvatar({
   className = "aspect-square w-full",
   emojiClassName = "text-[clamp(4rem,18vw,9rem)]",
 }: Props) {
-  const emoji = avatarEmojiFor(avatarId);
+  const status = "";
+  const _ = status; // placeholder — replaced below
+
   const status = (statusMessage ?? "").trim();
 
   return (
