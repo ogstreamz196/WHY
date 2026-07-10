@@ -271,7 +271,7 @@ function ArenaPage() {
                 {percentileLabel}
               </motion.span>
             )}
-          </motion.div>
+          </motion.button>
         )}
 
         {/* Rows */}
