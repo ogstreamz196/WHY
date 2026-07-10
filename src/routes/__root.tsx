@@ -21,6 +21,7 @@ import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestone
 import { TopSignInBar } from "@/components/TopSignInBar";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { useBossTheme } from "@/lib/useBossTheme";
+import { useEquippedTheme } from "@/lib/useEquippedTheme";
 
 
 import appCss from "../styles.css?url";
