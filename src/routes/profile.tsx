@@ -110,12 +110,14 @@ function ProfilePage() {
   const [localPoints, setLocalPoints] = useState(0);
   const [localStreak, setLocalStreak] = useState(0);
   const [localSeen, setLocalSeen] = useState(0);
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  const [localHydrated, setLocalHydrated] = useState(false);
+  const [selectedBadge, setSelectedBadge] = useState<BadgeDetail | null>(null);
   useEffect(() => {
     setLocalBadges(getBadges());
     setLocalPoints(getPoints());
     setLocalStreak(getStreak());
     setLocalSeen(getSeen());
+    setLocalHydrated(true);
   }, []);
   const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(localBadges);
   const widgetMilestones = useMemo(() => {
@@ -128,6 +130,14 @@ function ProfilePage() {
     });
   }, [localSeen, localStreak, localPoints]);
   const localUnlocked = localBadges.filter((b) => b.unlocked).length;
+
+  const localProgressFor = (id: string): { current: number; target: number } | null => {
+    const t = LOCAL_BADGE_TARGETS[id];
+    if (!t) return null;
+    const current =
+      t.stat === "seen" ? localSeen : t.stat === "streak" ? localStreak : localPoints;
+    return { current, target: t.target };
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
