@@ -146,8 +146,12 @@ export const Route = createFileRoute("/")({
       { property: "og:type", content: "website" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    welcome: s.welcome === "1" || s.welcome === 1 || s.welcome === true ? true : undefined,
+  }),
   component: WhyApp,
 });
+
 
 type Reaction = "like" | "love" | null;
 
