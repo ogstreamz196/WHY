@@ -103,7 +103,8 @@ export const setAdultMode = createServerFn({ method: "POST" })
 export const revokeAdultVerification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdultStatus> => {
-    const { error } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("profiles")
       .update({ adult_verified_at: null, adult_provider: null })
       .eq("id", context.userId);
