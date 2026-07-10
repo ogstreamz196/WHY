@@ -847,3 +847,37 @@ h3 { font-size: clamp(1.1rem,  0.95rem + 0.8vw, 1.5rem); line-height: 1.15; }
 
 
 
+
+/* ============================================
+   BOSS EDIT MODE — danger red theme
+   Applied to <body> when the Boss toggles the
+   floating "Edit page" widget on.
+   ============================================ */
+body.edit-mode-danger {
+  --background: oklch(0.16 0.15 25);
+  --foreground: oklch(0.98 0.02 20);
+  --card: oklch(0.20 0.18 25);
+  --primary: oklch(0.62 0.24 25);
+  --accent: oklch(0.55 0.24 20);
+  --ring: oklch(0.70 0.24 25);
+  --gradient-primary: linear-gradient(135deg, #ef4444 0%, #b91c1c 55%, #7f1d1d 100%);
+  background-color: oklch(0.16 0.15 25);
+  transition: background-color 300ms ease;
+}
+body.edit-mode-danger::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  box-shadow: inset 0 0 0 3px rgba(239, 68, 68, 0.75),
+              inset 0 0 60px rgba(239, 68, 68, 0.25);
+  animation: edit-mode-pulse 2s ease-in-out infinite;
+}
+@keyframes edit-mode-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.edit-mode-danger::before { animation: none; }
+}
