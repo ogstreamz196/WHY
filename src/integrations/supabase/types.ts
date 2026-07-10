@@ -347,6 +347,7 @@ export type Database = {
           fun_fact: string | null
           id: string
           is_adult: boolean
+          original_question: string | null
           question: string
           sheet_id: string | null
           source: string
@@ -361,6 +362,7 @@ export type Database = {
           fun_fact?: string | null
           id?: string
           is_adult?: boolean
+          original_question?: string | null
           question: string
           sheet_id?: string | null
           source?: string
@@ -375,6 +377,7 @@ export type Database = {
           fun_fact?: string | null
           id?: string
           is_adult?: boolean
+          original_question?: string | null
           question?: string
           sheet_id?: string | null
           source?: string

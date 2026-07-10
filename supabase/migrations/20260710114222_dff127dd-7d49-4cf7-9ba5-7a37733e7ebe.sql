@@ -1,0 +1,1 @@
+ALTER TABLE public.facts ADD COLUMN IF NOT EXISTS original_question TEXT;
