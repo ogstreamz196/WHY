@@ -380,8 +380,10 @@ export const STORE_CATALOG: StoreItem[] = [
     gradient: "linear-gradient(135deg, #1e3c72 0%, #a044ff 50%, #f7b733 100%)" },
 ];
 
-// Free items every user owns automatically.
-const FREE_ITEMS = STORE_CATALOG.filter((i) => i.cost === 0).map((i) => i.id);
+// Free items every user owns automatically (excluding VIP-only unlocks).
+const FREE_ITEMS = STORE_CATALOG.filter((i) => i.cost === 0 && !i.vipOnly).map((i) => i.id);
+// VIP-exclusive items granted while the user has an active subscription.
+const VIP_ITEMS = STORE_CATALOG.filter((i) => i.vipOnly).map((i) => i.id);
 
 /** Resolve an emoji for an avatar_id, with a friendly fallback. */
 export const avatarEmojiFor = (avatarId: string | null | undefined): string => {
@@ -390,11 +392,12 @@ export const avatarEmojiFor = (avatarId: string | null | undefined): string => {
   return item?.emoji ?? "🌱";
 };
 
-export const getInventory = (): string[] => {
+export const getInventory = (isVip = false): string[] => {
   const owned = read<string[]>(KEY_INVENTORY, []);
-  return Array.from(new Set([...FREE_ITEMS, ...owned]));
+  const extras = isVip ? VIP_ITEMS : [];
+  return Array.from(new Set([...FREE_ITEMS, ...extras, ...owned]));
 };
-export const ownsItem = (id: string) => getInventory().includes(id);
+export const ownsItem = (id: string, isVip = false) => getInventory(isVip).includes(id);
 
 export type Equipped = { avatar?: string; theme?: string };
 const defaultEquipped: Equipped = { avatar: "avatar-sprout", theme: "theme-cosmos" };
