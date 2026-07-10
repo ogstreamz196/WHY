@@ -179,7 +179,7 @@ function StorePage() {
     flash(`${item.emoji} equipped`);
   };
 
-  const items = STORE_CATALOG.filter((i) => tab !== "coins" && tab !== "vip" && i.category === tab);
+  const items = STORE_CATALOG.filter((i) => tab !== "vip" && i.category === tab);
 
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
