@@ -248,6 +248,7 @@ export type StoreItem = {
   description: string;
   cost: number;         // in Y-coins
   gradient?: string;    // CSS gradient for preview / theme application
+  vipOnly?: boolean;    // Exclusive to VIP members (never purchasable with coins)
 };
 
 export const STORE_CATALOG: StoreItem[] = [
