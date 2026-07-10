@@ -42,10 +42,10 @@ describe("normalizeStoredQuestion", () => {
     if (r.ok) expect(r.question).toBe("is the sky blue");
   });
 
-  it("collapses whitespace and lowercases first char", () => {
+  it("collapses whitespace and lowercases only the first char", () => {
     const r = normalizeStoredQuestion("   Do  You  Know  Why   Rain Falls  ");
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.question).toBe("rain falls");
+    if (r.ok) expect(r.question).toBe("rain Falls");
   });
 
   it("accepts a past-tense phrase and renders it grammatically", () => {
