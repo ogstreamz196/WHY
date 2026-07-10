@@ -362,6 +362,22 @@ export const STORE_CATALOG: StoreItem[] = [
     gradient: "linear-gradient(135deg, #ff6a00 0%, #ee0979 50%, #6a11cb 100%)" },
   { id: "theme-matrix",   category: "theme", name: "Matrix",       emoji: "💚", description: "Follow the green rabbit.",       cost: 500,
     gradient: "linear-gradient(135deg, #000000 0%, #003b00 50%, #00ff41 100%)" },
+
+  // ===== VIP-exclusive avatars (never purchasable — unlocked with VIP) =====
+  { id: "avatar-vip-diamond", category: "avatar", name: "Diamond VIP", emoji: "💎", description: "VIP exclusive. Sparkles under every light.", cost: 0, vipOnly: true },
+  { id: "avatar-vip-phoenix", category: "avatar", name: "Ember Lord",  emoji: "🔥", description: "VIP exclusive. Wreathed in eternal flame.", cost: 0, vipOnly: true },
+  { id: "avatar-vip-crown",   category: "avatar", name: "Crown Bearer",emoji: "👑", description: "VIP exclusive. Royalty of curiosity.",     cost: 0, vipOnly: true },
+  { id: "avatar-vip-star",    category: "avatar", name: "Supernova",   emoji: "🌟", description: "VIP exclusive. Outshines the galaxy.",     cost: 0, vipOnly: true },
+  { id: "avatar-vip-comet",   category: "avatar", name: "Comet Rider", emoji: "☄️", description: "VIP exclusive. Rides the tail of wonder.",  cost: 0, vipOnly: true },
+  { id: "avatar-vip-medal",   category: "avatar", name: "Gold Medal",  emoji: "🥇", description: "VIP exclusive. Champion of curiosity.",    cost: 0, vipOnly: true },
+
+  // ===== VIP-exclusive themes =====
+  { id: "theme-vip-obsidian", category: "theme", name: "Obsidian VIP", emoji: "🖤", description: "VIP exclusive. Molten black with amber veins.", cost: 0, vipOnly: true,
+    gradient: "linear-gradient(135deg, #0b0b0f 0%, #1a1a2e 45%, #d4a017 100%)" },
+  { id: "theme-vip-rose",     category: "theme", name: "Rose Gold VIP",emoji: "🌹", description: "VIP exclusive. Champagne blush luxury.",         cost: 0, vipOnly: true,
+    gradient: "linear-gradient(135deg, #b76e79 0%, #f9d5c8 50%, #e0c097 100%)" },
+  { id: "theme-vip-aurora",   category: "theme", name: "Royal Aurora", emoji: "💫", description: "VIP exclusive. Regal violet skies.",             cost: 0, vipOnly: true,
+    gradient: "linear-gradient(135deg, #1e3c72 0%, #a044ff 50%, #f7b733 100%)" },
 ];
 
 // Free items every user owns automatically.
