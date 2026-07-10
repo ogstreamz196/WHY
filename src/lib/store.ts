@@ -240,6 +240,16 @@ const KEY_INVENTORY = "why:inventory"; // array of owned item ids
 const KEY_EQUIPPED = "why:equipped";   // { avatar?: id, theme?: id }
 
 export type StoreCategory = "avatar" | "theme" | "boost";
+export type AnimatedAvatarKind =
+  | "orbit-stars"
+  | "flame-swirl"
+  | "spin-sparkle"
+  | "bounce-glow"
+  | "comet-trail"
+  | "rainbow-halo"
+  | "heart-burst"
+  | "lightning"
+  | "wobble";
 export type StoreItem = {
   id: string;
   category: StoreCategory;
@@ -249,6 +259,7 @@ export type StoreItem = {
   cost: number;         // in Y-coins
   gradient?: string;    // CSS gradient for preview / theme application
   vipOnly?: boolean;    // Exclusive to VIP members (never purchasable with coins)
+  animation?: AnimatedAvatarKind; // Optional animated FX (typically VIP avatars)
 };
 
 export const STORE_CATALOG: StoreItem[] = [
