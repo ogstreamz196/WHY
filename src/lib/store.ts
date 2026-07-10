@@ -297,6 +297,13 @@ export const STORE_CATALOG: StoreItem[] = [
 // Free items every user owns automatically.
 const FREE_ITEMS = STORE_CATALOG.filter((i) => i.cost === 0).map((i) => i.id);
 
+/** Resolve an emoji for an avatar_id, with a friendly fallback. */
+export const avatarEmojiFor = (avatarId: string | null | undefined): string => {
+  if (!avatarId) return "🌱";
+  const item = STORE_CATALOG.find((i) => i.id === avatarId && i.category === "avatar");
+  return item?.emoji ?? "🌱";
+};
+
 export const getInventory = (): string[] => {
   const owned = read<string[]>(KEY_INVENTORY, []);
   return Array.from(new Set([...FREE_ITEMS, ...owned]));
