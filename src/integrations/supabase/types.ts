@@ -1170,6 +1170,20 @@ export type Database = {
         Args: { _category?: string; _user: string }
         Returns: number
       }
+      get_public_leaderboard: {
+        Args: { _filter?: string; _kind?: string }
+        Returns: {
+          age_band: string
+          avatar_id: string
+          category: string
+          created_at: string
+          display_name: string
+          favorite_category: string
+          score: number
+          user_id: string
+          username: string
+        }[]
+      }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
