@@ -24,6 +24,7 @@ import {
   type StoreCategory,
   type StoreItem,
 } from "@/lib/store";
+import { previewTheme } from "@/lib/useEquippedTheme";
 
 
 export const Route = createFileRoute("/store")({
