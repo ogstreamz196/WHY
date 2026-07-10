@@ -209,13 +209,14 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!heavyFx) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const px = (e.clientX - rect.left) / rect.width - 0.5;
       const py = (e.clientY - rect.top) / rect.height - 0.5;
       ry.set(px * 20);
       rx.set(-py * 20);
     },
-    [rx, ry],
+    [rx, ry, heavyFx],
   );
   const resetTilt = useCallback(() => {
     rx.set(0);
