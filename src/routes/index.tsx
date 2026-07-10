@@ -971,7 +971,7 @@ function WhyApp() {
                                 disabled={chainLoading || chain.length >= 6 || chain[chain.length - 1]?.terminal}
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.96 }}
-                                className="candy-btn mt-4 flex h-16 w-full items-center justify-center gap-3 rounded-full px-6 text-lg font-black uppercase tracking-wide text-white disabled:opacity-50"
+                                className="candy-btn font-fun mt-4 flex min-h-16 w-full items-center justify-center gap-3 rounded-full px-6 py-3 text-[clamp(1.15rem,3vw,1.5rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
                               >
                                 {chain.length >= 6
                                   ? "🌌 You've reached the bottom of the rabbit hole"
