@@ -545,7 +545,7 @@ export const bossBackfillNormalizeQuestions = createServerFn({ method: "POST" })
       }
       result.changes.push({ id, before, after: norm.question });
       if (!data.dryRun) {
-        const patch: Record<string, unknown> = { question: norm.question };
+        const patch: { question: string; original_question?: string } = { question: norm.question };
         // Only capture original the first time we touch this row.
         if (!r.original_question) patch.original_question = before;
         const { error: uErr } = await supabaseAdmin.from("facts").update(patch).eq("id", id);
