@@ -322,15 +322,39 @@ nav[aria-label="Primary"] button:focus-visible {
   }
   @media (prefers-contrast: more) {
     .font-fun {
-      font-weight: 650;
+      font-weight: 700;
+      letter-spacing: 0;
+      color: #fff;
       text-shadow:
-        0 0 2px black,
-        0 1px 0 black,
-        0 2px 8px color-mix(in oklab, black 55%, transparent);
+        0 0 2px #000,
+        0 0 2px #000,
+        0 1px 0 #000,
+        0 2px 0 #000;
+      -webkit-text-stroke: 0.4px rgba(0,0,0,0.9);
+    }
+    .font-fun.on-light,
+    .bg-background .font-fun,
+    [data-surface="light"] .font-fun {
+      color: #0a0a0a;
+      text-shadow: none;
+      -webkit-text-stroke: 0.4px rgba(255,255,255,0.9);
     }
   }
   @media (prefers-reduced-transparency: reduce) {
-    .font-fun { text-shadow: 0 1px 0 rgba(0,0,0,0.6); }
+    /* Drop soft halos entirely for readers who dislike composited layers. */
+    .font-fun { text-shadow: none; font-weight: 600; }
+    .font-fun.on-light,
+    .bg-background .font-fun,
+    [data-surface="light"] .font-fun { text-shadow: none; color: #0a0a0a; }
+  }
+  @media (prefers-color-scheme: light) {
+    /* When the OS asks for light, prefer the on-light treatment even without
+       an explicit surface hint — avoids white-on-white washouts. */
+    .font-fun {
+      text-shadow:
+        0 1px 0 color-mix(in oklab, white 65%, transparent),
+        0 1px 6px color-mix(in oklab, black 18%, transparent);
+    }
   }
 
 }
