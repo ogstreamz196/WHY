@@ -301,10 +301,10 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
             {/* Emoji medallion with pointer tilt */}
             <div
               className="relative mx-auto mb-3 flex h-28 w-28 items-center justify-center [perspective:600px]"
-              onPointerMove={handlePointerMove}
-              onPointerLeave={resetTilt}
+              onPointerMove={heavyFx ? handlePointerMove : undefined}
+              onPointerLeave={heavyFx ? resetTilt : undefined}
             >
-              {badge.unlocked && (
+              {badge.unlocked && heavyFx && (
                 <>
                   <motion.span
                     aria-hidden
