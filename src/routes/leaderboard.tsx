@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
 import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
 import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
+import { avatarEmojiFor } from "@/lib/store";
 import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
 
