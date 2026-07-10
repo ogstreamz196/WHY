@@ -488,3 +488,82 @@ export const bossBulkImportFromSheet = createServerFn({ method: "POST" })
 
     return result;
   });
+
+
+// -------------------- Backfill: normalize stored questions --------------------
+//
+// Scans public.facts and re-runs normalizeStoredQuestion on every question.
+// When the normalized text differs from what's stored, saves the current text
+// into `original_question` (only if empty) and updates `question`. Rows whose
+// grammar fails the normalizer are reported back for manual review — never
+// silently overwritten.
+export type BackfillResult = {
+  scanned: number;
+  updated: number;
+  unchanged: number;
+  invalid: { id: string; question: string; reason: string }[];
+  changes: { id: string; before: string; after: string }[];
+};
+
+export const bossBackfillNormalizeQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { limit?: number; dryRun?: boolean }) => ({
+    limit: Math.min(Math.max(d.limit ?? 500, 1), 5000),
+    dryRun: !!d.dryRun,
+  }))
+  .handler(async ({ data, context }): Promise<BackfillResult> => {
+    await assertBoss(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { normalizeStoredQuestion } = await import("@/lib/normalizeQuestion");
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("facts")
+      .select("id, question, original_question")
+      .order("created_at", { ascending: true })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+
+    const result: BackfillResult = {
+      scanned: rows?.length ?? 0,
+      updated: 0,
+      unchanged: 0,
+      invalid: [],
+      changes: [],
+    };
+
+    for (const r of rows ?? []) {
+      const id = r.id as string;
+      const before = (r.question as string) ?? "";
+      const norm = normalizeStoredQuestion(before);
+      if (!norm.ok) {
+        result.invalid.push({ id, question: before, reason: norm.reason ?? "grammar" });
+        continue;
+      }
+      if (norm.question === before) {
+        result.unchanged++;
+        continue;
+      }
+      result.changes.push({ id, before, after: norm.question });
+      if (!data.dryRun) {
+        const patch: { question: string; original_question?: string } = { question: norm.question };
+        // Only capture original the first time we touch this row.
+        if (!r.original_question) patch.original_question = before;
+        const { error: uErr } = await supabaseAdmin.from("facts").update(patch).eq("id", id);
+        if (uErr) {
+          result.invalid.push({ id, question: before, reason: uErr.message });
+          continue;
+        }
+        result.updated++;
+      }
+    }
+
+    if (!data.dryRun) {
+      await writeAudit(supabaseAdmin, context.userId, "backfill_normalize_questions", null, {
+        scanned: result.scanned,
+        updated: result.updated,
+        unchanged: result.unchanged,
+        invalid: result.invalid.length,
+      });
+    }
+    return result;
+  });
