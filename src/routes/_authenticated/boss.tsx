@@ -720,22 +720,64 @@ function BulkImportSheet() {
   const [range, setRange] = useState("Sheet1!A1:D1000");
   const [defaultCategory, setDefaultCategory] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ inserted: number; skipped: number; errors: { row: number; reason: string }[] } | null>(null);
+  const [phase, setPhase] = useState<"idle" | "planning" | "importing" | "done">("idle");
+  const [progress, setProgress] = useState({ processed: 0, total: 0 });
+  const [counts, setCounts] = useState({ inserted: 0, skipped: 0, errors: 0 });
+  const [errorList, setErrorList] = useState<{ row: number; reason: string }[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
+  const reset = () => {
+    setProgress({ processed: 0, total: 0 });
+    setCounts({ inserted: 0, skipped: 0, errors: 0 });
+    setErrorList([]);
+    setErr(null);
+  };
+
   const run = async (dryRun: boolean) => {
-    setBusy(true); setErr(null); setResult(null);
+    setBusy(true); reset(); setPhase("planning");
     try {
-      const { bossBulkImportFromSheet } = await import("@/lib/boss.functions");
-      const r = await bossBulkImportFromSheet({
-        data: { spreadsheetId: spreadsheetId.trim() || undefined, range, defaultCategory: defaultCategory.trim() || undefined, dryRun },
+      const { bossBulkImportPlan, bossBulkImportChunk } = await import("@/lib/boss.functions");
+      const plan = await bossBulkImportPlan({
+        data: {
+          spreadsheetId: spreadsheetId.trim() || undefined,
+          range,
+          defaultCategory: defaultCategory.trim() || undefined,
+        },
       });
-      setResult(r);
-      toast.success(dryRun ? `Preview: ${r.inserted} to import` : `Imported ${r.inserted} facts`);
+      setCounts({ inserted: 0, skipped: plan.skipped, errors: plan.errors.length });
+      setErrorList(plan.errors);
+      setProgress({ processed: 0, total: plan.candidates.length });
+
+      if (dryRun) {
+        setCounts((c) => ({ ...c, inserted: plan.candidates.length }));
+        setPhase("done");
+        toast.success(`Preview: ${plan.candidates.length} to import`);
+        return;
+      }
+
+      setPhase("importing");
+      const CHUNK = 25;
+      for (let i = 0; i < plan.candidates.length; i += CHUNK) {
+        const batch = plan.candidates.slice(i, i + CHUNK);
+        const r = await bossBulkImportChunk({ data: { candidates: batch } });
+        setCounts((c) => ({
+          inserted: c.inserted + r.inserted,
+          skipped: c.skipped + r.skipped,
+          errors: c.errors + r.errors.length,
+        }));
+        if (r.errors.length) setErrorList((prev) => [...prev, ...r.errors]);
+        setProgress((p) => ({ ...p, processed: Math.min(p.total, i + batch.length) }));
+      }
+      setPhase("done");
+      toast.success(`Imported ${plan.candidates.length ? "batch complete" : "nothing to import"}`);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Import failed");
+      setPhase("idle");
     } finally { setBusy(false); }
   };
+
+  const pct = progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
+  const showResult = phase !== "idle";
 
   return (
     <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -773,24 +815,48 @@ function BulkImportSheet() {
             disabled={busy}
             className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-black text-white/90 disabled:opacity-40"
           >
-            {busy ? "…" : "Preview"}
+            {busy && phase === "planning" ? "Loading…" : "Preview"}
           </button>
           <button
             onClick={() => run(false)}
             disabled={busy}
             className="flex-1 rounded-full bg-sky-500 px-4 py-2 text-sm font-black text-black disabled:opacity-40"
           >
-            {busy ? "Importing…" : "Import"}
+            {busy ? (phase === "importing" ? `Importing ${pct}%` : "Loading…") : "Import"}
           </button>
         </div>
       </div>
       {err && <p className="mt-2 text-xs text-rose-300">{err}</p>}
-      {result && (
+      {showResult && (
         <div className="mt-3 space-y-2 rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white/80">
-          <p><span className="font-black text-emerald-300">{result.inserted}</span> inserted · <span className="font-black text-amber-300">{result.skipped}</span> skipped · <span className="font-black text-rose-300">{result.errors.length}</span> errors</p>
-          {result.errors.length > 0 && (
+          {progress.total > 0 && (
+            <div>
+              <div className="mb-1 flex justify-between text-[11px] text-white/60">
+                <span>{phase === "importing" ? "Importing…" : phase === "done" ? "Done" : "Ready"}</span>
+                <span>{progress.processed} / {progress.total} ({pct}%)</span>
+              </div>
+              <div
+                className="h-2 w-full overflow-hidden rounded-full bg-white/10"
+                role="progressbar"
+                aria-valuenow={pct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
+                  className="h-full bg-sky-400 transition-all duration-200"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          )}
+          <p>
+            <span className="font-black text-emerald-300">{counts.inserted}</span> inserted ·{" "}
+            <span className="font-black text-amber-300">{counts.skipped}</span> skipped ·{" "}
+            <span className="font-black text-rose-300">{counts.errors}</span> errors
+          </p>
+          {errorList.length > 0 && (
             <ul className="max-h-40 overflow-auto space-y-1">
-              {result.errors.slice(0, 20).map((e, i) => (
+              {errorList.slice(0, 20).map((e, i) => (
                 <li key={i} className="font-mono text-[11px] text-rose-200/80">row {e.row}: {e.reason}</li>
               ))}
             </ul>
