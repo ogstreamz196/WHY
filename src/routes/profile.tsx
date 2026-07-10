@@ -41,6 +41,29 @@ const MILESTONES = [
   { key: "points", label: "Curiosity points", steps: [100, 500, 1000, 5000, 10000, 25000] },
 ] as const;
 
+// Maps local (explorer) badge id → which live stat + numeric target it tracks.
+// Used to render an accurate progress bar in the details modal.
+const LOCAL_BADGE_TARGETS: Record<string, { stat: "seen" | "streak" | "points"; target: number }> = {
+  curious:    { stat: "seen",   target: 5 },
+  explorer:   { stat: "seen",   target: 25 },
+  scientist:  { stat: "seen",   target: 100 },
+  sage:       { stat: "seen",   target: 250 },
+  polymath:   { stat: "seen",   target: 500 },
+  oracle:     { stat: "seen",   target: 1000 },
+  streak3:    { stat: "streak", target: 3 },
+  streak7:    { stat: "streak", target: 7 },
+  streak14:   { stat: "streak", target: 14 },
+  streak30:   { stat: "streak", target: 30 },
+  streak60:   { stat: "streak", target: 60 },
+  streak100:  { stat: "streak", target: 100 },
+  points100:  { stat: "points", target: 100 },
+  points500:  { stat: "points", target: 500 },
+  points1k:   { stat: "points", target: 1000 },
+  points5k:   { stat: "points", target: 5000 },
+  points10k:  { stat: "points", target: 10000 },
+  points25k:  { stat: "points", target: 25000 },
+};
+
 export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [{ title: "Your profile — Why?" }, { name: "theme-color", content: "#100c1f" }],
