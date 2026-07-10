@@ -244,10 +244,17 @@ ${recentQs.slice(0, 30).map((q) => `- ${q}`).join("\n") || "(none)"}`;
         continue;
       }
 
+      const { normalizeStoredQuestion } = await import("@/lib/normalizeQuestion");
+      const norm = normalizeStoredQuestion(candidate.question);
+      if (!norm.ok) {
+        console.log("[why?] grammar rejected:", norm.reason, candidate.question);
+        continue;
+      }
+
       const { data: inserted, error } = await admin
         .from("facts")
         .insert({
-          question: candidate.question.trim(),
+          question: norm.question,
           answer: candidate.answer.trim(),
           fun_fact: candidate.fun_fact.trim(),
           category,
@@ -335,10 +342,14 @@ If the question is inappropriate, unsafe, or nonsensical for kids, instead retur
         ? candidate.category
         : "science";
 
+    const { normalizeStoredQuestion } = await import("@/lib/normalizeQuestion");
+    const norm = normalizeStoredQuestion(candidate.question);
+    if (!norm.ok) return null;
+
     const { data: inserted } = await admin
       .from("facts")
       .insert({
-        question: candidate.question.trim(),
+        question: norm.question,
         answer: candidate.answer.trim(),
         fun_fact: candidate.fun_fact.trim(),
         category,
