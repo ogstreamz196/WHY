@@ -56,6 +56,15 @@ function StorePage() {
   const [confetti, setConfetti] = useState(0);
   const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const { isVip, subscription } = useSubscription(userId);
+  const qc = useQueryClient();
+  const fetchStats = useServerFn(getMyStats);
+  const doSpend = useServerFn(spendCoins);
+
+  const serverStats = useQuery({
+    queryKey: ["stats"],
+    queryFn: () => fetchStats(),
+    enabled: !!userId,
+  });
 
   const refresh = () => {
     setCoins(getPoints());
@@ -63,6 +72,12 @@ function StorePage() {
     setEquip(getEquipped());
   };
   useEffect(() => { refresh(); }, []);
+
+  // When signed in, mirror server balance into the local display.
+  useEffect(() => {
+    if (userId && serverStats.data) setCoins(serverStats.data.total_points);
+  }, [userId, serverStats.data]);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
