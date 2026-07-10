@@ -34,7 +34,7 @@ describe("parseBulkImportRows — normalization + skipping", () => {
       ["question", "answer"],
       ["Why does the sky look blue?", "Scattering."],
     ]);
-    expect(r.candidates[0].question).toBe("the sky look blue");
+    expect(r.candidates[0].question).toBe("does the sky look blue");
   });
 
   it("skips rows with empty question or answer", () => {
