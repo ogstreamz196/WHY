@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Award, Brain, Calendar, Crown, Flame, Sparkles, Target, Trophy, X, Zap } from "lucide-react";
 import { VipBadge } from "@/components/VipBadge";
 import { emojiFor } from "@/lib/categories";
+import { avatarEmojiFor } from "@/lib/store";
 import {
   getPlayerProfilePublic,
   type PlayerProfilePublic,
