@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { avatarEmojiFor } from "@/lib/store";
+import { AnimatedAvatar } from "@/components/AnimatedAvatar";
 
 type Props = {
   avatarId: string | null | undefined;
@@ -22,8 +22,8 @@ export function ProfileAvatar({
   className = "aspect-square w-full",
   emojiClassName = "text-[clamp(4rem,18vw,9rem)]",
 }: Props) {
-  const emoji = avatarEmojiFor(avatarId);
   const status = (statusMessage ?? "").trim();
+
 
   return (
     <div className={`relative ${className}`}>
@@ -96,7 +96,7 @@ export function ProfileAvatar({
           role="img"
           aria-label={avatarId ?? "avatar"}
         >
-          {emoji}
+          <AnimatedAvatar avatarId={avatarId} className="text-[1em]" />
         </span>
       </div>
 

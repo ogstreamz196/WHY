@@ -25,6 +25,8 @@ import {
   type StoreItem,
 } from "@/lib/store";
 import { previewTheme } from "@/lib/useEquippedTheme";
+import { AnimatedAvatar } from "@/components/AnimatedAvatar";
+import { useRef } from "react";
 
 
 export const Route = createFileRoute("/store")({
@@ -55,6 +57,8 @@ function StorePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [confetti, setConfetti] = useState(0);
+  const [preview, setPreview] = useState<StoreItem | null>(null);
+  const longPressRef = useRef<number | null>(null);
   const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const { isVip, subscription } = useSubscription(userId);
   const qc = useQueryClient();
@@ -348,41 +352,64 @@ function StorePage() {
                 (item.category === "avatar" && equipped.avatar === item.id) ||
                 (item.category === "theme" && equipped.theme === item.id);
               const canAfford = coins >= item.cost;
-              const themePreviewHandlers =
-                item.category === "theme"
-                  ? {
-                      onMouseEnter: () => previewTheme(item.id),
-                      onMouseLeave: () => previewTheme(null),
-                      onPointerCancel: () => previewTheme(null),
-                      onFocus: () => previewTheme(item.id),
-                      onBlur: () => previewTheme(null),
-                    }
-                  : {};
-              const cardAriaLabel =
-                item.category === "theme"
-                  ? isEquipped
-                    ? `${item.name} theme — current theme. Focus to preview.`
-                    : `Preview ${item.name} theme`
-                  : undefined;
+              const isTheme = item.category === "theme";
+              const cardAriaLabel = isTheme
+                ? isEquipped
+                  ? `${item.name} theme — current theme. Focus to preview.`
+                  : `Preview ${item.name} theme`
+                : `Preview ${item.name}`;
+              const openPreview = () => {
+                setPreview(item);
+                if (isTheme) previewTheme(item.id);
+              };
+              const closePreview = () => {
+                setPreview((p) => (p?.id === item.id ? null : p));
+                if (isTheme) previewTheme(null);
+              };
+              const previewHandlers = {
+                onMouseEnter: openPreview,
+                onMouseLeave: closePreview,
+                onFocus: openPreview,
+                onBlur: closePreview,
+                onPointerDown: (e: React.PointerEvent) => {
+                  if (e.pointerType === "touch") {
+                    if (longPressRef.current) window.clearTimeout(longPressRef.current);
+                    longPressRef.current = window.setTimeout(openPreview, 120);
+                  }
+                },
+                onPointerUp: () => {
+                  if (longPressRef.current) window.clearTimeout(longPressRef.current);
+                },
+                onPointerCancel: () => {
+                  if (longPressRef.current) window.clearTimeout(longPressRef.current);
+                  closePreview();
+                },
+              };
               return (
                 <motion.article
                   key={item.id}
                   whileTap={{ scale: 0.97 }}
-                  tabIndex={item.category === "theme" ? 0 : undefined}
-                  aria-label={cardAriaLabel}
+                  tabIndex={0}
+                  aria-label={cardAriaLabel ?? `Preview ${item.name}`}
                   aria-pressed={item.category === "theme" ? isEquipped : undefined}
-                  {...themePreviewHandlers}
+                  {...previewHandlers}
                   className={`glass-strong relative overflow-hidden rounded-3xl p-3 outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
                     isEquipped ? "ring-2 ring-emerald-400/70" : ""
-                  }`}
+                  } ${item.vipOnly ? "ring-1 ring-amber-300/60" : ""}`}
                 >
                   {isEquipped && (
                     <span
                       className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full bg-emerald-400/90 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-950 shadow"
-                      aria-label="Current theme"
+                      aria-label="Current"
                     >
                       <Check className="h-2.5 w-2.5" aria-hidden />
                       Current
+                    </span>
+                  )}
+                  {item.vipOnly && !isEquipped && (
+                    <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-950 shadow">
+                      <Crown className="h-2.5 w-2.5" aria-hidden />
+                      VIP
                     </span>
                   )}
                   <div
@@ -394,8 +421,12 @@ function StorePage() {
                         "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15), transparent 60%)",
                     }}
                   />
-                  <div className="flex h-20 items-center justify-center text-5xl drop-shadow">
-                    <span aria-hidden>{item.emoji}</span>
+                  <div className="flex h-20 items-center justify-center drop-shadow">
+                    {item.category === "avatar" ? (
+                      <AnimatedAvatar avatarId={item.id} className="text-5xl" />
+                    ) : (
+                      <span className="text-5xl" aria-hidden>{item.emoji}</span>
+                    )}
                   </div>
                   <p className="mt-1 truncate font-display text-sm font-black text-white">{item.name}</p>
                   <p className="line-clamp-2 min-h-8 text-[10px] leading-tight text-white/70">{item.description}</p>
@@ -442,6 +473,46 @@ function StorePage() {
             className="fixed inset-x-0 bottom-24 z-50 mx-auto w-fit rounded-full bg-white/10 px-4 py-2 text-sm font-black text-white backdrop-blur-xl"
           >
             {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Instant hover / touch-hold preview popover */}
+      <AnimatePresence>
+        {preview && (
+          <motion.div
+            key={preview.id}
+            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: 20 }}
+            transition={{ type: "spring", stiffness: 320, damping: 24 }}
+            className="pointer-events-none fixed inset-x-0 bottom-32 z-40 mx-auto flex w-fit max-w-[min(92vw,22rem)] flex-col items-center gap-3 rounded-3xl border border-white/15 bg-black/70 p-5 shadow-2xl backdrop-blur-xl"
+            role="dialog"
+            aria-label={`${preview.name} preview`}
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -z-10 rounded-3xl opacity-60"
+              style={{
+                background:
+                  preview.gradient ??
+                  "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15), transparent 60%)",
+              }}
+            />
+            <div className="flex h-32 w-32 items-center justify-center">
+              {preview.category === "avatar" ? (
+                <AnimatedAvatar avatarId={preview.id} className="text-8xl" />
+              ) : (
+                <span className="text-8xl" aria-hidden>{preview.emoji}</span>
+              )}
+            </div>
+            <div className="text-center">
+              <p className="flex items-center justify-center gap-1.5 font-display text-lg font-black text-white">
+                {preview.vipOnly && <Crown className="h-4 w-4 text-amber-300" aria-hidden />}
+                {preview.name}
+              </p>
+              <p className="mt-1 text-xs text-white/70">{preview.description}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
