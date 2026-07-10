@@ -10,6 +10,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
 import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
 import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
+import { avatarEmojiFor } from "@/lib/store";
 import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
 
@@ -356,8 +357,14 @@ function ArenaPage() {
                           </span>
                           <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
                         </div>
-                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
-                          {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xl">
+                          {r.avatar_id ? (
+                            <span aria-hidden>{avatarEmojiFor(r.avatar_id)}</span>
+                          ) : (
+                            <span className="text-sm font-black text-white/80">
+                              {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
+                            </span>
+                          )}
                         </div>
                         <div className="relative min-w-0 flex-1">
                           <p className="truncate text-sm font-black text-white">
@@ -614,7 +621,13 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
       <div className="relative z-20 mb-3">
         <div className={`relative ${cfg.avatar} rounded-full ${cfg.ring} bg-neutral-950 p-1.5`}>
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-white/10 to-white/0">
-            <span className={`font-black text-white ${place === 1 ? "text-3xl" : "text-lg"}`}>{initial}</span>
+            {entry.avatar_id ? (
+              <span className={place === 1 ? "text-5xl" : "text-3xl"} aria-hidden>
+                {avatarEmojiFor(entry.avatar_id)}
+              </span>
+            ) : (
+              <span className={`font-black text-white ${place === 1 ? "text-3xl" : "text-lg"}`}>{initial}</span>
+            )}
           </div>
         </div>
         <div
