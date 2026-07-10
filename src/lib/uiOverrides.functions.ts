@@ -4,17 +4,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type UiOverridesMap = Record<string, unknown>;
+export type UiOverridesMap = Record<string, any>;
 
 export const getUiOverrides = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin.from("ui_overrides").select("key, value");
-    const map: UiOverridesMap = {};
+    const map: Record<string, any> = {};
     for (const row of data ?? []) map[(row as any).key] = (row as any).value;
     return { overrides: map };
   } catch {
-    return { overrides: {} as UiOverridesMap };
+    return { overrides: {} as Record<string, any> };
   }
 });
 
