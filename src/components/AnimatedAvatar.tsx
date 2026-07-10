@@ -47,27 +47,34 @@ function emojiMotionFor(kind: AnimatedAvatarKind) {
     case "bounce-glow":
       return {
         animate: { y: [0, -8, 0], scale: [1, 1.05, 1] },
-        transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut" },
+        transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut" as const },
       };
     case "spin-sparkle":
       return {
         animate: { rotate: [0, 360] },
-        transition: { duration: 6, repeat: Infinity, ease: "linear" },
+        transition: { duration: 6, repeat: Infinity, ease: "linear" as const },
       };
     case "flame-swirl":
       return {
-        animate: { scale: [1, 1.08, 1], filter: ["drop-shadow(0 0 6px #ff6b00)", "drop-shadow(0 0 14px #ffd93d)", "drop-shadow(0 0 6px #ff6b00)"] },
-        transition: { duration: 1.3, repeat: Infinity, ease: "easeInOut" },
+        animate: {
+          scale: [1, 1.08, 1],
+          filter: [
+            "drop-shadow(0 0 6px #ff6b00)",
+            "drop-shadow(0 0 14px #ffd93d)",
+            "drop-shadow(0 0 6px #ff6b00)",
+          ],
+        },
+        transition: { duration: 1.3, repeat: Infinity, ease: "easeInOut" as const },
       };
     case "wobble":
       return {
         animate: { rotate: [-8, 8, -8], y: [0, -3, 0] },
-        transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" },
+        transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" as const },
       };
     case "comet-trail":
       return {
         animate: { x: [-4, 4, -4], y: [4, -4, 4], rotate: [-6, 6, -6] },
-        transition: { duration: 1.8, repeat: Infinity, ease: "easeInOut" },
+        transition: { duration: 1.8, repeat: Infinity, ease: "easeInOut" as const },
       };
     case "orbit-stars":
     case "rainbow-halo":
@@ -76,7 +83,7 @@ function emojiMotionFor(kind: AnimatedAvatarKind) {
     default:
       return {
         animate: { scale: [1, 1.04, 1] },
-        transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" },
+        transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" as const },
       };
   }
 }
