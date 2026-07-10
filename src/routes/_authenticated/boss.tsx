@@ -139,6 +139,7 @@ function BossDashboard() {
       </section>
 
       <FactCodeDecoder />
+      <BulkImportSheet />
       <AuditLogSection />
     </Shell>
   );
