@@ -346,11 +346,12 @@ function ArenaPage() {
                         type="button"
                         onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
                         aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
-                        className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.995] ${
+                        className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left ${INTERACTIVE_PLAYER} ${
                           me
                             ? "border-fuchsia-300/60 bg-fuchsia-500/15 shadow-[0_0_28px_rgba(217,70,239,0.28)] ring-2 ring-fuchsia-300/40"
                             : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
                         }`}
+
                       >
                         {me && (
                           <motion.span
