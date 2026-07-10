@@ -39,14 +39,14 @@ export const Route = createFileRoute("/store")({
 
 type Tab = StoreCategory | "vip";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: "vip",    label: "VIP & Coins", emoji: "👑" },
   { id: "avatar", label: "Avatars",     emoji: "🧑‍🚀" },
   { id: "theme",  label: "Themes",      emoji: "🎨" },
+  { id: "vip",    label: "VIP & Coins", emoji: "👑" },
 ];
 
 
 function StorePage() {
-  const [tab, setTab] = useState<Tab>("vip");
+  const [tab, setTab] = useState<Tab>("avatar");
   const [coins, setCoins] = useState(0);
   const [inventory, setInventory] = useState<string[]>([]);
   const [equipped, setEquip] = useState(getEquipped());
