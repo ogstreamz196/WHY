@@ -390,6 +390,58 @@ export type BulkImportResult = {
   errors: { row: number; reason: string }[];
 };
 
+// ---- Plan: fetch + normalize, no writes. Returns candidates for the UI
+// to insert in chunks (so it can render a live progress bar).
+export const bossBulkImportPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { spreadsheetId?: string; range?: string; defaultCategory?: string }) => ({
+    spreadsheetId: (d.spreadsheetId ?? process.env.WHY_SHEET_ID ?? "").trim(),
+    range: (d.range ?? "Sheet1!A1:Z1000").trim(),
+    defaultCategory: (d.defaultCategory ?? "").trim().toLowerCase(),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertBoss(context);
+    if (!data.spreadsheetId) throw new Error("Missing spreadsheetId");
+    const rows = await fetchSheetRows(data.spreadsheetId, data.range);
+    const { parseBulkImportRows } = await import("@/lib/bulkImport");
+    const parsed = parseBulkImportRows(rows, {
+      range: data.range,
+      defaultCategory: data.defaultCategory,
+    });
+    return {
+      spreadsheetId: data.spreadsheetId,
+      range: data.range,
+      candidates: parsed.candidates,
+      skipped: parsed.skipped,
+      errors: parsed.errors,
+    };
+  });
+
+// ---- Chunk: dedupe + insert a slice. Called repeatedly by the UI.
+export const bossBulkImportChunk = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: {
+    candidates: { question: string; answer: string; fun_fact: string | null; category: string | null }[];
+  }) => ({
+    candidates: (d.candidates ?? []).slice(0, 100),
+  }))
+  .handler(async ({ data, context }): Promise<BulkImportResult> => {
+    await assertBoss(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { dedupeAgainstExisting } = await import("@/lib/bulkImport");
+
+    const out: BulkImportResult = { inserted: 0, skipped: 0, errors: [] };
+    const { toInsert, dupes } = await dedupeAgainstExisting(supabaseAdmin, data.candidates);
+    out.skipped += dupes;
+    if (toInsert.length) {
+      const { data: rows2, error } = await supabaseAdmin.from("facts").insert(toInsert).select("id");
+      if (error) out.errors.push({ row: -1, reason: error.message });
+      else out.inserted = rows2?.length ?? 0;
+    }
+    return out;
+  });
+
+// ---- Legacy single-shot import (kept for callers/tests that don't stream).
 export const bossBulkImportFromSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { spreadsheetId?: string; range?: string; defaultCategory?: string; dryRun?: boolean }) => ({
@@ -401,93 +453,29 @@ export const bossBulkImportFromSheet = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<BulkImportResult> => {
     await assertBoss(context);
     if (!data.spreadsheetId) throw new Error("Missing spreadsheetId");
-
     const rows = await fetchSheetRows(data.spreadsheetId, data.range);
-    if (rows.length < 2) return { inserted: 0, skipped: 0, errors: [{ row: 0, reason: "No data rows" }] };
-
-    const header = rows[0].map((h) => h.trim().toLowerCase());
-    const idx = {
-      question: header.findIndex((h) => h === "question" || h === "q"),
-      answer: header.findIndex((h) => h === "answer" || h === "a"),
-      fun: header.findIndex((h) => h === "fun_fact" || h === "fun fact" || h === "fun"),
-      cat: header.findIndex((h) => h === "category" || h === "cat"),
-    };
-    if (idx.question < 0 || idx.answer < 0) {
-      throw new Error("Sheet must have 'question' and 'answer' columns");
-    }
-
-    // Tab name from range (before !) as category fallback
-    const tabName = data.range.split("!")[0].replace(/^'|'$/g, "").trim().toLowerCase();
-    const tabCat = CATS.has(tabName) ? tabName : null;
-    const fallbackCat = CATS.has(data.defaultCategory) ? data.defaultCategory : tabCat;
-
-    const { normalizeStoredQuestion } = await import("@/lib/normalizeQuestion");
+    const { parseBulkImportRows, dedupeAgainstExisting } = await import("@/lib/bulkImport");
+    const parsed = parseBulkImportRows(rows, { range: data.range, defaultCategory: data.defaultCategory });
+    const result: BulkImportResult = { inserted: 0, skipped: parsed.skipped, errors: parsed.errors };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const result: BulkImportResult = { inserted: 0, skipped: 0, errors: [] };
-    const toInsert: { question: string; answer: string; fun_fact: string | null; category: string | null }[] = [];
-
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      const rowNum = i + 1;
-      const rawQ = (r[idx.question] ?? "").trim();
-      const rawA = (r[idx.answer] ?? "").trim();
-      const fun = idx.fun >= 0 ? (r[idx.fun] ?? "").trim() : "";
-      const catRaw = idx.cat >= 0 ? (r[idx.cat] ?? "").trim().toLowerCase() : "";
-      const category = CATS.has(catRaw) ? catRaw : fallbackCat;
-
-      if (!rawQ || !rawA) {
-        result.skipped++;
-        continue;
-      }
-      const norm = normalizeStoredQuestion(rawQ);
-      if (!norm.ok) {
-        result.errors.push({ row: rowNum, reason: norm.reason ?? "grammar" });
-        continue;
-      }
-      // Dedupe against existing question text
-      const { data: existing } = await supabaseAdmin
-        .from("facts")
-        .select("id")
-        .ilike("question", norm.question)
-        .limit(1)
-        .maybeSingle();
-      if (existing) {
-        result.skipped++;
-        continue;
-      }
-      toInsert.push({ question: norm.question, answer: rawA, fun_fact: fun || null, category });
-    }
-
-    if (data.dryRun) {
-      return { inserted: toInsert.length, skipped: result.skipped, errors: result.errors };
-    }
-
-    // Insert in small batches so partial failures still make progress.
+    const { toInsert, dupes } = await dedupeAgainstExisting(supabaseAdmin, parsed.candidates);
+    result.skipped += dupes;
+    if (data.dryRun) return { inserted: toInsert.length, skipped: result.skipped, errors: result.errors };
     const CHUNK = 25;
     for (let i = 0; i < toInsert.length; i += CHUNK) {
       const batch = toInsert.slice(i, i + CHUNK);
-      const { data: rows2, error } = await supabaseAdmin
-        .from("facts")
-        .insert(batch)
-        .select("id");
-      if (error) {
-        result.errors.push({ row: -1, reason: error.message });
-        continue;
-      }
+      const { data: rows2, error } = await supabaseAdmin.from("facts").insert(batch).select("id");
+      if (error) { result.errors.push({ row: -1, reason: error.message }); continue; }
       result.inserted += rows2?.length ?? 0;
     }
-
     await writeAudit(supabaseAdmin, context.userId, "bulk_import_facts", null, {
-      spreadsheetId: data.spreadsheetId,
-      range: data.range,
-      inserted: result.inserted,
-      skipped: result.skipped,
-      errors: result.errors.length,
+      spreadsheetId: data.spreadsheetId, range: data.range,
+      inserted: result.inserted, skipped: result.skipped, errors: result.errors.length,
     });
-
     return result;
   });
+// Preserve CATS reference even though the pure helpers own the canonical set.
+void CATS;
 
 
 // -------------------- Backfill: normalize stored questions --------------------
