@@ -96,7 +96,7 @@ export function ProfileAvatar({
           role="img"
           aria-label={avatarId ?? "avatar"}
         >
-          {emoji}
+          <AnimatedAvatar avatarId={avatarId} className="text-[1em]" />
         </span>
       </div>
 
