@@ -171,8 +171,21 @@ function QuizPlayPage() {
 
   if (!quiz || !current) {
     return (
-      <main className="grid min-h-[100dvh] place-items-center">
-        <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+      <main className="relative min-h-[100dvh] w-full overflow-x-hidden">
+        <CosmicBackground />
+        <div className="mx-auto max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+          <div className="glass-strong rounded-3xl p-5 space-y-4" role="status" aria-live="polite" aria-label="Loading quiz">
+            <SkeletonBlock height="1rem" className="w-1/3" />
+            <SkeletonBlock height="2.25rem" lines={2} />
+            <div className="grid gap-2">
+              <SkeletonBlock height="3rem" />
+              <SkeletonBlock height="3rem" />
+              <SkeletonBlock height="3rem" />
+              <SkeletonBlock height="3rem" />
+            </div>
+            <p className="font-fun text-center text-sm text-white/80">Warming up your questions…</p>
+          </div>
+        </div>
       </main>
     );
   }
