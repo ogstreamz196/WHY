@@ -43,6 +43,8 @@ export function PlayerProfileModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     if (!userId) return;
     let alive = true;
@@ -55,12 +57,13 @@ export function PlayerProfileModal({
         if (!p) setError("This explorer has kept their profile private.");
         else setData(p);
       })
-      .catch(() => alive && setError("Couldn't load this player right now."))
+      .catch(() => alive && setError("Couldn't load this player right now. Please try again."))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [userId, fetchProfile]);
+  }, [userId, fetchProfile, attempt]);
+
 
   useEffect(() => {
     if (!userId) return;
