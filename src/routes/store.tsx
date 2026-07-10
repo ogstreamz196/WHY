@@ -75,6 +75,26 @@ function StorePage() {
   };
   useEffect(() => { refresh(); }, []);
 
+  // Robust preview reset: clear whenever the store unmounts, the tab
+  // switches away from Themes, the window loses focus, or the tab is
+  // hidden. Without this the preview can get "stuck" if a hover/focus
+  // event never receives its matching leave/blur (e.g. drag-scroll,
+  // keyboard tab into a different section, alt-tab).
+  useEffect(() => {
+    if (tab !== "theme") {
+      previewTheme(null);
+      return;
+    }
+    const reset = () => previewTheme(null);
+    window.addEventListener("blur", reset);
+    document.addEventListener("visibilitychange", reset);
+    return () => {
+      window.removeEventListener("blur", reset);
+      document.removeEventListener("visibilitychange", reset);
+      previewTheme(null);
+    };
+  }, [tab]);
+
   // When signed in, mirror server balance into the local display.
   useEffect(() => {
     if (userId && serverStats.data) setCoins(serverStats.data.total_points);
