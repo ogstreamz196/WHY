@@ -239,7 +239,11 @@ export function DailyChallenge({ onCompleted }: Props) {
                       {asWhyQuestion(fact.question)}
                     </h3>
 
-                    <div className="mt-4 grid gap-3" role="group" aria-label="Answer choices">
+                    <div
+                      className="mt-4 grid gap-3"
+                      role="radiogroup"
+                      aria-label="Answer choices"
+                    >
                       {mcq.choices.map((choice, i) => {
                         const isPicked = picked === i;
                         const isCorrect = i === mcq.correctIndex;
@@ -247,14 +251,25 @@ export function DailyChallenge({ onCompleted }: Props) {
                         const showWrong = isPicked && !isCorrect;
                         const letter = String.fromCharCode(65 + i);
                         const status = showCorrect ? " (correct)" : showWrong ? " (incorrect)" : "";
+                        const isTabStop = focusIdx === i;
                         return (
                           <motion.button
                             key={i}
+                            ref={(el) => {
+                              choiceRefs.current[i] = el;
+                            }}
                             type="button"
+                            role="radio"
+                            aria-checked={isPicked}
+                            tabIndex={isTabStop ? 0 : -1}
                             disabled={picked !== null && picked === mcq.correctIndex}
-                            onClick={() => answer(i)}
+                            onClick={() => {
+                              setFocusIdx(i);
+                              answer(i);
+                            }}
+                            onFocus={() => setFocusIdx(i)}
+                            onKeyDown={(e) => handleChoiceKey(e, i)}
                             aria-label={`Option ${letter}: ${choice}${status}`}
-                            aria-pressed={isPicked}
                             initial={{ opacity: 0, y: 12, scale: 0.96 }}
                             animate={
                               showWrong
@@ -269,7 +284,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                             }}
                             whileHover={picked === null ? { scale: 1.02, y: -2 } : undefined}
                             whileTap={picked === null ? { scale: 0.97 } : undefined}
-                            className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left text-base font-bold leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
+                            className={`group relative flex min-h-[56px] items-center gap-3 overflow-hidden rounded-2xl border-2 px-4 py-4 text-left text-base font-bold leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                               showCorrect
                                 ? "border-emerald-400 bg-gradient-to-br from-emerald-400/25 to-emerald-500/10 text-emerald-50 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
                                 : showWrong
@@ -316,22 +331,21 @@ export function DailyChallenge({ onCompleted }: Props) {
                       })}
                     </div>
 
-                    {phase === "result" && (
-                      <motion.div
-                        role="status"
-                        aria-live="polite"
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3"
-                      >
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                          The full story
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-white/95">
-                          {fact.answer}
-                        </p>
-                      </motion.div>
-                    )}
+                    <AnimatePresence>
+                      {phase === "result" && (
+                        <AnswerSummary
+                          correct
+                          explanation={fact.answer}
+                          funFact={fact.fun_fact}
+                          points={pointsAwarded}
+                          scoreBefore={0}
+                          scoreAfter={pointsAwarded}
+                          streak={awardedFlash?.streak}
+                          actionLabel="Nice — keep exploring"
+                          autoFocusAction={false}
+                        />
+                      )}
+                    </AnimatePresence>
 
                   </>
                 )}
