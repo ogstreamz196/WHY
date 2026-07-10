@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Flame, LogOut, Sparkles, Trophy, Zap, Pencil, Loader2, Check, Clock, ArrowRight, ArrowUpDown, ChevronDown, Crown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getMyProfile,
@@ -23,11 +23,23 @@ import { CoinIcon } from "@/components/CoinIcon";
 import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
 import { StreakBadges } from "@/components/StreakBadges";
+import { BadgeDetailsModal } from "@/components/BadgeDetailsModal";
+import { LevelProgressWidget } from "@/components/LevelProgressWidget";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { useUnlockWatcher } from "@/lib/unlock-watch";
+import { getBadges, getPoints, getSeen, getStreak, type Badge } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth";
 import { STORE_CATALOG } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
 import { VipBadge } from "@/components/VipBadge";
 import { useSubscription } from "@/hooks/useSubscription";
+
+const MILESTONES = [
+  { key: "seen",   label: "Facts discovered", steps: [10, 50, 100, 250, 500, 1000] },
+  { key: "streak", label: "Day streak",       steps: [3, 7, 14, 30, 60, 100] },
+  { key: "points", label: "Curiosity points", steps: [100, 500, 1000, 5000, 10000, 25000] },
+] as const;
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
