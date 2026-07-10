@@ -234,11 +234,15 @@ function ArenaPage() {
 
         {/* My rank banner */}
         {result?.my_rank && (
-          <motion.div
+          <motion.button
+            type="button"
             key={`${tab}-${filter}-me`}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-strong mb-3 flex items-center justify-between rounded-2xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-3"
+            onClick={() => user?.id && setSelected({ userId: user.id, rank: result.my_rank! })}
+            disabled={!user?.id}
+            aria-label="View your player profile"
+            className="glass-strong mb-3 flex w-full items-center justify-between rounded-2xl border border-fuchsia-300/40 bg-fuchsia-500/10 p-3 text-left ring-2 ring-fuchsia-300/40 transition hover:-translate-y-0.5 hover:bg-fuchsia-500/15 focus-visible:outline-none focus-visible:ring-fuchsia-300/70 active:scale-[0.99] disabled:cursor-default disabled:opacity-100 disabled:hover:translate-y-0"
           >
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200">Your rank</p>
