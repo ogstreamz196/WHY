@@ -405,6 +405,7 @@ export type Database = {
           hide_from_public: boolean
           id: string
           leaderboard_opt_out: boolean
+          status_message: string | null
           updated_at: string
           username: string | null
         }
@@ -420,6 +421,7 @@ export type Database = {
           hide_from_public?: boolean
           id: string
           leaderboard_opt_out?: boolean
+          status_message?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -435,6 +437,7 @@ export type Database = {
           hide_from_public?: boolean
           id?: string
           leaderboard_opt_out?: boolean
+          status_message?: string | null
           updated_at?: string
           username?: string | null
         }
