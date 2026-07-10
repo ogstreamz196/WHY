@@ -105,6 +105,30 @@ function ProfilePage() {
     "achievements-first",
   );
 
+  // Local (client-side) badges + progress — merged in from the old /badges page.
+  const [localBadges, setLocalBadges] = useState<Badge[]>([]);
+  const [localPoints, setLocalPoints] = useState(0);
+  const [localStreak, setLocalStreak] = useState(0);
+  const [localSeen, setLocalSeen] = useState(0);
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  useEffect(() => {
+    setLocalBadges(getBadges());
+    setLocalPoints(getPoints());
+    setLocalStreak(getStreak());
+    setLocalSeen(getSeen());
+  }, []);
+  const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(localBadges);
+  const widgetMilestones = useMemo(() => {
+    const stats: Record<string, number> = { seen: localSeen, streak: localStreak, points: localPoints };
+    return MILESTONES.map((m) => {
+      const current = stats[m.key] ?? 0;
+      const nextIdx = m.steps.findIndex((s) => current < s);
+      const next = nextIdx === -1 ? m.steps[m.steps.length - 1] : m.steps[nextIdx];
+      return { label: m.label, value: current, next };
+    });
+  }, [localSeen, localStreak, localPoints]);
+  const localUnlocked = localBadges.filter((b) => b.unlocked).length;
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem("profile:sectionOrder");
