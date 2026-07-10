@@ -443,7 +443,7 @@ function WhyApp() {
   // automatically (Apple on Apple devices, Google otherwise). We only try
   // once per browser session and re-attempt every few minutes if dismissed.
   useEffect(() => {
-    if (user) { setGuestPopup(false); return; }
+    if (user) return;
     if (!fact?.id) return;
     guestFactCount.current += 1;
     if (guestFactCount.current === 1) void triggerAutoSignIn();
