@@ -23,7 +23,7 @@ import { CoinIcon } from "@/components/CoinIcon";
 import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
 import { StreakBadges } from "@/components/StreakBadges";
-import { BadgeDetailsModal } from "@/components/BadgeDetailsModal";
+import { BadgeDetailsModal, type BadgeDetail } from "@/components/BadgeDetailsModal";
 import { LevelProgressWidget } from "@/components/LevelProgressWidget";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
