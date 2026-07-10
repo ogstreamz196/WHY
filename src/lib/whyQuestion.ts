@@ -28,6 +28,17 @@ function singularize(word: string): string {
 
 // Try to rewrite "Why <subject> <verb-s> ..." into
 // "Why does <singular subject> <base verb> ..." for more natural phrasing.
+// Past-tense signals — if present, leave the sentence in past tense.
+const PAST_TENSE = new Set([
+  "had", "was", "were", "did", "went", "came", "made", "took", "saw",
+  "got", "gave", "found", "used", "became", "built", "grew", "flew",
+  "ran", "sat", "stood", "told", "said", "knew", "thought", "brought",
+  "caught", "taught", "wrote", "ate", "drank", "fell", "held", "kept",
+  "left", "lost", "meant", "met", "paid", "put", "read", "sent", "shot",
+  "slept", "spoke", "spent", "won", "wore", "used", "existed", "lived",
+  "died", "evolved", "invented", "discovered", "created", "developed",
+]);
+
 function insertDoes(afterWhy: string): string {
   const trimmed = afterWhy.trimStart();
   if (!trimmed) return afterWhy;
@@ -41,6 +52,12 @@ function insertDoes(afterWhy: string): string {
     return afterWhy;
   }
 
+  // Bail on past-tense sentences ("dinosaurs had feathers", "romans built roads").
+  // Also bail on common past-tense -ed verbs after a plural noun subject.
+  for (const tok of tokens) {
+    const t = tok.toLowerCase().replace(/[^a-z]/g, "");
+    if (PAST_TENSE.has(t)) return afterWhy;
+  }
 
   // Scan a short subject window for a present-tense -s verb.
   const maxScan = Math.min(tokens.length, 3);
