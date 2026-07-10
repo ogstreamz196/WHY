@@ -415,7 +415,7 @@ function WhyApp() {
     window.setTimeout(() => {
       setRevealed(true);
       setRevealing(false);
-      grantPoints(2);
+      // Coins deferred to the 3s dwell timer so users must actually read the answer.
       markMission("mystery");
       markMission("surprise");
       if (category !== "all" && fact?.category) markMission("category");
