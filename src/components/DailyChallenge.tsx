@@ -42,6 +42,9 @@ export function DailyChallenge({ onCompleted }: Props) {
     delta: number;
   }>(null);
   const [milestoneBurst, setMilestoneBurst] = useState<StreakMilestone | null>(null);
+  const [pointsAwarded, setPointsAwarded] = useState(0);
+  const [focusIdx, setFocusIdx] = useState(0);
+  const choiceRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     let cancelled = false;
