@@ -298,7 +298,12 @@ function ArenaPage() {
           >
             {/* Podium — top 3 */}
             {result.entries.length >= 1 && (
-              <Podium entries={result.entries.slice(0, 3)} unit={tab === "streaks" ? "days" : "pts"} meId={user?.id} />
+              <Podium
+                entries={result.entries.slice(0, 3)}
+                unit={tab === "streaks" ? "days" : "pts"}
+                meId={user?.id}
+                onOpen={(userId, rank) => setSelected({ userId, rank })}
+              />
             )}
             <ol className="space-y-2">
 
@@ -320,46 +325,60 @@ function ArenaPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ type: "spring", stiffness: 320, damping: 26 }}
-                      className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 transition ${
-                        me
-                          ? "border-fuchsia-300/40 bg-fuchsia-500/10"
-                          : "border-white/10 bg-white/[0.04] hover:bg-white/[0.07]"
-                      }`}
                     >
-                      <div className="flex w-14 shrink-0 flex-col items-center gap-0.5">
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}>
-                          {honor.label}
-                        </span>
-                        <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
-                        {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-black text-white">
-                          {r.display_name || r.username || "Explorer"}
-                          {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
-                          {me && <span className="ml-1 text-[10px] font-black text-fuchsia-300">YOU</span>}
-                        </p>
-                        <p className="truncate text-[11px] text-white/60">
-                          {honor.cheer}
-                        </p>
-                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                            className="h-full rounded-full"
-                            style={{ background: barGradient }}
+                      <button
+                        type="button"
+                        onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
+                        aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
+                        className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.995] ${
+                          me
+                            ? "border-fuchsia-300/60 bg-fuchsia-500/15 shadow-[0_0_28px_rgba(217,70,239,0.28)] ring-2 ring-fuchsia-300/40"
+                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+                        }`}
+                      >
+                        {me && (
+                          <motion.span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-fuchsia-300/60"
+                            animate={{ opacity: [0.35, 0.9, 0.35] }}
+                            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                           />
+                        )}
+                        <div className="relative flex w-14 shrink-0 flex-col items-center gap-0.5">
+                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}>
+                            {honor.label}
+                          </span>
+                          <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
-                        <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
-                          {tab === "streaks" ? "days" : "pts"}
-                        </p>
-                      </div>
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-sm font-black text-white/80">
+                          {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
+                        </div>
+                        <div className="relative min-w-0 flex-1">
+                          <p className="truncate text-sm font-black text-white">
+                            {r.display_name || r.username || "Explorer"}
+                            {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
+                            {me && <span className="ml-1 text-[10px] font-black text-fuchsia-200">YOU</span>}
+                          </p>
+                          <p className="truncate text-[11px] text-white/60">
+                            {honor.cheer}
+                          </p>
+                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${pct}%` }}
+                              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                              className="h-full rounded-full"
+                              style={{ background: barGradient }}
+                            />
+                          </div>
+                        </div>
+                        <div className="relative text-right">
+                          <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
+                            {tab === "streaks" ? "days" : "pts"}
+                          </p>
+                        </div>
+                      </button>
                     </motion.li>
                   );
                 })}
