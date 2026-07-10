@@ -235,7 +235,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
                       🤔 Pick the real reason
                     </p>
-                    <h3 className="mt-1 font-display text-base font-black leading-tight text-white">
+                    <h3 className="mt-1 font-fun text-[clamp(1.1rem,2.9vw,1.4rem)] font-bold leading-snug text-white">
                       {asWhyQuestion(fact.question)}
                     </h3>
 
