@@ -569,14 +569,17 @@ const PODIUM_CFG = {
   },
 } as const;
 
-function PodiumColumn({ entry, place, unit, isMe }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean }) {
+function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean; onOpen: (userId: string, rank: number) => void }) {
   const cfg = PODIUM_CFG[place];
   const name = entry.display_name || entry.username || "Explorer";
   const initial = name.slice(0, 1).toUpperCase();
 
   return (
-    <motion.div
-      className={`relative flex flex-col items-center ${cfg.wrap}`}
+    <motion.button
+      type="button"
+      onClick={() => onOpen(entry.user_id, entry.rank)}
+      aria-label={`View ${name}'s profile, rank ${place}`}
+      className={`relative flex flex-col items-center ${cfg.wrap} cursor-pointer rounded-t-[2rem] transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70 active:scale-[0.98]`}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: cfg.delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
