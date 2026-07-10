@@ -30,7 +30,7 @@ import {
 
 export const Route = createFileRoute("/chains")({
   head: () => ({
-    meta: [{ title: "Your Why chains — Why?" }],
+    meta: [{ title: "Your Favourites — Why?" }],
   }),
   component: ChainsPage,
 });
@@ -94,7 +94,7 @@ function ChainsPage() {
     <main className="relative min-h-[100dvh] w-full pb-32">
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
-        <h1 className="font-display text-3xl font-black text-white">Your Why chains</h1>
+        <h1 className="font-display text-3xl font-black text-white">Your Favourites</h1>
         <p className="mt-1 text-sm text-white/60">The curiosity trails you've saved.</p>
 
         {/* Collections */}
@@ -152,14 +152,14 @@ function ChainsPage() {
             </div>
           ) : (
             <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
-              No collections yet — group related chains into a theme.
+              No collections yet — group related favourites into a theme.
             </p>
           )}
         </section>
 
         {/* Chains */}
         <section className="mt-8">
-          <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
+          <h2 className="font-display text-lg font-black text-white">Saved Favourites</h2>
           <div className="mt-3 space-y-3">
             {chains.isLoading && (
               <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-white/60" /></div>
@@ -167,7 +167,7 @@ function ChainsPage() {
             {chains.data && chains.data.items.length === 0 && (
               <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
                 Nothing saved yet. Tap <span className="font-bold text-white">But… Why?</span> on a fact,
-                then <span className="font-bold text-white">Save chain</span> to keep the trail.
+                then <span className="font-bold text-white">Save to favourites</span> to keep the trail.
               </p>
             )}
             {(chains.data?.items ?? []).map((chain) => (
@@ -176,7 +176,7 @@ function ChainsPage() {
                 chain={chain}
                 onOpen={() => navigate({ to: "/chain/$id", params: { id: chain.id } })}
                 onDelete={() => {
-                  if (confirm("Delete this chain?")) del.mutate(chain.id);
+                  if (confirm("Delete this from favourites?")) del.mutate(chain.id);
                 }}
                 onPin={() => pin.mutate({ id: chain.id, pinned: !chain.pinned })}
                 onShare={() => share.mutate({ id: chain.id, is_public: !chain.is_public })}
@@ -195,7 +195,7 @@ function CollectionCard({ c }: { c: CollectionSummary }) {
     <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-3xl border border-white/10 p-4">
       <div className="text-2xl">📚</div>
       <div className="mt-1 font-black text-white">{c.name}</div>
-      <div className="text-[11px] text-white/50">{c.chain_count} chain{c.chain_count === 1 ? "" : "s"}</div>
+      <div className="text-[11px] text-white/50">{c.chain_count} item{c.chain_count === 1 ? "" : "s"}</div>
     </motion.div>
   );
 }
@@ -228,7 +228,7 @@ function ChainRow({
         <div className="flex items-start gap-2">
           <Sparkles className="mt-1 h-4 w-4 text-fuchsia-300" />
           <div className="flex-1">
-            <div className="font-display font-black leading-tight text-white">{chain.title ?? "Untitled chain"}</div>
+            <div className="font-display font-black leading-tight text-white">{chain.title ?? "Untitled favourite"}</div>
             {chain.last_question && (
               <div className="mt-0.5 line-clamp-2 text-xs text-white/60">→ {chain.last_question}</div>
             )}

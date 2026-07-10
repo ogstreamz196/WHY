@@ -6,7 +6,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 
 const items = [
   { to: "/",            label: "Home",   Icon: Home },
-  { to: "/chains",      label: "Chains", Icon: Sparkles },
+  { to: "/chains",      label: "Favourites", Icon: Sparkles },
   { to: "/leaderboard", label: "Ranks",  Icon: Medal },
   { to: "/store",       label: "Store",  Icon: Store },
   { to: "/profile",     label: "You",    Icon: User },
