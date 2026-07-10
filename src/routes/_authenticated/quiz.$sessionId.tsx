@@ -8,6 +8,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { Celebration } from "@/components/Celebration";
 import { AnswerSummary } from "@/components/AnswerSummary";
 import { FeedbackToggles } from "@/components/FeedbackToggles";
+import { SkeletonBlock } from "@/components/FunStates";
 import { feedback } from "@/lib/feedback";
 import {
   finishQuiz,
