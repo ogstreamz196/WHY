@@ -82,7 +82,7 @@ export const getPlayerProfilePublic = createServerFn({ method: "GET" })
       display_name: profile.display_name ?? null,
       avatar_id: profile.avatar_id ?? null,
       age_band: lb?.age_band ?? null,
-      favorite_category: profile.favorite_category ?? lb?.favorite_category ?? null,
+      favorite_category: profile.favorite_category ?? null,
       bio: profile.bio ?? null,
       joined_at: profile.created_at ?? null,
       is_vip: !!vipRes,
