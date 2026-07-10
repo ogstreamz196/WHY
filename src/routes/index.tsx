@@ -1028,14 +1028,23 @@ function WhyApp() {
                                   className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
                                 />
                                 <ChainStep index={0} question={asWhyQuestion(fact.question)} solved />
-                                {chain.map((layer, i) => (
-                                  <ChainStep
-                                    key={i}
-                                    index={i + 1}
-                                    question={layer.question}
-                                    answer={layer.answer}
-                                  />
-                                ))}
+                                {chain.map((layer, i) => {
+                                  const isLast = i === chain.length - 1;
+                                  const key = `${fact?.id ?? "x"}::${i + 1}`;
+                                  const rewarded = chainRewardedRef.current.has(key);
+                                  const counting = isLast && chainDwellKey === key;
+                                  return (
+                                    <ChainStep
+                                      key={i}
+                                      index={i + 1}
+                                      question={layer.question}
+                                      answer={layer.answer}
+                                      counting={counting}
+                                      rewarded={rewarded}
+                                    />
+                                  );
+                                })}
+
                                 {chainLoading && (
                                   <li className="relative">
                                     <span className="absolute -left-9 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/60">
