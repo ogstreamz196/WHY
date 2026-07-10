@@ -136,9 +136,13 @@ export function PlayerProfileModal({
                   initial={{ scale: 0.7, rotate: -8 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                  className="relative flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white/70 bg-neutral-950 text-3xl font-black text-white shadow-xl"
+                  className="relative flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white/70 bg-neutral-950 shadow-xl"
                 >
-                  {initial}
+                  {data?.avatar_id ? (
+                    <span className="text-4xl" aria-hidden>{avatarEmojiFor(data.avatar_id)}</span>
+                  ) : (
+                    <span className="text-3xl font-black text-white">{initial}</span>
+                  )}
                   {isMe && (
                     <span className="absolute -bottom-2 -right-2 rounded-full border border-white bg-fuchsia-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white shadow-md">
                       You
