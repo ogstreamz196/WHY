@@ -551,13 +551,68 @@ function ProfilePage() {
                 <div id="achievements-body" className="space-y-6">
                   <LevelProgressWidget xp={localPoints} milestones={widgetMilestones} />
 
-                  <div className="grid grid-cols-3 gap-3">
-                    {(achievements.data ?? []).map((a) => (
-                      <AchievementTile key={a.id} a={a} />
-                    ))}
-                  </div>
+                  {/* Server achievements: loading → skeleton, empty → empty state, else grid */}
+                  {achievements.isLoading && !achievements.data ? (
+                    <div className="grid grid-cols-3 gap-3" aria-busy="true" aria-live="polite">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-[104px] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
+                        />
+                      ))}
+                      <span className="sr-only">Loading achievements…</span>
+                    </div>
+                  ) : (achievements.data ?? []).length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
+                      <div className="text-3xl">🏆</div>
+                      <p className="mt-2 text-sm font-black text-white">No achievements yet</p>
+                      <p className="mt-1 text-xs text-white/60">
+                        Discover facts, keep a streak going, or take a quiz to start unlocking trophies.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-3">
+                      {(achievements.data ?? []).map((a) => (
+                        <AchievementTile
+                          key={a.id}
+                          a={a}
+                          onSelect={() =>
+                            setSelectedBadge({
+                              id: `achievement:${a.id}`,
+                              label: a.name,
+                              emoji: a.emoji,
+                              unlocked: !!a.unlocked_at,
+                              description: a.description,
+                              unlockedAt: a.unlocked_at,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
 
-                  {localBadges.length > 0 && (
+                  {/* Explorer badges: loading skeleton until localStorage read, then grid or empty state */}
+                  {!localHydrated ? (
+                    <div>
+                      <div className="mb-3 h-3 w-40 animate-pulse rounded bg-white/10" />
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy="true">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="h-[132px] animate-pulse rounded-3xl border border-white/10 bg-white/[0.04]"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : localBadges.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
+                      <div className="text-3xl">✨</div>
+                      <p className="mt-2 text-sm font-black text-white">Explorer badges appear here</p>
+                      <p className="mt-1 text-xs text-white/60">
+                        Explore facts on the home screen to earn your first explorer badge.
+                      </p>
+                    </div>
+                  ) : (
                     <div>
                       <p className="mb-3 text-xs text-white/60">
                         Explorer badges · unlocked{" "}
@@ -569,14 +624,23 @@ function ProfilePage() {
                         {localBadges.map((b, i) => (
                           <motion.button
                             type="button"
-                            onClick={() => setSelectedBadge(b)}
+                            onClick={() =>
+                              setSelectedBadge({
+                                id: b.id,
+                                label: b.label,
+                                emoji: b.emoji,
+                                unlocked: b.unlocked,
+                                progress: localProgressFor(b.id),
+                              })
+                            }
                             key={b.id}
                             initial={{ opacity: 0, y: 10, scale: 0.9 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             whileHover={{ scale: b.unlocked ? 1.05 : 1.02 }}
                             whileTap={{ scale: 0.96 }}
                             transition={{ delay: Math.min(i, 12) * 0.03 }}
-                            className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition ${
+                            aria-label={`${b.label} — ${b.unlocked ? "unlocked" : "locked"}. View details`}
+                            className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60 ${
                               b.unlocked ? "" : "opacity-50 grayscale hover:opacity-80"
                             }`}
                           >
