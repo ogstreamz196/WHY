@@ -305,16 +305,26 @@ function QuizPlayPage() {
                       : isPicked
                         ? "selected"
                         : "";
+                  const isTabStop = focusIdx === i;
                   return (
                     <motion.button
                       key={i}
-                      ref={i === 0 ? firstChoiceRef : undefined}
+                      ref={(el) => {
+                        choiceRefs.current[i] = el;
+                      }}
                       type="button"
                       role="radio"
                       aria-checked={isPicked}
+                      tabIndex={isTabStop ? 0 : -1}
                       aria-label={`Option ${letter}: ${choice}${stateLabel ? `, ${stateLabel}` : ""}`}
-                      onClick={() => handlePick(i)}
+                      onClick={() => {
+                        setFocusIdx(i);
+                        void handlePick(i);
+                      }}
+                      onFocus={() => setFocusIdx(i)}
+                      onKeyDown={(e) => handleChoiceKey(e, i)}
                       disabled={answering || !!result}
+                      whileHover={!result && !answering ? { scale: 1.01, y: -1 } : undefined}
                       whileTap={{ scale: 0.98 }}
                       className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed ${
                         isCorrect
@@ -341,33 +351,16 @@ function QuizPlayPage() {
 
             <AnimatePresence>
               {result && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`mt-4 rounded-2xl border p-3 ${
-                    result.correct
-                      ? "border-emerald-400/30 bg-emerald-400/10"
-                      : "border-rose-400/30 bg-rose-400/10"
-                  }`}
-                >
-                  <p className="text-sm font-black text-white">
-                    {result.correct ? `✅ +${result.points_awarded} points` : "❌ Not quite"}
-                  </p>
-                  {result.explanation && (
-                    <p className="mt-1 text-xs leading-relaxed text-white/80">{result.explanation}</p>
-                  )}
-                  {current.fun_fact && (
-                    <p className="mt-2 text-xs italic text-yellow-200/90">⭐ {current.fun_fact}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={next}
-                    className="mt-3 w-full rounded-full px-4 py-2.5 text-sm font-black text-white"
-                    style={{ background: "var(--gradient-primary)" }}
-                  >
-                    {idx + 1 >= quiz.questions.length ? "See results" : "Next question →"}
-                  </button>
-                </motion.div>
+                <AnswerSummary
+                  correct={result.correct}
+                  explanation={result.explanation ?? undefined}
+                  funFact={current.fun_fact ?? undefined}
+                  points={result.correct ? result.points_awarded : 0}
+                  scoreBefore={scoreBefore}
+                  scoreAfter={totalPoints}
+                  onAction={next}
+                  actionLabel={idx + 1 >= quiz.questions.length ? "See results" : "Next question →"}
+                />
               )}
             </AnimatePresence>
           </motion.article>
