@@ -104,6 +104,7 @@ import { Celebration } from "@/components/Celebration";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
+import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
 import { GuestSignUpPopup } from "@/components/GuestSignUpPopup";
 import { getGuestPromptSeconds } from "@/lib/boss.functions";
 import { useQuery } from "@tanstack/react-query";
