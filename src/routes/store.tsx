@@ -10,6 +10,9 @@ import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getMyStats, spendCoins } from "@/lib/account.functions";
 import {
   COIN_PACKS,
   STORE_CATALOG,
@@ -21,6 +24,7 @@ import {
   type StoreCategory,
   type StoreItem,
 } from "@/lib/store";
+
 
 export const Route = createFileRoute("/store")({
   head: () => ({
@@ -52,6 +56,15 @@ function StorePage() {
   const [confetti, setConfetti] = useState(0);
   const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
   const { isVip, subscription } = useSubscription(userId);
+  const qc = useQueryClient();
+  const fetchStats = useServerFn(getMyStats);
+  const doSpend = useServerFn(spendCoins);
+
+  const serverStats = useQuery({
+    queryKey: ["stats"],
+    queryFn: () => fetchStats(),
+    enabled: !!userId,
+  });
 
   const refresh = () => {
     setCoins(getPoints());
@@ -59,6 +72,12 @@ function StorePage() {
     setEquip(getEquipped());
   };
   useEffect(() => { refresh(); }, []);
+
+  // When signed in, mirror server balance into the local display.
+  useEffect(() => {
+    if (userId && serverStats.data) setCoins(serverStats.data.total_points);
+  }, [userId, serverStats.data]);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -105,7 +124,38 @@ function StorePage() {
   };
 
 
-  const buy = (item: StoreItem) => {
+  const buy = async (item: StoreItem) => {
+    // Signed-in: check server balance & debit server-side first.
+    if (userId) {
+      if (coins < item.cost) {
+        flash(`Need ${item.cost - coins} more coins`);
+        return;
+      }
+      try {
+        const res = await doSpend({ data: { amount: item.cost, reason: `store:${item.id}` } });
+        if (!res.ok) {
+          flash(`Need ${item.cost - res.total_points} more coins`);
+          setCoins(res.total_points);
+          return;
+        }
+        setCoins(res.total_points);
+        qc.invalidateQueries({ queryKey: ["stats"] });
+      } catch (e) {
+        console.error(e);
+        flash("Purchase failed — try again");
+        return;
+      }
+      // Grant inventory locally without double-debiting local coins.
+      const inv = getInventory();
+      if (!inv.includes(item.id)) {
+        inv.push(item.id);
+        try { window.sessionStorage.setItem("why:inventory", JSON.stringify(inv)); } catch { /* ignore */ }
+      }
+      setInventory(inv);
+      flash(`${item.emoji} ${item.name} unlocked!`);
+      return;
+    }
+    // Guest fallback: local-only.
     const res = purchaseItem(item.id);
     if (!res.ok) {
       flash(
@@ -120,6 +170,7 @@ function StorePage() {
     refresh();
     flash(`${item.emoji} ${item.name} unlocked!`);
   };
+
 
   const equip = (item: StoreItem) => {
     if (item.category !== "avatar" && item.category !== "theme") return;
