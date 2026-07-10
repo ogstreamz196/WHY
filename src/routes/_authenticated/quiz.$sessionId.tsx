@@ -216,6 +216,8 @@ function QuizPlayPage() {
           <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-amber-300">
             {totalPoints} pts
           </div>
+          <FeedbackToggles />
+
         </header>
 
         {/* Timer — only after reveal */}
