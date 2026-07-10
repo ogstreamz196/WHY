@@ -46,6 +46,44 @@ export type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
 // -------------------- Random fact --------------------
 
+// Curated fallback facts — served when the DB pool is empty or RLS filters out
+// everything (fresh install, offline preview, anon visitors). Guarantees that
+// every visitor — signed in or not — always sees a fact on the landing page.
+const FALLBACK_FACTS: Fact[] = [
+  {
+    id: "00000000-0000-0000-0000-000000000001",
+    question: "why is the sky blue",
+    answer: "Sunlight scatters off tiny air molecules, and blue light scatters the most.",
+    category: "science",
+    fun_fact: "At sunset the light travels through more air, so only the reds and oranges reach your eyes.",
+    code: "WHY-SKY001",
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000002",
+    question: "why do we yawn",
+    answer: "Your brain uses yawns to cool down and pull in a fresh burst of oxygen.",
+    category: "body",
+    fun_fact: "Yawns are contagious — just reading this might make you yawn!",
+    code: "WHY-YWN002",
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000003",
+    question: "why does the moon change shape",
+    answer: "The Sun lights up different sides of the Moon as it orbits Earth.",
+    category: "space",
+    fun_fact: "One full cycle of Moon phases takes about 29.5 days.",
+    code: "WHY-MOON03",
+  },
+];
+
+function pickFallback(skip: Set<string>, category?: string): Fact {
+  const pool = category ? FALLBACK_FACTS.filter((f) => f.category === category) : FALLBACK_FACTS;
+  const list = pool.length ? pool : FALLBACK_FACTS;
+  const fresh = list.filter((f) => !skip.has(f.id));
+  const choice = (fresh.length ? fresh : list)[Math.floor(Math.random() * (fresh.length ? fresh.length : list.length))];
+  return choice;
+}
+
 export const getRandomFact = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) =>
     z
@@ -68,38 +106,44 @@ export const getRandomFact = createServerFn({ method: "GET" })
       return q;
     };
 
-    let countQuery = supabase.from("facts").select("id", { count: "exact", head: true });
-    if (data.category) countQuery = countQuery.eq("category", data.category);
-    const { count } = await countQuery;
-    if (!count || count === 0) {
-      const { data: any } = await supabase.from("facts").select(FACT_COLS).limit(1);
-      return (any?.[0] as Fact) ?? null;
+    try {
+      let countQuery = supabase.from("facts").select("id", { count: "exact", head: true });
+      if (data.category) countQuery = countQuery.eq("category", data.category);
+      const { count } = await countQuery;
+      if (!count || count === 0) {
+        const { data: any } = await supabase.from("facts").select(FACT_COLS).limit(1);
+        return (any?.[0] as Fact) ?? pickFallback(skip, data.category);
+      }
+
+      // If the caller has seen (nearly) everything in this scope, fall back to
+      // any fact — we've exhausted the pool.
+      const exhausted = skip.size >= count;
+
+      for (let attempt = 0; attempt < 8 && !exhausted; attempt++) {
+        const offset = Math.floor(Math.random() * count);
+        const { data: rows } = await base()
+          .order("created_at", { ascending: true })
+          .range(offset, offset);
+        const row = rows?.[0] as Fact | undefined;
+        if (row && !skip.has(row.id)) return row;
+      }
+
+      // Deterministic scan for the first unseen row (handles clustered seens).
+      if (!exhausted) {
+        const { data: rows } = await base().order("created_at", { ascending: true }).limit(200);
+        const fresh = (rows ?? []).find((r) => !skip.has((r as Fact).id));
+        if (fresh) return fresh as Fact;
+      }
+
+      // Truly exhausted — return any row so the UI doesn't stall.
+      const { data: fallback } = await base().limit(1);
+      return (fallback?.[0] as Fact) ?? pickFallback(skip, data.category);
+    } catch (err) {
+      console.warn("getRandomFact failed, serving fallback", err);
+      return pickFallback(skip, data.category);
     }
-
-    // If the caller has seen (nearly) everything in this scope, fall back to
-    // any fact — we've exhausted the pool.
-    const exhausted = skip.size >= count;
-
-    for (let attempt = 0; attempt < 8 && !exhausted; attempt++) {
-      const offset = Math.floor(Math.random() * count);
-      const { data: rows } = await base()
-        .order("created_at", { ascending: true })
-        .range(offset, offset);
-      const row = rows?.[0] as Fact | undefined;
-      if (row && !skip.has(row.id)) return row;
-    }
-
-    // Deterministic scan for the first unseen row (handles clustered seens).
-    if (!exhausted) {
-      const { data: rows } = await base().order("created_at", { ascending: true }).limit(200);
-      const fresh = (rows ?? []).find((r) => !skip.has((r as Fact).id));
-      if (fresh) return fresh as Fact;
-    }
-
-    // Truly exhausted — return any row so the UI doesn't stall.
-    const { data: fallback } = await base().limit(1);
-    return (fallback?.[0] as Fact) ?? null;
   });
+
 
 
 
