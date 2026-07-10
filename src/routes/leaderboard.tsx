@@ -85,6 +85,18 @@ function medalClass(rank: number): string {
   return "bg-white/5 text-white/70";
 }
 
+// Shared tap / focus / hover behaviour for every clickable player surface
+// (podium columns, leaderboard rows, "Your rank" banner) so keyboard, mouse
+// and touch all get the same affordances.
+const INTERACTIVE_PLAYER =
+  "min-h-11 cursor-pointer transition-transform transition-shadow duration-200 " +
+  "hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] " +
+  "focus:outline-none focus-visible:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-fuchsia-300/70 focus-visible:ring-offset-2 " +
+  "focus-visible:ring-offset-transparent " +
+  "disabled:cursor-default disabled:opacity-100 disabled:hover:translate-y-0 disabled:hover:shadow-none";
+
+
 function ArenaPage() {
   const { user } = useCurrentUser();
   const fetchBoard = useServerFn(getLeaderboardPublic);
@@ -242,7 +254,7 @@ function ArenaPage() {
             onClick={() => user?.id && setSelected({ userId: user.id, rank: result.my_rank! })}
             disabled={!user?.id}
             aria-label="View your player profile"
-            className="glass-strong mb-3 flex w-full items-center justify-between rounded-2xl border border-fuchsia-300/40 bg-fuchsia-500/10 p-3 text-left ring-2 ring-fuchsia-300/40 transition hover:-translate-y-0.5 hover:bg-fuchsia-500/15 focus-visible:outline-none focus-visible:ring-fuchsia-300/70 active:scale-[0.99] disabled:cursor-default disabled:opacity-100 disabled:hover:translate-y-0"
+            className={`glass-strong mb-3 flex w-full items-center justify-between rounded-2xl border border-fuchsia-300/40 bg-fuchsia-500/10 p-3 text-left ring-2 ring-fuchsia-300/40 hover:bg-fuchsia-500/15 ${INTERACTIVE_PLAYER}`}
           >
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200">Your rank</p>
@@ -334,11 +346,12 @@ function ArenaPage() {
                         type="button"
                         onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
                         aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
-                        className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.995] ${
+                        className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left ${INTERACTIVE_PLAYER} ${
                           me
                             ? "border-fuchsia-300/60 bg-fuchsia-500/15 shadow-[0_0_28px_rgba(217,70,239,0.28)] ring-2 ring-fuchsia-300/40"
                             : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
                         }`}
+
                       >
                         {me && (
                           <motion.span
@@ -591,7 +604,7 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
       type="button"
       onClick={() => onOpen(entry.user_id, entry.rank)}
       aria-label={`View ${name}'s profile, rank ${place}`}
-      className={`relative flex flex-col items-center ${cfg.wrap} cursor-pointer rounded-t-[2rem] transition hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70 active:scale-[0.98]`}
+      className={`relative flex flex-col items-center ${cfg.wrap} rounded-t-[2rem] ${INTERACTIVE_PLAYER}`}
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: cfg.delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}

@@ -43,6 +43,8 @@ export function PlayerProfileModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     if (!userId) return;
     let alive = true;
@@ -55,12 +57,13 @@ export function PlayerProfileModal({
         if (!p) setError("This explorer has kept their profile private.");
         else setData(p);
       })
-      .catch(() => alive && setError("Couldn't load this player right now."))
+      .catch(() => alive && setError("Couldn't load this player right now. Please try again."))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [userId, fetchProfile]);
+  }, [userId, fetchProfile, attempt]);
+
 
   useEffect(() => {
     if (!userId) return;
@@ -164,15 +167,49 @@ export function PlayerProfileModal({
             {/* Body */}
             <div className="max-h-[70vh] overflow-y-auto px-5 pb-6 pt-4">
               {loading ? (
-                <div className="space-y-2" aria-busy="true">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-16 animate-pulse rounded-2xl bg-white/5" />
-                  ))}
+                <div
+                  className="space-y-3"
+                  aria-busy="true"
+                  aria-live="polite"
+                  role="status"
+                >
+                  <span className="sr-only">Loading player profile…</span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-[76px] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
+                      />
+                    ))}
+                  </div>
+                  <div className="h-24 animate-pulse rounded-2xl border border-white/10 bg-white/[0.03]" />
                 </div>
               ) : error ? (
-                <p className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center text-sm text-white/70">
-                  {error}
-                </p>
+                <div
+                  role="alert"
+                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center"
+                >
+                  <p className="text-2xl" aria-hidden>😕</p>
+                  <p className="mt-2 text-sm text-white/80">{error}</p>
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAttempt((n) => n + 1)}
+                      className="min-h-11 rounded-full px-4 py-2 text-xs font-black text-white shadow-[var(--shadow-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/70"
+                      style={{ background: "var(--gradient-primary)" }}
+                    >
+                      Try again
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="min-h-11 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-black text-white/80 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+
               ) : data ? (
                 <>
                   {data.bio && (
