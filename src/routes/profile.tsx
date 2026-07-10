@@ -231,6 +231,7 @@ function ProfilePage() {
     if (profile.data) {
       setName(profile.data.display_name ?? "");
       setBio(profile.data.bio ?? "");
+      setStatus(profile.data.status_message ?? "");
     }
   }, [profile.data]);
 
