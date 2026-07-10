@@ -641,7 +641,7 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
           </span>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.button>
   );
 }
 
