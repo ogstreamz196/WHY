@@ -123,6 +123,7 @@ function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
+  const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [sectionOrder, setSectionOrder] = useState<"achievements-first" | "discoveries-first">(
     "achievements-first",
