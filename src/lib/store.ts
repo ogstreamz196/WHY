@@ -413,6 +413,15 @@ export const avatarEmojiFor = (avatarId: string | null | undefined): string => {
   return item?.emoji ?? "🌱";
 };
 
+/** Resolve the animation kind for an avatar_id, if any. */
+export const avatarAnimationFor = (
+  avatarId: string | null | undefined,
+): AnimatedAvatarKind | undefined => {
+  if (!avatarId) return undefined;
+  const item = STORE_CATALOG.find((i) => i.id === avatarId && i.category === "avatar");
+  return item?.animation;
+};
+
 export const getInventory = (isVip = false): string[] => {
   const owned = read<string[]>(KEY_INVENTORY, []);
   const extras = isVip ? VIP_ITEMS : [];
