@@ -1,9 +1,7 @@
 // Public leaderboard reads — no auth required. Backed by leaderboard_* views
 // which grant SELECT to anon.
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { Database } from "@/integrations/supabase/types";
 import type {
   LeaderboardKind,
   LeaderboardEntry,
@@ -134,67 +132,29 @@ async function fetchRows(
   kind: string,
   filter: string | undefined,
 ): Promise<{ rows: LbRow[]; windowLabel: string | null }> {
-    const url = process.env.SUPABASE_URL!;
-    const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-    const supabase = createClient<Database>(url, key, {
-      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    });
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const safeKind = ["global", "age", "category", "window", "rising", "streaks", "weekend", "new"].includes(kind)
+    ? kind
+    : "global";
+  const { data, error } = await (supabaseAdmin as any).rpc("get_public_leaderboard", {
+    _kind: safeKind,
+    _filter: filter ?? null,
+  });
+  if (error) throw error;
 
-    let rows: LbRow[] = [];
-    let windowLabel: string | null = null;
-    const cols =
-      "user_id, username, display_name, avatar_id, age_band, favorite_category, score";
+  const rows = ((data ?? []) as Array<LbRow & { category?: string | null }>).map((row) => ({
+    user_id: row.user_id,
+    username: row.username,
+    display_name: row.display_name,
+    avatar_id: row.avatar_id,
+    age_band: row.age_band,
+    favorite_category: row.favorite_category,
+    score: row.score ?? 0,
+  }));
 
-  if (kind === "global") {
-      const { data: r } = await supabase.from("leaderboard_global").select(cols);
-      rows = (r ?? []) as LbRow[];
-  } else if (kind === "age") {
-    const band = filter ?? "adult";
-      const { data: r } = await supabase
-        .from("leaderboard_global")
-        .select(cols)
-        .eq("age_band", band);
-      rows = (r ?? []) as LbRow[];
-  } else if (kind === "category") {
-    const cat = filter ?? "";
-      const { data: r } = await supabase
-        .from("leaderboard_category")
-        .select("user_id, username, display_name, avatar_id, age_band, score")
-        .eq("category", cat);
-      rows = ((r ?? []) as Array<Omit<LbRow, "favorite_category">>).map((x) => ({
-        ...x,
-        favorite_category: null,
-      }));
-      windowLabel = cat;
-  } else if (kind === "window") {
-    const win = filter && WINDOW_DAYS[filter] ? filter : "weekly";
-      const days = WINDOW_DAYS[win];
-      const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
-      const { data: r } = await supabase
-        .from("leaderboard_windowed")
-        .select(`${cols}, created_at`)
-        .gte("created_at", since);
-      const agg = new Map<string, LbRow>();
-      for (const row of (r ?? []) as Array<LbRow & { created_at: string }>) {
-        const cur = agg.get(row.user_id);
-        if (cur) cur.score = (cur.score ?? 0) + (row.score ?? 0);
-        else agg.set(row.user_id, { ...row, score: row.score ?? 0 });
-      }
-      rows = [...agg.values()];
-      windowLabel = win;
-  } else if (kind === "rising") {
-      const { data: r } = await supabase.from("leaderboard_rising").select(cols);
-      rows = (r ?? []) as LbRow[];
-  } else if (kind === "streaks") {
-      const { data: r } = await supabase.from("leaderboard_streaks").select(cols);
-      rows = (r ?? []) as LbRow[];
-  } else if (kind === "weekend") {
-      const { data: r } = await supabase.from("leaderboard_weekend").select(cols);
-      rows = (r ?? []) as LbRow[];
-  } else if (kind === "new") {
-      const { data: r } = await supabase.from("leaderboard_new").select(cols);
-      rows = (r ?? []) as LbRow[];
-    }
+  let windowLabel: string | null = null;
+  if (safeKind === "category") windowLabel = filter ?? null;
+  if (safeKind === "window") windowLabel = filter && WINDOW_DAYS[filter] ? filter : "weekly";
 
   return { rows, windowLabel };
 }
