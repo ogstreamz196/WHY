@@ -1,6 +1,52 @@
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { X, Lock, Check, Sparkles, Calendar, Trophy } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+/**
+ * Detects low-power / constrained environments where heavy motion should be
+ * suppressed: prefers-reduced-motion, save-data, low deviceMemory, few CPU
+ * cores, or throttled network.
+ */
+function detectLowPower(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return true;
+    const nav = navigator as Navigator & {
+      deviceMemory?: number;
+      connection?: { saveData?: boolean; effectiveType?: string };
+    };
+    if (nav.connection?.saveData) return true;
+    if (typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2) return true;
+    if (typeof nav.hardwareConcurrency === "number" && nav.hardwareConcurrency > 0 && nav.hardwareConcurrency <= 2) return true;
+    const et = nav.connection?.effectiveType;
+    if (et === "slow-2g" || et === "2g") return true;
+  } catch {
+    /* noop */
+  }
+  return false;
+}
+
+function usePerfMode() {
+  const [lowPower, setLowPower] = useState(false);
+  const [visible, setVisible] = useState(
+    typeof document === "undefined" ? true : document.visibilityState !== "hidden",
+  );
+
+  useEffect(() => {
+    setLowPower(detectLowPower());
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const onMq = () => setLowPower(detectLowPower());
+    mq?.addEventListener?.("change", onMq);
+    const onVis = () => setVisible(document.visibilityState !== "hidden");
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      mq?.removeEventListener?.("change", onMq);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
+  return { lowPower, visible, heavyFx: !lowPower && visible };
+}
 
 export type BadgeDetail = {
   id: string;
