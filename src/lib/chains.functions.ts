@@ -62,6 +62,15 @@ const StepSchema = z.object({
   answer: z.string().trim().max(2000).optional().nullable(),
 });
 
+export type ChampionClaim = {
+  claimed: boolean;
+  title_key: string;
+  value: number;
+  previous_value: number;
+  previous_holder_id: string | null;
+  previous_holder_name: string | null;
+};
+
 export const saveChain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -73,7 +82,7 @@ export const saveChain = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }): Promise<{ id: string; newlyUnlocked: string[] }> => {
+  .handler(async ({ data, context }): Promise<{ id: string; newlyUnlocked: string[]; champion: ChampionClaim | null }> => {
     const { data: chain, error } = await context.supabase
       .from("why_chains")
       .insert({
@@ -94,8 +103,66 @@ export const saveChain = createServerFn({ method: "POST" })
     const { error: stepsErr } = await context.supabase.from("why_chain_steps").insert(rows);
     if (stepsErr) throw new Error(stepsErr.message);
     const newlyUnlocked = await runAchievementCheckForUser(context);
-    return { id: chain.id, newlyUnlocked };
+
+    // Claim the "longest chain" champion title if this chain sets a new record.
+    let champion: ChampionClaim | null = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: claim } = await supabaseAdmin.rpc("claim_champion_title", {
+        _title: "longest_chain",
+        _user: context.userId,
+        _value: data.steps.length,
+        _ref: chain.id,
+      });
+      const row = Array.isArray(claim) ? claim[0] : claim;
+      if (row) {
+        let prevName: string | null = null;
+        if (row.previous_holder) {
+          const { data: prof } = await supabaseAdmin
+            .from("profiles").select("display_name").eq("id", row.previous_holder).maybeSingle();
+          prevName = prof?.display_name ?? null;
+        }
+        champion = {
+          claimed: !!row.claimed,
+          title_key: "longest_chain",
+          value: row.current_value ?? data.steps.length,
+          previous_value: row.previous_value ?? 0,
+          previous_holder_id: row.previous_holder ?? null,
+          previous_holder_name: prevName,
+        };
+      }
+    } catch (e) { console.warn("champion claim failed", e); }
+
+    return { id: chain.id, newlyUnlocked, champion };
   });
+
+export const getChampionTitle = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) =>
+    z.object({ title_key: z.string().min(1).max(64).default("longest_chain") }).parse(input ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const sb = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
+    );
+    const { data: row } = await sb
+      .from("champion_titles").select("*").eq("title_key", data.title_key).maybeSingle();
+    if (!row) return null;
+    let holder: { id: string; display_name: string | null; avatar_id: string | null } | null = null;
+    if (row.holder_user_id) {
+      const { data: prof } = await sb
+        .from("profiles").select("id, display_name, avatar_id").eq("id", row.holder_user_id).maybeSingle();
+      holder = prof ?? null;
+    }
+    return {
+      title_key: row.title_key,
+      record_value: row.record_value,
+      claimed_at: row.claimed_at,
+      holder,
+    };
+  });
+
 
 export const listMyChains = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
