@@ -43,10 +43,11 @@ export type ProfileDTO = {
   favorite_category: string | null;
   leaderboard_opt_out: boolean;
   hide_from_public: boolean;
+  status_message: string | null;
 };
 
 const PROFILE_COLS =
-  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public";
+  "id, display_name, username, avatar_id, bio, created_at, age_band, favorite_category, leaderboard_opt_out, hide_from_public, status_message";
 
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -80,13 +81,25 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         favorite_category: z.string().max(40).optional(),
         leaderboard_opt_out: z.boolean().optional(),
         hide_from_public: z.boolean().optional(),
+        status_message: z.string().trim().max(60).nullable().optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<ProfileDTO> => {
+    // status_message is a VIP-only feature — silently drop for non-VIPs.
+    const patch: Record<string, unknown> = { ...data };
+    if ("status_message" in patch) {
+      const { data: sub } = await context.supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      const isVip = !!sub && (sub.status === "active" || sub.status === "trialing");
+      if (!isVip) delete patch.status_message;
+    }
     const { data: row, error } = await context.supabase
       .from("profiles")
-      .update({ ...data, updated_at: new Date().toISOString() })
+      .update({ ...patch, updated_at: new Date().toISOString() })
       .eq("id", context.userId)
       .select(PROFILE_COLS)
       .single();
