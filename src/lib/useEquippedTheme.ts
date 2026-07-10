@@ -30,7 +30,15 @@ export function useEquippedTheme() {
     applyEquipped();
     const onChange = () => applyEquipped();
     window.addEventListener("why:equipped-change", onChange as EventListener);
-    return () => window.removeEventListener("why:equipped-change", onChange as EventListener);
+    // Cross-tab / storage sync
+    window.addEventListener("storage", onChange);
+    // Re-apply when tab regains focus (covers SPA nav edge cases)
+    window.addEventListener("focus", onChange);
+    return () => {
+      window.removeEventListener("why:equipped-change", onChange as EventListener);
+      window.removeEventListener("storage", onChange);
+      window.removeEventListener("focus", onChange);
+    };
   }, [applyEquipped]);
 }
 
