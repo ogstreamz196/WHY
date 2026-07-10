@@ -167,17 +167,20 @@ export function DailyChallenge({ onCompleted }: Props) {
             </div>
 
           </div>
-          {done && (
-            <button
-              type="button"
-              onClick={() => setCollapsed((v) => !v)}
-              aria-expanded={!collapsed}
-              aria-controls="daily-challenge-body"
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-            >
-              {collapsed ? "Show" : "Hide"}
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            <FeedbackToggles />
+            {done && (
+              <button
+                type="button"
+                onClick={() => setCollapsed((v) => !v)}
+                aria-expanded={!collapsed}
+                aria-controls="daily-challenge-body"
+                className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              >
+                {collapsed ? "Show" : "Hide"}
+              </button>
+            )}
+          </div>
         </header>
 
 
