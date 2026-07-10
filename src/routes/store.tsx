@@ -12,7 +12,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyStats, spendCoins } from "@/lib/account.functions";
+import { getMyStats, spendCoins, updateMyProfile } from "@/lib/account.functions";
 import {
   COIN_PACKS,
   STORE_CATALOG,
@@ -59,6 +59,7 @@ function StorePage() {
   const qc = useQueryClient();
   const fetchStats = useServerFn(getMyStats);
   const doSpend = useServerFn(spendCoins);
+  const doUpdateProfile = useServerFn(updateMyProfile);
 
   const serverStats = useQuery({
     queryKey: ["stats"],
@@ -172,11 +173,20 @@ function StorePage() {
   };
 
 
-  const equip = (item: StoreItem) => {
+  const equip = async (item: StoreItem) => {
     if (item.category !== "avatar" && item.category !== "theme") return;
     setEquipped({ [item.category]: item.id });
     refresh();
     flash(`${item.emoji} equipped`);
+    if (userId && item.category === "avatar") {
+      try {
+        await doUpdateProfile({ data: { avatar_id: item.id } });
+        qc.invalidateQueries({ queryKey: ["profile"] });
+        qc.invalidateQueries({ queryKey: ["player-profile"] });
+      } catch (e) {
+        console.error("Failed to sync avatar to profile", e);
+      }
+    }
   };
 
   const items = STORE_CATALOG.filter((i) => tab !== "vip" && i.category === tab);
