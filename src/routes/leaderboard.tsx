@@ -618,7 +618,7 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           aria-hidden="true"
         >
-          <Crown className="h-10 w-10 fill-amber-400 text-amber-400 drop-shadow-[0_0_14px_rgba(251,191,36,0.7)]" />
+          <Crown className="h-14 w-14 fill-amber-400 text-amber-400 drop-shadow-[0_0_18px_rgba(251,191,36,0.85)]" />
         </motion.div>
       )}
 
