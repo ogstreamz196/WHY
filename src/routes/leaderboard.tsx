@@ -627,7 +627,7 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
         <div className={`relative ${cfg.avatar} rounded-full ${cfg.ring} bg-neutral-950 p-1.5`}>
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-white/10 to-white/0">
             {entry.avatar_id ? (
-              <span className={place === 1 ? "text-5xl" : "text-3xl"} aria-hidden>
+              <span className={place === 1 ? "text-6xl sm:text-7xl" : place === 2 ? "text-4xl" : "text-3xl"} aria-hidden>
                 {avatarEmojiFor(entry.avatar_id)}
               </span>
             ) : (
