@@ -32,8 +32,13 @@ test.describe("/badges legacy redirect", () => {
     // We visit the profile page directly; if auth intercepts, we still check
     // that no build/route error occurred (page renders SOMETHING with a nav).
     await page.goto("/profile#achievements");
-    // Wait for either the achievements anchor or the auth form to appear.
     await page.waitForLoadState("domcontentloaded");
+    // The auth gate redirects client-side, so let the URL settle first.
+    try {
+      await page.waitForURL(/\/auth(\?|$)/, { timeout: 4000 });
+    } catch {
+      // Stayed on /profile — a session is available.
+    }
     const url = new URL(page.url());
     if (url.pathname === "/profile") {
       const anchor = page.locator("#achievements");
