@@ -105,7 +105,6 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
-import { lovable } from "@/integrations/lovable";
 
 
 import { useQuery } from "@tanstack/react-query";
