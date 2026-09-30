@@ -1,19 +1,24 @@
-import { useMemo } from "react";
+/**
+ * Deterministic pseudo-random so the server-rendered HTML and the hydrated
+ * client markup match exactly (Math.random() would mismatch on every load).
+ */
+function seeded(n: number) {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+const STARS = Array.from({ length: 40 }, (_, i) => ({
+  id: i,
+  top: +(seeded(i + 1) * 100).toFixed(4),
+  left: +(seeded(i + 101) * 100).toFixed(4),
+  size: +(seeded(i + 201) * 2 + 1).toFixed(4),
+  delay: +(seeded(i + 301) * 3).toFixed(4),
+  duration: +(2 + seeded(i + 401) * 3).toFixed(4),
+}));
 
 /** Deep-space animated background with drifting nebulae + twinkling stars. */
 export function CosmicBackground() {
-  const stars = useMemo(
-    () =>
-      Array.from({ length: 40 }, (_, i) => ({
-        id: i,
-        top: Math.random() * 100,
-        left: Math.random() * 100,
-        size: Math.random() * 2 + 1,
-        delay: Math.random() * 3,
-        duration: 2 + Math.random() * 3,
-      })),
-    [],
-  );
+  const stars = STARS;
 
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">

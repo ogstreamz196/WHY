@@ -11,8 +11,15 @@ import { expect, test } from "@playwright/test";
 async function gotoProfile(page: import("@playwright/test").Page, hash = "") {
   await page.goto(`/profile${hash}`);
   await page.waitForLoadState("domcontentloaded");
-  const path = new URL(page.url()).pathname;
-  return path === "/profile";
+  // The auth gate runs client-side, so the bounce to /auth happens *after*
+  // domcontentloaded. Wait for the URL to settle before deciding whether we
+  // actually landed on the profile page.
+  try {
+    await page.waitForURL(/\/auth(\?|$)/, { timeout: 4000 });
+  } catch {
+    // Stayed on /profile — a session is available.
+  }
+  return new URL(page.url()).pathname === "/profile";
 }
 
 test.describe("Achievements + Explorer badge grid", () => {

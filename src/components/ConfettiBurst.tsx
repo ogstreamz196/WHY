@@ -16,19 +16,20 @@ export function ConfettiBurst({ trigger, duration = 1800 }: { trigger: number; d
     return () => clearTimeout(t);
   }, [trigger, duration]);
 
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 40 }, (_, i) => ({
-        id: i,
-        x: (Math.random() - 0.5) * window.innerWidth * 0.9,
-        y: -window.innerHeight * 0.55 + Math.random() * 80,
-        rot: Math.random() * 720,
-        color: COLORS[i % COLORS.length],
-        delay: Math.random() * 0.15,
-        size: 6 + Math.random() * 6,
-      })),
-    [key],
-  );
+  const pieces = useMemo(() => {
+    // Guard browser globals: this component can be evaluated during SSR.
+    const vw = typeof window === "undefined" ? 1024 : window.innerWidth;
+    const vh = typeof window === "undefined" ? 768 : window.innerHeight;
+    return Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: (Math.random() - 0.5) * vw * 0.9,
+      y: -vh * 0.55 + Math.random() * 80,
+      rot: Math.random() * 720,
+      color: COLORS[i % COLORS.length],
+      delay: Math.random() * 0.15,
+      size: 6 + Math.random() * 6,
+    }));
+  }, [key]);
 
   return (
     <AnimatePresence>
