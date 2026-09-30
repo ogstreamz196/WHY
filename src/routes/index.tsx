@@ -413,47 +413,30 @@ function WhyApp() {
 
 
 
-  // Guest auto sign-in: instead of nagging with a prompt, kick off OAuth
-  // automatically (Apple on Apple devices, Google otherwise). We only try
-  // once per browser session and re-attempt every few minutes if dismissed.
-  const autoSignInAttempted = useRef(false);
-  const triggerAutoSignIn = useCallback(async () => {
-    if (autoSignInAttempted.current) return;
-    autoSignInAttempted.current = true;
-    try {
-      const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
-      const platform =
-        typeof navigator !== "undefined"
-          ? (navigator as Navigator & { platform?: string }).platform || ""
-          : "";
-      const iOS = /iPad|iPhone|iPod/.test(ua) || /iPad|iPhone|iPod/.test(platform);
-      const iPadOS = platform === "MacIntel" && (navigator?.maxTouchPoints ?? 0) > 1;
-      const mac = /Macintosh|Mac OS X/.test(ua);
-      const provider: "apple" | "google" = iOS || iPadOS || mac ? "apple" : "google";
-      await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: `${window.location.origin}/auth/callback`,
-      });
-    } catch {
-      // Silent — user can still sign in via the top bar.
-    }
+  // Guests are never force-redirected into an OAuth flow — that navigates the
+  // whole page away before they can read anything. Instead we surface a gentle,
+  // dismissible sign-in invitation after they've enjoyed a few facts.
+  const guestNudge = useCallback(() => {
+    setSignInPrompt({
+      title: "Keep your curiosity safe",
+      message:
+        "Sign in free with Google or Apple to save your streak, coins, favourites and daily rewards. It takes a second and we never post anything.",
+    });
   }, []);
 
-
-  // automatically (Apple on Apple devices, Google otherwise). We only try
-  // once per browser session and re-attempt every few minutes if dismissed.
   useEffect(() => {
     if (user) return;
     if (!fact?.id) return;
     guestFactCount.current += 1;
-    if (guestFactCount.current === 1) void triggerAutoSignIn();
-  }, [fact?.id, user]);
+    if (guestFactCount.current === 3) guestNudge();
+  }, [fact?.id, user, guestNudge]);
 
   useEffect(() => {
     if (user) return;
-    const REPROMPT_MS = 3 * 60_000;
-    const t = window.setTimeout(() => { void triggerAutoSignIn(); }, REPROMPT_MS);
-    return () => window.clearTimeout(t);
-  }, [user]);
+    const REPROMPT_MS = 5 * 60_000;
+    const t = window.setInterval(() => { guestNudge(); }, REPROMPT_MS);
+    return () => window.clearInterval(t);
+  }, [user, guestNudge]);
 
 
   useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
