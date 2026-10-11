@@ -14,6 +14,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyProfile, updateMyProfile } from "@/lib/account.functions";
+import { bossAmIBoss } from "@/lib/boss.functions";
 import { LinkedAccounts } from "@/components/LinkedAccounts";
 import { CATEGORIES } from "@/lib/categories";
 
@@ -37,6 +38,14 @@ function SettingsPage() {
   const runSync = useServerFn(syncFactsFromSheet);
   const { user } = useCurrentUser();
   const navigate = useNavigate();
+  const amIBoss = useServerFn(bossAmIBoss);
+  // The sheet sync is an admin tool; only show it to the Boss account.
+  const bossQuery = useQuery({
+    queryKey: ["am-i-boss", user?.id],
+    queryFn: () => amIBoss(),
+    enabled: !!user,
+  });
+  const isBoss = !!user && !!bossQuery.data?.isBoss;
 
   useEffect(() => {
     setLocal(getSettings());
@@ -180,6 +189,7 @@ function SettingsPage() {
           </div>
         </section>
 
+        {isBoss && (
         <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <h2 className="text-lg font-extrabold text-slate-900">📊 Google Sheets sync</h2>
           <p className="mt-1 text-xs text-slate-600">
@@ -223,6 +233,7 @@ function SettingsPage() {
             <p className="mt-3 whitespace-pre-wrap text-xs text-slate-700">{syncMsg}</p>
           )}
         </section>
+        )}
 
 
 

@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { syncFactsFromSheet } from "@/lib/sync.functions";
 
 /**
  * Public sync webhook — call from pg_cron or manually via curl to pull the
@@ -40,7 +39,8 @@ export const Route = createFileRoute("/api/public/hooks/sync-sheet")({
           /* empty body ok */
         }
         try {
-          const result = await syncFactsFromSheet({ data: body });
+          const { SyncInput, runSheetSync } = await import("@/lib/sync.server");
+          const result = await runSheetSync(SyncInput.parse(body));
           return Response.json(result);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
