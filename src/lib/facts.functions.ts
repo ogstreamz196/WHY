@@ -4,6 +4,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeAiQuota } from "@/lib/aiQuota.server";
 
 function getSupabase() {
   return createClient(
@@ -226,7 +227,7 @@ export const generateAndStoreFact = createServerFn({ method: "POST" })
       })
       .parse(input ?? {}),
   )
-  .handler(async ({ data }): Promise<Fact | null> => {
+  .handler(async ({ data, context }): Promise<Fact | null> => {
     const supabase = getSupabase();
     const skip = new Set<string>(data.seenIds ?? []);
 
@@ -234,20 +235,12 @@ export const generateAndStoreFact = createServerFn({ method: "POST" })
     // exhausted the existing pool for this scope. This keeps the sheets DB
     // from growing until every entry has been served at least once.
     if (!data.force) {
-      let poolQ = supabase.from("facts").select("id", { count: "exact", head: true });
-      if (data.category) poolQ = poolQ.eq("category", data.category);
-      const { count } = await poolQ;
-      if ((count ?? 0) > skip.size) {
-        // Unseen entries still remain → serve one instead of generating.
-        const { data: rows } = await (data.category
-          ? supabase.from("facts").select(FACT_COLS).eq("category", data.category)
-          : supabase.from("facts").select(FACT_COLS)
-        )
-          .order("created_at", { ascending: true })
-          .limit(500);
-        const unseen = (rows ?? []).find((r) => !skip.has((r as Fact).id));
-        if (unseen) return unseen as Fact;
-      }
+      const unseen = await findUnseenFact(supabase, skip, data.category);
+      if (unseen) return unseen;
+    }
+
+    if (!(await consumeAiQuota(context.userId, "fact"))) {
+      return pickExistingFact(supabase, skip);
     }
 
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -323,14 +316,44 @@ ${recentQs.slice(0, 30).map((q) => `- ${q}`).join("\n") || "(none)"}`;
     }
 
     // Fallback: return an unseen (or any) existing fact so UX doesn't stall.
-    const { data: fallback } = await supabase
-      .from("facts")
-      .select(FACT_COLS)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    const pick = (fallback ?? []).find((r) => !skip.has((r as Fact).id)) ?? fallback?.[0];
-    return (pick as Fact) ?? null;
+    return pickExistingFact(supabase, skip);
   });
+
+type PublicClient = ReturnType<typeof getSupabase>;
+
+/** Oldest fact in scope the caller hasn't seen, scanning ids page by page. */
+async function findUnseenFact(
+  supabase: PublicClient,
+  skip: Set<string>,
+  category?: string,
+): Promise<Fact | null> {
+  const PAGE = 1000;
+  for (let page = 0; page < 20; page++) {
+    let q = supabase.from("facts").select("id");
+    if (category) q = q.eq("category", category);
+    const { data: ids } = await q
+      .order("created_at", { ascending: true })
+      .range(page * PAGE, page * PAGE + PAGE - 1);
+    if (!ids || ids.length === 0) return null;
+    const hit = ids.find((r) => !skip.has(r.id as string));
+    if (hit) {
+      const { data: row } = await supabase.from("facts").select(FACT_COLS).eq("id", hit.id).maybeSingle();
+      return (row as Fact | null) ?? null;
+    }
+    if (ids.length < PAGE) return null;
+  }
+  return null;
+}
+
+async function pickExistingFact(supabase: PublicClient, skip: Set<string>): Promise<Fact | null> {
+  const { data: fallback } = await supabase
+    .from("facts")
+    .select(FACT_COLS)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  const pick = (fallback ?? []).find((r) => !skip.has((r as Fact).id)) ?? fallback?.[0];
+  return (pick as Fact) ?? null;
+}
 
 // -------------------- Search or generate --------------------
 
@@ -339,7 +362,7 @@ export const searchOrGenerateFact = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({ query: z.string().min(2).max(200) }).parse(input),
   )
-  .handler(async ({ data }): Promise<Fact | null> => {
+  .handler(async ({ data, context }): Promise<Fact | null> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     const supabase = getSupabase();
     const q = data.query.trim().replace(/^why\s+/i, "").replace(/\?+$/, "");
@@ -354,6 +377,7 @@ export const searchOrGenerateFact = createServerFn({ method: "POST" })
 
     // 2. Ask AI to reformulate then generate + validate + store
     if (!apiKey) return null;
+    if (!(await consumeAiQuota(context.userId, "search"))) return null;
     const admin = await getAdmin();
     const { data: recent } = await admin
       .from("facts")
@@ -452,9 +476,10 @@ export const generateWhyLayer = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }): Promise<{ question: string; answer: string } | null> => {
+  .handler(async ({ data, context }): Promise<{ question: string; answer: string } | null> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) return null;
+    if (!(await consumeAiQuota(context.userId, "why_layer"))) return null;
 
     const prompt = `${SAFETY_PROMPT}
 

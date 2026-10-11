@@ -30,6 +30,10 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({
   requireSupabaseAuth: {},
 }));
 
+vi.mock("@/lib/aiQuota.server", () => ({
+  consumeAiQuota: async () => true,
+}));
+
 // Track exactly what gets passed to .insert() on the facts table.
 const insertSpy = vi.fn();
 
