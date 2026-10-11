@@ -136,6 +136,14 @@ import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categ
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { Celebration } from "@/components/Celebration";
+import { ConfettiBurst } from "@/components/ConfettiBurst";
+import {
+  CoinGainFloaters,
+  DepthMeter,
+  MAX_CHAIN_DEPTH,
+  ThinkingStep,
+  WigglingThinker,
+} from "@/components/WhyChainFx";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
@@ -258,6 +266,7 @@ function WhyApp() {
     [],
   );
   const [chainLoading, setChainLoading] = useState(false);
+  const [chainConfetti, setChainConfetti] = useState(0);
   const [chainDwellKey, setChainDwellKey] = useState<string | null>(null);
   const chainRewardedRef = useRef<Set<string>>(new Set());
 
@@ -527,25 +536,38 @@ function WhyApp() {
   };
 
   const askWhy = async () => {
-    if (!fact) return;
+    if (!fact || chainLoading) return;
     setChainLoading(true);
     try {
       const prev = chain.flatMap((c) => [c.question, c.answer]);
-      const layer = await generateLayer({
+      const res = await generateLayer({
         data: { rootQuestion: fact.question, previousChain: prev },
       });
-      if (layer) {
-        setChain((c) => {
-          const next = [...c, layer];
-          if (next.length >= 3) markMission("chain");
-          return next;
-        });
-        setSavedChainId(null); // dirty
-        // Coins deferred to the 3s dwell timer (see effect above) so users
-        // can't farm by mashing "But… Why?" — reward only on actual reading.
+      if (!res.ok) {
+        toast(
+          res.reason === "rate_limited"
+            ? "🧠 Whoa, curious mind! Take a little breather and dig again soon."
+            : "🌀 The answer got tangled — tap But… Why? to try again.",
+        );
+        return;
       }
+      const layer = { question: res.question, answer: res.answer };
+      const depth = chain.length + 1;
+      setChain((c) => [...c, layer]);
+      if (depth >= 3) markMission("chain");
+      if (depth === 3) {
+        setChainConfetti((n) => n + 1);
+        toast.success("🧠 Deep thinker! You're 3 whys deep.");
+      } else if (depth === MAX_CHAIN_DEPTH) {
+        setChainConfetti((n) => n + 1);
+        toast.success("🌌 Rabbit hole master! You reached the very bottom.");
+      }
+      setSavedChainId(null); // dirty
+      // Coins deferred to the 3s dwell timer (see effect above) so users
+      // can't farm by mashing "But… Why?" — reward only on actual reading.
     } catch (e) {
       console.warn(e);
+      toast.error("📡 Couldn't reach the answer machine. Check your connection and try again.");
     } finally {
       setChainLoading(false);
     }
@@ -705,7 +727,8 @@ function WhyApp() {
                   />
                 )}
               </Link>
-              <div className="glass flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
+              <div className="glass relative flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
+                <CoinGainFloaters value={points} />
                 <CoinIcon size={16} />
                 <motion.span
                   key={points}
@@ -1152,8 +1175,9 @@ function WhyApp() {
                               </div>
 
                               {/* ── ENDLESS "BUT… WHY?" CHAIN ── */}
-                              {(chain.length > 0 || true) && (
+                              {
                                 <div className="pt-2">
+                                  <DepthMeter depth={chain.length} />
                                   <ol className="relative space-y-3 pl-9">
                                     <span
                                       aria-hidden
@@ -1181,16 +1205,7 @@ function WhyApp() {
                                       );
                                     })}
 
-                                    {chainLoading && (
-                                      <li className="relative">
-                                        <span className="absolute -left-9 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/60">
-                                          …
-                                        </span>
-                                        <p className="text-sm italic text-white/60">
-                                          Digging deeper…
-                                        </p>
-                                      </li>
-                                    )}
+                                    {chainLoading && <ThinkingStep />}
                                   </ol>
 
                                   <motion.button
@@ -1198,20 +1213,35 @@ function WhyApp() {
                                     onClick={askWhy}
                                     disabled={
                                       chainLoading ||
-                                      chain.length >= 6 ||
+                                      chain.length >= MAX_CHAIN_DEPTH ||
                                       chain[chain.length - 1]?.terminal
                                     }
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.96 }}
-                                    className="candy-btn font-fun mt-4 flex min-h-16 w-full items-center justify-center gap-3 rounded-full px-6 py-3 text-[clamp(1.15rem,3vw,1.5rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.94, rotate: -1 }}
+                                    className="candy-btn font-fun relative mt-4 flex min-h-16 w-full items-center justify-center gap-3 overflow-hidden rounded-full px-6 py-3 text-[clamp(1.15rem,3vw,1.5rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
                                   >
-                                    {chain.length >= 6 ? (
+                                    {!chainLoading && chain.length < MAX_CHAIN_DEPTH && (
+                                      <motion.span
+                                        aria-hidden
+                                        className="pointer-events-none absolute inset-y-0 left-0 w-1/4 -skew-x-12 bg-white/30 blur-md motion-reduce:hidden"
+                                        initial={{ x: "-150%" }}
+                                        animate={{ x: "450%" }}
+                                        transition={{
+                                          duration: 1.4,
+                                          repeat: Infinity,
+                                          repeatDelay: 2.8,
+                                          ease: "easeInOut",
+                                        }}
+                                      />
+                                    )}
+                                    {chain.length >= MAX_CHAIN_DEPTH ? (
                                       "🌌 You've reached the bottom of the rabbit hole"
                                     ) : chainLoading ? (
                                       "Diving deeper…"
                                     ) : (
                                       <>
-                                        <span aria-hidden>🤔</span> But… Why?
+                                        <WigglingThinker />{" "}
+                                        {chain.length === 0 ? "But… Why?" : "But… Why? Deeper!"}
                                       </>
                                     )}
                                   </motion.button>
@@ -1231,7 +1261,7 @@ function WhyApp() {
                                     </button>
                                   )}
                                 </div>
-                              )}
+                              }
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -1319,6 +1349,7 @@ function WhyApp() {
       </div>
 
       {showSkeleton && !fact ? <BottomNavSkeleton /> : <BottomNav />}
+      <ConfettiBurst trigger={chainConfetti} />
       <Celebration
         open={!!celebrate}
         points={celebrate?.points ?? 0}
@@ -1430,9 +1461,9 @@ function ChainStep({
 }) {
   return (
     <motion.li
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35 }}
+      initial={{ opacity: 0, x: -16, scale: 0.94 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      transition={{ type: "spring", stiffness: 380, damping: 24 }}
       className="relative"
     >
       <span
@@ -1445,7 +1476,23 @@ function ChainStep({
       >
         {solved ? "✓" : index}
       </span>
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <div className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        {!solved && (
+          // One-off glow when a new layer lands.
+          <motion.span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-2xl motion-reduce:hidden"
+            initial={{
+              opacity: 0.9,
+              boxShadow: "0 0 0 2px rgba(240,171,252,0.9), 0 0 28px rgba(217,70,239,0.6)",
+            }}
+            animate={{
+              opacity: 0,
+              boxShadow: "0 0 0 2px rgba(240,171,252,0), 0 0 0 rgba(217,70,239,0)",
+            }}
+            transition={{ duration: 1.4, ease: "easeOut" }}
+          />
+        )}
         <p className="font-fun font-semibold text-white text-[clamp(1.05rem,2.6vw,1.3rem)]">
           {question}
         </p>
@@ -1457,10 +1504,23 @@ function ChainStep({
         {answer && (counting || rewarded) && (
           <div className="mt-2.5" aria-live="polite">
             {rewarded ? (
-              <div className="flex items-center gap-1.5 text-[11px] font-black text-amber-300">
-                <span aria-hidden>🪙</span>
+              <motion.div
+                initial={{ scale: 0.4, opacity: 0, y: 6 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 520, damping: 14 }}
+                className="flex items-center gap-1.5 text-[11px] font-black text-amber-300"
+              >
+                <motion.span
+                  aria-hidden
+                  initial={{ rotateY: 0 }}
+                  animate={{ rotateY: 720 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="inline-block"
+                >
+                  🪙
+                </motion.span>
                 <span>Coin earned!</span>
-              </div>
+              </motion.div>
             ) : (
               <>
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-white/60">

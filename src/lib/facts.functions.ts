@@ -4,7 +4,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { consumeAiQuota } from "@/lib/aiQuota.server";
+import { consumeAiQuota, consumeGuestAiQuota, optionalUserId } from "@/lib/aiQuota.server";
 
 function getSupabase() {
   return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
@@ -488,20 +488,30 @@ export const decodeFactCode = createServerFn({ method: "POST" })
 
 // -------------------- "But… Why?" endless chain --------------------
 
+export type WhyLayerResult =
+  | { ok: true; question: string; answer: string }
+  | { ok: false; reason: "rate_limited" | "unavailable" };
+
+// Open to guests too: the home page shows "But… Why?" before anyone signs in.
+// Signed-in users are rate-limited per account, guests per IP.
 export const generateWhyLayer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
     z
       .object({
         rootQuestion: z.string().min(1).max(300),
-        previousChain: z.array(z.string()).max(10).default([]),
+        previousChain: z.array(z.string().max(1000)).max(12).default([]),
       })
       .parse(input),
   )
-  .handler(async ({ data, context }): Promise<{ question: string; answer: string } | null> => {
+  .handler(async ({ data }): Promise<WhyLayerResult> => {
     const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) return null;
-    if (!(await consumeAiQuota(context.userId, "why_layer"))) return null;
+    if (!apiKey) return { ok: false, reason: "unavailable" };
+
+    const userId = await optionalUserId().catch(() => null);
+    const allowed = userId
+      ? await consumeAiQuota(userId, "why_layer")
+      : await consumeGuestAiQuota();
+    if (!allowed) return { ok: false, reason: "rate_limited" };
 
     const prompt = `${SAFETY_PROMPT}
 
@@ -515,9 +525,15 @@ Now write the NEXT layer: a natural "but why…" follow-up question AND a short 
 Return STRICT JSON only, no prose, no markdown:
 {"question":"<a short 'but why…' style follow-up question, ending with ?>","answer":"<2-3 short sentences an 8-12 year old can understand>"}`;
 
-    const res = await callJson<{ question: string; answer: string }>(apiKey, prompt);
-    if (!res?.question || !res?.answer) return null;
-    return { question: res.question.trim(), answer: res.answer.trim() };
+    let res: { question: string; answer: string } | null = null;
+    try {
+      res = await callJson<{ question: string; answer: string }>(apiKey, prompt);
+    } catch (e) {
+      console.warn("[why?] but-why generation failed:", e);
+      return { ok: false, reason: "unavailable" };
+    }
+    if (!res?.question || !res?.answer) return { ok: false, reason: "unavailable" };
+    return { ok: true, question: res.question.trim(), answer: res.answer.trim() };
   });
 
 // -------------------- Daily featured fact --------------------

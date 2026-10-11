@@ -32,6 +32,8 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({
 
 vi.mock("@/lib/aiQuota.server", () => ({
   consumeAiQuota: async () => true,
+  consumeGuestAiQuota: async () => true,
+  optionalUserId: async () => "test-user",
 }));
 
 // Track exactly what gets passed to .insert() on the facts table.
