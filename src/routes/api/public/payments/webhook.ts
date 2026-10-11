@@ -14,6 +14,12 @@ function getSupabase(): any {
   return _supabase;
 }
 
+/** Supabase returns errors instead of throwing; throw so Paddle gets a non-2xx and retries. */
+function check<T extends { error: { message: string } | null }>(res: T, what: string): T {
+  if (res.error) throw new Error(`${what}: ${res.error.message}`);
+  return res;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
   const { id, customerId, items, status, currentBillingPeriod, customData } = data;
@@ -35,57 +41,57 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
 
   const supabase = getSupabase();
 
-  const { data: existing } = await supabase
-    .from("subscriptions")
-    .select("id, signup_bonus_awarded")
-    .eq("paddle_subscription_id", id)
-    .maybeSingle();
-
-  await supabase.from("subscriptions").upsert(
-    {
-      user_id: userId,
-      paddle_subscription_id: id,
-      paddle_customer_id: customerId,
-      product_id: productId,
-      price_id: priceId,
-      status,
-      current_period_start: currentBillingPeriod?.startsAt,
-      current_period_end: currentBillingPeriod?.endsAt,
-      environment: env,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "paddle_subscription_id" },
+  check(
+    await supabase.from("subscriptions").upsert(
+      {
+        user_id: userId,
+        paddle_subscription_id: id,
+        paddle_customer_id: customerId,
+        product_id: productId,
+        price_id: priceId,
+        status,
+        current_period_start: currentBillingPeriod?.startsAt,
+        current_period_end: currentBillingPeriod?.endsAt,
+        environment: env,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "paddle_subscription_id" },
+    ),
+    "upsert subscription",
   );
 
-  // Award one-time signup bonus (500 coins) on first subscription per user
-  const alreadyAwarded = (existing as { signup_bonus_awarded?: boolean } | null)?.signup_bonus_awarded;
-  if (!alreadyAwarded && (status === "active" || status === "trialing")) {
-    const { data: anyPrior } = await supabase
+  // Award a one-time signup bonus on the user's first subscription.
+  if (status !== "active" && status !== "trialing") return;
+  const { data: anyPrior } = check(
+    await supabase
       .from("subscriptions")
       .select("id")
       .eq("user_id", userId)
       .eq("signup_bonus_awarded", true)
-      .limit(1);
-    if (!anyPrior || anyPrior.length === 0) {
-      // Bump user stats
-      const { data: stats } = await supabase
-        .from("user_stats")
-        .select("total_points")
-        .eq("user_id", userId)
-        .maybeSingle();
-      const current = (stats as { total_points?: number } | null)?.total_points ?? 0;
-      // User just purchased VIP → award bonus at VIP rate (isVip: true).
-      const bonus = computeCoinDrop(SIGNUP_BONUS_COINS_BASE, { isVip: true });
-      await supabase
-        .from("user_stats")
-        .update({ total_points: current + bonus })
-        .eq("user_id", userId);
-      await supabase
-        .from("subscriptions")
-        .update({ signup_bonus_awarded: true })
-        .eq("paddle_subscription_id", id);
-    }
-  }
+      .limit(1),
+    "check prior bonus",
+  );
+  if (anyPrior && anyPrior.length > 0) return;
+
+  // Flip the flag first; only the delivery that flips it pays the bonus, so
+  // Paddle retries or duplicate events can't award it twice.
+  const { data: claimed } = check(
+    await supabase
+      .from("subscriptions")
+      .update({ signup_bonus_awarded: true })
+      .eq("paddle_subscription_id", id)
+      .eq("signup_bonus_awarded", false)
+      .select("id"),
+    "claim signup bonus",
+  );
+  if (!claimed || claimed.length === 0) return;
+
+  // User just purchased VIP → award bonus at VIP rate (isVip: true).
+  const bonus = computeCoinDrop(SIGNUP_BONUS_COINS_BASE, { isVip: true });
+  check(
+    await supabase.rpc("apply_points", { _user: userId, _points: bonus, _facts_seen: 0 }),
+    "award signup bonus",
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,7 +99,7 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
   const { id, status, currentBillingPeriod, scheduledChange } = data;
   // Business rule: revoke VIP immediately on past_due (failed payment)
   const effectiveStatus = status === "past_due" ? "canceled" : status;
-  await getSupabase()
+  check(await getSupabase()
     .from("subscriptions")
     .update({
       status: effectiveStatus,
@@ -103,28 +109,28 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
       updated_at: new Date().toISOString(),
     })
     .eq("paddle_subscription_id", id)
-    .eq("environment", env);
+    .eq("environment", env), "update subscription");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
   // Business rule: revoke VIP immediately (no grace period)
-  await getSupabase()
+  check(await getSupabase()
     .from("subscriptions")
     .update({ status: "canceled", updated_at: new Date().toISOString() })
     .eq("paddle_subscription_id", data.id)
-    .eq("environment", env);
+    .eq("environment", env), "cancel subscription");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleTransactionPaymentFailed(data: any, env: PaddleEnv) {
   const subscriptionId = data.subscriptionId;
   if (!subscriptionId) return;
-  await getSupabase()
+  check(await getSupabase()
     .from("subscriptions")
     .update({ status: "canceled", updated_at: new Date().toISOString() })
     .eq("paddle_subscription_id", subscriptionId)
-    .eq("environment", env);
+    .eq("environment", env), "cancel after failed payment");
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
