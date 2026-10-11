@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/import-guest")({
     <main className="grid min-h-[100dvh] place-items-center p-6 text-white">
       <div className="glass-strong max-w-md rounded-3xl p-6 text-center">
         <p className="font-bold">Couldn't load your guest data.</p>
-        <p className="mt-1 text-sm text-white/60">{error.message}</p>
+        <p className="mt-1 text-sm text-white/60">{error instanceof Error ? error.message : String(error)}</p>
         <button className="mt-4 rounded-2xl bg-white/10 px-4 py-2 text-sm" onClick={reset}>Try again</button>
       </div>
     </main>
