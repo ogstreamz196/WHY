@@ -194,11 +194,11 @@ function RootComponent() {
         >
           Skip to content
         </a>
+        <TopSignInBar />
         <div id="main" tabIndex={-1}>
           <Outlet />
         </div>
         <GlobalStreakMilestoneWatcher />
-        <TopSignInBar />
         <GoogleIdentitySync />
         <FloatingEditToggle />
         <ThemeDebugger />
