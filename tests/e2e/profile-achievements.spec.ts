@@ -67,10 +67,14 @@ test.describe("Achievements + Explorer badge grid", () => {
     ).toBeVisible();
   });
 
-  test("renders an empty state for explorer badges before local data hydrates", async ({ page }) => {
+  test("renders an empty state for explorer badges before local data hydrates", async ({
+    page,
+  }) => {
     // Clear localStorage so no explorer progress exists.
     await page.addInitScript(() => {
-      try { window.localStorage.clear(); } catch {}
+      try {
+        window.localStorage.clear();
+      } catch {}
     });
     const onProfile = await gotoProfile(page, "#achievements");
     test.skip(!onProfile, "profile is auth-gated in this environment");

@@ -4,7 +4,17 @@
 import { normalizeStoredQuestion } from "@/lib/normalizeQuestion";
 
 export const CATEGORY_SET = new Set([
-  "animals","space","earth","science","body","weather","food","history","technology","ocean","dinosaurs",
+  "animals",
+  "space",
+  "earth",
+  "science",
+  "body",
+  "weather",
+  "food",
+  "history",
+  "technology",
+  "ocean",
+  "dinosaurs",
 ]);
 
 export type BulkImportCandidate = {
@@ -67,7 +77,10 @@ export function parseBulkImportRows(
     const catRaw = idx.cat >= 0 ? (r[idx.cat] ?? "").trim().toLowerCase() : "";
     const category = CATEGORY_SET.has(catRaw) ? catRaw : fallbackCat;
 
-    if (!rawQ || !rawA) { out.skipped++; continue; }
+    if (!rawQ || !rawA) {
+      out.skipped++;
+      continue;
+    }
     const norm = normalizeStoredQuestion(rawQ);
     if (!norm.ok) {
       out.errors.push({ row: rowNum, reason: norm.reason ?? "grammar" });
@@ -96,7 +109,11 @@ export async function dedupeAgainstExisting(
   let dupes = 0;
   for (const c of candidates) {
     const { data } = await admin
-      .from("facts").select("id").ilike("question", c.question).limit(1).maybeSingle();
+      .from("facts")
+      .select("id")
+      .ilike("question", c.question)
+      .limit(1)
+      .maybeSingle();
     if (data) dupes++;
     else toInsert.push(c);
   }

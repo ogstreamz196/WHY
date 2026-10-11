@@ -27,7 +27,11 @@ export function CosmicBackground() {
       <div
         aria-hidden
         className="absolute inset-0 transition-opacity duration-500"
-        style={{ background: "var(--theme-gradient, transparent)", opacity: 0.35, mixBlendMode: "soft-light" }}
+        style={{
+          background: "var(--theme-gradient, transparent)",
+          opacity: 0.35,
+          mixBlendMode: "soft-light",
+        }}
       />
 
       <div
@@ -36,11 +40,17 @@ export function CosmicBackground() {
       />
       <div
         className="absolute -right-32 top-1/3 h-[28rem] w-[28rem] rounded-full opacity-25 blur-3xl animate-float-slow"
-        style={{ animationDelay: "1.5s", background: "radial-gradient(circle, oklch(0.72 0.20 195), transparent 70%)" }}
+        style={{
+          animationDelay: "1.5s",
+          background: "radial-gradient(circle, oklch(0.72 0.20 195), transparent 70%)",
+        }}
       />
       <div
         className="absolute bottom-0 left-1/4 h-96 w-96 rounded-full opacity-20 blur-3xl animate-float-slow"
-        style={{ animationDelay: "3s", background: "radial-gradient(circle, oklch(0.72 0.24 340), transparent 70%)" }}
+        style={{
+          animationDelay: "3s",
+          background: "radial-gradient(circle, oklch(0.72 0.24 340), transparent 70%)",
+        }}
       />
       {/* Stars */}
       {stars.map((s) => (

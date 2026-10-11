@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           category: string
@@ -810,6 +831,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_inventory: {
+        Row: {
+          acquired_at: string
+          cost: number
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          cost?: number
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          cost?: number
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           adult_mode_enabled: boolean
@@ -853,6 +895,7 @@ export type Database = {
           last_active_day: string | null
           last_daily_challenge_day: string | null
           last_login_bonus_day: string | null
+          login_streak: number
           longest_streak: number
           total_points: number
           updated_at: string
@@ -864,6 +907,7 @@ export type Database = {
           last_active_day?: string | null
           last_daily_challenge_day?: string | null
           last_login_bonus_day?: string | null
+          login_streak?: number
           longest_streak?: number
           total_points?: number
           updated_at?: string
@@ -875,6 +919,7 @@ export type Database = {
           last_active_day?: string | null
           last_daily_challenge_day?: string | null
           last_login_bonus_day?: string | null
+          login_streak?: number
           longest_streak?: number
           total_points?: number
           updated_at?: string
@@ -1143,6 +1188,10 @@ export type Database = {
       }
     }
     Functions: {
+      apply_points: {
+        Args: { _facts_seen?: number; _points: number; _user: string }
+        Returns: number | null
+      }
       boss_decode_fact_code: {
         Args: { _code: string }
         Returns: {
@@ -1169,6 +1218,13 @@ export type Database = {
       count_unseen_facts: {
         Args: { _category?: string; _user: string }
         Returns: number
+      }
+      purchase_item: {
+        Args: { _cost: number; _item: string; _user: string }
+        Returns: {
+          out_status: string
+          out_total: number
+        }[]
       }
       get_public_leaderboard: {
         Args: { _filter?: string; _kind?: string }

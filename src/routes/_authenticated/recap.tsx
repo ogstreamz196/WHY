@@ -27,7 +27,12 @@ function RecapPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetchRecap().then((r) => { setRecap(r); setLoading(false); }).catch(() => setLoading(false));
+    fetchRecap()
+      .then((r) => {
+        setRecap(r);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [user, fetchRecap]);
 
   const share = async () => {
@@ -35,8 +40,13 @@ function RecapPage() {
     const text = `📚 My curiosity week:\n\n✨ ${recap.discoveries} discoveries\n🔥 ${recap.current_streak}-day streak\n🏅 ${recap.new_achievements.length} new badges\n\n${recap.insight}`;
     try {
       if (navigator.share) await navigator.share({ title: "My curiosity week", text });
-      else { await navigator.clipboard.writeText(text); toast.success("Copied to clipboard"); }
-    } catch {/* cancelled */}
+      else {
+        await navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard");
+      }
+    } catch {
+      /* cancelled */
+    }
   };
 
   return (
@@ -44,7 +54,10 @@ function RecapPage() {
       <CosmicBackground />
       <div className="mx-auto w-full max-w-md px-4 pt-6">
         <div className="mb-4 flex items-center gap-2">
-          <Link to="/profile" className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70">
+          <Link
+            to="/profile"
+            className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <h1 className="font-display text-lg font-black text-white">Your curiosity week</h1>
@@ -66,7 +79,10 @@ function RecapPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            <Card delay={0} className="bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 border-violet-400/20">
+            <Card
+              delay={0}
+              className="bg-gradient-to-br from-violet-500/15 to-fuchsia-500/15 border-violet-400/20"
+            >
               <div className="text-[10px] font-black uppercase tracking-widest text-violet-200/80">
                 {formatDate(recap.start)} — {formatDate(recap.end)}
               </div>
@@ -82,24 +98,34 @@ function RecapPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <Card delay={0.05}>
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">XP earned</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                  XP earned
+                </div>
                 <div className="mt-1 text-3xl font-black text-white">~{recap.xp_earned_est}</div>
               </Card>
               <Card delay={0.1}>
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">Best streak</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                  Best streak
+                </div>
                 <div className="mt-1 text-3xl font-black text-white">🔥 {recap.best_streak}</div>
               </Card>
             </div>
 
             {recap.categories.length > 0 && (
               <Card delay={0.15}>
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">Top categories</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                  Top categories
+                </div>
                 <div className="mt-2 space-y-2">
                   {recap.categories.map((c) => (
                     <div key={c.key}>
                       <div className="flex items-center justify-between text-xs text-white/80">
-                        <span className="font-bold">{emojiFor(c.key)} {c.key}</span>
-                        <span className="text-white/50">{c.count} · {c.pct}%</span>
+                        <span className="font-bold">
+                          {emojiFor(c.key)} {c.key}
+                        </span>
+                        <span className="text-white/50">
+                          {c.count} · {c.pct}%
+                        </span>
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/5">
                         <motion.div
@@ -117,11 +143,17 @@ function RecapPage() {
 
             {recap.new_achievements.length > 0 && (
               <Card delay={0.2}>
-                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">New this week</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                  New this week
+                </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {recap.new_achievements.map((a) => (
-                    <span key={a.id} className="flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-100">
-                      <span>{a.emoji}</span>{a.name}
+                    <span
+                      key={a.id}
+                      className="flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-100"
+                    >
+                      <span>{a.emoji}</span>
+                      {a.name}
                     </span>
                   ))}
                 </div>
@@ -149,7 +181,15 @@ function RecapPage() {
   );
 }
 
-function Card({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+function Card({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

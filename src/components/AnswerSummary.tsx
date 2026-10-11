@@ -81,12 +81,14 @@ export function AnswerSummary({
               : "border-rose-300 bg-rose-400 text-rose-950"
           }`}
         >
-          {correct ? <Check className="h-5 w-5" strokeWidth={3} /> : <X className="h-5 w-5" strokeWidth={3} />}
+          {correct ? (
+            <Check className="h-5 w-5" strokeWidth={3} />
+          ) : (
+            <X className="h-5 w-5" strokeWidth={3} />
+          )}
         </motion.span>
         <div className="flex-1">
-          <p className="text-sm font-black text-white">
-            {correct ? "Nailed it!" : "Not quite"}
-          </p>
+          <p className="text-sm font-black text-white">{correct ? "Nailed it!" : "Not quite"}</p>
           {(points > 0 || typeof streak === "number") && (
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-bold text-white/80">
               <span className="inline-flex items-center gap-1">
@@ -130,7 +132,9 @@ export function AnswerSummary({
           <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
             Here's why
           </p>
-          <p className="mt-1 font-fun text-[clamp(1rem,2.4vw,1.2rem)] font-medium leading-snug text-white">{explanation}</p>
+          <p className="mt-1 font-fun text-[clamp(1rem,2.4vw,1.2rem)] font-medium leading-snug text-white">
+            {explanation}
+          </p>
         </motion.div>
       )}
 

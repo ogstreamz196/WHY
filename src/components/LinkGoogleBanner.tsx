@@ -53,7 +53,6 @@ export function LinkGoogleBanner() {
     setVisible(false);
   }
 
-
   return (
     <AnimatePresence>
       {visible && (

@@ -12,7 +12,12 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyStats, spendCoins, updateMyProfile } from "@/lib/account.functions";
+import {
+  getMyInventory,
+  getMyStats,
+  purchaseStoreItem,
+  updateMyProfile,
+} from "@/lib/account.functions";
 import {
   COIN_PACKS,
   STORE_CATALOG,
@@ -21,6 +26,7 @@ import {
   getPoints,
   purchaseItem,
   setEquipped,
+  setOwnedItems,
   type StoreCategory,
   type StoreItem,
 } from "@/lib/store";
@@ -28,12 +34,15 @@ import { previewTheme } from "@/lib/useEquippedTheme";
 import { AnimatedAvatar } from "@/components/AnimatedAvatar";
 import { useRef } from "react";
 
-
 export const Route = createFileRoute("/store")({
   head: () => ({
     meta: [
       { title: "Store — Why?" },
-      { name: "description", content: "Spend Y-coins on avatars, themes and cosmic upgrades — or top up your coin balance." },
+      {
+        name: "description",
+        content:
+          "Spend Y-coins on avatars, themes and cosmic upgrades — or top up your coin balance.",
+      },
       { name: "theme-color", content: "#0b0518" },
     ],
   }),
@@ -42,11 +51,10 @@ export const Route = createFileRoute("/store")({
 
 type Tab = StoreCategory | "vip";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: "avatar", label: "Avatars",     emoji: "🧑‍🚀" },
-  { id: "theme",  label: "Themes",      emoji: "🎨" },
-  { id: "vip",    label: "VIP & Coins", emoji: "👑" },
+  { id: "avatar", label: "Avatars", emoji: "🧑‍🚀" },
+  { id: "theme", label: "Themes", emoji: "🎨" },
+  { id: "vip", label: "VIP & Coins", emoji: "👑" },
 ];
-
 
 function StorePage() {
   const [tab, setTab] = useState<Tab>("avatar");
@@ -63,7 +71,8 @@ function StorePage() {
   const { isVip, subscription } = useSubscription(userId);
   const qc = useQueryClient();
   const fetchStats = useServerFn(getMyStats);
-  const doSpend = useServerFn(spendCoins);
+  const doPurchase = useServerFn(purchaseStoreItem);
+  const fetchInventory = useServerFn(getMyInventory);
   const doUpdateProfile = useServerFn(updateMyProfile);
 
   const serverStats = useQuery({
@@ -77,7 +86,9 @@ function StorePage() {
     setInventory(getInventory());
     setEquip(getEquipped());
   };
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   // Robust preview reset: clear whenever the store unmounts, the tab
   // switches away from Themes, the window loses focus, or the tab is
@@ -99,11 +110,23 @@ function StorePage() {
     };
   }, [tab]);
 
+  // Signed-in users' purchases live on the server; mirror them into the local cache.
+  const serverInventory = useQuery({
+    queryKey: ["inventory"],
+    queryFn: () => fetchInventory(),
+    enabled: !!userId,
+  });
+  useEffect(() => {
+    if (userId && serverInventory.data) {
+      setOwnedItems(serverInventory.data);
+      setInventory(getInventory());
+    }
+  }, [userId, serverInventory.data]);
+
   // When signed in, mirror server balance into the local display.
   useEffect(() => {
     if (userId && serverStats.data) setCoins(serverStats.data.total_points);
   }, [userId, serverStats.data]);
-
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -149,7 +172,6 @@ function StorePage() {
     }
   };
 
-
   const buy = async (item: StoreItem) => {
     // Signed-in: check server balance & debit server-side first.
     if (userId) {
@@ -158,26 +180,28 @@ function StorePage() {
         return;
       }
       try {
-        const res = await doSpend({ data: { amount: item.cost, reason: `store:${item.id}` } });
+        const res = await doPurchase({ data: { item_id: item.id } });
+        setCoins(res.total_points);
         if (!res.ok) {
-          flash(`Need ${item.cost - res.total_points} more coins`);
-          setCoins(res.total_points);
+          flash(
+            res.reason === "insufficient_coins"
+              ? `Need ${item.cost - res.total_points} more coins`
+              : res.reason === "already_owned"
+                ? "Already owned"
+                : "Item not found",
+          );
           return;
         }
-        setCoins(res.total_points);
         qc.invalidateQueries({ queryKey: ["stats"] });
+        qc.invalidateQueries({ queryKey: ["inventory"] });
       } catch (e) {
         console.error(e);
         flash("Purchase failed — try again");
         return;
       }
-      // Grant inventory locally without double-debiting local coins.
-      const inv = getInventory();
-      if (!inv.includes(item.id)) {
-        inv.push(item.id);
-        try { window.sessionStorage.setItem("why:inventory", JSON.stringify(inv)); } catch { /* ignore */ }
-      }
-      setInventory(inv);
+      const inv = Array.from(new Set([...getInventory(), item.id]));
+      setOwnedItems(inv);
+      setInventory(getInventory());
       flash(`${item.emoji} ${item.name} unlocked!`);
       return;
     }
@@ -196,7 +220,6 @@ function StorePage() {
     refresh();
     flash(`${item.emoji} ${item.name} unlocked!`);
   };
-
 
   const equip = async (item: StoreItem) => {
     if (item.category !== "avatar" && item.category !== "theme") return;
@@ -239,7 +262,12 @@ function StorePage() {
           <h1 className="font-display text-xl font-black tracking-tight text-white">Store</h1>
           <div className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
             <CoinIcon size={18} />
-            <motion.span key={coins} initial={{ scale: 1.3 }} animate={{ scale: 1 }} className="text-sm font-black text-white">
+            <motion.span
+              key={coins}
+              initial={{ scale: 1.3 }}
+              animate={{ scale: 1 }}
+              className="text-sm font-black text-white"
+            >
               {coins}
             </motion.span>
           </div>
@@ -259,7 +287,9 @@ function StorePage() {
               }`}
               style={tab === t.id ? { background: "var(--gradient-primary)" } : undefined}
             >
-              <span className="mr-1" aria-hidden>{t.emoji}</span>
+              <span className="mr-1" aria-hidden>
+                {t.emoji}
+              </span>
               {t.label}
             </button>
           ))}
@@ -272,24 +302,37 @@ function StorePage() {
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-0 -z-10 opacity-60"
-                style={{ background: "radial-gradient(circle at 20% 10%, rgba(255,200,80,0.35), transparent 60%), radial-gradient(circle at 90% 90%, rgba(180,80,255,0.25), transparent 60%)" }}
+                style={{
+                  background:
+                    "radial-gradient(circle at 20% 10%, rgba(255,200,80,0.35), transparent 60%), radial-gradient(circle at 90% 90%, rgba(180,80,255,0.25), transparent 60%)",
+                }}
               />
               <div className="flex items-center gap-2">
                 <Crown className="h-6 w-6 text-yellow-300" />
                 <h2 className="font-display text-2xl font-black text-white">VIP Membership</h2>
               </div>
               <p className="mt-2 text-sm text-white/85">
-                Double your coin drops on every fact, quiz and mission — plus a one-time <b>500 coin</b> welcome bonus.
+                Double your coin drops on every fact, quiz and mission — plus a one-time{" "}
+                <b>500 coin</b> welcome bonus.
               </p>
               <ul className="mt-3 space-y-1.5 text-sm text-white/85">
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> 2× coins on all activity</li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> 500 welcome coins</li>
-                <li className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-300" /> Cancel anytime</li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-300" /> 2× coins on all activity
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-300" /> 500 welcome coins
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-300" /> Cancel anytime
+                </li>
               </ul>
 
               {isVip ? (
                 <div className="mt-4 rounded-full bg-emerald-500/20 px-4 py-2.5 text-center text-sm font-black text-emerald-200">
-                  ✨ You're a VIP{subscription?.current_period_end ? ` — renews ${new Date(subscription.current_period_end).toLocaleDateString()}` : ""}
+                  ✨ You're a VIP
+                  {subscription?.current_period_end
+                    ? ` — renews ${new Date(subscription.current_period_end).toLocaleDateString()}`
+                    : ""}
                 </div>
               ) : (
                 <button
@@ -299,20 +342,32 @@ function StorePage() {
                   className="mt-4 w-full rounded-full px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
                   style={{ background: "var(--gradient-primary)" }}
                 >
-                  {!userId ? "Sign in to subscribe" : checkoutLoading ? "Opening checkout…" : "Go VIP — $4.99 / month"}
+                  {!userId
+                    ? "Sign in to subscribe"
+                    : checkoutLoading
+                      ? "Opening checkout…"
+                      : "Go VIP — $4.99 / month"}
                 </button>
               )}
             </div>
 
             <div className="glass-strong rounded-3xl p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Earn free coins</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                Earn free coins
+              </p>
               <p className="mt-1 text-sm text-white/90">
-                +1 per fact • +2 for revealing • +3 for asking <em>but why?</em> • <b>+25</b> for the Daily Challenge.
+                +1 per fact • +2 for revealing • +3 for asking <em>but why?</em> • <b>+25</b> for
+                the Daily Challenge.
               </p>
             </div>
-            <p className="pt-2 text-[10px] font-black uppercase tracking-widest text-white/60">Or top up</p>
+            <p className="pt-2 text-[10px] font-black uppercase tracking-widest text-white/60">
+              Or top up
+            </p>
             {COIN_PACKS.map((pack) => (
-              <div key={pack.id} className="glass-strong flex items-center justify-between gap-3 rounded-3xl p-4">
+              <div
+                key={pack.id}
+                className="glass-strong flex items-center justify-between gap-3 rounded-3xl p-4"
+              >
                 <div>
                   <p className="font-display text-base font-black text-white">{pack.label}</p>
                   <p className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-white/80">
@@ -341,7 +396,6 @@ function StorePage() {
             </p>
           </section>
         ) : (
-
           <section
             className="grid grid-cols-2 gap-3 sm:grid-cols-3"
             onPointerLeave={tab === "theme" ? () => previewTheme(null) : undefined}
@@ -425,11 +479,17 @@ function StorePage() {
                     {item.category === "avatar" ? (
                       <AnimatedAvatar avatarId={item.id} className="text-5xl" />
                     ) : (
-                      <span className="text-5xl" aria-hidden>{item.emoji}</span>
+                      <span className="text-5xl" aria-hidden>
+                        {item.emoji}
+                      </span>
                     )}
                   </div>
-                  <p className="mt-1 truncate font-display text-sm font-black text-white">{item.name}</p>
-                  <p className="line-clamp-2 min-h-8 text-[10px] leading-tight text-white/70">{item.description}</p>
+                  <p className="mt-1 truncate font-display text-sm font-black text-white">
+                    {item.name}
+                  </p>
+                  <p className="line-clamp-2 min-h-8 text-[10px] leading-tight text-white/70">
+                    {item.description}
+                  </p>
 
                   {owned ? (
                     <button
@@ -442,7 +502,13 @@ function StorePage() {
                           : "bg-white/10 text-white hover:bg-white/20"
                       }`}
                     >
-                      {isEquipped ? <><Check className="h-3 w-3" /> Equipped</> : "Equip"}
+                      {isEquipped ? (
+                        <>
+                          <Check className="h-3 w-3" /> Equipped
+                        </>
+                      ) : (
+                        "Equip"
+                      )}
                     </button>
                   ) : (
                     <button
@@ -450,7 +516,11 @@ function StorePage() {
                       onClick={() => buy(item)}
                       disabled={!canAfford}
                       className="mt-2 flex w-full items-center justify-center gap-1 rounded-full px-2 py-1.5 text-[11px] font-black text-white transition disabled:opacity-50"
-                      style={{ background: canAfford ? "var(--gradient-primary)" : "rgba(255,255,255,0.08)" }}
+                      style={{
+                        background: canAfford
+                          ? "var(--gradient-primary)"
+                          : "rgba(255,255,255,0.08)",
+                      }}
                     >
                       {canAfford ? <Sparkles className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                       <CoinIcon size={12} />
@@ -503,7 +573,9 @@ function StorePage() {
               {preview.category === "avatar" ? (
                 <AnimatedAvatar avatarId={preview.id} className="text-8xl" />
               ) : (
-                <span className="text-8xl" aria-hidden>{preview.emoji}</span>
+                <span className="text-8xl" aria-hidden>
+                  {preview.emoji}
+                </span>
               )}
             </div>
             <div className="text-center">

@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  completeDailyChallenge,
-  getPoints,
-  getStreak,
-  hasCompletedDailyChallenge,
-} from "./store";
+import { completeDailyChallenge, getPoints, getStreak, hasCompletedDailyChallenge } from "./store";
 
 // Wall-clock helpers so we can jump between days deterministically.
 function setToday(iso: string) {
@@ -49,22 +44,22 @@ describe("Daily Challenge — points & streak", () => {
   });
 
   it("advances the streak by one when completed on consecutive days", () => {
-    completeDailyChallenge();               // day 1  → 1
+    completeDailyChallenge(); // day 1  → 1
     setToday("2026-07-09T09:00:00Z");
-    completeDailyChallenge();               // day 2  → 2
+    completeDailyChallenge(); // day 2  → 2
     setToday("2026-07-10T09:00:00Z");
-    const r = completeDailyChallenge();     // day 3  → 3
+    const r = completeDailyChallenge(); // day 3  → 3
     expect(r.streak).toBe(3);
     expect(getPoints()).toBe(75);
   });
 
   it("resets the streak to 1 when a day is missed", () => {
-    completeDailyChallenge();               // day 1
+    completeDailyChallenge(); // day 1
     setToday("2026-07-09T09:00:00Z");
-    completeDailyChallenge();               // day 2 → streak 2
+    completeDailyChallenge(); // day 2 → streak 2
     // skip July 10
     setToday("2026-07-11T09:00:00Z");
-    const r = completeDailyChallenge();     // gap → reset
+    const r = completeDailyChallenge(); // gap → reset
     expect(r.streak).toBe(1);
     expect(getPoints()).toBe(75); // 25 * 3 completions
   });

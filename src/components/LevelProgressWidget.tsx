@@ -39,7 +39,9 @@ export function LevelProgressWidget({ xp, milestones = [] }: Props) {
       <motion.span
         aria-hidden
         className="pointer-events-none absolute -inset-y-2 -left-1/3 w-1/3 rotate-12"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)" }}
+        style={{
+          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)",
+        }}
         animate={{ x: ["0%", "400%"] }}
         transition={{ duration: 4.5, repeat: Infinity, ease: "linear" }}
       />
@@ -84,7 +86,9 @@ export function LevelProgressWidget({ xp, milestones = [] }: Props) {
             const pct = Math.min(100, Math.round((m.value / Math.max(1, m.next)) * 100));
             return (
               <div key={m.label} className="rounded-2xl bg-black/25 p-2.5 backdrop-blur-sm">
-                <p className="text-[9px] font-black uppercase tracking-widest text-white/70">{m.label}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-white/70">
+                  {m.label}
+                </p>
                 <p className="mt-0.5 font-display text-sm font-black">
                   {m.value.toLocaleString()}
                   <span className="text-white/60"> / {m.next.toLocaleString()}</span>

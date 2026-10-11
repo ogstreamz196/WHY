@@ -120,7 +120,8 @@ function FxLayer({ kind }: { kind: AnimatedAvatarKind }) {
             background:
               "conic-gradient(from 0deg, #ff5f6d, #ffc371, #47ffbc, #38a1ff, #a557ff, #ff5f6d)",
             mask: "radial-gradient(circle, transparent 55%, black 58%, black 72%, transparent 75%)",
-            WebkitMask: "radial-gradient(circle, transparent 55%, black 58%, black 72%, transparent 75%)",
+            WebkitMask:
+              "radial-gradient(circle, transparent 55%, black 58%, black 72%, transparent 75%)",
           }}
           animate={{ rotate: 360 }}
           transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
@@ -134,8 +135,7 @@ function FxLayer({ kind }: { kind: AnimatedAvatarKind }) {
             aria-hidden
             className="pointer-events-none absolute inset-[-20%] rounded-full blur-xl"
             style={{
-              background:
-                "conic-gradient(from 0deg, #ff6b00, #ffd93d, #ff2d55, #ff6b00)",
+              background: "conic-gradient(from 0deg, #ff6b00, #ffd93d, #ff2d55, #ff6b00)",
             }}
             animate={{ rotate: 360, opacity: [0.5, 0.9, 0.5] }}
             transition={{
@@ -150,7 +150,12 @@ function FxLayer({ kind }: { kind: AnimatedAvatarKind }) {
               className="pointer-events-none absolute text-[0.5em]"
               style={{ left: `${20 + i * 30}%`, top: "-30%" }}
               animate={{ y: [0, -8, 0], opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 1 + i * 0.2, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
+              transition={{
+                duration: 1 + i * 0.2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.15,
+              }}
             >
               🔥
             </motion.span>
@@ -189,7 +194,9 @@ function FxLayer({ kind }: { kind: AnimatedAvatarKind }) {
         >
           <div
             className="absolute left-1/2 top-1/2 h-[3px] w-[130%] -translate-x-1/2 -translate-y-1/2 rotate-[135deg] rounded-full blur-[2px]"
-            style={{ background: "linear-gradient(90deg, transparent, #7dd3fc, #a78bfa, transparent)" }}
+            style={{
+              background: "linear-gradient(90deg, transparent, #7dd3fc, #a78bfa, transparent)",
+            }}
           />
         </motion.div>
       );
@@ -218,7 +225,9 @@ function FxLayer({ kind }: { kind: AnimatedAvatarKind }) {
           <motion.div
             aria-hidden
             className="pointer-events-none absolute inset-[-10%] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(255,236,102,0.55), transparent 65%)" }}
+            style={{
+              background: "radial-gradient(circle, rgba(255,236,102,0.55), transparent 65%)",
+            }}
             animate={{ opacity: [0.2, 1, 0.2] }}
             transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
           />

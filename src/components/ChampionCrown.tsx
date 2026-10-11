@@ -7,16 +7,26 @@ import { avatarEmojiFor } from "@/lib/store";
 
 type Champion = Awaited<ReturnType<typeof getChampionTitle>>;
 
-export function ChampionCrown({ titleKey = "longest_chain", label = "Longest Chain Champion" }: { titleKey?: string; label?: string }) {
+export function ChampionCrown({
+  titleKey = "longest_chain",
+  label = "Longest Chain Champion",
+}: {
+  titleKey?: string;
+  label?: string;
+}) {
   const fetchChampion = useServerFn(getChampionTitle);
   const [c, setC] = useState<Champion | null>(null);
 
   useEffect(() => {
     let alive = true;
     fetchChampion({ data: { title_key: titleKey } })
-      .then((r) => { if (alive) setC(r); })
+      .then((r) => {
+        if (alive) setC(r);
+      })
       .catch(() => {});
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [fetchChampion, titleKey]);
 
   if (!c || !c.holder) return null;

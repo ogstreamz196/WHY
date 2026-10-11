@@ -53,7 +53,6 @@ function QuizPlayPage() {
   const revealBtnRef = useRef<HTMLButtonElement | null>(null);
   const choiceRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-
   useEffect(() => {
     const raw = sessionStorage.getItem(`quiz:${sessionId}`);
     if (!raw) {
@@ -65,7 +64,7 @@ function QuizPlayPage() {
   }, [sessionId, navigate]);
 
   const current = quiz?.questions[idx];
-  const totalMs = current ? TIMER_MS[current.difficulty] ?? 12000 : 0;
+  const totalMs = current ? (TIMER_MS[current.difficulty] ?? 12000) : 0;
 
   // Timer only runs after user reveals the answers.
   useEffect(() => {
@@ -83,7 +82,6 @@ function QuizPlayPage() {
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, quiz, revealed, result, picked]);
-
 
   // Focus management: reveal button on new question, first choice on reveal.
   useEffect(() => {
@@ -122,7 +120,6 @@ function QuizPlayPage() {
     [current],
   );
 
-
   async function handlePick(pickIndex: number) {
     if (!current || answering || result) return;
     setAnswering(true);
@@ -134,7 +131,7 @@ function QuizPlayPage() {
         data: {
           session_id: sessionId,
           fact_id: current.fact_id,
-          picked_index: pickIndex < 0 ? 0 : pickIndex,
+          picked_index: pickIndex < 0 ? -1 : pickIndex,
           ms_taken: msTaken,
         },
       });
@@ -170,13 +167,17 @@ function QuizPlayPage() {
     setFocusIdx(0);
   }
 
-
   if (!quiz || !current) {
     return (
       <main className="relative min-h-[100dvh] w-full overflow-x-hidden">
         <CosmicBackground />
         <div className="mx-auto max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
-          <div className="glass-strong rounded-3xl p-5 space-y-4" role="status" aria-live="polite" aria-label="Loading quiz">
+          <div
+            className="glass-strong rounded-3xl p-5 space-y-4"
+            role="status"
+            aria-live="polite"
+            aria-label="Loading quiz"
+          >
             <SkeletonBlock height="1rem" className="w-1/3" />
             <SkeletonBlock height="2.25rem" lines={2} />
             <div className="grid gap-2">
@@ -214,7 +215,10 @@ function QuizPlayPage() {
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-3 flex items-center gap-2">
-          <Link to="/quiz" className="glass flex h-10 w-10 items-center justify-center rounded-2xl text-white/80">
+          <Link
+            to="/quiz"
+            className="glass flex h-10 w-10 items-center justify-center rounded-2xl text-white/80"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="flex-1">
@@ -232,7 +236,6 @@ function QuizPlayPage() {
             {totalPoints} pts
           </div>
           <FeedbackToggles />
-
         </header>
 
         {/* Timer — only after reveal */}
@@ -285,7 +288,8 @@ function QuizPlayPage() {
             {!revealed ? (
               <div className="mt-5 space-y-3">
                 <p id={`reveal-hint-${idx}`} className="text-sm text-white/70">
-                  Take your time to read the question. When you're ready, reveal the answers — the timer starts then.
+                  Take your time to read the question. When you're ready, reveal the answers — the
+                  timer starts then.
                 </p>
                 <button
                   ref={revealBtnRef}
@@ -351,18 +355,22 @@ function QuizPlayPage() {
                               : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
                       }`}
                     >
-                      <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/80">
+                      <span
+                        aria-hidden="true"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/80"
+                      >
                         {letter}
                       </span>
                       <span className="flex-1 text-sm font-semibold text-white">{choice}</span>
-                      {isCorrect && <Check aria-hidden="true" className="h-4 w-4 text-emerald-300" />}
+                      {isCorrect && (
+                        <Check aria-hidden="true" className="h-4 w-4 text-emerald-300" />
+                      )}
                       {isWrongPick && <X aria-hidden="true" className="h-4 w-4 text-rose-300" />}
                     </motion.button>
                   );
                 })}
               </div>
             )}
-
 
             <AnimatePresence>
               {result && (
@@ -386,7 +394,9 @@ function QuizPlayPage() {
 }
 
 function QuizFinal({ result }: { result: FinishResult }) {
-  const streak = result.perfect ? "🌟 PERFECT" : `${result.correct_count}/${result.question_count} correct`;
+  const streak = result.perfect
+    ? "🌟 PERFECT"
+    : `${result.correct_count}/${result.question_count} correct`;
   return (
     <main className="relative min-h-[100dvh] w-full">
       <CosmicBackground />

@@ -82,59 +82,69 @@ export const saveChain = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }): Promise<{ id: string; newlyUnlocked: string[]; champion: ChampionClaim | null }> => {
-    const { data: chain, error } = await context.supabase
-      .from("why_chains")
-      .insert({
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ id: string; newlyUnlocked: string[]; champion: ChampionClaim | null }> => {
+      const { data: chain, error } = await context.supabase
+        .from("why_chains")
+        .insert({
+          user_id: context.userId,
+          title: data.title,
+          root_fact_id: data.root_fact_id ?? null,
+        })
+        .select("id")
+        .single();
+      if (error) throw new Error(error.message);
+      const rows = data.steps.map((s, i) => ({
+        chain_id: chain.id,
         user_id: context.userId,
-        title: data.title,
-        root_fact_id: data.root_fact_id ?? null,
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    const rows = data.steps.map((s, i) => ({
-      chain_id: chain.id,
-      user_id: context.userId,
-      position: i,
-      question: s.question,
-      answer: s.answer ?? null,
-    }));
-    const { error: stepsErr } = await context.supabase.from("why_chain_steps").insert(rows);
-    if (stepsErr) throw new Error(stepsErr.message);
-    const newlyUnlocked = await runAchievementCheckForUser(context);
+        position: i,
+        question: s.question,
+        answer: s.answer ?? null,
+      }));
+      const { error: stepsErr } = await context.supabase.from("why_chain_steps").insert(rows);
+      if (stepsErr) throw new Error(stepsErr.message);
+      const newlyUnlocked = await runAchievementCheckForUser(context);
 
-    // Claim the "longest chain" champion title if this chain sets a new record.
-    let champion: ChampionClaim | null = null;
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: claim } = await supabaseAdmin.rpc("claim_champion_title", {
-        _title: "longest_chain",
-        _user: context.userId,
-        _value: data.steps.length,
-        _ref: chain.id,
-      });
-      const row = Array.isArray(claim) ? claim[0] : claim;
-      if (row) {
-        let prevName: string | null = null;
-        if (row.previous_holder) {
-          const { data: prof } = await supabaseAdmin
-            .from("profiles").select("display_name").eq("id", row.previous_holder).maybeSingle();
-          prevName = prof?.display_name ?? null;
+      // Claim the "longest chain" champion title if this chain sets a new record.
+      let champion: ChampionClaim | null = null;
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: claim } = await supabaseAdmin.rpc("claim_champion_title", {
+          _title: "longest_chain",
+          _user: context.userId,
+          _value: data.steps.length,
+          _ref: chain.id,
+        });
+        const row = Array.isArray(claim) ? claim[0] : claim;
+        if (row) {
+          let prevName: string | null = null;
+          if (row.previous_holder) {
+            const { data: prof } = await supabaseAdmin
+              .from("profiles")
+              .select("display_name")
+              .eq("id", row.previous_holder)
+              .maybeSingle();
+            prevName = prof?.display_name ?? null;
+          }
+          champion = {
+            claimed: !!row.claimed,
+            title_key: "longest_chain",
+            value: row.current_value ?? data.steps.length,
+            previous_value: row.previous_value ?? 0,
+            previous_holder_id: row.previous_holder ?? null,
+            previous_holder_name: prevName,
+          };
         }
-        champion = {
-          claimed: !!row.claimed,
-          title_key: "longest_chain",
-          value: row.current_value ?? data.steps.length,
-          previous_value: row.previous_value ?? 0,
-          previous_holder_id: row.previous_holder ?? null,
-          previous_holder_name: prevName,
-        };
+      } catch (e) {
+        console.warn("champion claim failed", e);
       }
-    } catch (e) { console.warn("champion claim failed", e); }
 
-    return { id: chain.id, newlyUnlocked, champion };
-  });
+      return { id: chain.id, newlyUnlocked, champion };
+    },
+  );
 
 export const getChampionTitle = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) =>
@@ -147,12 +157,18 @@ export const getChampionTitle = createServerFn({ method: "GET" })
       { auth: { storage: undefined, persistSession: false, autoRefreshToken: false } },
     );
     const { data: row } = await sb
-      .from("champion_titles").select("*").eq("title_key", data.title_key).maybeSingle();
+      .from("champion_titles")
+      .select("*")
+      .eq("title_key", data.title_key)
+      .maybeSingle();
     if (!row) return null;
     let holder: { id: string; display_name: string | null; avatar_id: string | null } | null = null;
     if (row.holder_user_id) {
       const { data: prof } = await sb
-        .from("profiles").select("id, display_name, avatar_id").eq("id", row.holder_user_id).maybeSingle();
+        .from("profiles")
+        .select("id, display_name, avatar_id")
+        .eq("id", row.holder_user_id)
+        .maybeSingle();
       holder = prof ?? null;
     }
     return {
@@ -162,7 +178,6 @@ export const getChampionTitle = createServerFn({ method: "GET" })
       holder,
     };
   });
-
 
 export const listMyChains = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -174,44 +189,59 @@ export const listMyChains = createServerFn({ method: "GET" })
       })
       .parse(input ?? {}),
   )
-  .handler(async ({ data, context }): Promise<{ items: ChainSummary[]; hasMore: boolean; nextOffset: number }> => {
-    const from = data.offset;
-    const to = data.offset + data.limit - 1;
-    const { data: chains, error, count } = await context.supabase
-      .from("why_chains")
-      .select("id, title, root_fact_id, is_public, share_slug, pinned, updated_at", { count: "exact" })
-      .eq("user_id", context.userId)
-      .order("pinned", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .range(from, to);
-    if (error) throw new Error(error.message);
-    const rows = chains ?? [];
-    if (!rows.length) {
-      return { items: [], hasMore: false, nextOffset: data.offset };
-    }
-    const ids = rows.map((c) => c.id);
-    const { data: steps } = await context.supabase
-      .from("why_chain_steps")
-      .select("chain_id, question, position")
-      .in("chain_id", ids)
-      .order("position", { ascending: false });
-    const lastByChain = new Map<string, { q: string; count: number }>();
-    (steps ?? []).forEach((s) => {
-      const prev = lastByChain.get(s.chain_id);
-      if (!prev) lastByChain.set(s.chain_id, { q: s.question, count: 1 });
-      else lastByChain.set(s.chain_id, { q: prev.q, count: prev.count + 1 });
-    });
-    const items = rows.map((c) => {
-      const meta = lastByChain.get(c.id);
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ items: ChainSummary[]; hasMore: boolean; nextOffset: number }> => {
+      const from = data.offset;
+      const to = data.offset + data.limit - 1;
+      const {
+        data: chains,
+        error,
+        count,
+      } = await context.supabase
+        .from("why_chains")
+        .select("id, title, root_fact_id, is_public, share_slug, pinned, updated_at", {
+          count: "exact",
+        })
+        .eq("user_id", context.userId)
+        .order("pinned", { ascending: false })
+        .order("updated_at", { ascending: false })
+        .range(from, to);
+      if (error) throw new Error(error.message);
+      const rows = chains ?? [];
+      if (!rows.length) {
+        return { items: [], hasMore: false, nextOffset: data.offset };
+      }
+      const ids = rows.map((c) => c.id);
+      const { data: steps } = await context.supabase
+        .from("why_chain_steps")
+        .select("chain_id, question, position")
+        .in("chain_id", ids)
+        .order("position", { ascending: false });
+      const lastByChain = new Map<string, { q: string; count: number }>();
+      (steps ?? []).forEach((s) => {
+        const prev = lastByChain.get(s.chain_id);
+        if (!prev) lastByChain.set(s.chain_id, { q: s.question, count: 1 });
+        else lastByChain.set(s.chain_id, { q: prev.q, count: prev.count + 1 });
+      });
+      const items = rows.map((c) => {
+        const meta = lastByChain.get(c.id);
+        return {
+          ...c,
+          step_count: meta?.count ?? 0,
+          last_question: meta?.q ?? null,
+        } as ChainSummary;
+      });
+      const total = count ?? data.offset + items.length;
       return {
-        ...c,
-        step_count: meta?.count ?? 0,
-        last_question: meta?.q ?? null,
-      } as ChainSummary;
-    });
-    const total = count ?? (data.offset + items.length);
-    return { items, hasMore: data.offset + items.length < total, nextOffset: data.offset + items.length };
-  });
+        items,
+        hasMore: data.offset + items.length < total,
+        nextOffset: data.offset + items.length,
+      };
+    },
+  );
 
 export const getChain = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -278,28 +308,32 @@ export const setChainShared = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({ id: z.string().uuid(), is_public: z.boolean() }).parse(input),
   )
-  .handler(async ({ data, context }): Promise<{ share_slug: string | null; is_public: boolean }> => {
-    const patch: { is_public: boolean; share_slug?: string | null } = { is_public: data.is_public };
-    if (data.is_public) {
-      const { data: existing } = await context.supabase
+  .handler(
+    async ({ data, context }): Promise<{ share_slug: string | null; is_public: boolean }> => {
+      const patch: { is_public: boolean; share_slug?: string | null } = {
+        is_public: data.is_public,
+      };
+      if (data.is_public) {
+        const { data: existing } = await context.supabase
+          .from("why_chains")
+          .select("share_slug")
+          .eq("id", data.id)
+          .eq("user_id", context.userId)
+          .maybeSingle();
+        if (!existing) throw new Error("Not found");
+        if (!existing.share_slug) patch.share_slug = makeSlug();
+      }
+      const { data: row, error } = await context.supabase
         .from("why_chains")
-        .select("share_slug")
+        .update(patch)
         .eq("id", data.id)
         .eq("user_id", context.userId)
-        .maybeSingle();
-      if (!existing) throw new Error("Not found");
-      if (!existing.share_slug) patch.share_slug = makeSlug();
-    }
-    const { data: row, error } = await context.supabase
-      .from("why_chains")
-      .update(patch)
-      .eq("id", data.id)
-      .eq("user_id", context.userId)
-      .select("share_slug, is_public")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
-  });
+        .select("share_slug, is_public")
+        .single();
+      if (error) throw new Error(error.message);
+      return row;
+    },
+  );
 
 export const togglePinChain = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -378,9 +412,14 @@ export const listCollections = createServerFn({ method: "GET" })
     const { data: items } = await context.supabase
       .from("chain_collection_items")
       .select("collection_id")
-      .in("collection_id", cols.map((c) => c.id));
+      .in(
+        "collection_id",
+        cols.map((c) => c.id),
+      );
     const counts = new Map<string, number>();
-    (items ?? []).forEach((r) => counts.set(r.collection_id, (counts.get(r.collection_id) ?? 0) + 1));
+    (items ?? []).forEach((r) =>
+      counts.set(r.collection_id, (counts.get(r.collection_id) ?? 0) + 1),
+    );
     return cols.map((c) => ({ ...c, chain_count: counts.get(c.id) ?? 0 }));
   });
 
@@ -407,21 +446,17 @@ export const createCollection = createServerFn({ method: "POST" })
 export const addChainToCollection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ collection_id: z.string().uuid(), chain_id: z.string().uuid() })
-      .parse(input),
+    z.object({ collection_id: z.string().uuid(), chain_id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("chain_collection_items")
-      .upsert(
-        {
-          collection_id: data.collection_id,
-          chain_id: data.chain_id,
-          user_id: context.userId,
-        },
-        { onConflict: "collection_id,chain_id", ignoreDuplicates: true },
-      );
+    const { error } = await context.supabase.from("chain_collection_items").upsert(
+      {
+        collection_id: data.collection_id,
+        chain_id: data.chain_id,
+        user_id: context.userId,
+      },
+      { onConflict: "collection_id,chain_id", ignoreDuplicates: true },
+    );
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -429,9 +464,7 @@ export const addChainToCollection = createServerFn({ method: "POST" })
 export const removeChainFromCollection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ collection_id: z.string().uuid(), chain_id: z.string().uuid() })
-      .parse(input),
+    z.object({ collection_id: z.string().uuid(), chain_id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -468,7 +501,12 @@ export type CategoryInterest = {
 export const bumpCategoryInterest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ category: z.string().trim().min(1).max(40), delta: z.number().int().min(1).max(20).default(1) }).parse(input),
+    z
+      .object({
+        category: z.string().trim().min(1).max(40),
+        delta: z.number().int().min(1).max(20).default(1),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { data: existing } = await context.supabase
@@ -478,17 +516,15 @@ export const bumpCategoryInterest = createServerFn({ method: "POST" })
       .eq("category", data.category)
       .maybeSingle();
     const nextWeight = (existing?.weight ?? 0) + data.delta;
-    const { error } = await context.supabase
-      .from("category_interests")
-      .upsert(
-        {
-          user_id: context.userId,
-          category: data.category,
-          weight: nextWeight,
-          last_engaged_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,category" },
-      );
+    const { error } = await context.supabase.from("category_interests").upsert(
+      {
+        user_id: context.userId,
+        category: data.category,
+        weight: nextWeight,
+        last_engaged_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,category" },
+    );
     if (error) throw new Error(error.message);
     const newlyUnlocked = await runAchievementCheckForUser(context);
     return { ok: true as const, weight: nextWeight, newlyUnlocked };
@@ -528,25 +564,32 @@ export const getDiscoveryTimeline = createServerFn({ method: "GET" })
       })
       .parse(input ?? {}),
   )
-  .handler(async ({ data, context }): Promise<{ items: TimelineEntry[]; hasMore: boolean; nextOffset: number }> => {
-    const from = data.offset;
-    const to = data.offset + data.limit - 1;
-    const { data: rows, error } = await context.supabase
-      .from("discoveries")
-      .select("seen_at, facts:fact_id (id, question, category)")
-      .eq("user_id", context.userId)
-      .order("seen_at", { ascending: false })
-      .range(from, to);
-    if (error) throw new Error(error.message);
-    const items = ((rows ?? []) as Array<{ seen_at: string; facts: TimelineEntry["fact"] | null }>)
-      .filter((r) => r.facts !== null)
-      .map((r) => ({ seen_at: r.seen_at, fact: r.facts! }));
-    return {
-      items,
-      hasMore: items.length === data.limit,
-      nextOffset: data.offset + items.length,
-    };
-  });
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ items: TimelineEntry[]; hasMore: boolean; nextOffset: number }> => {
+      const from = data.offset;
+      const to = data.offset + data.limit - 1;
+      const { data: rows, error } = await context.supabase
+        .from("discoveries")
+        .select("seen_at, facts:fact_id (id, question, category)")
+        .eq("user_id", context.userId)
+        .order("seen_at", { ascending: false })
+        .range(from, to);
+      if (error) throw new Error(error.message);
+      const items = (
+        (rows ?? []) as Array<{ seen_at: string; facts: TimelineEntry["fact"] | null }>
+      )
+        .filter((r) => r.facts !== null)
+        .map((r) => ({ seen_at: r.seen_at, fact: r.facts! }));
+      return {
+        items,
+        hasMore: items.length === data.limit,
+        nextOffset: data.offset + items.length,
+      };
+    },
+  );
 
 // ---------- Share slug regeneration ----------
 

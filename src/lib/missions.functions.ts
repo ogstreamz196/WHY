@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { runAchievementCheckForUser, awardXp } from "./account.functions";
+import { applyPoints, runAchievementCheckForUser, awardXp } from "./account.functions";
 import { awardAmountForUser } from "./vipStatus";
 
 let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
@@ -15,7 +15,6 @@ async function admin() {
   return _admin;
 }
 
-
 const BONUS_POINTS_BASE = 50;
 
 function today(): string {
@@ -24,8 +23,17 @@ function today(): string {
 
 // Rotate category-of-the-day deterministically per calendar day.
 const ROTATION = [
-  "space", "animals", "ocean", "science", "history",
-  "body", "earth", "weather", "food", "technology", "dinosaurs",
+  "space",
+  "animals",
+  "ocean",
+  "science",
+  "history",
+  "body",
+  "earth",
+  "weather",
+  "food",
+  "technology",
+  "dinosaurs",
 ] as const;
 
 function categoryOfDay(dateStr: string): string {
@@ -49,15 +57,18 @@ export type DailyMissionDTO = {
   completed: boolean;
 };
 
-function toDTO(row: {
-  mission_date: string;
-  mystery_done: boolean;
-  surprise_done: boolean;
-  chain_done: boolean;
-  category_done: boolean;
-  category_key: string | null;
-  bonus_awarded: boolean;
-} | null, dateStr: string): DailyMissionDTO {
+function toDTO(
+  row: {
+    mission_date: string;
+    mystery_done: boolean;
+    surprise_done: boolean;
+    chain_done: boolean;
+    category_done: boolean;
+    category_key: string | null;
+    bonus_awarded: boolean;
+  } | null,
+  dateStr: string,
+): DailyMissionDTO {
   const category_key = row?.category_key ?? categoryOfDay(dateStr);
   const mystery_done = row?.mystery_done ?? false;
   const surprise_done = row?.surprise_done ?? false;
@@ -81,7 +92,9 @@ export const getTodayMission = createServerFn({ method: "GET" })
     const t = today();
     const { data, error } = await context.supabase
       .from("daily_missions")
-      .select("mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded")
+      .select(
+        "mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded",
+      )
       .eq("user_id", context.userId)
       .eq("mission_date", t)
       .maybeSingle();
@@ -103,7 +116,9 @@ export const markMissionTask = createServerFn({ method: "POST" })
 
     const { data: existing } = await context.supabase
       .from("daily_missions")
-      .select("mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded")
+      .select(
+        "mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded",
+      )
       .eq("user_id", context.userId)
       .eq("mission_date", t)
       .maybeSingle();
@@ -123,10 +138,14 @@ export const markMissionTask = createServerFn({ method: "POST" })
     if (data.task === "chain") patch.chain_done = true;
     if (data.task === "category") patch.category_done = true;
 
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (
+      await admin()
+    )
       .from("daily_missions")
       .upsert(patch, { onConflict: "user_id,mission_date" })
-      .select("mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded")
+      .select(
+        "mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded",
+      )
       .single();
     if (error) throw new Error(error.message);
     return toDTO(row, t);
@@ -134,39 +153,73 @@ export const markMissionTask = createServerFn({ method: "POST" })
 
 export const claimMissionBonus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ awarded: boolean; points: number; total_points: number; newlyUnlocked: string[] }> => {
-    const t = today();
-    const { data: existing } = await context.supabase
-      .from("daily_missions")
-      .select("mystery_done, surprise_done, chain_done, category_done, bonus_awarded")
-      .eq("user_id", context.userId)
-      .eq("mission_date", t)
-      .maybeSingle();
-    if (!existing) return { awarded: false, points: 0, total_points: 0, newlyUnlocked: [] };
-    const complete = existing.mystery_done && existing.surprise_done && existing.chain_done && existing.category_done;
-    if (!complete || existing.bonus_awarded) {
-      const { data: s } = await (await admin())
-        .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
-      return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
-    }
-    await context.supabase
-      .from("daily_missions")
-      .update({ bonus_awarded: true, completed_at: new Date().toISOString() })
-      .eq("user_id", context.userId)
-      .eq("mission_date", t);
+  .handler(
+    async ({
+      context,
+    }): Promise<{
+      awarded: boolean;
+      points: number;
+      total_points: number;
+      newlyUnlocked: string[];
+    }> => {
+      const t = today();
+      const { data: existing } = await context.supabase
+        .from("daily_missions")
+        .select("mystery_done, surprise_done, chain_done, category_done, bonus_awarded")
+        .eq("user_id", context.userId)
+        .eq("mission_date", t)
+        .maybeSingle();
+      if (!existing) return { awarded: false, points: 0, total_points: 0, newlyUnlocked: [] };
+      const complete =
+        existing.mystery_done &&
+        existing.surprise_done &&
+        existing.chain_done &&
+        existing.category_done;
+      if (!complete || existing.bonus_awarded) {
+        const { data: s } = await (
+          await admin()
+        )
+          .from("user_stats")
+          .select("total_points")
+          .eq("user_id", context.userId)
+          .maybeSingle();
+        return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
+      }
+      // Only the request that flips bonus_awarded false → true gets paid.
+      const { data: claimed, error: claimErr } = await (
+        await admin()
+      )
+        .from("daily_missions")
+        .update({ bonus_awarded: true, completed_at: new Date().toISOString() })
+        .eq("user_id", context.userId)
+        .eq("mission_date", t)
+        .eq("bonus_awarded", false)
+        .select("user_id");
+      if (claimErr) throw new Error(claimErr.message);
+      if (!claimed || claimed.length === 0) {
+        const { data: s } = await (
+          await admin()
+        )
+          .from("user_stats")
+          .select("total_points")
+          .eq("user_id", context.userId)
+          .maybeSingle();
+        return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
+      }
 
-    const { data: stats } = await (await admin())
-      .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
-    const awardedPoints = await awardAmountForUser(context, BONUS_POINTS_BASE);
-    const next = (stats?.total_points ?? 0) + awardedPoints;
-    await (await admin()).from("user_stats").upsert(
-      { user_id: context.userId, total_points: next, last_active_day: t },
-      { onConflict: "user_id" },
-    );
-    await awardXp(context, "mission", awardedPoints);
-    const newlyUnlocked = await runAchievementCheckForUser(context);
-    return { awarded: true, points: awardedPoints, total_points: next, newlyUnlocked };
-  });
+      const awardedPoints = await awardAmountForUser(context, BONUS_POINTS_BASE);
+      const next = (await applyPoints(context.userId, awardedPoints)) ?? 0;
+      await (
+        await admin()
+      )
+        .from("user_stats")
+        .update({ last_active_day: t })
+        .eq("user_id", context.userId);
+      await awardXp(context, "mission", awardedPoints);
+      const newlyUnlocked = await runAchievementCheckForUser(context);
+      return { awarded: true, points: awardedPoints, total_points: next, newlyUnlocked };
+    },
+  );
 
 // -------- Weekly recap --------
 
@@ -232,11 +285,12 @@ export const getWeeklyRecap = createServerFn({ method: "GET" })
     }));
 
     const top = categories[0];
-    const insight = total === 0
-      ? "A quiet week — a fresh mystery is waiting for you today."
-      : top && top.pct >= 40
-      ? `You leaned into ${top.key} this week — ${top.pct}% of your discoveries.`
-      : `You explored ${categories.length} different topics this week — a true curious mind.`;
+    const insight =
+      total === 0
+        ? "A quiet week — a fresh mystery is waiting for you today."
+        : top && top.pct >= 40
+          ? `You leaned into ${top.key} this week — ${top.pct}% of your discoveries.`
+          : `You explored ${categories.length} different topics this week — a true curious mind.`;
 
     return {
       start: startIso.slice(0, 10),

@@ -38,13 +38,20 @@ function ResetPage() {
   return (
     <main className="relative flex min-h-[100dvh] items-center justify-center px-4">
       <CosmicBackground />
-      <form onSubmit={submit} className="glass-strong w-full max-w-md rounded-4xl border border-white/10 p-6">
+      <form
+        onSubmit={submit}
+        className="glass-strong w-full max-w-md rounded-4xl border border-white/10 p-6"
+      >
         <h1 className="font-display text-2xl font-black text-white">Set a new password</h1>
         <p className="mt-1 text-sm text-white/60">Then jump back into your curiosity journey.</p>
         <div className="mt-5 space-y-3">
           <PasswordField value={password} onChange={setPassword} label="New password" />
           <PasswordField value={confirm} onChange={setConfirm} label="Confirm password" />
-          {error && <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300">{error}</p>}
+          {error && (
+            <p className="rounded-xl bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-300">
+              {error}
+            </p>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -59,10 +66,20 @@ function ResetPage() {
   );
 }
 
-function PasswordField({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+function PasswordField({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-white/50">{label}</span>
+      <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-white/50">
+        {label}
+      </span>
       <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-violet-400/50">
         <Lock className="h-4 w-4 text-white/40" />
         <input

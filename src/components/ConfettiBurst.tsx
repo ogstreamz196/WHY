@@ -7,7 +7,13 @@ const COLORS = ["#a855f7", "#22d3ee", "#f59e0b", "#ec4899", "#34d399", "#facc15"
  * Fires a confetti burst whenever `trigger` changes to a new truthy value.
  * Renders as a fixed, non-interactive overlay.
  */
-export function ConfettiBurst({ trigger, duration = 1800 }: { trigger: number; duration?: number }) {
+export function ConfettiBurst({
+  trigger,
+  duration = 1800,
+}: {
+  trigger: number;
+  duration?: number;
+}) {
   const [key, setKey] = useState(0);
   useEffect(() => {
     if (!trigger) return;

@@ -2,7 +2,16 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState } from "react";
-import { Sparkles, Flame, Coins, Heart, ArrowRight, Loader2, ChevronDown, Check } from "lucide-react";
+import {
+  Sparkles,
+  Flame,
+  Coins,
+  Heart,
+  ArrowRight,
+  Loader2,
+  ChevronDown,
+  Check,
+} from "lucide-react";
 import { z } from "zod";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { getFavorites, getPoints, getStreak } from "@/lib/store";
@@ -14,7 +23,10 @@ export const Route = createFileRoute("/_authenticated/import-guest")({
   head: () => ({
     meta: [
       { title: "Bring your guest progress? — Why?" },
-      { name: "description", content: "Import your streak, Y-Coins and favourites into your new account." },
+      {
+        name: "description",
+        content: "Import your streak, Y-Coins and favourites into your new account.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -24,8 +36,12 @@ export const Route = createFileRoute("/_authenticated/import-guest")({
     <main className="grid min-h-[100dvh] place-items-center p-6 text-white">
       <div className="glass-strong max-w-md rounded-3xl p-6 text-center">
         <p className="font-bold">Couldn't load your guest data.</p>
-        <p className="mt-1 text-sm text-white/60">{error.message}</p>
-        <button className="mt-4 rounded-2xl bg-white/10 px-4 py-2 text-sm" onClick={reset}>Try again</button>
+        <p className="mt-1 text-sm text-white/60">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
+        <button className="mt-4 rounded-2xl bg-white/10 px-4 py-2 text-sm" onClick={reset}>
+          Try again
+        </button>
       </div>
     </main>
   ),
@@ -86,7 +102,9 @@ function ImportGuestPage() {
       <main className="grid min-h-[100dvh] place-items-center p-6 text-white">
         <div className="glass-strong max-w-md rounded-3xl p-6 text-center">
           <p className="font-bold">Nothing to import yet.</p>
-          <p className="mt-1 text-sm text-white/60">Your new account starts fresh — start exploring!</p>
+          <p className="mt-1 text-sm text-white/60">
+            Your new account starts fresh — start exploring!
+          </p>
           <button
             onClick={goHome}
             className="mt-4 inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold text-white"
@@ -147,9 +165,21 @@ function ImportGuestPage() {
             ) : (
               <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="grid grid-cols-3 gap-2">
-                  <SummaryTile icon={<Coins className="h-4 w-4" />} label="Y-Coins" value={guest.points} />
-                  <SummaryTile icon={<Flame className="h-4 w-4" />} label="Streak" value={`${guest.streak}d`} />
-                  <SummaryTile icon={<Heart className="h-4 w-4" />} label="Favourites" value={guest.favorites.length} />
+                  <SummaryTile
+                    icon={<Coins className="h-4 w-4" />}
+                    label="Y-Coins"
+                    value={guest.points}
+                  />
+                  <SummaryTile
+                    icon={<Flame className="h-4 w-4" />}
+                    label="Streak"
+                    value={`${guest.streak}d`}
+                  />
+                  <SummaryTile
+                    icon={<Heart className="h-4 w-4" />}
+                    label="Favourites"
+                    value={guest.favorites.length}
+                  />
                 </div>
 
                 <button
@@ -170,8 +200,14 @@ function ImportGuestPage() {
                       className="overflow-hidden"
                     >
                       <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm">
-                        <ReviewRow label="Y-Coin balance" detail={`${guest.points} coins merged — we keep the higher of guest or account.`} />
-                        <ReviewRow label="Streak" detail={`${guest.streak}-day streak preserved as your longest.`} />
+                        <ReviewRow
+                          label="Y-Coin balance"
+                          detail={`${guest.points} coins merged — we keep the higher of guest or account.`}
+                        />
+                        <ReviewRow
+                          label="Streak"
+                          detail={`${guest.streak}-day streak preserved as your longest.`}
+                        />
                         <ReviewRow
                           label="Favourite facts"
                           detail={`${guest.favorites.length} saved fact${guest.favorites.length === 1 ? "" : "s"} added to your account.`}
@@ -179,12 +215,17 @@ function ImportGuestPage() {
                         {guest.favorites.length > 0 && (
                           <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1 text-xs text-white/70">
                             {guest.favorites.slice(0, 20).map((f) => (
-                              <li key={f.id} className="line-clamp-1 rounded-lg bg-white/5 px-2 py-1">
+                              <li
+                                key={f.id}
+                                className="line-clamp-1 rounded-lg bg-white/5 px-2 py-1"
+                              >
                                 • {f.question ?? f.id}
                               </li>
                             ))}
                             {guest.favorites.length > 20 && (
-                              <li className="text-white/50">…and {guest.favorites.length - 20} more</li>
+                              <li className="text-white/50">
+                                …and {guest.favorites.length - 20} more
+                              </li>
                             )}
                           </ul>
                         )}
@@ -210,9 +251,13 @@ function ImportGuestPage() {
                     style={{ background: "var(--gradient-primary)" }}
                   >
                     {state === "importing" ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Importing…</>
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Importing…
+                      </>
                     ) : (
-                      <>Import my progress <ArrowRight className="h-4 w-4" /></>
+                      <>
+                        Import my progress <ArrowRight className="h-4 w-4" />
+                      </>
                     )}
                   </button>
                   <button
@@ -222,10 +267,7 @@ function ImportGuestPage() {
                   >
                     Skip — start fresh
                   </button>
-                  <Link
-                    to="/"
-                    className="text-center text-xs text-white/40 hover:text-white/70"
-                  >
+                  <Link to="/" className="text-center text-xs text-white/40 hover:text-white/70">
                     Decide later
                   </Link>
                 </div>
@@ -238,7 +280,15 @@ function ImportGuestPage() {
   );
 }
 
-function SummaryTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+function SummaryTile({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center">
       <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white/90">

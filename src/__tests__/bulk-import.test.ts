@@ -17,7 +17,10 @@ describe("parseBulkImportRows — header validation", () => {
 
   it("throws when required columns are missing", () => {
     expect(() =>
-      parseBulkImportRows([["foo", "bar"], ["x", "y"]]),
+      parseBulkImportRows([
+        ["foo", "bar"],
+        ["x", "y"],
+      ]),
     ).toThrow(BulkImportHeaderError);
   });
 
@@ -96,8 +99,7 @@ describe("dedupeAgainstExisting", () => {
         select: () => ({
           ilike: (_col: string, val: string) => ({
             limit: () => ({
-              maybeSingle: () =>
-                Promise.resolve({ data: existing.has(val) ? { id: "x" } : null }),
+              maybeSingle: () => Promise.resolve({ data: existing.has(val) ? { id: "x" } : null }),
             }),
           }),
         }),

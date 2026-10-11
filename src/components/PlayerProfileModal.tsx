@@ -1,14 +1,22 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
-import { Award, Brain, Calendar, Crown, Flame, Sparkles, Target, Trophy, X, Zap } from "lucide-react";
+import {
+  Award,
+  Brain,
+  Calendar,
+  Crown,
+  Flame,
+  Sparkles,
+  Target,
+  Trophy,
+  X,
+  Zap,
+} from "lucide-react";
 import { VipBadge } from "@/components/VipBadge";
 import { emojiFor } from "@/lib/categories";
 import { avatarEmojiFor } from "@/lib/store";
-import {
-  getPlayerProfilePublic,
-  type PlayerProfilePublic,
-} from "@/lib/player-profile.functions";
+import { getPlayerProfilePublic, type PlayerProfilePublic } from "@/lib/player-profile.functions";
 
 type Props = {
   userId: string | null;
@@ -31,14 +39,7 @@ function since(iso: string | null): string {
   return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
-export function PlayerProfileModal({
-  userId,
-  rank,
-  totalUsers,
-  boardLabel,
-  isMe,
-  onClose,
-}: Props) {
+export function PlayerProfileModal({ userId, rank, totalUsers, boardLabel, isMe, onClose }: Props) {
   const fetchProfile = useServerFn(getPlayerProfilePublic);
   const [data, setData] = useState<PlayerProfilePublic | null>(null);
   const [loading, setLoading] = useState(false);
@@ -64,7 +65,6 @@ export function PlayerProfileModal({
       alive = false;
     };
   }, [userId, fetchProfile, attempt]);
-
 
   useEffect(() => {
     if (!userId) return;
@@ -139,7 +139,9 @@ export function PlayerProfileModal({
                   className="relative flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white/70 bg-neutral-950 shadow-xl"
                 >
                   {data?.avatar_id ? (
-                    <span className="text-4xl" aria-hidden>{avatarEmojiFor(data.avatar_id)}</span>
+                    <span className="text-4xl" aria-hidden>
+                      {avatarEmojiFor(data.avatar_id)}
+                    </span>
                   ) : (
                     <span className="text-3xl font-black text-white">{initial}</span>
                   )}
@@ -172,12 +174,7 @@ export function PlayerProfileModal({
             {/* Body */}
             <div className="max-h-[70vh] overflow-y-auto px-5 pb-6 pt-4">
               {loading ? (
-                <div
-                  className="space-y-3"
-                  aria-busy="true"
-                  aria-live="polite"
-                  role="status"
-                >
+                <div className="space-y-3" aria-busy="true" aria-live="polite" role="status">
                   <span className="sr-only">Loading player profile…</span>
                   <div className="grid grid-cols-2 gap-2.5">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -194,7 +191,9 @@ export function PlayerProfileModal({
                   role="alert"
                   className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center"
                 >
-                  <p className="text-2xl" aria-hidden>😕</p>
+                  <p className="text-2xl" aria-hidden>
+                    😕
+                  </p>
                   <p className="mt-2 text-sm text-white/80">{error}</p>
                   <div className="mt-4 flex items-center justify-center gap-2">
                     <button
@@ -214,7 +213,6 @@ export function PlayerProfileModal({
                     </button>
                   </div>
                 </div>
-
               ) : data ? (
                 <>
                   {data.bio && (
@@ -283,7 +281,9 @@ export function PlayerProfileModal({
                       <Row
                         icon={<Users />}
                         label="Age band"
-                        value={<span className="capitalize">{data.age_band.replace(/_/g, " ")}</span>}
+                        value={
+                          <span className="capitalize">{data.age_band.replace(/_/g, " ")}</span>
+                        }
                       />
                     )}
                     <Row

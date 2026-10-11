@@ -14,10 +14,10 @@ import { useCurrentUser } from "@/lib/auth";
 import { emojiFor } from "@/lib/categories";
 
 const TASKS: { key: MissionTask; label: string; hint: string; icon: string }[] = [
-  { key: "mystery",  label: "Today's mystery",   hint: "Reveal today's featured why", icon: "🔮" },
-  { key: "surprise", label: "One surprise fact", hint: "Tap Next for a fresh why",    icon: "✨" },
-  { key: "chain",    label: "Follow a chain",    hint: "Ask “But why?” 3 times",      icon: "🔗" },
-  { key: "category", label: "Explore a theme",   hint: "Discover in today's category",icon: "🎯" },
+  { key: "mystery", label: "Today's mystery", hint: "Reveal today's featured why", icon: "🔮" },
+  { key: "surprise", label: "One surprise fact", hint: "Tap Next for a fresh why", icon: "✨" },
+  { key: "chain", label: "Follow a chain", hint: "Ask “But why?” 3 times", icon: "🔗" },
+  { key: "category", label: "Explore a theme", hint: "Discover in today's category", icon: "🎯" },
 ];
 
 type Props = {
@@ -38,12 +38,24 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
   const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     fetchMission()
-      .then((m) => { if (!cancelled) { setMission(m); setLoading(false); } })
-      .catch(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((m) => {
+        if (!cancelled) {
+          setMission(m);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user, fetchMission]);
 
   useEffect(() => {
@@ -54,23 +66,31 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
       setMission((prev) => {
         if (!prev) return prev;
         const next = { ...prev };
-        if (task === "mystery")  next.mystery_done = true;
+        if (task === "mystery") next.mystery_done = true;
         if (task === "surprise") next.surprise_done = true;
-        if (task === "chain")    next.chain_done = true;
+        if (task === "chain") next.chain_done = true;
         if (task === "category") next.category_done = true;
-        next.completed = next.mystery_done && next.surprise_done && next.chain_done && next.category_done;
+        next.completed =
+          next.mystery_done && next.surprise_done && next.chain_done && next.category_done;
         return next;
       });
       try {
         const res = await markTask({ data: { task } });
         setMission(res);
-      } catch (e) { console.warn("mission mark failed", e); }
+      } catch (e) {
+        console.warn("mission mark failed", e);
+      }
     });
   }, [registerMarker, markTask, user]);
 
   if (!user || loading || !mission) return null;
 
-  const done = [mission.mystery_done, mission.surprise_done, mission.chain_done, mission.category_done];
+  const done = [
+    mission.mystery_done,
+    mission.surprise_done,
+    mission.chain_done,
+    mission.category_done,
+  ];
   const doneCount = done.filter(Boolean).length;
   const pct = Math.round((doneCount / 4) * 100);
 
@@ -82,10 +102,15 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
       if (res.awarded) {
         onCelebrate(res.points);
         setMission({ ...mission, bonus_awarded: true });
-        toast.success(`+${res.points} XP mission bonus!`, { description: "Come back tomorrow for a new mission." });
+        toast.success(`+${res.points} XP mission bonus!`, {
+          description: "Come back tomorrow for a new mission.",
+        });
       }
-    } catch (e) { console.warn(e); }
-    finally { setClaiming(false); }
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setClaiming(false);
+    }
   }
 
   return (
@@ -109,16 +134,16 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
           </div>
           <p className="mt-0.5 text-xs text-white/60 sm:text-sm md:text-[0.95rem]">
             {mission.completed
-              ? mission.bonus_awarded ? "All complete — see you tomorrow ✨" : "All 4 done — claim your bonus!"
+              ? mission.bonus_awarded
+                ? "All complete — see you tomorrow ✨"
+                : "All 4 done — claim your bonus!"
               : `${doneCount} of 4 complete · Category: ${emojiFor(mission.category_key)} ${mission.category_key}`}
           </p>
         </div>
-        <motion.span
-          animate={{ rotate: expanded ? 180 : 0 }}
-          className="text-white/40"
-        >⌄</motion.span>
+        <motion.span animate={{ rotate: expanded ? 180 : 0 }} className="text-white/40">
+          ⌄
+        </motion.span>
       </button>
-
 
       <AnimatePresence initial={false}>
         {expanded && (
@@ -144,7 +169,9 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
                 >
                   <span className="shrink-0 text-lg sm:text-xl md:text-2xl">{t.icon}</span>
                   <div className="min-w-0 flex-1">
-                    <div className={`text-sm font-bold leading-snug sm:text-[0.95rem] md:text-base ${isDone ? "text-emerald-200 line-through" : "text-white"}`}>
+                    <div
+                      className={`text-sm font-bold leading-snug sm:text-[0.95rem] md:text-base ${isDone ? "text-emerald-200 line-through" : "text-white"}`}
+                    >
                       {t.label}
                       {isCategory && (
                         <span className="ml-1 font-normal text-white/50">
@@ -152,7 +179,9 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
                         </span>
                       )}
                     </div>
-                    <div className="mt-0.5 text-[11px] leading-snug text-white/50 sm:text-xs md:text-sm">{t.hint}</div>
+                    <div className="mt-0.5 text-[11px] leading-snug text-white/50 sm:text-xs md:text-sm">
+                      {t.hint}
+                    </div>
                   </div>
                   {isDone ? (
                     <motion.span
@@ -171,12 +200,13 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
                       Go
                     </button>
                   ) : (
-                    <span className="shrink-0 text-white/20"><Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4" /></span>
+                    <span className="shrink-0 text-white/20">
+                      <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </span>
                   )}
                 </div>
               );
             })}
-
 
             {mission.completed && !mission.bonus_awarded && (
               <motion.button
@@ -193,7 +223,6 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
                 {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : "🎁 Claim +50 XP bonus"}
               </motion.button>
             )}
-
           </motion.div>
         )}
       </AnimatePresence>
@@ -209,7 +238,9 @@ function ProgressRing({ pct }: { pct: number }) {
     <svg viewBox="0 0 44 44" className="h-11 w-11 -rotate-90" aria-hidden>
       <circle cx="22" cy="22" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3.5" />
       <motion.circle
-        cx="22" cy="22" r={r}
+        cx="22"
+        cy="22"
+        r={r}
         fill="none"
         stroke="url(#missionGrad)"
         strokeWidth="3.5"

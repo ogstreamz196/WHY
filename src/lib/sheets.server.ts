@@ -21,21 +21,36 @@ function headers(env: { lovableKey: string; connKey: string }): Record<string, s
 
 async function tabExists(env: ReturnType<typeof requireEnv>, tab: string): Promise<boolean> {
   if (!env) return false;
-  const res = await fetch(`${GATEWAY}/spreadsheets/${env.spreadsheetId}?fields=sheets.properties.title`, {
-    headers: headers(env),
-  });
+  const res = await fetch(
+    `${GATEWAY}/spreadsheets/${env.spreadsheetId}?fields=sheets.properties.title`,
+    {
+      headers: headers(env),
+    },
+  );
   if (!res.ok) return false;
   const body = (await res.json()) as { sheets?: { properties?: { title?: string } }[] };
   return !!body.sheets?.some((s) => s.properties?.title === tab);
 }
 
-async function createTab(env: NonNullable<ReturnType<typeof requireEnv>>, tab: string): Promise<void> {
+async function createTab(
+  env: NonNullable<ReturnType<typeof requireEnv>>,
+  tab: string,
+): Promise<void> {
   // Add sheet
   await fetch(`${GATEWAY}/spreadsheets/${env.spreadsheetId}:batchUpdate`, {
     method: "POST",
     headers: headers(env),
     body: JSON.stringify({
-      requests: [{ addSheet: { properties: { title: tab, gridProperties: { rowCount: 1000, columnCount: 6, frozenRowCount: 1 } } } }],
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title: tab,
+              gridProperties: { rowCount: 1000, columnCount: 6, frozenRowCount: 1 },
+            },
+          },
+        },
+      ],
     }),
   });
   // Header row
@@ -70,7 +85,11 @@ async function createTab(env: NonNullable<ReturnType<typeof requireEnv>>, tab: s
             cell: {
               userEnteredFormat: {
                 backgroundColor: { red: 0.12, green: 0.16, blue: 0.35 },
-                textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true, fontSize: 11 },
+                textFormat: {
+                  foregroundColor: { red: 1, green: 1, blue: 1 },
+                  bold: true,
+                  fontSize: 11,
+                },
                 horizontalAlignment: "CENTER",
               },
             },
@@ -131,7 +150,9 @@ export async function appendFactToSheet(fact: {
         method: "POST",
         headers: headers(env),
         body: JSON.stringify({
-          values: [[fact.code, fact.code_seq, fact.question, fact.answer, fact.fun_fact ?? "", created]],
+          values: [
+            [fact.code, fact.code_seq, fact.question, fact.answer, fact.fun_fact ?? "", created],
+          ],
         }),
       },
     );

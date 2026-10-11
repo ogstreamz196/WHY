@@ -16,8 +16,14 @@ function detectLowPower(): boolean {
       connection?: { saveData?: boolean; effectiveType?: string };
     };
     if (nav.connection?.saveData) return true;
-    if (typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2) return true;
-    if (typeof nav.hardwareConcurrency === "number" && nav.hardwareConcurrency > 0 && nav.hardwareConcurrency <= 2) return true;
+    if (typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2)
+      return true;
+    if (
+      typeof nav.hardwareConcurrency === "number" &&
+      nav.hardwareConcurrency > 0 &&
+      nav.hardwareConcurrency <= 2
+    )
+      return true;
     const et = nav.connection?.effectiveType;
     if (et === "slow-2g" || et === "2g") return true;
   } catch {
@@ -68,26 +74,62 @@ type Props = {
 
 // Per-badge unlock guidance for local (client-side) explorer badges.
 const BADGE_META: Record<string, { requirement: string; examples: string[] }> = {
-  curious:   { requirement: "Discover 5 facts.",         examples: ["Tap “New fact” 5 times", "Answer one daily challenge"] },
-  explorer:  { requirement: "Discover 25 facts.",        examples: ["Explore a new category", "Chain 3 whys in a row"] },
-  scientist: { requirement: "Discover 100 facts.",       examples: ["Read facts across every category", "Build a chain of 5"] },
-  sage:      { requirement: "Discover 250 facts.",       examples: ["Return every day for a week", "Save 10 favourites"] },
-  polymath:  { requirement: "Discover 500 facts.",       examples: ["Complete 30 daily challenges", "Explore every category"] },
-  oracle:    { requirement: "Discover 1,000 facts.",     examples: ["Stay curious every single day", "Master the Curiosity Arena"] },
+  curious: {
+    requirement: "Discover 5 facts.",
+    examples: ["Tap “New fact” 5 times", "Answer one daily challenge"],
+  },
+  explorer: {
+    requirement: "Discover 25 facts.",
+    examples: ["Explore a new category", "Chain 3 whys in a row"],
+  },
+  scientist: {
+    requirement: "Discover 100 facts.",
+    examples: ["Read facts across every category", "Build a chain of 5"],
+  },
+  sage: {
+    requirement: "Discover 250 facts.",
+    examples: ["Return every day for a week", "Save 10 favourites"],
+  },
+  polymath: {
+    requirement: "Discover 500 facts.",
+    examples: ["Complete 30 daily challenges", "Explore every category"],
+  },
+  oracle: {
+    requirement: "Discover 1,000 facts.",
+    examples: ["Stay curious every single day", "Master the Curiosity Arena"],
+  },
 
-  streak3:   { requirement: "Keep a 3-day streak.",      examples: ["Complete a daily challenge 3 days in a row"] },
-  streak7:   { requirement: "Keep a 7-day streak.",      examples: ["Come back every day for a week"] },
-  streak14:  { requirement: "Keep a 14-day streak.",     examples: ["Two weeks of curiosity in a row"] },
-  streak30:  { requirement: "Keep a 30-day streak.",     examples: ["A full month of daily wonder"] },
-  streak60:  { requirement: "Keep a 60-day streak.",     examples: ["Two months of unbroken curiosity"] },
-  streak100: { requirement: "Keep a 100-day streak.",    examples: ["100 days of asking Why?"] },
+  streak3: {
+    requirement: "Keep a 3-day streak.",
+    examples: ["Complete a daily challenge 3 days in a row"],
+  },
+  streak7: { requirement: "Keep a 7-day streak.", examples: ["Come back every day for a week"] },
+  streak14: { requirement: "Keep a 14-day streak.", examples: ["Two weeks of curiosity in a row"] },
+  streak30: { requirement: "Keep a 30-day streak.", examples: ["A full month of daily wonder"] },
+  streak60: {
+    requirement: "Keep a 60-day streak.",
+    examples: ["Two months of unbroken curiosity"],
+  },
+  streak100: { requirement: "Keep a 100-day streak.", examples: ["100 days of asking Why?"] },
 
-  points100:  { requirement: "Earn 100 Y-Coins.",        examples: ["Answer 4 daily challenges", "Win a quiz round"] },
-  points500:  { requirement: "Earn 500 Y-Coins.",        examples: ["Play the Curiosity Arena", "Chain whys and win streaks"] },
-  points1k:   { requirement: "Earn 1,000 Y-Coins.",      examples: ["Compete on the leaderboard", "Complete weekly missions"] },
-  points5k:   { requirement: "Earn 5,000 Y-Coins.",      examples: ["Consistent daily play adds up fast"] },
-  points10k:  { requirement: "Earn 10,000 Y-Coins.",     examples: ["Top the monthly leaderboard"] },
-  points25k:  { requirement: "Earn 25,000 Y-Coins.",     examples: ["Become a Curiosity Champion"] },
+  points100: {
+    requirement: "Earn 100 Y-Coins.",
+    examples: ["Answer 4 daily challenges", "Win a quiz round"],
+  },
+  points500: {
+    requirement: "Earn 500 Y-Coins.",
+    examples: ["Play the Curiosity Arena", "Chain whys and win streaks"],
+  },
+  points1k: {
+    requirement: "Earn 1,000 Y-Coins.",
+    examples: ["Compete on the leaderboard", "Complete weekly missions"],
+  },
+  points5k: {
+    requirement: "Earn 5,000 Y-Coins.",
+    examples: ["Consistent daily play adds up fast"],
+  },
+  points10k: { requirement: "Earn 10,000 Y-Coins.", examples: ["Top the monthly leaderboard"] },
+  points25k: { requirement: "Earn 25,000 Y-Coins.", examples: ["Become a Curiosity Champion"] },
 };
 
 const FOCUSABLE_SELECTOR = [
@@ -113,10 +155,7 @@ function formatUnlockDate(iso: string) {
 
 export function BadgeDetailsModal({ badge, onClose }: Props) {
   const meta = badge ? BADGE_META[badge.id] : undefined;
-  const requirement =
-    meta?.requirement ??
-    badge?.description ??
-    "Keep exploring to unlock.";
+  const requirement = meta?.requirement ?? badge?.description ?? "Keep exploring to unlock.";
   const examples = meta?.examples ?? [];
 
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -129,8 +168,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
     if (!badge) return;
 
     // Remember what had focus before the modal opened so we can return to it.
-    previouslyFocusedRef.current =
-      (document.activeElement as HTMLElement | null) ?? null;
+    previouslyFocusedRef.current = (document.activeElement as HTMLElement | null) ?? null;
 
     // Lock background scroll while the sheet is open.
     const prevOverflow = document.body.style.overflow;
@@ -152,9 +190,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
 
       const panel = panelRef.current;
       if (!panel) return;
-      const nodes = Array.from(
-        panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      ).filter(
+      const nodes = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
         (el) =>
           !el.hasAttribute("disabled") &&
           el.getAttribute("aria-hidden") !== "true" &&
@@ -202,10 +238,8 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
   const glareY = useTransform(rx, [-14, 14], ["75%", "25%"]);
   const glareBg = useTransform(
     [glareX, glareY],
-    ([x, y]) =>
-      `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.55), transparent 55%)`,
+    ([x, y]) => `radial-gradient(circle at ${x} ${y}, rgba(255,255,255,0.55), transparent 55%)`,
   );
-
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
@@ -325,7 +359,12 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
                         y: Math.sin((i / 8) * Math.PI * 2) * 62,
                         rotate: [0, 180],
                       }}
-                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.14, ease: "easeOut" }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        delay: i * 0.14,
+                        ease: "easeOut",
+                      }}
                     >
                       ✨
                     </motion.span>
@@ -335,9 +374,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
               <motion.div
                 initial={{ scale: 0.6, rotate: badge.unlocked ? -20 : 0 }}
                 animate={
-                  badge.unlocked
-                    ? { scale: 1, rotate: 0 }
-                    : { scale: 1, x: [0, -3, 3, -3, 3, 0] }
+                  badge.unlocked ? { scale: 1, rotate: 0 } : { scale: 1, x: [0, -3, 3, -3, 3, 0] }
                 }
                 transition={
                   badge.unlocked
@@ -348,9 +385,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
                   rotateX,
                   rotateY,
                   transformStyle: "preserve-3d",
-                  background: badge.unlocked
-                    ? "var(--gradient-primary)"
-                    : "oklch(0.25 0.02 285)",
+                  background: badge.unlocked ? "var(--gradient-primary)" : "oklch(0.25 0.02 285)",
                 }}
                 className={`relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl text-5xl shadow-2xl ${
                   badge.unlocked ? "" : "grayscale"
@@ -483,7 +518,9 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
               whileTap={{ scale: 0.97 }}
               onClick={onClose}
               className="relative mt-5 w-full rounded-2xl px-4 py-3 text-sm font-black text-white shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-              style={{ background: badge.unlocked ? "var(--gradient-primary)" : "rgba(255,255,255,0.1)" }}
+              style={{
+                background: badge.unlocked ? "var(--gradient-primary)" : "rgba(255,255,255,0.1)",
+              }}
             >
               {badge.unlocked ? "Nice!" : "Keep exploring"}
             </motion.button>

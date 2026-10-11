@@ -24,7 +24,10 @@ export function useBossTheme() {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       apply(session?.user?.email?.toLowerCase() === BOSS_EMAIL);
     });
-    return () => { alive = false; sub.subscription.unsubscribe(); };
+    return () => {
+      alive = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
   return isBoss;
 }

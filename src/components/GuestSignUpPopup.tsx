@@ -46,7 +46,6 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
   const provider: "apple" | "google" = isApple ? "apple" : "google";
   const providerLabel = isApple ? "Apple" : "Google";
 
-
   useEffect(() => {
     if (!open) return;
     setRemaining(seconds);
@@ -141,7 +140,6 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
     }
   }
 
-
   // First press of the close (X) button pulls the Google button under the
   // user's finger/cursor AND immediately triggers Google sign-in — so the
   // action they see is the Google OAuth flow opening, exactly as if they
@@ -171,9 +169,6 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
     setCancelCountdown(5);
   }
 
-
-
-
   return (
     <AnimatePresence>
       {open && (
@@ -202,7 +197,8 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
               <div className="min-w-0">
                 <p className="font-fun text-lg font-black leading-tight">Loving the facts?</p>
                 <p className="mt-1 text-sm text-white/85">
-                  You're on a free trial — sign in to keep your streak, coins &amp; favourites forever.
+                  You're on a free trial — sign in to keep your streak, coins &amp; favourites
+                  forever.
                 </p>
               </div>
 
@@ -218,8 +214,8 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
                   locked
                     ? `Wait ${remaining}s`
                     : cancelCountdown !== null
-                    ? `Closing in ${cancelCountdown}s — click to keep open`
-                    : "Close"
+                      ? `Closing in ${cancelCountdown}s — click to keep open`
+                      : "Close"
                 }
                 className="ml-auto grid h-9 w-9 flex-none place-items-center rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20"
               >
@@ -241,7 +237,14 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
               disabled={googleLoading}
               animate={
                 googleClicking
-                  ? { scale: [1, 0.9, 1.06, 1], boxShadow: ["0 4px 6px rgba(0,0,0,0.1)", "0 0 0 8px rgba(255,255,255,0.45)", "0 4px 6px rgba(0,0,0,0.1)"] }
+                  ? {
+                      scale: [1, 0.9, 1.06, 1],
+                      boxShadow: [
+                        "0 4px 6px rgba(0,0,0,0.1)",
+                        "0 0 0 8px rgba(255,255,255,0.45)",
+                        "0 4px 6px rgba(0,0,0,0.1)",
+                      ],
+                    }
                   : {}
               }
               transition={{ duration: 0.28 }}
@@ -252,20 +255,37 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
               }
             >
               {isApple ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-                  <path d="M16.365 1.43c0 1.14-.42 2.23-1.24 3.03-.83.83-2.17 1.47-3.28 1.38-.13-1.1.42-2.24 1.19-3.02.83-.84 2.24-1.47 3.33-1.39zM20.5 17.1c-.56 1.29-.83 1.86-1.55 3-1 1.62-2.42 3.63-4.18 3.65-1.56.02-1.96-1.02-4.08-1.01-2.12.01-2.56 1.03-4.12 1.01-1.76-.03-3.1-1.85-4.1-3.47C.3 16.62-.16 11.6 1.8 8.94c1.4-1.9 3.6-3.02 5.67-3.02 2.11 0 3.44 1.16 5.18 1.16 1.69 0 2.72-1.16 5.16-1.16 1.84 0 3.79 1 5.19 2.73-4.56 2.5-3.82 9.02-.5 8.45z"/>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  fill="currentColor"
+                >
+                  <path d="M16.365 1.43c0 1.14-.42 2.23-1.24 3.03-.83.83-2.17 1.47-3.28 1.38-.13-1.1.42-2.24 1.19-3.02.83-.84 2.24-1.47 3.33-1.39zM20.5 17.1c-.56 1.29-.83 1.86-1.55 3-1 1.62-2.42 3.63-4.18 3.65-1.56.02-1.96-1.02-4.08-1.01-2.12.01-2.56 1.03-4.12 1.01-1.76-.03-3.1-1.85-4.1-3.47C.3 16.62-.16 11.6 1.8 8.94c1.4-1.9 3.6-3.02 5.67-3.02 2.11 0 3.44 1.16 5.18 1.16 1.69 0 2.72-1.16 5.16-1.16 1.84 0 3.79 1 5.19 2.73-4.56 2.5-3.82 9.02-.5 8.45z" />
                 </svg>
               ) : (
                 <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                  <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.4 29.4 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.3-3.5z"/>
-                  <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.7 19 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/>
-                  <path fill="#4CAF50" d="M24 43.5c5 0 9.6-1.7 13.2-4.7l-6.1-5c-2 1.4-4.4 2.2-7.1 2.2-5.4 0-9.9-3.5-11.5-8.4l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/>
-                  <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5c-.4.3 6.3-4.6 6.3-14.6 0-1.2-.1-2.4-.3-3.5z"/>
+                  <path
+                    fill="#FFC107"
+                    d="M43.6 20.5H42V20H24v8h11.3C33.9 32.4 29.4 35.5 24 35.5c-6.4 0-11.5-5.1-11.5-11.5S17.6 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.3-3.5z"
+                  />
+                  <path
+                    fill="#FF3D00"
+                    d="M6.3 14.7l6.6 4.8C14.7 15.7 19 12.5 24 12.5c2.9 0 5.6 1.1 7.7 2.9l5.7-5.7C33.8 6.3 29.1 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"
+                  />
+                  <path
+                    fill="#4CAF50"
+                    d="M24 43.5c5 0 9.6-1.7 13.2-4.7l-6.1-5c-2 1.4-4.4 2.2-7.1 2.2-5.4 0-9.9-3.5-11.5-8.4l-6.5 5C9.6 39 16.2 43.5 24 43.5z"
+                  />
+                  <path
+                    fill="#1976D2"
+                    d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.1 5c-.4.3 6.3-4.6 6.3-14.6 0-1.2-.1-2.4-.3-3.5z"
+                  />
                 </svg>
               )}
               {googleLoading ? `Opening ${providerLabel}…` : `Sign in with ${providerLabel}`}
             </motion.button>
-
 
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
@@ -301,7 +321,9 @@ export function GuestSignUpPopup({ open, seconds, onClose }: Props) {
 
             {cancelCountdown !== null && !locked && (
               <div className="mt-4 flex items-center justify-between gap-2 rounded-2xl bg-white/10 px-3 py-2 text-xs text-white/90">
-                <span>Closing in <span className="tabular-nums font-black">{cancelCountdown}s</span>…</span>
+                <span>
+                  Closing in <span className="tabular-nums font-black">{cancelCountdown}s</span>…
+                </span>
                 <button
                   type="button"
                   onClick={() => setCancelCountdown(null)}

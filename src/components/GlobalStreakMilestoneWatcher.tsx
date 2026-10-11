@@ -42,10 +42,10 @@ export function GlobalStreakMilestoneWatcher() {
       if (current && current.days > seen) {
         sessionStorage.setItem(KEY_SEEN, String(current.days));
         analytics.streakMilestoneUnlocked(current.days, current.label, "global_watcher");
-        toast.success(
-          `${current.emoji} ${current.label} unlocked! ${current.days}-day streak!`,
-          { duration: 5000, className: "font-bold" },
-        );
+        toast.success(`${current.emoji} ${current.label} unlocked! ${current.days}-day streak!`, {
+          duration: 5000,
+          className: "font-bold",
+        });
         setMilestoneState(current);
       } else if (current && current.days < seen) {
         // Streak dropped below a previously celebrated milestone — reset baseline

@@ -17,7 +17,7 @@ export function trackEvent(event: string, props: EventProps = {}): void {
   if (typeof window === "undefined") return;
   try {
     // Always log so we can see events in dev/preview.
-    // eslint-disable-next-line no-console
+
     console.info("[analytics]", event, props);
     window.plausible?.(event, { props });
     window.gtag?.("event", event, props);

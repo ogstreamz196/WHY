@@ -6,10 +6,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
-    meta: [
-      { title: "Signing you in… — Why?" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Signing you in… — Why?" }, { name: "robots", content: "noindex" }],
   }),
   component: AuthCallback,
 });
@@ -91,7 +88,6 @@ function AuthCallback() {
       if (timeout) clearTimeout(timeout);
     };
   }, [navigate]);
-
 
   return (
     <main className="relative flex min-h-[100dvh] items-center justify-center px-4">

@@ -6,7 +6,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
-import { awardXp } from "./account.functions";
+import { applyPoints, awardXp } from "./account.functions";
 import { awardAmountForUser } from "./vipStatus";
 
 let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
@@ -18,7 +18,6 @@ async function admin() {
   if (!_admin) _admin = await loadAdmin();
   return _admin;
 }
-
 
 // ---------------- Types ----------------
 
@@ -119,7 +118,11 @@ export function wordCount(s: string) {
 }
 
 export function trimToWords(s: string, n: number) {
-  const words = s.trim().replace(/[.!?…]+$/g, "").split(/\s+/).filter(Boolean);
+  const words = s
+    .trim()
+    .replace(/[.!?…]+$/g, "")
+    .split(/\s+/)
+    .filter(Boolean);
   return words.slice(0, n).join(" ");
 }
 
@@ -130,7 +133,10 @@ export function trimToWords(s: string, n: number) {
  * - capitalize the first character (preserves ALLCAPS acronyms)
  */
 export function prettifyAnswer(s: string) {
-  let t = s.trim().replace(/\s+/g, " ").replace(/^["'“”‘’]+|["'“”‘’]+$/g, "");
+  let t = s
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^["'“”‘’]+|["'“”‘’]+$/g, "");
   t = t.replace(/[.!?…,;:\s]+$/g, "");
   if (!t) return t;
   const first = t.charAt(0);
@@ -185,8 +191,6 @@ export function sanitizeQuizRow(input: {
   return { correct_answer: correct, distractors, explanation };
 }
 
-
-
 async function generateDistractors(
   ai: AiClient | null,
   fact: { question: string; answer: string; category: string | null },
@@ -229,7 +233,10 @@ async function generateDistractors(
       prompt,
       maxRetries: 1,
     });
-    const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const cleaned = text
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
     const start = cleaned.indexOf("{");
     const end = cleaned.lastIndexOf("}");
     if (start === -1 || end === -1) return fallback();
@@ -242,7 +249,8 @@ async function generateDistractors(
       typeof parsed.answer === "string" && parsed.answer.trim()
         ? parsed.answer.trim()
         : fact.answer;
-    const answer = trimToWords(rawAnswer, target) || trimToWords(fact.answer, target) || fact.answer;
+    const answer =
+      trimToWords(rawAnswer, target) || trimToWords(fact.answer, target) || fact.answer;
     const distractors = Array.isArray(parsed.distractors)
       ? parsed.distractors
           .map((d) => trimToWords(String(d), target))
@@ -303,13 +311,13 @@ export const startQuiz = createServerFn({ method: "POST" })
     const factIds = picked.map((f) => f.id);
 
     // Look up existing cached questions
-    const { data: cached } = await context.supabase
+    const { data: cached } = await (
+      await admin()
+    )
       .from("quiz_questions")
       .select("fact_id, correct_answer, distractors, explanation, difficulty, category")
       .in("fact_id", factIds);
-    const cacheMap = new Map(
-      (cached ?? []).map((c) => [c.fact_id as string, c] as const),
-    );
+    const cacheMap = new Map((cached ?? []).map((c) => [c.fact_id as string, c] as const));
 
     // Generate any missing (concurrently, capped).
     const missing = picked.filter((f) => !cacheMap.has(f.id));
@@ -383,13 +391,14 @@ export const startQuiz = createServerFn({ method: "POST" })
       throw new Error("No valid quiz questions could be prepared. Please try again.");
     }
 
-
     const finalFactIds = questions.map((q) => q.fact_id);
-    const { data: session, error: sErr } = await context.supabase
+    const { data: session, error: sErr } = await (
+      await admin()
+    )
       .from("quiz_sessions")
       .insert({
         user_id: context.userId,
-        category: data.category === "all" ? null : data.category ?? null,
+        category: data.category === "all" ? null : (data.category ?? null),
         difficulty,
         question_count: questions.length,
         fact_ids: finalFactIds,
@@ -408,7 +417,6 @@ export const startQuiz = createServerFn({ method: "POST" })
     };
   });
 
-
 // ---------------- submitAnswer ----------------
 
 export const submitAnswer = createServerFn({ method: "POST" })
@@ -418,13 +426,15 @@ export const submitAnswer = createServerFn({ method: "POST" })
       .object({
         session_id: z.string().uuid(),
         fact_id: z.string().uuid(),
-        picked_index: z.number().int().min(0).max(3),
+        // -1 = ran out of time (always wrong).
+        picked_index: z.number().int().min(-1).max(3),
         ms_taken: z.number().int().min(0).max(600_000),
       })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<AnswerResult> => {
-    const { data: session, error: sErr } = await context.supabase
+    const db = await admin();
+    const { data: session, error: sErr } = await db
       .from("quiz_sessions")
       .select("id, user_id, difficulty, fact_ids, answer_order, correct_count, score, finished_at")
       .eq("id", data.session_id)
@@ -433,45 +443,47 @@ export const submitAnswer = createServerFn({ method: "POST" })
     if (!session || session.user_id !== context.userId) {
       throw new Error("Session not found.");
     }
-    if (session.finished_at) {
-      // Idempotent: return the previously recorded answer for this fact if any.
-      const factIdsPrev = (session.fact_ids ?? []) as string[];
-      const answerOrderPrev = (session.answer_order ?? []) as number[];
-      const idxPrev = factIdsPrev.indexOf(data.fact_id);
-      const correctIdxPrev = idxPrev >= 0 ? answerOrderPrev[idxPrev] : 0;
-      const { data: prevAns } = await context.supabase
-        .from("quiz_answers")
-        .select("correct, points_awarded, picked_index")
-        .eq("session_id", session.id)
-        .eq("fact_id", data.fact_id)
-        .maybeSingle();
-      const { data: qrowPrev } = await context.supabase
-        .from("quiz_questions")
-        .select("correct_answer, explanation")
-        .eq("fact_id", data.fact_id)
-        .maybeSingle();
-      const { data: statsPrev } = await (await admin())
-        .from("quiz_stats")
-        .select("current_streak, best_streak")
-        .eq("user_id", context.userId)
-        .maybeSingle();
+    const factIds = (session.fact_ids ?? []) as string[];
+    const answerOrder = (session.answer_order ?? []) as number[];
+    const idx = factIds.indexOf(data.fact_id);
+    if (idx === -1) throw new Error("Fact not part of this session.");
+    const correctIdx = answerOrder[idx];
+
+    // Replays the stored result for a fact that was already answered (or a
+    // finished session) without awarding anything again.
+    const previousResult = async (): Promise<AnswerResult> => {
+      const [{ data: prevAns }, { data: qrowPrev }, { data: statsPrev }] = await Promise.all([
+        db
+          .from("quiz_answers")
+          .select("correct, points_awarded")
+          .eq("session_id", session.id)
+          .eq("fact_id", data.fact_id)
+          .maybeSingle(),
+        db
+          .from("quiz_questions")
+          .select("correct_answer, explanation")
+          .eq("fact_id", data.fact_id)
+          .maybeSingle(),
+        db
+          .from("quiz_stats")
+          .select("current_streak, best_streak")
+          .eq("user_id", context.userId)
+          .maybeSingle(),
+      ]);
       return {
         correct: prevAns?.correct ?? false,
-        correct_index: correctIdxPrev,
+        correct_index: correctIdx,
         correct_answer: (qrowPrev?.correct_answer as string) ?? "",
         explanation: (qrowPrev?.explanation as string) ?? null,
         points_awarded: prevAns?.points_awarded ?? 0,
         current_streak: statsPrev?.current_streak ?? 0,
         best_streak: statsPrev?.best_streak ?? 0,
       };
-    }
+    };
 
-    const factIds = (session.fact_ids ?? []) as string[];
-    const answerOrder = (session.answer_order ?? []) as number[];
-    const idx = factIds.indexOf(data.fact_id);
-    if (idx === -1) throw new Error("Fact not part of this session.");
-    const correctIdx = answerOrder[idx];
-    const correct = data.picked_index === correctIdx;
+    if (session.finished_at) return previousResult();
+
+    const correct = data.picked_index >= 0 && data.picked_index === correctIdx;
     const difficulty = (session.difficulty as Difficulty) ?? "medium";
 
     // Compute points server-side
@@ -483,14 +495,15 @@ export const submitAnswer = createServerFn({ method: "POST" })
       points = Math.round(points * DIFF_MULTIPLIER[difficulty]);
     }
 
-    const { data: qrow } = await context.supabase
+    const { data: qrow } = await db
       .from("quiz_questions")
       .select("correct_answer, explanation")
       .eq("fact_id", data.fact_id)
       .maybeSingle();
 
-    // Insert answer (unique on session+fact — dupes rejected).
-    const { error: ansErr } = await context.supabase.from("quiz_answers").insert({
+    // Insert answer (unique on session+fact). A duplicate means this fact was
+    // already answered — replay that result instead of scoring it again.
+    const { error: ansErr } = await db.from("quiz_answers").insert({
       session_id: session.id,
       user_id: context.userId,
       fact_id: data.fact_id,
@@ -499,12 +512,13 @@ export const submitAnswer = createServerFn({ method: "POST" })
       ms_taken: clampedMs,
       points_awarded: points,
     });
-    if (ansErr && !ansErr.message.includes("duplicate")) {
+    if (ansErr) {
+      if (ansErr.code === "23505" || ansErr.message.includes("duplicate")) return previousResult();
       throw new Error(ansErr.message);
     }
 
     // Update session running totals.
-    await context.supabase
+    await db
       .from("quiz_sessions")
       .update({
         correct_count: (session.correct_count ?? 0) + (correct ? 1 : 0),
@@ -513,7 +527,9 @@ export const submitAnswer = createServerFn({ method: "POST" })
       .eq("id", session.id);
 
     // Update streaks in quiz_stats
-    const { data: prevStats } = await (await admin())
+    const { data: prevStats } = await (
+      await admin()
+    )
       .from("quiz_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -522,15 +538,10 @@ export const submitAnswer = createServerFn({ method: "POST" })
     const prevBest = prevStats?.best_streak ?? 0;
     const nextCurrent = correct ? prevCurrent + 1 : 0;
     const nextBest = Math.max(prevBest, nextCurrent);
-    const nextFast =
-      (prevStats?.fast_correct ?? 0) + (correct && clampedMs < 3000 ? 1 : 0);
+    const nextFast = (prevStats?.fast_correct ?? 0) + (correct && clampedMs < 3000 ? 1 : 0);
     const cats = new Set<string>((prevStats?.categories_answered as string[]) ?? []);
     const catForFact = (
-      await context.supabase
-        .from("facts")
-        .select("category")
-        .eq("id", data.fact_id)
-        .maybeSingle()
+      await context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle()
     ).data?.category;
     if (catForFact) cats.add(catForFact);
 
@@ -546,8 +557,7 @@ export const submitAnswer = createServerFn({ method: "POST" })
         fast_correct: nextFast,
         categories_answered: Array.from(cats),
         favorite_category:
-          prevStats?.favorite_category ??
-          (catForFact ?? prevStats?.favorite_category ?? null),
+          prevStats?.favorite_category ?? catForFact ?? prevStats?.favorite_category ?? null,
       },
       { onConflict: "user_id" },
     );
@@ -567,11 +577,10 @@ export const submitAnswer = createServerFn({ method: "POST" })
 
 export const finishQuiz = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ session_id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ session_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<FinishResult> => {
-    const { data: session, error } = await context.supabase
+    const db = await admin();
+    const { data: session, error } = await db
       .from("quiz_sessions")
       .select("*")
       .eq("id", data.session_id)
@@ -582,27 +591,71 @@ export const finishQuiz = createServerFn({ method: "POST" })
     }
 
     const questionCount = session.question_count ?? 0;
-    const correctCount = session.correct_count ?? 0;
-    const baseScore = session.score ?? 0;
+
+    if (session.finished_at) {
+      // Already finished: report the stored result, award nothing.
+      const storedScore = session.score ?? 0;
+      const storedCorrect = session.correct_count ?? 0;
+      const wasPerfect = questionCount > 0 && storedCorrect === questionCount;
+      return {
+        session_id: session.id,
+        score: storedScore,
+        correct_count: storedCorrect,
+        question_count: questionCount,
+        accuracy: Number(session.accuracy ?? 0),
+        perfect: wasPerfect,
+        bonus_points: wasPerfect ? storedScore - Math.round(storedScore / 1.5) : 0,
+        xp_delta: storedScore,
+        unlocked_achievements: [],
+      };
+    }
+
+    // Score from the recorded answers, not from running totals.
+    const { data: answers, error: aErr } = await db
+      .from("quiz_answers")
+      .select("correct, points_awarded")
+      .eq("session_id", session.id);
+    if (aErr) throw new Error(aErr.message);
+    const correctCount = (answers ?? []).filter((a) => a.correct).length;
+    const baseScore = (answers ?? []).reduce((sum, a) => sum + (a.points_awarded ?? 0), 0);
     const perfect = questionCount > 0 && correctCount === questionCount;
     const bonus = perfect ? Math.round(baseScore * 0.5) : 0;
     const finalScore = baseScore + bonus;
     const accuracy =
       questionCount > 0 ? Math.round((correctCount / questionCount) * 10000) / 100 : 0;
 
-    if (!session.finished_at) {
-      await context.supabase
-        .from("quiz_sessions")
-        .update({
-          finished_at: new Date().toISOString(),
-          score: finalScore,
-          accuracy,
-        })
-        .eq("id", session.id);
+    // Mark finished only if nobody else has — the winner of this update is the
+    // only call that awards points.
+    const { data: claimed, error: fErr } = await db
+      .from("quiz_sessions")
+      .update({
+        finished_at: new Date().toISOString(),
+        score: finalScore,
+        correct_count: correctCount,
+        accuracy,
+      })
+      .eq("id", session.id)
+      .is("finished_at", null)
+      .select("id");
+    if (fErr) throw new Error(fErr.message);
+    if (!claimed || claimed.length === 0) {
+      return {
+        session_id: session.id,
+        score: finalScore,
+        correct_count: correctCount,
+        question_count: questionCount,
+        accuracy,
+        perfect,
+        bonus_points: bonus,
+        xp_delta: finalScore,
+        unlocked_achievements: [],
+      };
     }
 
     // XP: award quiz score as XP into user_stats.total_points too.
-    const { data: prevStats } = await (await admin())
+    const { data: prevStats } = await (
+      await admin()
+    )
       .from("quiz_stats")
       .select("total_score, best_score")
       .eq("user_id", context.userId)
@@ -619,20 +672,8 @@ export const finishQuiz = createServerFn({ method: "POST" })
       );
     }
 
-    const { data: userStats } = await (await admin())
-      .from("user_stats")
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day")
-      .eq("user_id", context.userId)
-      .maybeSingle();
     const awardedFinalScore = await awardAmountForUser(context, finalScore);
-    if (userStats) {
-      await (await admin())
-        .from("user_stats")
-        .update({
-          total_points: (userStats.total_points ?? 0) + awardedFinalScore,
-        })
-        .eq("user_id", context.userId);
-    }
+    if (awardedFinalScore > 0) await applyPoints(context.userId, awardedFinalScore);
 
     if (awardedFinalScore > 0) {
       await awardXp(context, "quiz", awardedFinalScore, session.category ?? null);
@@ -662,37 +703,37 @@ type AuthContext = {
 };
 
 async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
-  const { data: stats } = await (await admin())
+  const { data: stats } = await (
+    await admin()
+  )
     .from("quiz_stats")
     .select("*")
     .eq("user_id", context.userId)
     .maybeSingle();
   if (!stats) return [];
 
-  const { count: sessionsCount } = await context.supabase
+  const { data: finished } = await (
+    await admin()
+  )
     .from("quiz_sessions")
-    .select("id", { count: "exact", head: true })
+    .select("correct_count, question_count")
     .eq("user_id", context.userId)
     .not("finished_at", "is", null);
-
-  const { data: perfectRow } = await context.supabase
-    .from("quiz_sessions")
-    .select("id")
-    .eq("user_id", context.userId)
-    .not("finished_at", "is", null)
-    .filter("correct_count", "eq", "question_count")
-    .limit(1)
-    .maybeSingle();
+  const sessionsCount = finished?.length ?? 0;
+  // PostgREST can't compare two columns, so check for a perfect run here.
+  const hasPerfect = (finished ?? []).some(
+    (r) => r.question_count > 0 && r.correct_count === r.question_count,
+  );
 
   const catsCount = ((stats.categories_answered as string[]) ?? []).length;
 
   const rules: Record<string, boolean> = {
-    quiz_first: (sessionsCount ?? 0) >= 1,
+    quiz_first: sessionsCount >= 1,
     quiz_streak_7: (stats.best_streak ?? 0) >= 7,
     quiz_100: (stats.questions_answered ?? 0) >= 100,
     quiz_master_explorer: catsCount >= 8,
     quiz_speed_genius: (stats.fast_correct ?? 0) >= 10,
-    quiz_perfect: !!perfectRow,
+    quiz_perfect: hasPerfect,
     quiz_1000: (stats.total_score ?? 0) >= 1000,
     quiz_5000: (stats.total_score ?? 0) >= 5000,
   };
@@ -701,7 +742,9 @@ async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
     .map(([id]) => id);
   if (candidates.length === 0) return [];
 
-  const { data: already } = await (await admin())
+  const { data: already } = await (
+    await admin()
+  )
     .from("user_achievements")
     .select("achievement_id")
     .eq("user_id", context.userId)
@@ -709,7 +752,9 @@ async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
   const have = new Set((already ?? []).map((r) => r.achievement_id));
   const toInsert = candidates.filter((id) => !have.has(id));
   if (toInsert.length === 0) return [];
-  await (await admin())
+  await (
+    await admin()
+  )
     .from("user_achievements")
     .insert(toInsert.map((id) => ({ user_id: context.userId, achievement_id: id })));
   return toInsert;
@@ -732,7 +777,9 @@ export type QuizStatsDTO = {
 export const getMyQuizStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<QuizStatsDTO> => {
-    const { data } = await (await admin())
+    const { data } = await (
+      await admin()
+    )
       .from("quiz_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -748,7 +795,7 @@ export const getMyQuizStats = createServerFn({ method: "GET" })
       best_streak: data?.best_streak ?? 0,
       current_streak: data?.current_streak ?? 0,
       favorite_category: (data?.favorite_category as string | null) ?? null,
-      categories_answered: ((data?.categories_answered as string[]) ?? []),
+      categories_answered: (data?.categories_answered as string[]) ?? [],
     };
   });
 

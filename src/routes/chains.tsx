@@ -48,7 +48,8 @@ function ChainsPage() {
   const doCreate = useServerFn(createCollection);
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth", search: { mode: "signin", redirect: "/chains" } });
+    if (!loading && !user)
+      navigate({ to: "/auth", search: { mode: "signin", redirect: "/chains" } });
   }, [user, loading, navigate]);
 
   const chains = useQuery({
@@ -65,7 +66,10 @@ function ChainsPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["chains"] });
   const invalidateCollections = () => qc.invalidateQueries({ queryKey: ["collections"] });
 
-  const del = useMutation({ mutationFn: (id: string) => doDelete({ data: { id } }), onSuccess: invalidate });
+  const del = useMutation({
+    mutationFn: (id: string) => doDelete({ data: { id } }),
+    onSuccess: invalidate,
+  });
   const pin = useMutation({
     mutationFn: (v: { id: string; pinned: boolean }) => doPin({ data: v }),
     onSuccess: invalidate,
@@ -162,12 +166,15 @@ function ChainsPage() {
           <h2 className="font-display text-lg font-black text-white">Saved Favourites</h2>
           <div className="mt-3 space-y-3">
             {chains.isLoading && (
-              <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-white/60" /></div>
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+              </div>
             )}
             {chains.data && chains.data.items.length === 0 && (
               <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
-                Nothing saved yet. Tap <span className="font-bold text-white">But… Why?</span> on a fact,
-                then <span className="font-bold text-white">Save to favourites</span> to keep the trail.
+                Nothing saved yet. Tap <span className="font-bold text-white">But… Why?</span> on a
+                fact, then <span className="font-bold text-white">Save to favourites</span> to keep
+                the trail.
               </p>
             )}
             {(chains.data?.items ?? []).map((chain) => (
@@ -192,10 +199,15 @@ function ChainsPage() {
 
 function CollectionCard({ c }: { c: CollectionSummary }) {
   return (
-    <motion.div whileHover={{ scale: 1.02 }} className="glass rounded-3xl border border-white/10 p-4">
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      className="glass rounded-3xl border border-white/10 p-4"
+    >
       <div className="text-2xl">📚</div>
       <div className="mt-1 font-black text-white">{c.name}</div>
-      <div className="text-[11px] text-white/50">{c.chain_count} item{c.chain_count === 1 ? "" : "s"}</div>
+      <div className="text-[11px] text-white/50">
+        {c.chain_count} item{c.chain_count === 1 ? "" : "s"}
+      </div>
     </motion.div>
   );
 }
@@ -213,9 +225,10 @@ function ChainRow({
   onPin: () => void;
   onShare: () => void;
 }) {
-  const shareUrl = chain.share_slug && typeof window !== "undefined"
-    ? `${window.location.origin}/c/${chain.share_slug}`
-    : null;
+  const shareUrl =
+    chain.share_slug && typeof window !== "undefined"
+      ? `${window.location.origin}/c/${chain.share_slug}`
+      : null;
 
   return (
     <motion.div
@@ -228,9 +241,13 @@ function ChainRow({
         <div className="flex items-start gap-2">
           <Sparkles className="mt-1 h-4 w-4 text-fuchsia-300" />
           <div className="flex-1">
-            <div className="font-display font-black leading-tight text-white">{chain.title ?? "Untitled favourite"}</div>
+            <div className="font-display font-black leading-tight text-white">
+              {chain.title ?? "Untitled favourite"}
+            </div>
             {chain.last_question && (
-              <div className="mt-0.5 line-clamp-2 text-xs text-white/60">→ {chain.last_question}</div>
+              <div className="mt-0.5 line-clamp-2 text-xs text-white/60">
+                → {chain.last_question}
+              </div>
             )}
             <div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-white/40">
               {chain.step_count} step{chain.step_count === 1 ? "" : "s"}
@@ -261,9 +278,15 @@ function ChainRow({
             type="button"
             onClick={async () => {
               try {
-                if (navigator.share) await navigator.share({ url: shareUrl, title: chain.title ?? "Why chain" });
-                else { await navigator.clipboard.writeText(shareUrl); alert("Link copied!"); }
-              } catch { /* cancelled */ }
+                if (navigator.share)
+                  await navigator.share({ url: shareUrl, title: chain.title ?? "Why chain" });
+                else {
+                  await navigator.clipboard.writeText(shareUrl);
+                  alert("Link copied!");
+                }
+              } catch {
+                /* cancelled */
+              }
             }}
             className="inline-flex items-center gap-1 rounded-full bg-cyan-400/10 px-3 py-1.5 text-[11px] font-bold text-cyan-200"
           >

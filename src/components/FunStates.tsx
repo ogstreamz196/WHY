@@ -57,14 +57,8 @@ export function EmptyState({
       <div className="text-4xl" aria-hidden>
         {emoji}
       </div>
-      <p className="font-fun text-[clamp(1.1rem,2.8vw,1.4rem)] font-bold text-white">
-        {title}
-      </p>
-      {hint && (
-        <p className="font-fun text-[clamp(0.9rem,2.2vw,1.05rem)] text-white/80">
-          {hint}
-        </p>
-      )}
+      <p className="font-fun text-[clamp(1.1rem,2.8vw,1.4rem)] font-bold text-white">{title}</p>
+      {hint && <p className="font-fun text-[clamp(0.9rem,2.2vw,1.05rem)] text-white/80">{hint}</p>}
       {action && <div className="mt-1">{action}</div>}
     </div>
   );

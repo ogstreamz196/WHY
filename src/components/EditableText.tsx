@@ -44,7 +44,9 @@ export function EditableText({
 
   if (editing) {
     return (
-      <span className={`inline-flex flex-wrap items-center gap-1 rounded-lg bg-red-950/40 p-1 ring-2 ring-red-400 ${className ?? ""}`}>
+      <span
+        className={`inline-flex flex-wrap items-center gap-1 rounded-lg bg-red-950/40 p-1 ring-2 ring-red-400 ${className ?? ""}`}
+      >
         {multiline ? (
           <textarea
             ref={inputRef as any}

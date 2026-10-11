@@ -46,23 +46,23 @@ function AuthPage() {
     mode === "signup"
       ? "Join the curious"
       : mode === "signin"
-      ? "Welcome back"
-      : "Reset your password";
+        ? "Welcome back"
+        : "Reset your password";
   const sub =
     mode === "signup"
       ? "Save your streak, favourites and Y-Coins across every device."
       : mode === "signin"
-      ? "Continue your curiosity journey."
-      : "We'll email you a magic link to set a new password.";
+        ? "Continue your curiosity journey."
+        : "We'll email you a magic link to set a new password.";
 
   function nextDestination(): string {
     try {
       const store = typeof window !== "undefined" ? window.sessionStorage : null;
-      const hasGuest = !!store && (
-        (Number(store.getItem("why:points")) || 0) > 0 ||
-        (Number(store.getItem("why:streak")) || 0) > 0 ||
-        (JSON.parse(store.getItem("why:favorites") ?? "[]") as unknown[]).length > 0
-      );
+      const hasGuest =
+        !!store &&
+        ((Number(store.getItem("why:points")) || 0) > 0 ||
+          (Number(store.getItem("why:streak")) || 0) > 0 ||
+          (JSON.parse(store.getItem("why:favorites") ?? "[]") as unknown[]).length > 0);
       if (hasGuest) {
         const redirect = search.redirect ?? "/";
         return `/import-guest?redirect=${encodeURIComponent(redirect)}`;
@@ -81,7 +81,10 @@ function AuthPage() {
         redirect_uri: `${window.location.origin}/auth/callback`,
       });
       if (result.error) {
-        setMessage({ type: "error", text: `${provider === "apple" ? "Apple" : "Google"} sign-in failed. Please try again.` });
+        setMessage({
+          type: "error",
+          text: `${provider === "apple" ? "Apple" : "Google"} sign-in failed. Please try again.`,
+        });
       } else if (!result.redirected) {
         window.location.assign(nextDestination());
       }
@@ -261,9 +264,17 @@ function AuthPage() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  {mode === "signup" && (<>Create account <ArrowRight className="h-4 w-4" /></>)}
-                  {mode === "signin" && (<>Sign in <ArrowRight className="h-4 w-4" /></>)}
-                  {mode === "reset"  && "Send reset link"}
+                  {mode === "signup" && (
+                    <>
+                      Create account <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                  {mode === "signin" && (
+                    <>
+                      Sign in <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                  {mode === "reset" && "Send reset link"}
                 </>
               )}
             </button>
@@ -271,12 +282,18 @@ function AuthPage() {
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
             {mode !== "signin" && (
-              <button className="font-semibold text-white/70 hover:text-white" onClick={() => setMode("signin")}>
+              <button
+                className="font-semibold text-white/70 hover:text-white"
+                onClick={() => setMode("signin")}
+              >
                 Have an account? Sign in
               </button>
             )}
             {mode !== "signup" && (
-              <button className="font-semibold text-white/70 hover:text-white" onClick={() => setMode("signup")}>
+              <button
+                className="font-semibold text-white/70 hover:text-white"
+                onClick={() => setMode("signup")}
+              >
                 New here? Create account
               </button>
             )}
@@ -338,10 +355,19 @@ function Field({
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-      <path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2-1.9 3.3-4.7 3.3-8.2z"/>
-      <path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2v2.9A11 11 0 0 0 12 23z"/>
-      <path fill="#FBBC04" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7H2a11 11 0 0 0 0 10z"/>
-      <path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.7L19.4 4A11 11 0 0 0 2 7l3.7 2.9C6.6 7.3 9.1 5.4 12 5.4z"/>
+      <path
+        fill="#4285F4"
+        d="M22.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2-1.9 3.3-4.7 3.3-8.2z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2v2.9A11 11 0 0 0 12 23z"
+      />
+      <path fill="#FBBC04" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7H2a11 11 0 0 0 0 10z" />
+      <path
+        fill="#EA4335"
+        d="M12 5.4c1.6 0 3 .6 4.2 1.7L19.4 4A11 11 0 0 0 2 7l3.7 2.9C6.6 7.3 9.1 5.4 12 5.4z"
+      />
     </svg>
   );
 }
@@ -349,7 +375,7 @@ function GoogleIcon() {
 function AppleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
-      <path d="M16.365 1.43c0 1.14-.42 2.23-1.24 3.03-.88.87-2.06 1.44-3.14 1.35-.13-1.1.42-2.24 1.2-2.98.88-.86 2.28-1.47 3.18-1.4zM20.5 17.36c-.55 1.27-1.22 2.48-2.13 3.4-.79.8-1.79 1.79-3.07 1.79-1.24.02-1.65-.79-3.26-.79s-2.05.78-3.24.81c-1.28.05-2.25-.87-3.05-1.67-2.19-2.19-3.87-6.19-1.61-9.03 1.13-1.4 3.15-2.29 4.98-2.32 1.31-.03 2.55.88 3.36.88.79 0 2.31-1.09 3.9-.93.66.03 2.53.27 3.72 2.02-.09.06-2.23 1.3-2.21 3.87.03 3.08 2.71 4.1 2.61 3.97z"/>
+      <path d="M16.365 1.43c0 1.14-.42 2.23-1.24 3.03-.88.87-2.06 1.44-3.14 1.35-.13-1.1.42-2.24 1.2-2.98.88-.86 2.28-1.47 3.18-1.4zM20.5 17.36c-.55 1.27-1.22 2.48-2.13 3.4-.79.8-1.79 1.79-3.07 1.79-1.24.02-1.65-.79-3.26-.79s-2.05.78-3.24.81c-1.28.05-2.25-.87-3.05-1.67-2.19-2.19-3.87-6.19-1.61-9.03 1.13-1.4 3.15-2.29 4.98-2.32 1.31-.03 2.55.88 3.36.88.79 0 2.31-1.09 3.9-.93.66.03 2.53.27 3.72 2.02-.09.06-2.23 1.3-2.21 3.87.03 3.08 2.71 4.1 2.61 3.97z" />
     </svg>
   );
 }

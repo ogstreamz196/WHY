@@ -5,15 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type LeaderboardKind =
-  | "global"
-  | "age"
-  | "category"
-  | "window"
-  | "rising"
-  | "streaks"
-  | "weekend"
-  | "new"
-  | "quiz";
+  "global" | "age" | "category" | "window" | "rising" | "streaks" | "weekend" | "new" | "quiz";
 
 export type LeaderboardEntry = {
   user_id: string;
@@ -50,7 +42,11 @@ type LbRow = {
   score: number | null;
 };
 
-function rank(rows: LbRow[], me: string, limit: number): {
+function rank(
+  rows: LbRow[],
+  me: string,
+  limit: number,
+): {
   entries: LeaderboardEntry[];
   total: number;
   my_rank: number | null;
@@ -92,10 +88,19 @@ export const getLeaderboard = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) =>
     z
       .object({
-        kind: z.enum([
-          "global", "age", "category", "window",
-          "rising", "streaks", "weekend", "new", "quiz",
-        ]).default("global"),
+        kind: z
+          .enum([
+            "global",
+            "age",
+            "category",
+            "window",
+            "rising",
+            "streaks",
+            "weekend",
+            "new",
+            "quiz",
+          ])
+          .default("global"),
         filter: z.string().max(40).optional(),
         limit: z.number().int().min(1).max(200).default(50),
       })
@@ -130,12 +135,14 @@ export const getLeaderboard = createServerFn({ method: "GET" })
       }));
       windowLabel = cat;
     } else if (data.kind === "window") {
-      const win = (data.filter && WINDOW_DAYS[data.filter]) ? data.filter : "weekly";
+      const win = data.filter && WINDOW_DAYS[data.filter] ? data.filter : "weekly";
       const days = WINDOW_DAYS[win];
       const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
       const { data: r } = await context.supabase
         .from("leaderboard_windowed")
-        .select("user_id, username, display_name, avatar_id, age_band, favorite_category, score, created_at")
+        .select(
+          "user_id, username, display_name, avatar_id, age_band, favorite_category, score, created_at",
+        )
         .gte("created_at", since);
       // Aggregate again since the view groups by created_at as well
       const agg = new Map<string, LbRow>();
@@ -167,9 +174,7 @@ export const getLeaderboard = createServerFn({ method: "GET" })
         .select("user_id, username, display_name, avatar_id, age_band, favorite_category, score");
       rows = (r ?? []) as LbRow[];
     } else if (data.kind === "quiz") {
-      const { data: qs } = await context.supabase
-        .from("quiz_stats")
-        .select("user_id, total_score");
+      const { data: qs } = await context.supabase.from("quiz_stats").select("user_id, total_score");
       const stats = (qs ?? []) as Array<{ user_id: string; total_score: number | null }>;
       const ids = stats.map((s) => s.user_id);
       const { data: profs } = ids.length
@@ -177,7 +182,16 @@ export const getLeaderboard = createServerFn({ method: "GET" })
             .from("profiles_public")
             .select("id, username, display_name, avatar_id, favorite_category, leaderboard_opt_out")
             .in("id", ids)
-        : { data: [] as Array<{ id: string; username: string | null; display_name: string | null; avatar_id: string | null; favorite_category: string | null; leaderboard_opt_out: boolean | null }> };
+        : {
+            data: [] as Array<{
+              id: string;
+              username: string | null;
+              display_name: string | null;
+              avatar_id: string | null;
+              favorite_category: string | null;
+              leaderboard_opt_out: boolean | null;
+            }>,
+          };
       const pmap = new Map((profs ?? []).map((p) => [p.id, p]));
       rows = stats
         .map((s) => {
@@ -195,7 +209,6 @@ export const getLeaderboard = createServerFn({ method: "GET" })
         })
         .filter((r): r is LbRow => r !== null);
     }
-
 
     const { entries, total, my_rank, my_score } = rank(rows, me, data.limit);
     return {
@@ -246,19 +259,17 @@ export const getMyRankings = createServerFn({ method: "GET" })
     const favCat = (prof as { favorite_category: string | null } | null)?.favorite_category ?? null;
 
     // Global
-    const { data: g } = await context.supabase
-      .from("leaderboard_global")
-      .select("user_id, score");
-    const gRows = ((g ?? []) as { user_id: string; score: number | null }[])
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const { data: g } = await context.supabase.from("leaderboard_global").select("user_id, score");
+    const gRows = ((g ?? []) as { user_id: string; score: number | null }[]).sort(
+      (a, b) => (b.score ?? 0) - (a.score ?? 0),
+    );
     const gRank = gRows.findIndex((r) => r.user_id === me);
 
     // Rising 7d
-    const { data: rs } = await context.supabase
-      .from("leaderboard_rising")
-      .select("user_id, score");
-    const rsRows = ((rs ?? []) as { user_id: string; score: number | null }[])
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    const { data: rs } = await context.supabase.from("leaderboard_rising").select("user_id, score");
+    const rsRows = ((rs ?? []) as { user_id: string; score: number | null }[]).sort(
+      (a, b) => (b.score ?? 0) - (a.score ?? 0),
+    );
     const rsRank = rsRows.findIndex((r) => r.user_id === me);
 
     // Weekly window
@@ -282,7 +293,11 @@ export const getMyRankings = createServerFn({ method: "GET" })
         rank: gRank >= 0 ? gRank + 1 : null,
         total: gRows.length,
         percentile: pct(gRank >= 0 ? gRank + 1 : null, gRows.length),
-        message: msg("Global Explorers", gRank >= 0 ? gRank + 1 : null, pct(gRank >= 0 ? gRank + 1 : null, gRows.length)),
+        message: msg(
+          "Global Explorers",
+          gRank >= 0 ? gRank + 1 : null,
+          pct(gRank >= 0 ? gRank + 1 : null, gRows.length),
+        ),
       },
       {
         key: "weekly",
@@ -291,7 +306,11 @@ export const getMyRankings = createServerFn({ method: "GET" })
         rank: wRank >= 0 ? wRank + 1 : null,
         total: wRows.length,
         percentile: pct(wRank >= 0 ? wRank + 1 : null, wRows.length),
-        message: msg("This Week", wRank >= 0 ? wRank + 1 : null, pct(wRank >= 0 ? wRank + 1 : null, wRows.length)),
+        message: msg(
+          "This Week",
+          wRank >= 0 ? wRank + 1 : null,
+          pct(wRank >= 0 ? wRank + 1 : null, wRows.length),
+        ),
       },
       {
         key: "rising",
@@ -300,7 +319,11 @@ export const getMyRankings = createServerFn({ method: "GET" })
         rank: rsRank >= 0 ? rsRank + 1 : null,
         total: rsRows.length,
         percentile: pct(rsRank >= 0 ? rsRank + 1 : null, rsRows.length),
-        message: msg("Rising Stars", rsRank >= 0 ? rsRank + 1 : null, pct(rsRank >= 0 ? rsRank + 1 : null, rsRows.length)),
+        message: msg(
+          "Rising Stars",
+          rsRank >= 0 ? rsRank + 1 : null,
+          pct(rsRank >= 0 ? rsRank + 1 : null, rsRows.length),
+        ),
       },
     ];
 
@@ -309,8 +332,9 @@ export const getMyRankings = createServerFn({ method: "GET" })
         .from("leaderboard_global")
         .select("user_id, score")
         .eq("age_band", ageBand);
-      const aRows = ((a ?? []) as { user_id: string; score: number | null }[])
-        .sort((x, y) => (y.score ?? 0) - (x.score ?? 0));
+      const aRows = ((a ?? []) as { user_id: string; score: number | null }[]).sort(
+        (x, y) => (y.score ?? 0) - (x.score ?? 0),
+      );
       const aRank = aRows.findIndex((r) => r.user_id === me);
       rankings.push({
         key: "age",
@@ -319,7 +343,11 @@ export const getMyRankings = createServerFn({ method: "GET" })
         rank: aRank >= 0 ? aRank + 1 : null,
         total: aRows.length,
         percentile: pct(aRank >= 0 ? aRank + 1 : null, aRows.length),
-        message: msg("your age group", aRank >= 0 ? aRank + 1 : null, pct(aRank >= 0 ? aRank + 1 : null, aRows.length)),
+        message: msg(
+          "your age group",
+          aRank >= 0 ? aRank + 1 : null,
+          pct(aRank >= 0 ? aRank + 1 : null, aRows.length),
+        ),
       });
     }
 
@@ -328,8 +356,9 @@ export const getMyRankings = createServerFn({ method: "GET" })
         .from("leaderboard_category")
         .select("user_id, score")
         .eq("category", favCat);
-      const cRows = ((c ?? []) as { user_id: string; score: number | null }[])
-        .sort((x, y) => (y.score ?? 0) - (x.score ?? 0));
+      const cRows = ((c ?? []) as { user_id: string; score: number | null }[]).sort(
+        (x, y) => (y.score ?? 0) - (x.score ?? 0),
+      );
       const cRank = cRows.findIndex((r) => r.user_id === me);
       rankings.push({
         key: "category",
@@ -338,7 +367,11 @@ export const getMyRankings = createServerFn({ method: "GET" })
         rank: cRank >= 0 ? cRank + 1 : null,
         total: cRows.length,
         percentile: pct(cRank >= 0 ? cRank + 1 : null, cRows.length),
-        message: msg(favCat, cRank >= 0 ? cRank + 1 : null, pct(cRank >= 0 ? cRank + 1 : null, cRows.length)),
+        message: msg(
+          favCat,
+          cRank >= 0 ? cRank + 1 : null,
+          pct(cRank >= 0 ? cRank + 1 : null, cRows.length),
+        ),
       });
     }
 

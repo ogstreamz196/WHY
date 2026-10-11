@@ -31,10 +31,22 @@ export const Route = createFileRoute("/adult")({
 function GoogleGlyph({ className = "h-4 w-4" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path fill="#4285F4" d="M23 12.3c0-.9-.1-1.6-.2-2.3H12v4.3h6.2c-.1.9-.9 2.4-2.5 3.5l-.02.15 3.6 2.8.25.02c2.3-2.1 3.5-5.2 3.5-8.5z" />
-      <path fill="#34A853" d="M12 24c3.3 0 6-1.1 8-3l-3.8-3c-1 .7-2.4 1.2-4.2 1.2-3.2 0-5.9-2.1-6.9-5.1H1.2v3.1C3.2 21 7.3 24 12 24z" />
-      <path fill="#FBBC05" d="M5.1 14.1c-.3-.7-.4-1.5-.4-2.1 0-.7.1-1.4.4-2.1V6.8H1.2C.4 8.3 0 10.1 0 12s.4 3.7 1.2 5.2l3.9-3.1z" />
-      <path fill="#EA4335" d="M12 4.8c2.3 0 3.8 1 4.7 1.8l3.4-3.3C18 1.2 15.3 0 12 0 7.3 0 3.2 3 1.2 6.8l3.9 3c1-3 3.7-5 6.9-5z" />
+      <path
+        fill="#4285F4"
+        d="M23 12.3c0-.9-.1-1.6-.2-2.3H12v4.3h6.2c-.1.9-.9 2.4-2.5 3.5l-.02.15 3.6 2.8.25.02c2.3-2.1 3.5-5.2 3.5-8.5z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.3 0 6-1.1 8-3l-3.8-3c-1 .7-2.4 1.2-4.2 1.2-3.2 0-5.9-2.1-6.9-5.1H1.2v3.1C3.2 21 7.3 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.1 14.1c-.3-.7-.4-1.5-.4-2.1 0-.7.1-1.4.4-2.1V6.8H1.2C.4 8.3 0 10.1 0 12s.4 3.7 1.2 5.2l3.9-3.1z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.8c2.3 0 3.8 1 4.7 1.8l3.4-3.3C18 1.2 15.3 0 12 0 7.3 0 3.2 3 1.2 6.8l3.9 3c1-3 3.7-5 6.9-5z"
+      />
     </svg>
   );
 }
@@ -236,7 +248,11 @@ function AdultPage() {
                 disabled={!ageConfirmed || !!linking}
                 className="flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/95 px-4 py-3 text-sm font-black text-gray-900 disabled:opacity-40"
               >
-                {linking === "google" ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleGlyph />}
+                {linking === "google" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <GoogleGlyph />
+                )}
                 Continue with Google
               </button>
               <button
@@ -245,7 +261,11 @@ function AdultPage() {
                 disabled={!ageConfirmed || !!linking}
                 className="flex items-center justify-center gap-2 rounded-full border border-white/15 bg-black px-4 py-3 text-sm font-black text-white disabled:opacity-40"
               >
-                {linking === "apple" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Apple className="h-4 w-4" />}
+                {linking === "apple" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Apple className="h-4 w-4" />
+                )}
                 Continue with Apple
               </button>
             </div>
@@ -257,7 +277,11 @@ function AdultPage() {
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black text-white disabled:opacity-40"
               style={{ background: "var(--gradient-primary)" }}
             >
-              {verify.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              {verify.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
               I'm already signed in with Google or Apple — verify me
             </button>
 
@@ -275,8 +299,8 @@ function AdultPage() {
             </AnimatePresence>
 
             <p className="mt-4 text-[10px] leading-relaxed text-white/40">
-              We store only your verification timestamp and the provider name. No ID document,
-              no biometric data.
+              We store only your verification timestamp and the provider name. No ID document, no
+              biometric data.
             </p>
           </motion.div>
         )}

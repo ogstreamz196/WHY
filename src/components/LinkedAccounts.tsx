@@ -46,7 +46,8 @@ export function LinkedAccounts() {
     <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
       <h2 className="mb-3 text-lg font-extrabold text-slate-900">🔗 Linked accounts</h2>
       <p className="mb-4 text-xs text-slate-600">
-        Link a sign-in method to your account. Your progress, coins, and favourites stay on the same profile.
+        Link a sign-in method to your account. Your progress, coins, and favourites stay on the same
+        profile.
       </p>
 
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3">
