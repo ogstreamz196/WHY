@@ -27,7 +27,6 @@ import { EditModeProvider } from "@/lib/editMode";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useEquippedTheme } from "@/lib/useEquippedTheme";
 
-
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CosmicBackground } from "../components/CosmicBackground";
@@ -74,7 +73,10 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             type="button"
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-[var(--shadow-glow)]"
             style={{ background: "var(--gradient-primary)" }}
           >
@@ -98,19 +100,39 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Why? — A pocket-sized universe of curiosity" },
-      { name: "description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
+      {
+        name: "description",
+        content:
+          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
+      },
       { name: "theme-color", content: "#100c1f" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Why?" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { property: "og:title", content: "Why? — A pocket-sized universe of curiosity" },
-      { property: "og:description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
+      {
+        property: "og:description",
+        content:
+          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Why? — A pocket-sized universe of curiosity" },
-      { name: "twitter:description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2e6a6b5-651b-46d0-b961-f1c8157d7e00/id-preview-86c535ee--c58b4bae-8420-4813-8e35-37776e764a70.lovable.app-1783527414073.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2e6a6b5-651b-46d0-b961-f1c8157d7e00/id-preview-86c535ee--c58b4bae-8420-4813-8e35-37776e764a70.lovable.app-1783527414073.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2e6a6b5-651b-46d0-b961-f1c8157d7e00/id-preview-86c535ee--c58b4bae-8420-4813-8e35-37776e764a70.lovable.app-1783527414073.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2e6a6b5-651b-46d0-b961-f1c8157d7e00/id-preview-86c535ee--c58b4bae-8420-4813-8e35-37776e764a70.lovable.app-1783527414073.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -128,7 +150,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
@@ -143,7 +167,6 @@ function RootComponent() {
   useBossTheme();
   useEquippedTheme();
 
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     // Lazy import so this stays client-only
@@ -157,7 +180,9 @@ function RootComponent() {
       });
       unsub = () => data.subscription.unsubscribe();
     });
-    return () => { unsub?.(); };
+    return () => {
+      unsub?.();
+    };
   }, [router, queryClient]);
 
   return (

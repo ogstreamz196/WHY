@@ -36,9 +36,7 @@ export function StreakBadges({ currentStreak, longestStreak = 0 }: Props) {
         <h2 className="inline-flex items-center gap-2 font-display text-xl font-black text-white">
           <Flame className="h-5 w-5 text-orange-400" /> Streak badges
         </h2>
-        <span className="text-xs font-bold text-white/60">
-          {currentStreak}🔥 current
-        </span>
+        <span className="text-xs font-bold text-white/60">{currentStreak}🔥 current</span>
       </header>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {STREAK_MILESTONES.map((m) => {

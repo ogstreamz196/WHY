@@ -24,7 +24,6 @@ export function ProfileAvatar({
 }: Props) {
   const status = (statusMessage ?? "").trim();
 
-
   return (
     <div className={`relative ${className}`}>
       {/* VIP flame aura — layered blurred gradients that pulse and rotate. */}
@@ -34,8 +33,7 @@ export function ProfileAvatar({
             aria-hidden
             className="pointer-events-none absolute inset-0 rounded-full blur-2xl"
             style={{
-              background:
-                "conic-gradient(from 0deg, #ff6b00, #ffd93d, #ff2d55, #ff6b00)",
+              background: "conic-gradient(from 0deg, #ff6b00, #ffd93d, #ff2d55, #ff6b00)",
               filter: "blur(28px) saturate(1.4)",
             }}
             animate={{ rotate: 360, scale: [1, 1.08, 1] }}
@@ -86,7 +84,9 @@ export function ProfileAvatar({
       {/* Transparent circular window — the avatar fills the whole thing. */}
       <div
         className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border ${
-          isVip ? "border-amber-300/70 shadow-[0_0_40px_rgba(255,140,0,0.55)]" : "border-white/15 shadow-[0_0_24px_rgba(0,0,0,0.35)]"
+          isVip
+            ? "border-amber-300/70 shadow-[0_0_40px_rgba(255,140,0,0.55)]"
+            : "border-white/15 shadow-[0_0_24px_rgba(0,0,0,0.35)]"
         }`}
         style={{ background: "transparent" }}
       >

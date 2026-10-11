@@ -31,11 +31,13 @@ function oklchToRgb(L, C, hDeg) {
   const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
   const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
   const s_ = L - 0.0894841775 * a - 1.291485548 * b;
-  const l = l_ ** 3, m = m_ ** 3, s = s_ ** 3;
-  const r =  4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  const l = l_ ** 3,
+    m = m_ ** 3,
+    s = s_ ** 3;
+  const r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
   const g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-  const bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
-  const clamp = v => Math.max(0, Math.min(1, v));
+  const bl = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+  const clamp = (v) => Math.max(0, Math.min(1, v));
   return [clamp(r), clamp(g), clamp(bl)];
 }
 
@@ -71,11 +73,12 @@ function composite(fg, bg) {
 }
 
 function relLuminance({ r, g, b }) {
-  const lin = c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 function contrast(fg, bg) {
-  const L1 = relLuminance(fg), L2 = relLuminance(bg);
+  const L1 = relLuminance(fg),
+    L2 = relLuminance(bg);
   const [a, b] = L1 > L2 ? [L1, L2] : [L2, L1];
   return (a + 0.05) / (b + 0.05);
 }
@@ -102,11 +105,11 @@ const THEMES = {
 
 // Fun-font foregrounds actually used in the app (see rg font-fun usage).
 const FUN_FOREGROUNDS = [
-  { name: "text-white",          color: "#ffffff",              size: "large" },
-  { name: "text-white/95",       color: "rgba(255,255,255,0.95)", size: "large" },
-  { name: "text-white/85",       color: "rgba(255,255,255,0.85)", size: "body"  },
-  { name: "text-white/80",       color: "rgba(255,255,255,0.80)", size: "body"  },
-  { name: "text-yellow-100",     color: "#fef9c3",              size: "body"  }, // fun-fact
+  { name: "text-white", color: "#ffffff", size: "large" },
+  { name: "text-white/95", color: "rgba(255,255,255,0.95)", size: "large" },
+  { name: "text-white/85", color: "rgba(255,255,255,0.85)", size: "body" },
+  { name: "text-white/80", color: "rgba(255,255,255,0.80)", size: "body" },
+  { name: "text-yellow-100", color: "#fef9c3", size: "body" }, // fun-fact
 ];
 
 // Background surfaces the fun text lands on. We test the darkest sample
@@ -130,26 +133,49 @@ for (const [themeName, tokens] of Object.entries(THEMES)) {
       const ratio = contrast(solidFg, bg);
       const min = THRESHOLDS[fg.size];
       const pass = ratio >= min;
-      rows.push({ theme: themeName, surface, fg: fg.name, size: fg.size, ratio: ratio.toFixed(2), min, pass });
-      if (!pass) failures.push({ theme: themeName, surface, fg: fg.name, ratio: ratio.toFixed(2), min });
+      rows.push({
+        theme: themeName,
+        surface,
+        fg: fg.name,
+        size: fg.size,
+        ratio: ratio.toFixed(2),
+        min,
+        pass,
+      });
+      if (!pass)
+        failures.push({ theme: themeName, surface, fg: fg.name, ratio: ratio.toFixed(2), min });
     }
   }
 }
 
 const pad = (s, n) => String(s).padEnd(n);
 console.log("\nFun-font contrast audit\n");
-console.log(pad("theme", 22), pad("surface", 12), pad("fg", 20), pad("size", 6), pad("ratio", 7), pad("min", 5), "result");
+console.log(
+  pad("theme", 22),
+  pad("surface", 12),
+  pad("fg", 20),
+  pad("size", 6),
+  pad("ratio", 7),
+  pad("min", 5),
+  "result",
+);
 console.log("-".repeat(84));
 for (const r of rows) {
   console.log(
-    pad(r.theme, 22), pad(r.surface, 12), pad(r.fg, 20),
-    pad(r.size, 6), pad(r.ratio + ":1", 7), pad(r.min + ":1", 5),
+    pad(r.theme, 22),
+    pad(r.surface, 12),
+    pad(r.fg, 20),
+    pad(r.size, 6),
+    pad(r.ratio + ":1", 7),
+    pad(r.min + ":1", 5),
     r.pass ? "PASS" : "FAIL",
   );
 }
 
 if (failures.length) {
-  console.error(`\n${failures.length} fun-font contrast failure(s). Adjust foreground opacity, tint, or the .font-fun text-shadow halo in src/styles.css.`);
+  console.error(
+    `\n${failures.length} fun-font contrast failure(s). Adjust foreground opacity, tint, or the .font-fun text-shadow halo in src/styles.css.`,
+  );
   process.exit(1);
 }
 console.log(`\nAll ${rows.length} fun-font pairs meet WCAG AA thresholds.`);

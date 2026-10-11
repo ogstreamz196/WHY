@@ -13,9 +13,7 @@ export type PaddleEnv = "sandbox" | "live";
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev/paddle";
 
 export function getConnectionApiKey(env: PaddleEnv): string {
-  return env === "sandbox"
-    ? getEnv("PADDLE_SANDBOX_API_KEY")
-    : getEnv("PADDLE_LIVE_API_KEY");
+  return env === "sandbox" ? getEnv("PADDLE_SANDBOX_API_KEY") : getEnv("PADDLE_LIVE_API_KEY");
 }
 
 export function getPaddleClient(env: PaddleEnv): Paddle {
@@ -30,7 +28,11 @@ export function getPaddleClient(env: PaddleEnv): Paddle {
   });
 }
 
-export async function gatewayFetch(env: PaddleEnv, path: string, init?: RequestInit): Promise<Response> {
+export async function gatewayFetch(
+  env: PaddleEnv,
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
   const connectionApiKey = getConnectionApiKey(env);
   const lovableApiKey = getEnv("LOVABLE_API_KEY");
   return fetch(`${GATEWAY_BASE_URL}${path}`, {

@@ -26,7 +26,11 @@ describe("asWhyQuestion — past tense handling", () => {
     ];
     for (const s of inputs) {
       const out = asWhyQuestion(s);
-      expect(/\bdoes\s+\w+(?:\s+\w+)?\s+(had|was|were|did|went|invented|discovered|evolved|created|built|used)\b/i.test(out)).toBe(false);
+      expect(
+        /\bdoes\s+\w+(?:\s+\w+)?\s+(had|was|were|did|went|invented|discovered|evolved|created|built|used)\b/i.test(
+          out,
+        ),
+      ).toBe(false);
     }
   });
 

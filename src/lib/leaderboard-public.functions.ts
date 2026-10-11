@@ -2,11 +2,7 @@
 // which grant SELECT to anon.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type {
-  LeaderboardKind,
-  LeaderboardEntry,
-  LeaderboardResult,
-} from "./leaderboard.functions";
+import type { LeaderboardKind, LeaderboardEntry, LeaderboardResult } from "./leaderboard.functions";
 
 const WINDOW_DAYS: Record<string, number> = { daily: 1, weekly: 7, monthly: 30 };
 
@@ -57,10 +53,7 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
     z
       .object({
         kind: z
-          .enum([
-            "global", "age", "category", "window",
-            "rising", "streaks", "weekend", "new",
-          ])
+          .enum(["global", "age", "category", "window", "rising", "streaks", "weekend", "new"])
           .default("global"),
         filter: z.string().max(40).optional(),
         limit: z.number().int().min(1).max(200).default(50),
@@ -108,7 +101,9 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
   });
 
 async function fetchVipSet(userIds: string[]): Promise<Set<string>> {
-  const env = (process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "").startsWith("test_") ? "sandbox" : "live";
+  const env = (process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "").startsWith("test_")
+    ? "sandbox"
+    : "live";
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabaseAdmin as any)
@@ -133,7 +128,16 @@ async function fetchRows(
   filter: string | undefined,
 ): Promise<{ rows: LbRow[]; windowLabel: string | null }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const safeKind = ["global", "age", "category", "window", "rising", "streaks", "weekend", "new"].includes(kind)
+  const safeKind = [
+    "global",
+    "age",
+    "category",
+    "window",
+    "rising",
+    "streaks",
+    "weekend",
+    "new",
+  ].includes(kind)
     ? kind
     : "global";
   const { data, error } = await (supabaseAdmin as any).rpc("get_public_leaderboard", {

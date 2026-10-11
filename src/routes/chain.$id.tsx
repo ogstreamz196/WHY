@@ -37,7 +37,8 @@ function ChainDetailPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth", search: { mode: "signin", redirect: `/chain/${id}` } });
+    if (!loading && !user)
+      navigate({ to: "/auth", search: { mode: "signin", redirect: `/chain/${id}` } });
   }, [user, loading, navigate, id]);
 
   const chain = useQuery({
@@ -71,7 +72,10 @@ function ChainDetailPage() {
       <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
         <div>
           <p className="font-display text-xl font-black">Chain not found.</p>
-          <Link to="/chains" className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold">
+          <Link
+            to="/chains"
+            className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold"
+          >
             Back to chains
           </Link>
         </div>

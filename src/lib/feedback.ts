@@ -52,8 +52,7 @@ function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   const AC: typeof AudioContext | undefined =
     window.AudioContext ||
-    (window as unknown as { webkitAudioContext?: typeof AudioContext })
-      .webkitAudioContext;
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
   if (!ctx) ctx = new AC();
   if (ctx.state === "suspended") void ctx.resume().catch(() => {});
@@ -63,7 +62,12 @@ function getCtx(): AudioContext | null {
 function tone(
   freq: number,
   durMs: number,
-  { type = "sine", gain = 0.08, slideTo, delayMs = 0 }: {
+  {
+    type = "sine",
+    gain = 0.08,
+    slideTo,
+    delayMs = 0,
+  }: {
     type?: OscillatorType;
     gain?: number;
     slideTo?: number;

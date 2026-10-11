@@ -11,10 +11,9 @@ describe("useThrottledFlag (skeleton throttle)", () => {
   });
 
   it("does not show skeleton before the throttle window elapses (fast load)", () => {
-    const { result, rerender } = renderHook(
-      ({ active }) => useThrottledFlag(active, 180),
-      { initialProps: { active: true } },
-    );
+    const { result, rerender } = renderHook(({ active }) => useThrottledFlag(active, 180), {
+      initialProps: { active: true },
+    });
 
     // Before the delay: hidden.
     expect(result.current).toBe(false);
@@ -44,10 +43,9 @@ describe("useThrottledFlag (skeleton throttle)", () => {
   });
 
   it("hides skeleton immediately when loading ends after showing", () => {
-    const { result, rerender } = renderHook(
-      ({ active }) => useThrottledFlag(active, 180),
-      { initialProps: { active: true } },
-    );
+    const { result, rerender } = renderHook(({ active }) => useThrottledFlag(active, 180), {
+      initialProps: { active: true },
+    });
     act(() => {
       vi.advanceTimersByTime(200);
     });
@@ -59,10 +57,9 @@ describe("useThrottledFlag (skeleton throttle)", () => {
   });
 
   it("handles a skip cycle: hides on new load then re-shows only after threshold", () => {
-    const { result, rerender } = renderHook(
-      ({ active }) => useThrottledFlag(active, 180),
-      { initialProps: { active: true } },
-    );
+    const { result, rerender } = renderHook(({ active }) => useThrottledFlag(active, 180), {
+      initialProps: { active: true },
+    });
     // First load completes fast (no skeleton flash).
     act(() => {
       vi.advanceTimersByTime(50);

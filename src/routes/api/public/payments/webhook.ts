@@ -99,38 +99,47 @@ async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
   const { id, status, currentBillingPeriod, scheduledChange } = data;
   // Business rule: revoke VIP immediately on past_due (failed payment)
   const effectiveStatus = status === "past_due" ? "canceled" : status;
-  check(await getSupabase()
-    .from("subscriptions")
-    .update({
-      status: effectiveStatus,
-      current_period_start: currentBillingPeriod?.startsAt,
-      current_period_end: currentBillingPeriod?.endsAt,
-      cancel_at_period_end: scheduledChange?.action === "cancel",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("paddle_subscription_id", id)
-    .eq("environment", env), "update subscription");
+  check(
+    await getSupabase()
+      .from("subscriptions")
+      .update({
+        status: effectiveStatus,
+        current_period_start: currentBillingPeriod?.startsAt,
+        current_period_end: currentBillingPeriod?.endsAt,
+        cancel_at_period_end: scheduledChange?.action === "cancel",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("paddle_subscription_id", id)
+      .eq("environment", env),
+    "update subscription",
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
   // Business rule: revoke VIP immediately (no grace period)
-  check(await getSupabase()
-    .from("subscriptions")
-    .update({ status: "canceled", updated_at: new Date().toISOString() })
-    .eq("paddle_subscription_id", data.id)
-    .eq("environment", env), "cancel subscription");
+  check(
+    await getSupabase()
+      .from("subscriptions")
+      .update({ status: "canceled", updated_at: new Date().toISOString() })
+      .eq("paddle_subscription_id", data.id)
+      .eq("environment", env),
+    "cancel subscription",
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleTransactionPaymentFailed(data: any, env: PaddleEnv) {
   const subscriptionId = data.subscriptionId;
   if (!subscriptionId) return;
-  check(await getSupabase()
-    .from("subscriptions")
-    .update({ status: "canceled", updated_at: new Date().toISOString() })
-    .eq("paddle_subscription_id", subscriptionId)
-    .eq("environment", env), "cancel after failed payment");
+  check(
+    await getSupabase()
+      .from("subscriptions")
+      .update({ status: "canceled", updated_at: new Date().toISOString() })
+      .eq("paddle_subscription_id", subscriptionId)
+      .eq("environment", env),
+    "cancel after failed payment",
+  );
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {

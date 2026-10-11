@@ -63,7 +63,6 @@ describe("prettifyAnswer", () => {
   });
 });
 
-
 describe("sanitizeQuizRow", () => {
   it("returns null when correct_answer resolves to empty", () => {
     expect(

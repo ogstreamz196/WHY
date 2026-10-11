@@ -42,7 +42,10 @@ export const bossListUsers = createServerFn({ method: "POST" })
     await assertBoss(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: users, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const { data: users, error } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    });
     if (error) throw new Error(error.message);
     const term = data.search.toLowerCase();
     const filtered = (users?.users ?? [])
@@ -105,8 +108,7 @@ export const bossAdjustBalance = createServerFn({ method: "POST" })
       .eq("user_id", data.userId)
       .maybeSingle();
     const current = existing?.total_points ?? 0;
-    const next =
-      data.setTo !== undefined ? data.setTo : Math.max(0, current + (data.delta ?? 0));
+    const next = data.setTo !== undefined ? data.setTo : Math.max(0, current + (data.delta ?? 0));
     const { error } = await supabaseAdmin
       .from("user_stats")
       .upsert({ user_id: data.userId, total_points: next }, { onConflict: "user_id" });
@@ -143,7 +145,9 @@ export const bossSetVip = createServerFn({ method: "POST" })
     const wasVip = (prevSubs ?? []).length > 0;
     const prevPeriodEnd = prevSubs?.[0]?.current_period_end ?? null;
     if (data.grant) {
-      const periodEnd = new Date(Date.now() + (data.days ?? 30) * 24 * 60 * 60 * 1000).toISOString();
+      const periodEnd = new Date(
+        Date.now() + (data.days ?? 30) * 24 * 60 * 60 * 1000,
+      ).toISOString();
       const { error } = await supabaseAdmin.from("subscriptions").upsert(
         {
           user_id: data.userId,
@@ -181,10 +185,19 @@ export const bossSetVip = createServerFn({ method: "POST" })
     return { ok: true, is_vip: false };
   });
 
-
 export type Privileges = {
-  free: { daily_facts_limit: number; quiz_daily_limit: number; coin_multiplier: number; ads_enabled: boolean };
-  vip: { daily_facts_limit: number; quiz_daily_limit: number; coin_multiplier: number; ads_enabled: boolean };
+  free: {
+    daily_facts_limit: number;
+    quiz_daily_limit: number;
+    coin_multiplier: number;
+    ads_enabled: boolean;
+  };
+  vip: {
+    daily_facts_limit: number;
+    quiz_daily_limit: number;
+    coin_multiplier: number;
+    ads_enabled: boolean;
+  };
 };
 
 export const bossGetPrivileges = createServerFn({ method: "POST" })
@@ -227,12 +240,15 @@ export const bossUpdatePrivileges = createServerFn({ method: "POST" })
       .select("value")
       .eq("key", "privileges")
       .maybeSingle();
-    const { error } = await context.supabase
-      .from("app_config")
-      .upsert(
-        { key: "privileges", value: data, updated_at: new Date().toISOString(), updated_by: context.userId },
-        { onConflict: "key" },
-      );
+    const { error } = await context.supabase.from("app_config").upsert(
+      {
+        key: "privileges",
+        value: data,
+        updated_at: new Date().toISOString(),
+        updated_by: context.userId,
+      },
+      { onConflict: "key" },
+    );
     if (error) throw new Error(error.message);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await writeAudit(supabaseAdmin, context.userId, "update_privileges", null, {
@@ -263,19 +279,15 @@ export type AuditEntryWithActor = AuditEntry & { actor_email: string | null };
 
 export const bossListAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: {
-    limit?: number;
-    action?: string;
-    email?: string;
-    from?: string;
-    to?: string;
-  }) => ({
-    limit: Math.min(Math.max(d.limit ?? 100, 1), 1000),
-    action: d.action?.trim() || undefined,
-    email: d.email?.trim().toLowerCase() || undefined,
-    from: d.from || undefined,
-    to: d.to || undefined,
-  }))
+  .inputValidator(
+    (d: { limit?: number; action?: string; email?: string; from?: string; to?: string }) => ({
+      limit: Math.min(Math.max(d.limit ?? 100, 1), 1000),
+      action: d.action?.trim() || undefined,
+      email: d.email?.trim().toLowerCase() || undefined,
+      from: d.from || undefined,
+      to: d.to || undefined,
+    }),
+  )
   .handler(async ({ data, context }) => {
     await assertBoss(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -296,7 +308,7 @@ export const bossListAudit = createServerFn({ method: "POST" })
 
     let entries = (rows ?? []).map((r: any) => ({
       ...r,
-      target_email: r.target_user_id ? emailMap.get(r.target_user_id) ?? null : null,
+      target_email: r.target_user_id ? (emailMap.get(r.target_user_id) ?? null) : null,
       actor_email: emailMap.get(r.actor_id) ?? null,
     })) as AuditEntryWithActor[];
     if (data.email) {
@@ -315,22 +327,21 @@ const GUEST_PROMPT_DEFAULT = 5;
  * lock its close button. Falls back to the default if unset. No auth so
  * anonymous visitors can fetch the current value.
  */
-export const getGuestPromptSeconds = createServerFn({ method: "GET" })
-  .handler(async () => {
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data } = await supabaseAdmin
-        .from("app_config")
-        .select("value")
-        .eq("key", GUEST_PROMPT_KEY)
-        .maybeSingle();
-      const raw = (data?.value as { seconds?: number } | null)?.seconds;
-      const n = typeof raw === "number" && Number.isFinite(raw) ? raw : GUEST_PROMPT_DEFAULT;
-      return { seconds: Math.max(0, Math.min(60, Math.round(n))) };
-    } catch {
-      return { seconds: GUEST_PROMPT_DEFAULT };
-    }
-  });
+export const getGuestPromptSeconds = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("app_config")
+      .select("value")
+      .eq("key", GUEST_PROMPT_KEY)
+      .maybeSingle();
+    const raw = (data?.value as { seconds?: number } | null)?.seconds;
+    const n = typeof raw === "number" && Number.isFinite(raw) ? raw : GUEST_PROMPT_DEFAULT;
+    return { seconds: Math.max(0, Math.min(60, Math.round(n))) };
+  } catch {
+    return { seconds: GUEST_PROMPT_DEFAULT };
+  }
+});
 
 export const bossSetGuestPromptSeconds = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -339,17 +350,15 @@ export const bossSetGuestPromptSeconds = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertBoss(context);
-    const { error } = await context.supabase
-      .from("app_config")
-      .upsert(
-        {
-          key: GUEST_PROMPT_KEY,
-          value: { seconds: data.seconds },
-          updated_at: new Date().toISOString(),
-          updated_by: context.userId,
-        },
-        { onConflict: "key" },
-      );
+    const { error } = await context.supabase.from("app_config").upsert(
+      {
+        key: GUEST_PROMPT_KEY,
+        value: { seconds: data.seconds },
+        updated_at: new Date().toISOString(),
+        updated_by: context.userId,
+      },
+      { onConflict: "key" },
+    );
     if (error) throw new Error(error.message);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await writeAudit(supabaseAdmin, context.userId, "update_guest_prompt", null, {
@@ -357,7 +366,6 @@ export const bossSetGuestPromptSeconds = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
-
 
 // -------------------- Bulk import questions from Google Sheets --------------------
 //
@@ -368,7 +376,17 @@ export const bossSetGuestPromptSeconds = createServerFn({ method: "POST" })
 // to the tab name (lower-cased) when it matches a known CategoryKey.
 
 const CATS = new Set([
-  "animals","space","earth","science","body","weather","food","history","technology","ocean","dinosaurs",
+  "animals",
+  "space",
+  "earth",
+  "science",
+  "body",
+  "weather",
+  "food",
+  "history",
+  "technology",
+  "ocean",
+  "dinosaurs",
 ]);
 
 async function fetchSheetRows(spreadsheetId: string, range: string): Promise<string[][]> {
@@ -420,11 +438,18 @@ export const bossBulkImportPlan = createServerFn({ method: "POST" })
 // ---- Chunk: dedupe + insert a slice. Called repeatedly by the UI.
 export const bossBulkImportChunk = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: {
-    candidates: { question: string; answer: string; fun_fact: string | null; category: string | null }[];
-  }) => ({
-    candidates: (d.candidates ?? []).slice(0, 100),
-  }))
+  .inputValidator(
+    (d: {
+      candidates: {
+        question: string;
+        answer: string;
+        fun_fact: string | null;
+        category: string | null;
+      }[];
+    }) => ({
+      candidates: (d.candidates ?? []).slice(0, 100),
+    }),
+  )
   .handler(async ({ data, context }): Promise<BulkImportResult> => {
     await assertBoss(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -434,7 +459,10 @@ export const bossBulkImportChunk = createServerFn({ method: "POST" })
     const { toInsert, dupes } = await dedupeAgainstExisting(supabaseAdmin, data.candidates);
     out.skipped += dupes;
     if (toInsert.length) {
-      const { data: rows2, error } = await supabaseAdmin.from("facts").insert(toInsert).select("id");
+      const { data: rows2, error } = await supabaseAdmin
+        .from("facts")
+        .insert(toInsert)
+        .select("id");
       if (error) out.errors.push({ row: -1, reason: error.message });
       else out.inserted = rows2?.length ?? 0;
     }
@@ -444,39 +472,59 @@ export const bossBulkImportChunk = createServerFn({ method: "POST" })
 // ---- Legacy single-shot import (kept for callers/tests that don't stream).
 export const bossBulkImportFromSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { spreadsheetId?: string; range?: string; defaultCategory?: string; dryRun?: boolean }) => ({
-    spreadsheetId: (d.spreadsheetId ?? process.env.WHY_SHEET_ID ?? "").trim(),
-    range: (d.range ?? "Sheet1!A1:Z1000").trim(),
-    defaultCategory: (d.defaultCategory ?? "").trim().toLowerCase(),
-    dryRun: !!d.dryRun,
-  }))
+  .inputValidator(
+    (d: {
+      spreadsheetId?: string;
+      range?: string;
+      defaultCategory?: string;
+      dryRun?: boolean;
+    }) => ({
+      spreadsheetId: (d.spreadsheetId ?? process.env.WHY_SHEET_ID ?? "").trim(),
+      range: (d.range ?? "Sheet1!A1:Z1000").trim(),
+      defaultCategory: (d.defaultCategory ?? "").trim().toLowerCase(),
+      dryRun: !!d.dryRun,
+    }),
+  )
   .handler(async ({ data, context }): Promise<BulkImportResult> => {
     await assertBoss(context);
     if (!data.spreadsheetId) throw new Error("Missing spreadsheetId");
     const rows = await fetchSheetRows(data.spreadsheetId, data.range);
     const { parseBulkImportRows, dedupeAgainstExisting } = await import("@/lib/bulkImport");
-    const parsed = parseBulkImportRows(rows, { range: data.range, defaultCategory: data.defaultCategory });
-    const result: BulkImportResult = { inserted: 0, skipped: parsed.skipped, errors: parsed.errors };
+    const parsed = parseBulkImportRows(rows, {
+      range: data.range,
+      defaultCategory: data.defaultCategory,
+    });
+    const result: BulkImportResult = {
+      inserted: 0,
+      skipped: parsed.skipped,
+      errors: parsed.errors,
+    };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { toInsert, dupes } = await dedupeAgainstExisting(supabaseAdmin, parsed.candidates);
     result.skipped += dupes;
-    if (data.dryRun) return { inserted: toInsert.length, skipped: result.skipped, errors: result.errors };
+    if (data.dryRun)
+      return { inserted: toInsert.length, skipped: result.skipped, errors: result.errors };
     const CHUNK = 25;
     for (let i = 0; i < toInsert.length; i += CHUNK) {
       const batch = toInsert.slice(i, i + CHUNK);
       const { data: rows2, error } = await supabaseAdmin.from("facts").insert(batch).select("id");
-      if (error) { result.errors.push({ row: -1, reason: error.message }); continue; }
+      if (error) {
+        result.errors.push({ row: -1, reason: error.message });
+        continue;
+      }
       result.inserted += rows2?.length ?? 0;
     }
     await writeAudit(supabaseAdmin, context.userId, "bulk_import_facts", null, {
-      spreadsheetId: data.spreadsheetId, range: data.range,
-      inserted: result.inserted, skipped: result.skipped, errors: result.errors.length,
+      spreadsheetId: data.spreadsheetId,
+      range: data.range,
+      inserted: result.inserted,
+      skipped: result.skipped,
+      errors: result.errors.length,
     });
     return result;
   });
 // Preserve CATS reference even though the pure helpers own the canonical set.
 void CATS;
-
 
 // -------------------- Backfill: normalize stored questions --------------------
 //

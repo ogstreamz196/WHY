@@ -63,7 +63,8 @@ export function useSubscription(userId: string | null | undefined) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, env]);
 
-  const isVip = !!subscription && (subscription.status === "active" || subscription.status === "trialing");
+  const isVip =
+    !!subscription && (subscription.status === "active" || subscription.status === "trialing");
 
   return { subscription, isVip, loading, refetch: fetchSub };
 }

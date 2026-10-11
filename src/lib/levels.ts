@@ -4,18 +4,18 @@ export type LevelTier = { min: number; level: number; title: string };
 
 // Ascending by min XP. Any XP below the first threshold uses tier[0].
 const TIERS: LevelTier[] = [
-  { min: 0,     level: 1,   title: "Curious Mind" },
-  { min: 50,    level: 2,   title: "Question Sprout" },
-  { min: 150,   level: 3,   title: "Question Seeker" },
-  { min: 350,   level: 5,   title: "Fact Finder" },
-  { min: 600,   level: 8,   title: "Question Hunter" },
-  { min: 1000,  level: 12,  title: "Knowledge Explorer" },
-  { min: 1600,  level: 18,  title: "Curiosity Adept" },
-  { min: 2500,  level: 25,  title: "Curiosity Expert" },
-  { min: 4000,  level: 35,  title: "Wisdom Seeker" },
-  { min: 6000,  level: 50,  title: "Infinite Thinker" },
-  { min: 9000,  level: 70,  title: "Cosmic Scholar" },
-  { min: 13000, level: 90,  title: "Curiosity Champion" },
+  { min: 0, level: 1, title: "Curious Mind" },
+  { min: 50, level: 2, title: "Question Sprout" },
+  { min: 150, level: 3, title: "Question Seeker" },
+  { min: 350, level: 5, title: "Fact Finder" },
+  { min: 600, level: 8, title: "Question Hunter" },
+  { min: 1000, level: 12, title: "Knowledge Explorer" },
+  { min: 1600, level: 18, title: "Curiosity Adept" },
+  { min: 2500, level: 25, title: "Curiosity Expert" },
+  { min: 4000, level: 35, title: "Wisdom Seeker" },
+  { min: 6000, level: 50, title: "Infinite Thinker" },
+  { min: 9000, level: 70, title: "Cosmic Scholar" },
+  { min: 13000, level: 90, title: "Curiosity Champion" },
   { min: 20000, level: 100, title: "Legendary Explorer" },
 ];
 

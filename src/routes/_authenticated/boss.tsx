@@ -72,7 +72,11 @@ function BossDashboard() {
   });
 
   if (boss.isPending) {
-    return <Shell><p className="text-white/60">Loading…</p></Shell>;
+    return (
+      <Shell>
+        <p className="text-white/60">Loading…</p>
+      </Shell>
+    );
   }
   if (!boss.data?.isBoss) {
     return (
@@ -88,10 +92,13 @@ function BossDashboard() {
 
   return (
     <Shell>
-      <PrivilegesEditor initial={privs.data ?? null} onSave={(v) => privMut.mutate(v)} saving={privMut.isPending} />
+      <PrivilegesEditor
+        initial={privs.data ?? null}
+        onSave={(v) => privMut.mutate(v)}
+        saving={privMut.isPending}
+      />
 
       <GuestPromptEditor />
-
 
       <section className="mt-6">
         <div className="mb-3 flex items-center gap-2">
@@ -158,7 +165,9 @@ function Shell({ children }: { children: React.ReactNode }) {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300/80">Dev · Boss only</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300/80">
+            Dev · Boss only
+          </p>
           <h1 className="flex items-center gap-2 font-display text-2xl font-black text-white">
             <Crown className="h-5 w-5 fill-amber-400 text-amber-400" /> Boss Dashboard
           </h1>
@@ -175,7 +184,13 @@ function UserRow({
   onVip,
   busy,
 }: {
-  row: { id: string; email: string | null; display_name: string | null; total_points: number; is_vip: boolean };
+  row: {
+    id: string;
+    email: string | null;
+    display_name: string | null;
+    total_points: number;
+    is_vip: boolean;
+  };
   onAdjust: (delta?: number, setTo?: number) => void;
   onVip: (grant: boolean, days?: number) => void;
   busy: boolean;
@@ -191,7 +206,9 @@ function UserRow({
           {(row.display_name || row.email || "?").slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-black text-white">{row.display_name || row.email || row.id}</p>
+          <p className="truncate text-sm font-black text-white">
+            {row.display_name || row.email || row.id}
+          </p>
           <p className="truncate text-[11px] text-white/50">{row.email}</p>
           <div className="mt-1 flex items-center gap-2 text-[11px]">
             <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/25 bg-amber-400/10 px-2 py-0.5 font-black text-amber-100">
@@ -421,13 +438,22 @@ function AuditLogSection() {
     );
   };
   const exportCsv = () => {
-    const headers = ["created_at", "action", "actor_email", "target_email", "target_user_id", "details"];
+    const headers = [
+      "created_at",
+      "action",
+      "actor_email",
+      "target_email",
+      "target_user_id",
+      "details",
+    ];
     const esc = (v: any) => {
       const s = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
       return `"${s.replace(/"/g, '""')}"`;
     };
     const rows = entries.map((e) =>
-      [e.created_at, e.action, e.actor_email, e.target_email, e.target_user_id, e.details].map(esc).join(","),
+      [e.created_at, e.action, e.actor_email, e.target_email, e.target_user_id, e.details]
+        .map(esc)
+        .join(","),
     );
     download(
       new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv" }),
@@ -515,7 +541,9 @@ function AuditLogSection() {
                   </span>
                   <span className="text-white/40">{new Date(e.created_at).toLocaleString()}</span>
                 </div>
-                {e.target_email && <div className="mt-0.5 truncate text-white/60">→ {e.target_email}</div>}
+                {e.target_email && (
+                  <div className="mt-0.5 truncate text-white/60">→ {e.target_email}</div>
+                )}
                 <div className="mt-0.5 text-white/50">{summarize(e)}</div>
               </button>
             </li>
@@ -564,7 +592,9 @@ function AuditDetailDrawer({ entry, onClose }: { entry: AuditRow | null; onClose
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-300/80">
               {entry.action.replace(/_/g, " ")}
             </p>
-            <p className="mt-0.5 text-xs text-white/60">{new Date(entry.created_at).toLocaleString()}</p>
+            <p className="mt-0.5 text-xs text-white/60">
+              {new Date(entry.created_at).toLocaleString()}
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -591,7 +621,7 @@ function AuditDetailDrawer({ entry, onClose }: { entry: AuditRow | null; onClose
           <DiffBlock title="After" value={next} />
         </div>
 
-        {(!prev && !next) && (
+        {!prev && !next && (
           <div className="mt-3">
             <DiffBlock title="Details" value={d} />
           </div>
@@ -619,7 +649,9 @@ function FactCodeDecoder() {
   const [err, setErr] = useState<string | null>(null);
 
   const onDecode = async () => {
-    setBusy(true); setErr(null); setResult(null);
+    setBusy(true);
+    setErr(null);
+    setResult(null);
     try {
       const { decodeFactCode } = await import("@/lib/facts.functions");
       const r = await decodeFactCode({ data: { code: code.trim() } });
@@ -627,7 +659,9 @@ function FactCodeDecoder() {
       else setResult(r);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to decode");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -660,7 +694,6 @@ function FactCodeDecoder() {
     </section>
   );
 }
-
 
 function GuestPromptEditor() {
   const qc = useQueryClient();
@@ -707,13 +740,13 @@ function GuestPromptEditor() {
           <Save className="h-4 w-4" /> {mut.isPending ? "Saving…" : "Save"}
         </button>
         <p className="text-xs text-white/50">
-          Guests see the popup every 2 facts. The close button dodges the cursor for this many seconds.
+          Guests see the popup every 2 facts. The close button dodges the cursor for this many
+          seconds.
         </p>
       </div>
     </section>
   );
 }
-
 
 function BulkImportSheet() {
   const [spreadsheetId, setSpreadsheetId] = useState("");
@@ -734,7 +767,9 @@ function BulkImportSheet() {
   };
 
   const run = async (dryRun: boolean) => {
-    setBusy(true); reset(); setPhase("planning");
+    setBusy(true);
+    reset();
+    setPhase("planning");
     try {
       const { bossBulkImportPlan, bossBulkImportChunk } = await import("@/lib/boss.functions");
       const plan = await bossBulkImportPlan({
@@ -773,7 +808,9 @@ function BulkImportSheet() {
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Import failed");
       setPhase("idle");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const pct = progress.total > 0 ? Math.round((progress.processed / progress.total) * 100) : 0;
@@ -786,7 +823,9 @@ function BulkImportSheet() {
         <h2 className="text-lg font-black text-white">Bulk import from Google Sheet</h2>
       </div>
       <p className="mb-3 text-xs text-white/60">
-        Sheet must have header row with columns: <code>question</code>, <code>answer</code>, optional <code>fun_fact</code>, optional <code>category</code>. Leave Spreadsheet ID blank to use the default library sheet.
+        Sheet must have header row with columns: <code>question</code>, <code>answer</code>,
+        optional <code>fun_fact</code>, optional <code>category</code>. Leave Spreadsheet ID blank
+        to use the default library sheet.
       </p>
       <div className="grid gap-2">
         <input
@@ -832,8 +871,12 @@ function BulkImportSheet() {
           {progress.total > 0 && (
             <div>
               <div className="mb-1 flex justify-between text-[11px] text-white/60">
-                <span>{phase === "importing" ? "Importing…" : phase === "done" ? "Done" : "Ready"}</span>
-                <span>{progress.processed} / {progress.total} ({pct}%)</span>
+                <span>
+                  {phase === "importing" ? "Importing…" : phase === "done" ? "Done" : "Ready"}
+                </span>
+                <span>
+                  {progress.processed} / {progress.total} ({pct}%)
+                </span>
               </div>
               <div
                 className="h-2 w-full overflow-hidden rounded-full bg-white/10"
@@ -857,7 +900,9 @@ function BulkImportSheet() {
           {errorList.length > 0 && (
             <ul className="max-h-40 overflow-auto space-y-1">
               {errorList.slice(0, 20).map((e, i) => (
-                <li key={i} className="font-mono text-[11px] text-rose-200/80">row {e.row}: {e.reason}</li>
+                <li key={i} className="font-mono text-[11px] text-rose-200/80">
+                  row {e.row}: {e.reason}
+                </li>
               ))}
             </ul>
           )}
@@ -867,26 +912,33 @@ function BulkImportSheet() {
   );
 }
 
-
 function NormalizeBackfill() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{
-    scanned: number; updated: number; unchanged: number;
+    scanned: number;
+    updated: number;
+    unchanged: number;
     invalid: { id: string; question: string; reason: string }[];
     changes: { id: string; before: string; after: string }[];
   } | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const run = async (dryRun: boolean) => {
-    setBusy(true); setErr(null); setResult(null);
+    setBusy(true);
+    setErr(null);
+    setResult(null);
     try {
       const { bossBackfillNormalizeQuestions } = await import("@/lib/boss.functions");
       const r = await bossBackfillNormalizeQuestions({ data: { dryRun, limit: 1000 } });
       setResult(r);
-      toast.success(dryRun ? `Preview: ${r.changes.length} would change` : `Normalized ${r.updated} questions`);
+      toast.success(
+        dryRun ? `Preview: ${r.changes.length} would change` : `Normalized ${r.updated} questions`,
+      );
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Backfill failed");
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -896,7 +948,8 @@ function NormalizeBackfill() {
         <h2 className="text-lg font-black text-white">Normalize existing questions</h2>
       </div>
       <p className="mb-3 text-xs text-white/60">
-        Re-runs the grammar normalizer on every saved fact. Original text is preserved in <code>original_question</code>.
+        Re-runs the grammar normalizer on every saved fact. Original text is preserved in{" "}
+        <code>original_question</code>.
       </p>
       <div className="flex gap-2">
         <button
@@ -927,7 +980,8 @@ function NormalizeBackfill() {
             <ul className="max-h-40 overflow-auto space-y-1">
               {result.changes.slice(0, 20).map((c) => (
                 <li key={c.id} className="font-mono text-[11px] text-white/70">
-                  <span className="text-rose-200/70 line-through">{c.before}</span>{" → "}
+                  <span className="text-rose-200/70 line-through">{c.before}</span>
+                  {" → "}
                   <span className="text-emerald-200">{c.after}</span>
                 </li>
               ))}

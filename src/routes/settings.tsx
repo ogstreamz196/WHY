@@ -52,7 +52,6 @@ function SettingsPage() {
     setBadges(getBadges());
   }, []);
 
-
   const update = (patch: Partial<Settings>) => {
     const next = { ...settings, ...patch };
     setLocal(next);
@@ -89,7 +88,10 @@ function SettingsPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-slate-900">{user.email}</p>
-                <Link to="/profile" className="text-xs font-semibold text-violet-700 underline-offset-2 hover:underline">
+                <Link
+                  to="/profile"
+                  className="text-xs font-semibold text-violet-700 underline-offset-2 hover:underline"
+                >
                   View profile
                 </Link>
               </div>
@@ -124,7 +126,6 @@ function SettingsPage() {
         </section>
 
         {user && <LinkedAccounts />}
-
 
         <section className="mb-6 space-y-2 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <Toggle
@@ -168,8 +169,6 @@ function SettingsPage() {
 
         {user && <ArenaPreferences />}
 
-
-
         <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <h2 className="text-lg font-extrabold text-slate-900">🏅 Explorer Badges</h2>
           <div className="mt-3 grid grid-cols-3 gap-2">
@@ -190,52 +189,52 @@ function SettingsPage() {
         </section>
 
         {isBoss && (
-        <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-          <h2 className="text-lg font-extrabold text-slate-900">📊 Google Sheets sync</h2>
-          <p className="mt-1 text-xs text-slate-600">
-            Import facts from a Google Sheet. Headers in row 1:
-            <code className="mx-1 rounded bg-slate-100 px-1">question | answer | category | fun_fact | row_id</code>.
-            New rows are added, edited rows are updated, and AI-generated facts stay untouched.
-          </p>
-          <input
-            type="text"
-            value={sheetId}
-            onChange={(e) => setSheetId(e.target.value)}
-            placeholder="Spreadsheet ID (or leave empty to use WHY_SHEET_ID)"
-            className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-violet-500"
-          />
-          <button
-            type="button"
-            disabled={syncing}
-            onClick={async () => {
-              setSyncing(true);
-              setSyncMsg(null);
-              try {
-                const res = await runSync({
-                  data: sheetId.trim() ? { spreadsheetId: sheetId.trim() } : {},
-                });
-                setSyncMsg(
-                  `✅ Scanned ${res.scanned} • Added ${res.inserted} • Updated ${res.updated} • Skipped ${res.skipped}${
-                    res.errors.length ? ` • ${res.errors.length} row error(s)` : ""
-                  }`,
-                );
-              } catch (err) {
-                setSyncMsg(`❌ ${err instanceof Error ? err.message : String(err)}`);
-              } finally {
-                setSyncing(false);
-              }
-            }}
-            className="mt-3 w-full rounded-2xl bg-violet-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-60"
-          >
-            {syncing ? "Syncing…" : "Sync now"}
-          </button>
-          {syncMsg && (
-            <p className="mt-3 whitespace-pre-wrap text-xs text-slate-700">{syncMsg}</p>
-          )}
-        </section>
+          <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
+            <h2 className="text-lg font-extrabold text-slate-900">📊 Google Sheets sync</h2>
+            <p className="mt-1 text-xs text-slate-600">
+              Import facts from a Google Sheet. Headers in row 1:
+              <code className="mx-1 rounded bg-slate-100 px-1">
+                question | answer | category | fun_fact | row_id
+              </code>
+              . New rows are added, edited rows are updated, and AI-generated facts stay untouched.
+            </p>
+            <input
+              type="text"
+              value={sheetId}
+              onChange={(e) => setSheetId(e.target.value)}
+              placeholder="Spreadsheet ID (or leave empty to use WHY_SHEET_ID)"
+              className="mt-3 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-violet-500"
+            />
+            <button
+              type="button"
+              disabled={syncing}
+              onClick={async () => {
+                setSyncing(true);
+                setSyncMsg(null);
+                try {
+                  const res = await runSync({
+                    data: sheetId.trim() ? { spreadsheetId: sheetId.trim() } : {},
+                  });
+                  setSyncMsg(
+                    `✅ Scanned ${res.scanned} • Added ${res.inserted} • Updated ${res.updated} • Skipped ${res.skipped}${
+                      res.errors.length ? ` • ${res.errors.length} row error(s)` : ""
+                    }`,
+                  );
+                } catch (err) {
+                  setSyncMsg(`❌ ${err instanceof Error ? err.message : String(err)}`);
+                } finally {
+                  setSyncing(false);
+                }
+              }}
+              className="mt-3 w-full rounded-2xl bg-violet-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-60"
+            >
+              {syncing ? "Syncing…" : "Sync now"}
+            </button>
+            {syncMsg && (
+              <p className="mt-3 whitespace-pre-wrap text-xs text-slate-700">{syncMsg}</p>
+            )}
+          </section>
         )}
-
-
 
         <section className="rounded-3xl bg-white/90 p-5 text-sm leading-relaxed text-slate-700 shadow-md ring-1 ring-black/5">
           <h2 className="text-lg font-extrabold text-slate-900">🔒 Privacy</h2>
@@ -291,9 +290,9 @@ function Toggle({
 
 const AGE_OPTIONS: Array<{ key: "under_10" | "10_12" | "teen" | "adult"; label: string }> = [
   { key: "under_10", label: "Under 10" },
-  { key: "10_12",    label: "10–12" },
-  { key: "teen",     label: "Teen" },
-  { key: "adult",    label: "Adult" },
+  { key: "10_12", label: "10–12" },
+  { key: "teen", label: "Teen" },
+  { key: "adult", label: "Adult" },
 ];
 
 function ArenaPreferences() {
@@ -338,7 +337,9 @@ function ArenaPreferences() {
                 disabled={saving}
                 onClick={() => save({ age_band: a.key })}
                 className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-                  active ? "bg-violet-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"
+                  active
+                    ? "bg-violet-600 text-white"
+                    : "bg-white text-slate-700 ring-1 ring-slate-200"
                 }`}
               >
                 {a.label}
@@ -361,7 +362,9 @@ function ArenaPreferences() {
                 disabled={saving}
                 onClick={() => save({ favorite_category: c.key })}
                 className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-                  active ? "bg-violet-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"
+                  active
+                    ? "bg-violet-600 text-white"
+                    : "bg-white text-slate-700 ring-1 ring-slate-200"
                 }`}
               >
                 {c.emoji} {c.label}
@@ -388,4 +391,3 @@ function ArenaPreferences() {
     </section>
   );
 }
-

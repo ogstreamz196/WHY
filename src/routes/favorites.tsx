@@ -32,8 +32,7 @@ function FavoritesPage() {
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
-          background:
-            "linear-gradient(180deg, #fef3c7 0%, #ede9fe 100%)",
+          background: "linear-gradient(180deg, #fef3c7 0%, #ede9fe 100%)",
         }}
       />
       <div className="mx-auto max-w-2xl px-4 pb-8 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
@@ -76,13 +75,9 @@ function FavoritesPage() {
                     <p className="text-xs font-bold uppercase tracking-widest text-amber-600">
                       {emojiFor(f.category)} Do you know why…
                     </p>
-                    <p className="mt-1 text-base font-extrabold text-slate-900">
-                      {f.question}
-                    </p>
+                    <p className="mt-1 text-base font-extrabold text-slate-900">{f.question}</p>
                     <p className="mt-2 text-sm leading-relaxed text-slate-700">{f.answer}</p>
-                    {f.fun_fact && (
-                      <p className="mt-2 text-xs text-amber-700">⭐ {f.fun_fact}</p>
-                    )}
+                    {f.fun_fact && <p className="mt-2 text-xs text-amber-700">⭐ {f.fun_fact}</p>}
                   </div>
                   <button
                     type="button"

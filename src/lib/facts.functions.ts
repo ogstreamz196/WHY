@@ -7,11 +7,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeAiQuota } from "@/lib/aiQuota.server";
 
 function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  return createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 async function getAdmin() {
@@ -56,7 +54,8 @@ const FALLBACK_FACTS: Fact[] = [
     question: "why is the sky blue",
     answer: "Sunlight scatters off tiny air molecules, and blue light scatters the most.",
     category: "science",
-    fun_fact: "At sunset the light travels through more air, so only the reds and oranges reach your eyes.",
+    fun_fact:
+      "At sunset the light travels through more air, so only the reds and oranges reach your eyes.",
     code: "WHY-SKY001",
   },
   {
@@ -81,7 +80,9 @@ function pickFallback(skip: Set<string>, category?: string): Fact {
   const pool = category ? FALLBACK_FACTS.filter((f) => f.category === category) : FALLBACK_FACTS;
   const list = pool.length ? pool : FALLBACK_FACTS;
   const fresh = list.filter((f) => !skip.has(f.id));
-  const choice = (fresh.length ? fresh : list)[Math.floor(Math.random() * (fresh.length ? fresh.length : list.length))];
+  const choice = (fresh.length ? fresh : list)[
+    Math.floor(Math.random() * (fresh.length ? fresh.length : list.length))
+  ];
   return choice;
 }
 
@@ -145,9 +146,6 @@ export const getRandomFact = createServerFn({ method: "GET" })
     }
   });
 
-
-
-
 // -------------------- AI helpers --------------------
 
 const SAFETY_PROMPT = `You are writing content for the WHY? app used by kids, families, adults, and classrooms.
@@ -161,10 +159,18 @@ CONTENT RULES (non-negotiable):
 - No brand promotion, no personal opinions.
 - Concise. No filler.`;
 
-async function callJson<T>(apiKey: string, prompt: string, model = "google/gemini-2.5-flash"): Promise<T | null> {
+async function callJson<T>(
+  apiKey: string,
+  prompt: string,
+  model = "google/gemini-2.5-flash",
+): Promise<T | null> {
   const gateway = createLovableAiGatewayProvider(apiKey);
   const { text } = await generateText({ model: gateway(model), prompt });
-  const cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
   try {
     return JSON.parse(cleaned) as T;
   } catch {
@@ -269,7 +275,12 @@ Return STRICT JSON only, no prose, no markdown:
 Question examples: "the sky is blue?", "flamingos stand on one leg?", "we get goosebumps?"
 
 Do NOT repeat or reword any of these recent questions:
-${recentQs.slice(0, 30).map((q) => `- ${q}`).join("\n") || "(none)"}`;
+${
+  recentQs
+    .slice(0, 30)
+    .map((q) => `- ${q}`)
+    .join("\n") || "(none)"
+}`;
 
     for (let attempt = 0; attempt < 3; attempt++) {
       const candidate = await callJson<GeneratedFact>(apiKey, genPrompt);
@@ -337,7 +348,11 @@ async function findUnseenFact(
     if (!ids || ids.length === 0) return null;
     const hit = ids.find((r) => !skip.has(r.id as string));
     if (hit) {
-      const { data: row } = await supabase.from("facts").select(FACT_COLS).eq("id", hit.id).maybeSingle();
+      const { data: row } = await supabase
+        .from("facts")
+        .select(FACT_COLS)
+        .eq("id", hit.id)
+        .maybeSingle();
       return (row as Fact | null) ?? null;
     }
     if (ids.length < PAGE) return null;
@@ -359,13 +374,14 @@ async function pickExistingFact(supabase: PublicClient, skip: Set<string>): Prom
 
 export const searchOrGenerateFact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ query: z.string().min(2).max(200) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ query: z.string().min(2).max(200) }).parse(input))
   .handler(async ({ data, context }): Promise<Fact | null> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     const supabase = getSupabase();
-    const q = data.query.trim().replace(/^why\s+/i, "").replace(/\?+$/, "");
+    const q = data.query
+      .trim()
+      .replace(/^why\s+/i, "")
+      .replace(/\?+$/, "");
 
     // 1. Try text match in DB first (question ilike)
     const { data: matches } = await supabase
@@ -443,9 +459,7 @@ If the question is inappropriate, unsafe, or nonsensical for kids, instead retur
 
 export const decodeFactCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ code: z.string().min(4).max(64) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ code: z.string().min(4).max(64) }).parse(input))
   .handler(async ({ data, context }) => {
     // Re-check the caller is an admin/boss before executing the definer RPC via service role.
     const { data: bossOk } = await context.supabase.rpc("is_boss", { _uid: context.userId });
@@ -457,11 +471,19 @@ export const decodeFactCode = createServerFn({ method: "POST" })
       .eq("code", data.code)
       .maybeSingle();
     if (error) throw error;
-    return (row as {
-      id: string; code: string; code_seq: number; category: string | null;
-      question: string; answer: string; fun_fact: string | null;
-      source: string; created_at: string;
-    } | null) ?? null;
+    return (
+      (row as {
+        id: string;
+        code: string;
+        code_seq: number;
+        category: string | null;
+        question: string;
+        answer: string;
+        fun_fact: string | null;
+        source: string;
+        created_at: string;
+      } | null) ?? null
+    );
   });
 
 // -------------------- "But… Why?" endless chain --------------------
@@ -503,9 +525,7 @@ Return STRICT JSON only, no prose, no markdown:
 export const getDailyFact = createServerFn({ method: "GET" }).handler(
   async (): Promise<Fact | null> => {
     const supabase = getSupabase();
-    const { count } = await supabase
-      .from("facts")
-      .select("id", { count: "exact", head: true });
+    const { count } = await supabase.from("facts").select("id", { count: "exact", head: true });
     if (!count) return null;
     const now = new Date();
     const start = Date.UTC(now.getUTCFullYear(), 0, 0);
@@ -543,9 +563,7 @@ function shuffleArr<T>(arr: T[]): T[] {
 export const getDailyChallengeMCQ = createServerFn({ method: "GET" }).handler(
   async (): Promise<DailyMCQ | null> => {
     const supabase = getSupabase();
-    const { count } = await supabase
-      .from("facts")
-      .select("id", { count: "exact", head: true });
+    const { count } = await supabase.from("facts").select("id", { count: "exact", head: true });
     if (!count) return null;
     const now = new Date();
     const start = Date.UTC(now.getUTCFullYear(), 0, 0);

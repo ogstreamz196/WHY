@@ -27,9 +27,7 @@ export type PlayerProfilePublic = {
 };
 
 export const getPlayerProfilePublic = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) =>
-    z.object({ userId: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ userId: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<PlayerProfilePublic | null> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const uid = data.userId;

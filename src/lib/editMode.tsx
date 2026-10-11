@@ -51,7 +51,12 @@ export function EditModeProvider({ children }: { children: ReactNode }) {
       getText: (key, fallback) => {
         const v = overrides[key];
         if (typeof v === "string") return v;
-        if (v && typeof v === "object" && "text" in (v as any) && typeof (v as any).text === "string") {
+        if (
+          v &&
+          typeof v === "object" &&
+          "text" in (v as any) &&
+          typeof (v as any).text === "string"
+        ) {
           return (v as any).text as string;
         }
         return fallback;

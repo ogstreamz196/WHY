@@ -11,11 +11,11 @@ const ICONS = { Home, Store, User, Sparkles, Medal } as const;
 type IconKey = keyof typeof ICONS;
 
 const DEFAULT_ITEMS: { to: string; label: string; icon: IconKey }[] = [
-  { to: "/",            label: "Home",       icon: "Home" },
-  { to: "/chains",      label: "Favourites", icon: "Sparkles" },
-  { to: "/leaderboard", label: "Ranks",      icon: "Medal" },
-  { to: "/store",       label: "Store",      icon: "Store" },
-  { to: "/profile",     label: "You",        icon: "User" },
+  { to: "/", label: "Home", icon: "Home" },
+  { to: "/chains", label: "Favourites", icon: "Sparkles" },
+  { to: "/leaderboard", label: "Ranks", icon: "Medal" },
+  { to: "/store", label: "Store", icon: "Store" },
+  { to: "/profile", label: "You", icon: "User" },
 ];
 
 const NAV_ORDER_KEY = "nav.bottom.order";
@@ -33,7 +33,10 @@ export function BottomNav() {
     const result: typeof DEFAULT_ITEMS = [];
     for (const to of savedOrder) {
       const item = byTo.get(to);
-      if (item) { result.push(item); byTo.delete(to); }
+      if (item) {
+        result.push(item);
+        byTo.delete(to);
+      }
     }
     // Append any new items that weren't in saved order
     for (const item of byTo.values()) result.push(item);
@@ -45,7 +48,10 @@ export function BottomNav() {
     const target = idx + dir;
     if (target < 0 || target >= next.length) return;
     [next[idx], next[target]] = [next[target], next[idx]];
-    void saveOverride(NAV_ORDER_KEY, next.map((i) => i.to));
+    void saveOverride(
+      NAV_ORDER_KEY,
+      next.map((i) => i.to),
+    );
   };
 
   return (
@@ -54,7 +60,9 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]"
     >
       <div className="mx-auto max-w-2xl px-3 pb-3">
-        <div className={`glass-strong flex items-center justify-around rounded-3xl px-2 py-2 shadow-[var(--shadow-card)] ${editMode ? "ring-2 ring-red-400/70" : ""}`}>
+        <div
+          className={`glass-strong flex items-center justify-around rounded-3xl px-2 py-2 shadow-[var(--shadow-card)] ${editMode ? "ring-2 ring-red-400/70" : ""}`}
+        >
           {ordered.map(({ to, label, icon }, idx) => {
             const Icon = ICONS[icon];
             const labelKey = `nav.bottom.label.${to}`;
@@ -76,13 +84,21 @@ export function BottomNav() {
                     className="absolute inset-x-3 top-1 h-1 rounded-full opacity-0 transition group-data-[active=true]:opacity-100"
                     style={{ background: "var(--gradient-primary)" }}
                   />
-                  <Icon className="h-5 w-5 transition-transform duration-300 group-data-[active=true]:scale-110 group-hover:rotate-[-6deg]" strokeWidth={2.2} />
+                  <Icon
+                    className="h-5 w-5 transition-transform duration-300 group-data-[active=true]:scale-110 group-hover:rotate-[-6deg]"
+                    strokeWidth={2.2}
+                  />
                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-wide">
                     {editMode ? (
-                      <EditableText storageKey={labelKey}>{label === "You" && isBoss ? "Boss" : label}</EditableText>
+                      <EditableText storageKey={labelKey}>
+                        {label === "You" && isBoss ? "Boss" : label}
+                      </EditableText>
                     ) : (
                       <>
-                        <OverrideOr storageKey={labelKey} fallback={label === "You" && isBoss ? "Boss" : label} />
+                        <OverrideOr
+                          storageKey={labelKey}
+                          fallback={label === "You" && isBoss ? "Boss" : label}
+                        />
                         {label === "You" && isVip && (
                           <span
                             aria-label="VIP"

@@ -19,7 +19,6 @@ async function admin() {
   return _admin;
 }
 
-
 // ---------------- Types ----------------
 
 export type Difficulty = "easy" | "medium" | "hard" | "expert";
@@ -119,7 +118,11 @@ export function wordCount(s: string) {
 }
 
 export function trimToWords(s: string, n: number) {
-  const words = s.trim().replace(/[.!?…]+$/g, "").split(/\s+/).filter(Boolean);
+  const words = s
+    .trim()
+    .replace(/[.!?…]+$/g, "")
+    .split(/\s+/)
+    .filter(Boolean);
   return words.slice(0, n).join(" ");
 }
 
@@ -130,7 +133,10 @@ export function trimToWords(s: string, n: number) {
  * - capitalize the first character (preserves ALLCAPS acronyms)
  */
 export function prettifyAnswer(s: string) {
-  let t = s.trim().replace(/\s+/g, " ").replace(/^["'“”‘’]+|["'“”‘’]+$/g, "");
+  let t = s
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^["'“”‘’]+|["'“”‘’]+$/g, "");
   t = t.replace(/[.!?…,;:\s]+$/g, "");
   if (!t) return t;
   const first = t.charAt(0);
@@ -185,8 +191,6 @@ export function sanitizeQuizRow(input: {
   return { correct_answer: correct, distractors, explanation };
 }
 
-
-
 async function generateDistractors(
   ai: AiClient | null,
   fact: { question: string; answer: string; category: string | null },
@@ -229,7 +233,10 @@ async function generateDistractors(
       prompt,
       maxRetries: 1,
     });
-    const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const cleaned = text
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
     const start = cleaned.indexOf("{");
     const end = cleaned.lastIndexOf("}");
     if (start === -1 || end === -1) return fallback();
@@ -242,7 +249,8 @@ async function generateDistractors(
       typeof parsed.answer === "string" && parsed.answer.trim()
         ? parsed.answer.trim()
         : fact.answer;
-    const answer = trimToWords(rawAnswer, target) || trimToWords(fact.answer, target) || fact.answer;
+    const answer =
+      trimToWords(rawAnswer, target) || trimToWords(fact.answer, target) || fact.answer;
     const distractors = Array.isArray(parsed.distractors)
       ? parsed.distractors
           .map((d) => trimToWords(String(d), target))
@@ -303,13 +311,13 @@ export const startQuiz = createServerFn({ method: "POST" })
     const factIds = picked.map((f) => f.id);
 
     // Look up existing cached questions
-    const { data: cached } = await (await admin())
+    const { data: cached } = await (
+      await admin()
+    )
       .from("quiz_questions")
       .select("fact_id, correct_answer, distractors, explanation, difficulty, category")
       .in("fact_id", factIds);
-    const cacheMap = new Map(
-      (cached ?? []).map((c) => [c.fact_id as string, c] as const),
-    );
+    const cacheMap = new Map((cached ?? []).map((c) => [c.fact_id as string, c] as const));
 
     // Generate any missing (concurrently, capped).
     const missing = picked.filter((f) => !cacheMap.has(f.id));
@@ -383,13 +391,14 @@ export const startQuiz = createServerFn({ method: "POST" })
       throw new Error("No valid quiz questions could be prepared. Please try again.");
     }
 
-
     const finalFactIds = questions.map((q) => q.fact_id);
-    const { data: session, error: sErr } = await (await admin())
+    const { data: session, error: sErr } = await (
+      await admin()
+    )
       .from("quiz_sessions")
       .insert({
         user_id: context.userId,
-        category: data.category === "all" ? null : data.category ?? null,
+        category: data.category === "all" ? null : (data.category ?? null),
         difficulty,
         question_count: questions.length,
         fact_ids: finalFactIds,
@@ -407,7 +416,6 @@ export const startQuiz = createServerFn({ method: "POST" })
       questions,
     };
   });
-
 
 // ---------------- submitAnswer ----------------
 
@@ -519,7 +527,9 @@ export const submitAnswer = createServerFn({ method: "POST" })
       .eq("id", session.id);
 
     // Update streaks in quiz_stats
-    const { data: prevStats } = await (await admin())
+    const { data: prevStats } = await (
+      await admin()
+    )
       .from("quiz_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -528,15 +538,10 @@ export const submitAnswer = createServerFn({ method: "POST" })
     const prevBest = prevStats?.best_streak ?? 0;
     const nextCurrent = correct ? prevCurrent + 1 : 0;
     const nextBest = Math.max(prevBest, nextCurrent);
-    const nextFast =
-      (prevStats?.fast_correct ?? 0) + (correct && clampedMs < 3000 ? 1 : 0);
+    const nextFast = (prevStats?.fast_correct ?? 0) + (correct && clampedMs < 3000 ? 1 : 0);
     const cats = new Set<string>((prevStats?.categories_answered as string[]) ?? []);
     const catForFact = (
-      await context.supabase
-        .from("facts")
-        .select("category")
-        .eq("id", data.fact_id)
-        .maybeSingle()
+      await context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle()
     ).data?.category;
     if (catForFact) cats.add(catForFact);
 
@@ -552,8 +557,7 @@ export const submitAnswer = createServerFn({ method: "POST" })
         fast_correct: nextFast,
         categories_answered: Array.from(cats),
         favorite_category:
-          prevStats?.favorite_category ??
-          (catForFact ?? prevStats?.favorite_category ?? null),
+          prevStats?.favorite_category ?? catForFact ?? prevStats?.favorite_category ?? null,
       },
       { onConflict: "user_id" },
     );
@@ -573,9 +577,7 @@ export const submitAnswer = createServerFn({ method: "POST" })
 
 export const finishQuiz = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ session_id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ session_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<FinishResult> => {
     const db = await admin();
     const { data: session, error } = await db
@@ -651,7 +653,9 @@ export const finishQuiz = createServerFn({ method: "POST" })
     }
 
     // XP: award quiz score as XP into user_stats.total_points too.
-    const { data: prevStats } = await (await admin())
+    const { data: prevStats } = await (
+      await admin()
+    )
       .from("quiz_stats")
       .select("total_score, best_score")
       .eq("user_id", context.userId)
@@ -699,14 +703,18 @@ type AuthContext = {
 };
 
 async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
-  const { data: stats } = await (await admin())
+  const { data: stats } = await (
+    await admin()
+  )
     .from("quiz_stats")
     .select("*")
     .eq("user_id", context.userId)
     .maybeSingle();
   if (!stats) return [];
 
-  const { data: finished } = await (await admin())
+  const { data: finished } = await (
+    await admin()
+  )
     .from("quiz_sessions")
     .select("correct_count, question_count")
     .eq("user_id", context.userId)
@@ -734,7 +742,9 @@ async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
     .map(([id]) => id);
   if (candidates.length === 0) return [];
 
-  const { data: already } = await (await admin())
+  const { data: already } = await (
+    await admin()
+  )
     .from("user_achievements")
     .select("achievement_id")
     .eq("user_id", context.userId)
@@ -742,7 +752,9 @@ async function checkQuizAchievements(context: AuthContext): Promise<string[]> {
   const have = new Set((already ?? []).map((r) => r.achievement_id));
   const toInsert = candidates.filter((id) => !have.has(id));
   if (toInsert.length === 0) return [];
-  await (await admin())
+  await (
+    await admin()
+  )
     .from("user_achievements")
     .insert(toInsert.map((id) => ({ user_id: context.userId, achievement_id: id })));
   return toInsert;
@@ -765,7 +777,9 @@ export type QuizStatsDTO = {
 export const getMyQuizStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<QuizStatsDTO> => {
-    const { data } = await (await admin())
+    const { data } = await (
+      await admin()
+    )
       .from("quiz_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -781,7 +795,7 @@ export const getMyQuizStats = createServerFn({ method: "GET" })
       best_streak: data?.best_streak ?? 0,
       current_streak: data?.current_streak ?? 0,
       favorite_category: (data?.favorite_category as string | null) ?? null,
-      categories_answered: ((data?.categories_answered as string[]) ?? []),
+      categories_answered: (data?.categories_answered as string[]) ?? [],
     };
   });
 

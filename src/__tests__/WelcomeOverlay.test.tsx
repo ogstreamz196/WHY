@@ -22,9 +22,7 @@ describe("WelcomeOverlay onboarding button", () => {
   });
 
   it("shows 'Continue the journey' for returning users (needsName=false)", () => {
-    render(
-      <WelcomeOverlay open name="Ada" needsName={false} onClose={() => {}} />,
-    );
+    render(<WelcomeOverlay open name="Ada" needsName={false} onClose={() => {}} />);
     expect(screen.getByRole("button", { name: /continue the journey/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /begin the journey/i })).toBeNull();
     // no nickname input for returning users
@@ -52,13 +50,7 @@ describe("WelcomeOverlay onboarding button", () => {
     const onClose = vi.fn();
     const onSubmitName = vi.fn().mockResolvedValue(undefined);
     render(
-      <WelcomeOverlay
-        open
-        name={null}
-        needsName
-        onClose={onClose}
-        onSubmitName={onSubmitName}
-      />,
+      <WelcomeOverlay open name={null} needsName onClose={onClose} onSubmitName={onSubmitName} />,
     );
     const input = screen.getByLabelText(/your nickname/i) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "  Curious Cat  " } });
@@ -71,13 +63,7 @@ describe("WelcomeOverlay onboarding button", () => {
     const onClose = vi.fn();
     const onSubmitName = vi.fn();
     render(
-      <WelcomeOverlay
-        open
-        name={null}
-        needsName
-        onClose={onClose}
-        onSubmitName={onSubmitName}
-      />,
+      <WelcomeOverlay open name={null} needsName onClose={onClose} onSubmitName={onSubmitName} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /begin the journey/i }));
     await waitFor(() =>

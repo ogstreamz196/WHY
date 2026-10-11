@@ -20,10 +20,10 @@ export const Route = createFileRoute("/_authenticated/quiz/")({
 });
 
 const DIFFICULTIES: { key: Difficulty; label: string; hint: string; mult: string }[] = [
-  { key: "easy",   label: "Easy",   hint: "15s per question", mult: "×1" },
+  { key: "easy", label: "Easy", hint: "15s per question", mult: "×1" },
   { key: "medium", label: "Medium", hint: "12s per question", mult: "×1.25" },
-  { key: "hard",   label: "Hard",   hint: "10s per question", mult: "×1.5" },
-  { key: "expert", label: "Expert", hint: "8s per question",  mult: "×2" },
+  { key: "hard", label: "Hard", hint: "10s per question", mult: "×1.5" },
+  { key: "expert", label: "Expert", hint: "8s per question", mult: "×2" },
 ];
 
 function QuizStartPage() {
@@ -54,20 +54,30 @@ function QuizStartPage() {
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
-          <Link to="/" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-foreground/90 active:scale-95">
+          <Link
+            to="/"
+            className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-foreground/90 active:scale-95"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex-1">
             <h1 className="font-display text-2xl font-black text-white">Curiosity Challenge</h1>
-            <p className="text-xs text-white/60">Answer fast, build streaks, top the leaderboard.</p>
+            <p className="text-xs text-white/60">
+              Answer fast, build streaks, top the leaderboard.
+            </p>
           </div>
-          <Link to="/leaderboard" className="glass flex h-11 items-center gap-1 rounded-2xl px-3 text-sm font-bold text-white/90 active:scale-95">
+          <Link
+            to="/leaderboard"
+            className="glass flex h-11 items-center gap-1 rounded-2xl px-3 text-sm font-bold text-white/90 active:scale-95"
+          >
             <Trophy className="h-4 w-4 text-amber-300" /> Ranks
           </Link>
         </header>
 
         <section className="glass-strong mb-4 rounded-3xl p-4">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/50">Category</p>
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/50">
+            Category
+          </p>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((c) => {
               const active = category === c.key;
@@ -91,7 +101,9 @@ function QuizStartPage() {
         </section>
 
         <section className="glass-strong mb-4 rounded-3xl p-4">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/50">Difficulty</p>
+          <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-white/50">
+            Difficulty
+          </p>
           <div className="grid grid-cols-2 gap-2">
             {DIFFICULTIES.map((d) => {
               const active = difficulty === d.key;
@@ -117,7 +129,9 @@ function QuizStartPage() {
 
         <section className="glass-strong mb-4 rounded-3xl p-4">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/50">Questions</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
+              Questions
+            </p>
             <span className="text-sm font-black text-white">{length}</span>
           </div>
           <input
@@ -139,7 +153,13 @@ function QuizStartPage() {
           className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-base font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
           style={{ background: gradientFor(category === "all" ? undefined : category) }}
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Zap className="h-5 w-5" /> Start challenge</>}
+          {loading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <Zap className="h-5 w-5" /> Start challenge
+            </>
+          )}
         </motion.button>
 
         <p className="mt-3 flex items-center justify-center gap-1 text-[11px] text-white/40">

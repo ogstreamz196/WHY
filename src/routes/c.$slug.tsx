@@ -29,7 +29,10 @@ export const Route = createFileRoute("/c/$slug")({
     <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
       <div>
         <p className="font-display text-2xl font-black">Something went wrong loading this chain.</p>
-        <Link to="/" className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold">
+        <Link
+          to="/"
+          className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold"
+        >
           Open Why?
         </Link>
       </div>
@@ -38,8 +41,13 @@ export const Route = createFileRoute("/c/$slug")({
   notFoundComponent: () => (
     <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
       <div>
-        <p className="font-display text-2xl font-black">This chain isn't shared (or was removed).</p>
-        <Link to="/" className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold">
+        <p className="font-display text-2xl font-black">
+          This chain isn't shared (or was removed).
+        </p>
+        <Link
+          to="/"
+          className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold"
+        >
           Explore Why?
         </Link>
       </div>
@@ -58,10 +66,15 @@ function PublicChainPage() {
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <div className="mb-4 flex items-center justify-between">
-          <Link to="/" className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/80">
+          <Link
+            to="/"
+            className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/80"
+          >
             🤔 Why?
           </Link>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Shared chain</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+            Shared chain
+          </span>
         </div>
 
         <motion.article
@@ -80,7 +93,10 @@ function PublicChainPage() {
               {avatar?.emoji ?? "🌱"}
             </span>
             <span>
-              by <span className="font-bold text-white/90">{owner?.display_name ?? "a curious explorer"}</span>
+              by{" "}
+              <span className="font-bold text-white/90">
+                {owner?.display_name ?? "a curious explorer"}
+              </span>
             </span>
           </div>
 

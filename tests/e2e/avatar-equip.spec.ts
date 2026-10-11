@@ -59,7 +59,9 @@ test.describe("Avatar equip → profile + leaderboard modal", () => {
       await you.click();
       const modal = page.getByRole("dialog");
       await expect(modal).toBeVisible();
-      await expect(modal.getByText(emoji, { exact: false }).first()).toBeVisible({ timeout: 5_000 });
+      await expect(modal.getByText(emoji, { exact: false }).first()).toBeVisible({
+        timeout: 5_000,
+      });
     }
   });
 });

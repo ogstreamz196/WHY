@@ -44,7 +44,17 @@ describe("asWhyQuestion", () => {
       "the moon glows",
       "cats purr when happy",
     ];
-    const prefixes = ["", "why ", "Why ", "WHY ", "why why ", "Why Why Why ", "wHy wHy ", "do you know why ", "Do You Know Why why "];
+    const prefixes = [
+      "",
+      "why ",
+      "Why ",
+      "WHY ",
+      "why why ",
+      "Why Why Why ",
+      "wHy wHy ",
+      "do you know why ",
+      "Do You Know Why why ",
+    ];
     const puncts = ["", "?", "!", ".", "??", "?!"];
     for (const base of bases) {
       for (const pre of prefixes) {
@@ -99,4 +109,3 @@ describe("asWhyQuestion", () => {
     }
   });
 });
-

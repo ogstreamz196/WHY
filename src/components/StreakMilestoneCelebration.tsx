@@ -73,9 +73,7 @@ export function StreakMilestoneCelebration({ milestone, onClose, source = "unkno
             <p className="mt-3 text-[10px] font-black uppercase tracking-[0.3em] text-orange-200">
               Streak milestone
             </p>
-            <p className="mt-1 font-display text-3xl font-black text-white">
-              {milestone.label}
-            </p>
+            <p className="mt-1 font-display text-3xl font-black text-white">{milestone.label}</p>
             <p className="mt-1 text-lg font-black text-orange-100">
               🔥 {milestone.days}-day streak!
             </p>

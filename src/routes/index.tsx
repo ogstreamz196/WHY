@@ -11,16 +11,44 @@ function notifyAchievements(ids?: string[]) {
 
 const REVEAL_KEYWORDS: Array<{ match: RegExp; label: string; emoji: string }> = [
   { match: /\b(thorn|spike|cactus|rose|prickl)/i, label: "Reveal the Spiky Secret", emoji: "🌵" },
-  { match: /\b(plant|flower|tree|leaf|forest|garden|seed)/i, label: "Grow the Answer", emoji: "🌱" },
-  { match: /\b(build|construct|bridge|tower|architect|crane|cement|brick)/i, label: "Build Me a Fact", emoji: "🏗️" },
-  { match: /\b(space|planet|star|galaxy|moon|rocket|astronaut|orbit)/i, label: "Launch the Answer", emoji: "🚀" },
-  { match: /\b(ocean|sea|fish|shark|whale|water|river|wave|underwater)/i, label: "Dive Into the Answer", emoji: "🌊" },
+  {
+    match: /\b(plant|flower|tree|leaf|forest|garden|seed)/i,
+    label: "Grow the Answer",
+    emoji: "🌱",
+  },
+  {
+    match: /\b(build|construct|bridge|tower|architect|crane|cement|brick)/i,
+    label: "Build Me a Fact",
+    emoji: "🏗️",
+  },
+  {
+    match: /\b(space|planet|star|galaxy|moon|rocket|astronaut|orbit)/i,
+    label: "Launch the Answer",
+    emoji: "🚀",
+  },
+  {
+    match: /\b(ocean|sea|fish|shark|whale|water|river|wave|underwater)/i,
+    label: "Dive Into the Answer",
+    emoji: "🌊",
+  },
   { match: /\b(fire|volcano|lava|flame|burn)/i, label: "Ignite the Answer", emoji: "🔥" },
   { match: /\b(ice|snow|cold|frozen|glacier|arctic)/i, label: "Chill Out the Answer", emoji: "❄️" },
-  { match: /\b(dog|cat|animal|bird|lion|tiger|elephant|monkey|pet)/i, label: "Unleash the Answer", emoji: "🐾" },
+  {
+    match: /\b(dog|cat|animal|bird|lion|tiger|elephant|monkey|pet)/i,
+    label: "Unleash the Answer",
+    emoji: "🐾",
+  },
   { match: /\b(dinosaur|fossil|prehistoric|jurassic)/i, label: "Dig Up the Answer", emoji: "🦖" },
-  { match: /\b(food|eat|cook|recipe|pizza|bread|fruit|vegetable)/i, label: "Taste the Answer", emoji: "🍽️" },
-  { match: /\b(candy|sweet|sugar|chocolate|cake|dessert)/i, label: "Reveal the Sweet Answer", emoji: "🍬" },
+  {
+    match: /\b(food|eat|cook|recipe|pizza|bread|fruit|vegetable)/i,
+    label: "Taste the Answer",
+    emoji: "🍽️",
+  },
+  {
+    match: /\b(candy|sweet|sugar|chocolate|cake|dessert)/i,
+    label: "Reveal the Sweet Answer",
+    emoji: "🍬",
+  },
   { match: /\b(music|song|sound|instrument|guitar|piano)/i, label: "Play the Answer", emoji: "🎵" },
   { match: /\b(sport|game|play|ball|team|race)/i, label: "Score the Answer", emoji: "⚽" },
   { match: /\b(car|train|plane|vehicle|engine|road)/i, label: "Drive to the Answer", emoji: "🚗" },
@@ -28,7 +56,11 @@ const REVEAL_KEYWORDS: Array<{ match: RegExp; label: string; emoji: string }> = 
   { match: /\b(brain|mind|think|memory|dream|sleep)/i, label: "Unlock the Answer", emoji: "🧠" },
   { match: /\b(body|heart|blood|bone|muscle|health)/i, label: "Reveal the Heartbeat", emoji: "❤️" },
   { match: /\b(book|read|story|word|language|write)/i, label: "Turn the Page", emoji: "📖" },
-  { match: /\b(computer|robot|tech|code|internet|phone|app)/i, label: "Boot Up the Answer", emoji: "🤖" },
+  {
+    match: /\b(computer|robot|tech|code|internet|phone|app)/i,
+    label: "Boot Up the Answer",
+    emoji: "🤖",
+  },
   { match: /\b(history|ancient|king|queen|war|empire)/i, label: "Unearth the Answer", emoji: "🏛️" },
   { match: /\b(magic|wizard|dragon|myth|legend)/i, label: "Cast the Answer", emoji: "✨" },
   { match: /\b(weather|rain|storm|cloud|wind|sun)/i, label: "Clear the Skies", emoji: "🌤️" },
@@ -49,14 +81,17 @@ const CATEGORY_REVEAL: Record<string, { label: string; emoji: string }> = {
   psychology: { label: "Read My Mind", emoji: "🧠" },
 };
 
-function getRevealLabel(question?: string, category?: string | null): { label: string; emoji: string } {
+function getRevealLabel(
+  question?: string,
+  category?: string | null,
+): { label: string; emoji: string } {
   if (question) {
-    for (const k of REVEAL_KEYWORDS) if (k.match.test(question)) return { label: k.label, emoji: k.emoji };
+    for (const k of REVEAL_KEYWORDS)
+      if (k.match.test(question)) return { label: k.label, emoji: k.emoji };
   }
   if (category && CATEGORY_REVEAL[category]) return CATEGORY_REVEAL[category];
   return { label: "Reveal the Answer", emoji: "✨" };
 }
-
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -106,7 +141,6 @@ import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
 
-
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth";
 import { useThrottledFlag } from "@/lib/useThrottledFlag";
@@ -133,16 +167,23 @@ import {
   type ChainSummary,
 } from "@/lib/chains.functions";
 
-
 import mascotImg from "@/assets/mascot.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Why? — A pocket-sized universe of curiosity" },
-      { name: "description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
+      {
+        name: "description",
+        content:
+          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
+      },
       { property: "og:title", content: "Why? — A pocket-sized universe of curiosity" },
-      { property: "og:description", content: "Do you know why…? A never-ending stream of child-friendly, fun and educational facts." },
+      {
+        property: "og:description",
+        content:
+          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -151,7 +192,6 @@ export const Route = createFileRoute("/")({
 
   component: WhyApp,
 });
-
 
 type Reaction = "like" | "love" | null;
 
@@ -175,7 +215,6 @@ function WhyApp() {
   const { user, isGuest } = useCurrentUser();
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
-
 
   const [fact, setFact] = useState<Fact | null>(null);
   const [loading, setLoading] = useState(true);
@@ -203,16 +242,21 @@ function WhyApp() {
 
   const missionMarkerRef = useRef<null | ((t: MissionTask) => void)>(null);
   const markMissionServer = useServerFn(markMissionTask);
-  const markMission = useCallback((t: MissionTask) => {
-    if (missionMarkerRef.current) missionMarkerRef.current(t);
-    else if (user) markMissionServer({ data: { task: t } }).catch(() => {});
-  }, [markMissionServer, user]);
+  const markMission = useCallback(
+    (t: MissionTask) => {
+      if (missionMarkerRef.current) missionMarkerRef.current(t);
+      else if (user) markMissionServer({ data: { task: t } }).catch(() => {});
+    },
+    [markMissionServer, user],
+  );
 
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
   const lastMilestone = useRef<number>(0);
 
-  const [chain, setChain] = useState<{ question: string; answer: string; terminal?: boolean }[]>([]);
+  const [chain, setChain] = useState<{ question: string; answer: string; terminal?: boolean }[]>(
+    [],
+  );
   const [chainLoading, setChainLoading] = useState(false);
   const [chainDwellKey, setChainDwellKey] = useState<string | null>(null);
   const chainRewardedRef = useRef<Set<string>>(new Set());
@@ -228,7 +272,6 @@ function WhyApp() {
     setLevel(Math.max(1, Math.floor(p / 100) + 1));
     setStreak(getStreak());
   }, []);
-
 
   // On sign-in: migrate any local guest state up to the server (once), then load
   // authoritative profile + stats from the server.
@@ -277,9 +320,10 @@ function WhyApp() {
         console.warn("account load failed", e);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, migrateGuest, fetchProfile, fetchStats, fetchLastChain]);
-
 
   const grantPoints = useCallback((delta: number) => {
     const prev = getPoints();
@@ -349,8 +393,13 @@ function WhyApp() {
             next = await generateNew({
               data: { category: cat, seenIds: seen, force: opts?.forceGenerate },
             });
-          } catch (e) { console.warn(e); }
-          if (next) { tapCount.current = 0; nextGenAt.current = 4 + Math.floor(Math.random() * 7); }
+          } catch (e) {
+            console.warn(e);
+          }
+          if (next) {
+            tapCount.current = 0;
+            nextGenAt.current = 4 + Math.floor(Math.random() * 7);
+          }
         }
         if (!next) {
           const cached = getCachedRandomFact(currentId);
@@ -364,8 +413,10 @@ function WhyApp() {
       } catch (err) {
         console.error(err);
         const cached = getCachedRandomFact(currentId);
-        if (cached) { showFact(cached); setError("You're offline — showing a cached fact."); }
-        else setError("Couldn't load a fact. Try again.");
+        if (cached) {
+          showFact(cached);
+          setError("You're offline — showing a cached fact.");
+        } else setError("Couldn't load a fact. Try again.");
       } finally {
         setLoading(false);
       }
@@ -394,11 +445,20 @@ function WhyApp() {
   // Guarded by chainRewardedRef so a single dwell session can only award once
   // per chain layer, even if the effect re-runs.
   useEffect(() => {
-    if (chain.length === 0) { setChainDwellKey(null); return; }
+    if (chain.length === 0) {
+      setChainDwellKey(null);
+      return;
+    }
     const last = chain[chain.length - 1];
-    if (!last?.answer) { setChainDwellKey(null); return; }
+    if (!last?.answer) {
+      setChainDwellKey(null);
+      return;
+    }
     const key = `${fact?.id ?? "x"}::${chain.length}`;
-    if (chainRewardedRef.current.has(key)) { setChainDwellKey(null); return; }
+    if (chainRewardedRef.current.has(key)) {
+      setChainDwellKey(null);
+      return;
+    }
     setChainDwellKey(key);
     const t = window.setTimeout(() => {
       if (chainRewardedRef.current.has(key)) return;
@@ -408,9 +468,6 @@ function WhyApp() {
     }, 3000);
     return () => window.clearTimeout(t);
   }, [chain.length, chain, fact?.id, grantPoints]);
-
-
-
 
   // Guests are never force-redirected into an OAuth flow — that navigates the
   // whole page away before they can read anything. Instead we surface a gentle,
@@ -433,14 +490,17 @@ function WhyApp() {
   useEffect(() => {
     if (user) return;
     const REPROMPT_MS = 5 * 60_000;
-    const t = window.setInterval(() => { guestNudge(); }, REPROMPT_MS);
+    const t = window.setInterval(() => {
+      guestNudge();
+    }, REPROMPT_MS);
     return () => window.clearInterval(t);
   }, [user, guestNudge]);
 
-
-  useEffect(() => { void loadNext(); /* eslint-disable-line */ }, []);
   useEffect(() => {
-    void loadNext(fact?.id); /* eslint-disable-line */
+    void loadNext();
+  }, []);
+  useEffect(() => {
+    void loadNext(fact?.id);
     if (user && category !== "all") {
       bumpInterest({ data: { category, delta: 1 } }).catch(() => {});
     }
@@ -484,9 +544,11 @@ function WhyApp() {
         // Coins deferred to the 3s dwell timer (see effect above) so users
         // can't farm by mashing "But… Why?" — reward only on actual reading.
       }
-
-    } catch (e) { console.warn(e); }
-    finally { setChainLoading(false); }
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setChainLoading(false);
+    }
   };
 
   const handleSaveChain = async () => {
@@ -535,8 +597,13 @@ function WhyApp() {
     const text = `🤔 WHY?\n\n${asWhyQuestion(fact.question)}\n\nTap to discover.\n${url}`;
     try {
       if (navigator.share) await navigator.share({ title: "Why?", text, url });
-      else { await navigator.clipboard.writeText(text); alert("Copied to clipboard!"); }
-    } catch { /* cancelled */ }
+      else {
+        await navigator.clipboard.writeText(text);
+        alert("Copied to clipboard!");
+      }
+    } catch {
+      /* cancelled */
+    }
   };
 
   const handleFav = () => {
@@ -551,10 +618,15 @@ function WhyApp() {
       const count = Number(sessionStorage.getItem(nudgeKey) ?? "0") + 1;
       sessionStorage.setItem(nudgeKey, String(count));
       toast.success("Saved on this device", {
-        description: count % 3 === 1 ? "Sign up to keep favourites across every device." : undefined,
-        action: count % 3 === 1
-          ? { label: "Sign up", onClick: () => navigate({ to: "/auth", search: { mode: "signup", redirect: "/" } }) }
-          : undefined,
+        description:
+          count % 3 === 1 ? "Sign up to keep favourites across every device." : undefined,
+        action:
+          count % 3 === 1
+            ? {
+                label: "Sign up",
+                onClick: () => navigate({ to: "/auth", search: { mode: "signup", redirect: "/" } }),
+              }
+            : undefined,
       });
     }
   };
@@ -567,11 +639,17 @@ function WhyApp() {
     setError(null);
     try {
       const f = await searchOrGen({ data: { query: q } });
-      if (f) { showFact(f); setSearch(""); setSearchOpen(false); }
-      else setError("Couldn't find or make a fact for that. Try another question!");
+      if (f) {
+        showFact(f);
+        setSearch("");
+        setSearchOpen(false);
+      } else setError("Couldn't find or make a fact for that. Try another question!");
     } catch (err) {
-      console.error(err); setError("Search failed. Try again in a moment.");
-    } finally { setSearching(false); }
+      console.error(err);
+      setError("Search failed. Try again in a moment.");
+    } finally {
+      setSearching(false);
+    }
   };
 
   const levelXP = points % 100;
@@ -599,7 +677,9 @@ function WhyApp() {
               <div className="glass flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <Flame className="h-4 w-4 text-orange-400" />
                 <span className="text-sm font-black text-white">{streak}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">day</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
+                  day
+                </span>
               </div>
               <Link
                 to={user ? "/profile" : "/auth"}
@@ -607,22 +687,37 @@ function WhyApp() {
                 className="glass flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl overflow-hidden active:scale-95 transition"
               >
                 {user ? (
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl text-lg" style={{ background: "var(--gradient-primary)" }}>
-                    <span className="font-black text-white">{(displayName ?? user.email ?? "?").slice(0, 1).toUpperCase()}</span>
+                  <span
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-lg"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
+                    <span className="font-black text-white">
+                      {(displayName ?? user.email ?? "?").slice(0, 1).toUpperCase()}
+                    </span>
                   </span>
                 ) : (
-                  <img src={mascotImg} alt="" loading="lazy" decoding="async" className="h-10 w-10 object-contain animate-float-slow" />
+                  <img
+                    src={mascotImg}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="h-10 w-10 object-contain animate-float-slow"
+                  />
                 )}
               </Link>
               <div className="glass flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <CoinIcon size={16} />
-                <motion.span key={points} initial={{ scale: 1.4, y: -4 }} animate={{ scale: 1, y: 0 }} className="text-sm font-black text-white">
+                <motion.span
+                  key={points}
+                  initial={{ scale: 1.4, y: -4 }}
+                  animate={{ scale: 1, y: 0 }}
+                  className="text-sm font-black text-white"
+                >
                   {points}
                 </motion.span>
               </div>
             </div>
           </div>
-
 
           {/* XP bar */}
           <div className="flex items-center gap-2">
@@ -690,7 +785,13 @@ function WhyApp() {
             discoveries={getSeen()}
             streak={streak}
             points={points}
-            onSignUp={() => setSignInPrompt({ title: "Save your curiosity", message: "Create a free account to keep your streak, coins, favourites and daily rewards forever." })}
+            onSignUp={() =>
+              setSignInPrompt({
+                title: "Save your curiosity",
+                message:
+                  "Create a free account to keep your streak, coins, favourites and daily rewards forever.",
+              })
+            }
           />
         )}
 
@@ -716,7 +817,9 @@ function WhyApp() {
               </motion.span>
               <span>
                 <span className="block text-sm font-black text-white">Daily login bonus</span>
-                <span className="block text-xs text-white/70">Tap to claim today's curiosity reward</span>
+                <span className="block text-xs text-white/70">
+                  Tap to claim today's curiosity reward
+                </span>
               </span>
             </span>
             <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-black text-amber-200">
@@ -733,13 +836,20 @@ function WhyApp() {
             params={{ id: lastChain.id }}
             className="mb-3 flex items-center gap-3 rounded-2xl border border-fuchsia-400/25 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 px-4 py-3"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg" style={{ background: "var(--gradient-primary)" }}>
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg"
+              style={{ background: "var(--gradient-primary)" }}
+            >
               🧵
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">Continue your favourite</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">
+                Continue your favourite
+              </div>
               <div className="truncate text-sm font-bold text-white">
-                {lastChain.title ?? lastChain.last_question ?? "Pick up your favourite where you left off"}
+                {lastChain.title ??
+                  lastChain.last_question ??
+                  "Pick up your favourite where you left off"}
               </div>
               <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
             </div>
@@ -750,19 +860,10 @@ function WhyApp() {
         <DailyMission
           onOpenCategory={(k) => setCategory(k as CategoryKey)}
           onCelebrate={(pts) => setCelebrate({ points: pts })}
-          registerMarker={(fn) => { missionMarkerRef.current = fn; }}
+          registerMarker={(fn) => {
+            missionMarkerRef.current = fn;
+          }}
         />
-
-
-
-
-
-
-
-
-
-
-
 
         <DailyChallenge
           onCompleted={(r) => {
@@ -780,7 +881,6 @@ function WhyApp() {
 
         {/* ── FACT CARD ───────────────────────────────────── */}
         <section className="flex flex-1 flex-col">
-
           <AnimatePresence mode="wait">
             <motion.div
               key={fact?.id ?? "loading"}
@@ -797,334 +897,369 @@ function WhyApp() {
                 style={{ background: catGradient }}
               />
               <div className="candy-rainbow-border">
-              <article className="glass-strong relative overflow-hidden p-5 shadow-[var(--shadow-card)] sm:p-6 md:p-8 lg:p-10">
-                {/* Candy sprinkles falling behind content */}
-                <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-                  {[
-                    { left: "8%",  delay: "0s",   color: "#ff5fa2" },
-                    { left: "22%", delay: "1.1s", color: "#ffd93d" },
-                    { left: "38%", delay: "2.3s", color: "#6bd968" },
-                    { left: "55%", delay: "0.6s", color: "#4ea8ff" },
-                    { left: "71%", delay: "1.8s", color: "#c471ff" },
-                    { left: "88%", delay: "2.9s", color: "#ff9a3c" },
-                  ].map((s, i) => (
+                <article className="glass-strong relative overflow-hidden p-5 shadow-[var(--shadow-card)] sm:p-6 md:p-8 lg:p-10">
+                  {/* Candy sprinkles falling behind content */}
+                  <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                    {[
+                      { left: "8%", delay: "0s", color: "#ff5fa2" },
+                      { left: "22%", delay: "1.1s", color: "#ffd93d" },
+                      { left: "38%", delay: "2.3s", color: "#6bd968" },
+                      { left: "55%", delay: "0.6s", color: "#4ea8ff" },
+                      { left: "71%", delay: "1.8s", color: "#c471ff" },
+                      { left: "88%", delay: "2.9s", color: "#ff9a3c" },
+                    ].map((s, i) => (
+                      <span
+                        key={i}
+                        className="candy-sprinkle"
+                        style={{
+                          left: s.left,
+                          background: s.color,
+                          animationDelay: s.delay,
+                          transform: `rotate(${i * 40}deg)`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {/* Speech-bubble tag */}
+                  <div className="relative mb-4 flex flex-wrap items-center gap-3 sm:mb-5">
+                    <div className="candy-chip animate-fade-up inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-2.5">
+                      <span aria-hidden className="shrink-0 text-lg">
+                        🍭
+                      </span>
+                      <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
+                        Curious?
+                      </span>
+                    </div>
                     <span
-                      key={i}
-                      className="candy-sprinkle"
-                      style={{ left: s.left, background: s.color, animationDelay: s.delay, transform: `rotate(${i * 40}deg)` }}
-                    />
-                  ))}
-                </div>
-                {/* Speech-bubble tag */}
-                <div className="relative mb-4 flex flex-wrap items-center gap-3 sm:mb-5">
-                  <div className="candy-chip animate-fade-up inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-2.5">
-                    <span aria-hidden className="shrink-0 text-lg">🍭</span>
-                    <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
-                      Curious?
+                      className="animate-bounce-in ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11 md:h-12 md:w-12 md:text-2xl"
+                      style={{ background: catGradient }}
+                      aria-label={fact?.category ?? "category"}
+                    >
+                      {emojiFor(fact?.category)}
                     </span>
                   </div>
-                  <span
-                    className="animate-bounce-in ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11 md:h-12 md:w-12 md:text-2xl"
-                    style={{ background: catGradient }}
-                    aria-label={fact?.category ?? "category"}
-                  >
-                    {emojiFor(fact?.category)}
-                  </span>
-                </div>
 
-
-
-
-                <AnimatePresence mode="wait" initial={false}>
-                {showSkeleton ? (
-                  <motion.div
-                    key="skeleton"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <FactSkeleton />
-                  </motion.div>
-                ) : !fact ? (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-center space-y-4"
-                  >
-                    <p className="text-lg text-white/80">
-                      {error ?? "No fact yet — let's find one for you."}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => void loadNext(undefined, { forceGenerate: false })}
-                      className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-white hover:bg-white/20 transition"
-                    >
-                      Try again
-                    </button>
-                  </motion.div>
-
-                ) : fact ? (
-                  <motion.div
-                    key={`fact-${fact.id}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(2rem,7vw,4rem)] [text-wrap:balance] break-words hyphens-auto">
-                      {asWhyQuestion(fact.question)}
-                    </h1>
-
-
-
-                    <AnimatePresence initial={false} mode="wait">
-                      {!revealed ? (
-                        <motion.div
-                          key="cta"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="mt-6 flex flex-col items-center"
+                  <AnimatePresence mode="wait" initial={false}>
+                    {showSkeleton ? (
+                      <motion.div
+                        key="skeleton"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <FactSkeleton />
+                      </motion.div>
+                    ) : !fact ? (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-center space-y-4"
+                      >
+                        <p className="text-lg text-white/80">
+                          {error ?? "No fact yet — let's find one for you."}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => void loadNext(undefined, { forceGenerate: false })}
+                          className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-white hover:bg-white/20 transition"
                         >
-                          <motion.div
-                            initial={{ scale: 0.4, rotate: -20, opacity: 0 }}
-                            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 12 }}
-                            whileHover={{ scale: 1.08, rotate: 6 }}
-                            whileTap={{ scale: 0.92, rotate: -6 }}
-                            className="candy-emoji-orb mb-4 flex h-32 w-32 items-center justify-center rounded-full text-6xl cursor-grab active:cursor-grabbing"
-                            aria-label={fact.category ?? "question icon"}
-                          >
-                            <span>{emojiFor(fact.category)}</span>
-                          </motion.div>
-                          <motion.button
-                            type="button"
-                            onClick={reveal}
-                            disabled={revealing}
-                            layout
-                            whileHover={{ scale: 1.03, rotate: -1 }}
-                            whileTap={{ scale: 0.94 }}
-                            animate={
-                              revealing
-                                ? { scale: [1, 1.06, 0.88, 1.02], rotate: [0, -2, 2, 0] }
-                                : { scale: 1 }
-                            }
-                            transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-                            className="candy-btn group relative w-full overflow-hidden rounded-full px-5 py-4 text-lg font-black uppercase tracking-wide text-white"
-                          >
-                            <span aria-hidden className="shine-sweep" />
-                            {revealing && (
-                              <motion.span
-                                aria-hidden
-                                initial={{ x: "-100%" }}
-                                animate={{ x: "0%" }}
-                                transition={{ duration: 0.46, ease: "easeOut" }}
-                                className="absolute inset-0 bg-white/30"
-                              />
-                            )}
-                            <span className="relative z-10 inline-flex items-center gap-2">
-                              <motion.span
-                                animate={
-                                  revealing
-                                    ? { rotate: 720, scale: 1.5 }
-                                    : { rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] }
-                                }
-                                transition={
-                                  revealing
-                                    ? { duration: 0.5, ease: "easeOut" }
-                                    : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-                                }
-                                className="inline-flex"
-                              >
-                                <Sparkles className="h-5 w-5" />
-                              </motion.span>
-                              {(() => {
-                                const rv = getRevealLabel(fact.question, fact.category);
-                                return <>
-                                  {revealing ? "Unwrapping…" : rv.label}
-                                  <span aria-hidden className="text-xl">{rv.emoji}</span>
-                                </>;
-                              })()}
-                            </span>
+                          Try again
+                        </button>
+                      </motion.div>
+                    ) : fact ? (
+                      <motion.div
+                        key={`fact-${fact.id}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                      >
+                        <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(2rem,7vw,4rem)] [text-wrap:balance] break-words hyphens-auto">
+                          {asWhyQuestion(fact.question)}
+                        </h1>
 
-
-                          </motion.button>
-                          <p className="mt-3 text-xs font-bold text-white/70">
-                            <span aria-hidden>🎉</span> Tap the candy button — go on! <span aria-hidden>🎉</span>
-                          </p>
-
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          key="answer"
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4 }}
-                          className="mt-5 space-y-4"
-                        >
-                          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                              ✨ Answer
-                            </p>
-                            <p className="mt-2 font-fun font-medium leading-snug text-white text-[clamp(1.35rem,3.6vw,1.9rem)]">
-                              <TalkingWords text={fact.answer} />
-                            </p>
-                          </div>
-
-                          {fact.fun_fact && (
+                        <AnimatePresence initial={false} mode="wait">
+                          {!revealed ? (
                             <motion.div
-                              initial={{ opacity: 0, y: 8 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.15 }}
-                              className="rounded-3xl border p-4"
-                              style={{
-                                background: "linear-gradient(135deg, oklch(0.28 0.10 40 / 0.3), oklch(0.30 0.14 340 / 0.3))",
-                                borderColor: "oklch(0.72 0.20 40 / 0.35)",
-                              }}
+                              key="cta"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              className="mt-6 flex flex-col items-center"
                             >
-                              <p className="text-[10px] font-black uppercase tracking-widest text-yellow-300">
-                                ⭐ Fun fact
-                              </p>
-                              <p className="mt-1.5 font-fun font-medium leading-snug text-white/95 text-[clamp(1.1rem,2.8vw,1.4rem)]">
-                                {fact.fun_fact}
-                              </p>
-                            </motion.div>
-                          )}
-
-                          {/* Discovery signals */}
-                          <div className="grid grid-cols-4 gap-2">
-                            <SignalBtn
-                              active={reaction === "love"}
-                              onClick={() => { setReaction("love"); if (reaction !== "love") grantPoints(1); }}
-                              tone="pink"
-                              icon={<Heart className={`h-5 w-5 ${reaction === "love" ? "fill-current" : ""}`} />}
-                              label="Love"
-                            />
-                            <SignalBtn
-                              active={reaction === "like"}
-                              onClick={() => { setReaction("like"); if (reaction !== "like") grantPoints(1); }}
-                              tone="amber"
-                              icon={<Star className={`h-5 w-5 ${reaction === "like" ? "fill-current" : ""}`} />}
-                              label="Rate"
-                            />
-                            <SignalBtn
-                              active={false}
-                              onClick={handleShare}
-                              tone="cyan"
-                              icon={<Share2 className="h-5 w-5" />}
-                              label="Share"
-                            />
-                            <SignalBtn
-                              active={fav}
-                              onClick={handleFav}
-                              tone="violet"
-                              icon={fav ? <BookmarkCheck className="h-5 w-5" /> : <BookmarkPlus className="h-5 w-5" />}
-                              label={fav ? "Saved" : "Save"}
-                            />
-                          </div>
-
-                          {/* ── ENDLESS "BUT… WHY?" CHAIN ── */}
-                          {(chain.length > 0 || true) && (
-                            <div className="pt-2">
-
-                              <ol className="relative space-y-3 pl-9">
-                                <span
-                                  aria-hidden
-                                  className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
-                                />
-                                <ChainStep index={0} question={asWhyQuestion(fact.question)} solved />
-                                {chain.map((layer, i) => {
-                                  const isLast = i === chain.length - 1;
-                                  const key = `${fact?.id ?? "x"}::${i + 1}`;
-                                  const rewarded = chainRewardedRef.current.has(key);
-                                  const counting = isLast && chainDwellKey === key;
-                                  return (
-                                    <ChainStep
-                                      key={i}
-                                      index={i + 1}
-                                      question={layer.question}
-                                      answer={layer.answer}
-                                      counting={counting}
-                                      rewarded={rewarded}
-                                    />
-                                  );
-                                })}
-
-                                {chainLoading && (
-                                  <li className="relative">
-                                    <span className="absolute -left-9 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/60">
-                                      …
-                                    </span>
-                                    <p className="text-sm italic text-white/60">Digging deeper…</p>
-                                  </li>
-                                )}
-                              </ol>
-
+                              <motion.div
+                                initial={{ scale: 0.4, rotate: -20, opacity: 0 }}
+                                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                                transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                                whileHover={{ scale: 1.08, rotate: 6 }}
+                                whileTap={{ scale: 0.92, rotate: -6 }}
+                                className="candy-emoji-orb mb-4 flex h-32 w-32 items-center justify-center rounded-full text-6xl cursor-grab active:cursor-grabbing"
+                                aria-label={fact.category ?? "question icon"}
+                              >
+                                <span>{emojiFor(fact.category)}</span>
+                              </motion.div>
                               <motion.button
                                 type="button"
-                                onClick={askWhy}
-                                disabled={chainLoading || chain.length >= 6 || chain[chain.length - 1]?.terminal}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.96 }}
-                                className="candy-btn font-fun mt-4 flex min-h-16 w-full items-center justify-center gap-3 rounded-full px-6 py-3 text-[clamp(1.15rem,3vw,1.5rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
+                                onClick={reveal}
+                                disabled={revealing}
+                                layout
+                                whileHover={{ scale: 1.03, rotate: -1 }}
+                                whileTap={{ scale: 0.94 }}
+                                animate={
+                                  revealing
+                                    ? { scale: [1, 1.06, 0.88, 1.02], rotate: [0, -2, 2, 0] }
+                                    : { scale: 1 }
+                                }
+                                transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+                                className="candy-btn group relative w-full overflow-hidden rounded-full px-5 py-4 text-lg font-black uppercase tracking-wide text-white"
                               >
-                                {chain.length >= 6
-                                  ? "🌌 You've reached the bottom of the rabbit hole"
-                                  : chainLoading
-                                    ? "Diving deeper…"
-                                    : <><span aria-hidden>🤔</span> But… Why?</>}
+                                <span aria-hidden className="shine-sweep" />
+                                {revealing && (
+                                  <motion.span
+                                    aria-hidden
+                                    initial={{ x: "-100%" }}
+                                    animate={{ x: "0%" }}
+                                    transition={{ duration: 0.46, ease: "easeOut" }}
+                                    className="absolute inset-0 bg-white/30"
+                                  />
+                                )}
+                                <span className="relative z-10 inline-flex items-center gap-2">
+                                  <motion.span
+                                    animate={
+                                      revealing
+                                        ? { rotate: 720, scale: 1.5 }
+                                        : { rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] }
+                                    }
+                                    transition={
+                                      revealing
+                                        ? { duration: 0.5, ease: "easeOut" }
+                                        : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+                                    }
+                                    className="inline-flex"
+                                  >
+                                    <Sparkles className="h-5 w-5" />
+                                  </motion.span>
+                                  {(() => {
+                                    const rv = getRevealLabel(fact.question, fact.category);
+                                    return (
+                                      <>
+                                        {revealing ? "Unwrapping…" : rv.label}
+                                        <span aria-hidden className="text-xl">
+                                          {rv.emoji}
+                                        </span>
+                                      </>
+                                    );
+                                  })()}
+                                </span>
                               </motion.button>
+                              <p className="mt-3 text-xs font-bold text-white/70">
+                                <span aria-hidden>🎉</span> Tap the candy button — go on!{" "}
+                                <span aria-hidden>🎉</span>
+                              </p>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="answer"
+                              initial={{ opacity: 0, y: 12 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.4 }}
+                              className="mt-5 space-y-4"
+                            >
+                              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                                  ✨ Answer
+                                </p>
+                                <p className="mt-2 font-fun font-medium leading-snug text-white text-[clamp(1.35rem,3.6vw,1.9rem)]">
+                                  <TalkingWords text={fact.answer} />
+                                </p>
+                              </div>
 
-                              {chain.length > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={handleSaveChain}
-                                  disabled={savingChain || !!savedChainId}
-                                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-3 text-xs font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-60"
+                              {fact.fun_fact && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.15 }}
+                                  className="rounded-3xl border p-4"
+                                  style={{
+                                    background:
+                                      "linear-gradient(135deg, oklch(0.28 0.10 40 / 0.3), oklch(0.30 0.14 340 / 0.3))",
+                                    borderColor: "oklch(0.72 0.20 40 / 0.35)",
+                                  }}
                                 >
-                                  {savedChainId ? "✓ Saved to Favourites" : savingChain ? "Saving…" : "💖 Save to Favourites"}
-                                </button>
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-yellow-300">
+                                    ⭐ Fun fact
+                                  </p>
+                                  <p className="mt-1.5 font-fun font-medium leading-snug text-white/95 text-[clamp(1.1rem,2.8vw,1.4rem)]">
+                                    {fact.fun_fact}
+                                  </p>
+                                </motion.div>
                               )}
-                            </div>
+
+                              {/* Discovery signals */}
+                              <div className="grid grid-cols-4 gap-2">
+                                <SignalBtn
+                                  active={reaction === "love"}
+                                  onClick={() => {
+                                    setReaction("love");
+                                    if (reaction !== "love") grantPoints(1);
+                                  }}
+                                  tone="pink"
+                                  icon={
+                                    <Heart
+                                      className={`h-5 w-5 ${reaction === "love" ? "fill-current" : ""}`}
+                                    />
+                                  }
+                                  label="Love"
+                                />
+                                <SignalBtn
+                                  active={reaction === "like"}
+                                  onClick={() => {
+                                    setReaction("like");
+                                    if (reaction !== "like") grantPoints(1);
+                                  }}
+                                  tone="amber"
+                                  icon={
+                                    <Star
+                                      className={`h-5 w-5 ${reaction === "like" ? "fill-current" : ""}`}
+                                    />
+                                  }
+                                  label="Rate"
+                                />
+                                <SignalBtn
+                                  active={false}
+                                  onClick={handleShare}
+                                  tone="cyan"
+                                  icon={<Share2 className="h-5 w-5" />}
+                                  label="Share"
+                                />
+                                <SignalBtn
+                                  active={fav}
+                                  onClick={handleFav}
+                                  tone="violet"
+                                  icon={
+                                    fav ? (
+                                      <BookmarkCheck className="h-5 w-5" />
+                                    ) : (
+                                      <BookmarkPlus className="h-5 w-5" />
+                                    )
+                                  }
+                                  label={fav ? "Saved" : "Save"}
+                                />
+                              </div>
+
+                              {/* ── ENDLESS "BUT… WHY?" CHAIN ── */}
+                              {(chain.length > 0 || true) && (
+                                <div className="pt-2">
+                                  <ol className="relative space-y-3 pl-9">
+                                    <span
+                                      aria-hidden
+                                      className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
+                                    />
+                                    <ChainStep
+                                      index={0}
+                                      question={asWhyQuestion(fact.question)}
+                                      solved
+                                    />
+                                    {chain.map((layer, i) => {
+                                      const isLast = i === chain.length - 1;
+                                      const key = `${fact?.id ?? "x"}::${i + 1}`;
+                                      const rewarded = chainRewardedRef.current.has(key);
+                                      const counting = isLast && chainDwellKey === key;
+                                      return (
+                                        <ChainStep
+                                          key={i}
+                                          index={i + 1}
+                                          question={layer.question}
+                                          answer={layer.answer}
+                                          counting={counting}
+                                          rewarded={rewarded}
+                                        />
+                                      );
+                                    })}
+
+                                    {chainLoading && (
+                                      <li className="relative">
+                                        <span className="absolute -left-9 top-1 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-black text-white/60">
+                                          …
+                                        </span>
+                                        <p className="text-sm italic text-white/60">
+                                          Digging deeper…
+                                        </p>
+                                      </li>
+                                    )}
+                                  </ol>
+
+                                  <motion.button
+                                    type="button"
+                                    onClick={askWhy}
+                                    disabled={
+                                      chainLoading ||
+                                      chain.length >= 6 ||
+                                      chain[chain.length - 1]?.terminal
+                                    }
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.96 }}
+                                    className="candy-btn font-fun mt-4 flex min-h-16 w-full items-center justify-center gap-3 rounded-full px-6 py-3 text-[clamp(1.15rem,3vw,1.5rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
+                                  >
+                                    {chain.length >= 6 ? (
+                                      "🌌 You've reached the bottom of the rabbit hole"
+                                    ) : chainLoading ? (
+                                      "Diving deeper…"
+                                    ) : (
+                                      <>
+                                        <span aria-hidden>🤔</span> But… Why?
+                                      </>
+                                    )}
+                                  </motion.button>
+
+                                  {chain.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={handleSaveChain}
+                                      disabled={savingChain || !!savedChainId}
+                                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-3 text-xs font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-60"
+                                    >
+                                      {savedChainId
+                                        ? "✓ Saved to Favourites"
+                                        : savingChain
+                                          ? "Saving…"
+                                          : "💖 Save to Favourites"}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </motion.div>
                           )}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ) : (
-                  <motion.p
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-center text-white/70"
-                  >
-                    No facts yet. Tap Next!
-                  </motion.p>
-                )}
-                </AnimatePresence>
+                        </AnimatePresence>
+                      </motion.div>
+                    ) : (
+                      <motion.p
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-center text-white/70"
+                      >
+                        No facts yet. Tap Next!
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
 
-                {error && fact && (
-                  <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
-                )}
-              </article>
+                  {error && fact && (
+                    <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
+                  )}
+                </article>
               </div>
-
             </motion.div>
           </AnimatePresence>
 
           {/* Category bubbles */}
-          <CategoryScroller
-            categories={CATEGORIES}
-            activeKey={category}
-            onSelect={setCategory}
-          />
-
+          <CategoryScroller categories={CATEGORIES} activeKey={category} onSelect={setCategory} />
         </section>
 
         {/* Giant Next button (sticky above bottom nav) */}
@@ -1151,28 +1286,37 @@ function WhyApp() {
 
         {user && (
           <section aria-labelledby="curiosity-challenge-title">
-            <h2 id="curiosity-challenge-title" className="sr-only">Curiosity Challenge</h2>
+            <h2 id="curiosity-challenge-title" className="sr-only">
+              Curiosity Challenge
+            </h2>
             <Link
               to="/quiz"
               aria-label="Curiosity Challenge — take a quiz and climb the leaderboard"
               className="mt-2 mb-4 flex items-center gap-3 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/15 to-violet-500/15 p-4 shadow-[0_0_24px_rgba(236,72,153,0.15)] transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/80"
             >
-              <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl shadow" style={{ background: "var(--gradient-primary)" }}>
+              <span
+                aria-hidden
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl shadow"
+                style={{ background: "var(--gradient-primary)" }}
+              >
                 🏆
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-200/80">Curiosity Challenge</div>
-                <div className="truncate text-sm font-bold text-white">Take a quiz · climb the leaderboard</div>
-                <div className="text-[10px] text-white/50">Correct +10 · Fast bonus · Perfect ×1.5</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-amber-200/80">
+                  Curiosity Challenge
+                </div>
+                <div className="truncate text-sm font-bold text-white">
+                  Take a quiz · climb the leaderboard
+                </div>
+                <div className="text-[10px] text-white/50">
+                  Correct +10 · Fast bonus · Perfect ×1.5
+                </div>
               </div>
               <ArrowRight aria-hidden className="h-4 w-4 text-white/60" />
             </Link>
           </section>
         )}
-
-
       </div>
-
 
       {showSkeleton && !fact ? <BottomNavSkeleton /> : <BottomNav />}
       <Celebration
@@ -1215,7 +1359,11 @@ function WhyApp() {
 // ── UI atoms ──────────────────────────────────────────────
 
 function SignalBtn({
-  active, onClick, icon, label, tone,
+  active,
+  onClick,
+  icon,
+  label,
+  tone,
 }: {
   active: boolean;
   onClick: () => void;
@@ -1224,10 +1372,26 @@ function SignalBtn({
   tone: "pink" | "amber" | "cyan" | "violet";
 }) {
   const tones: Record<string, { bg: string; ring: string; text: string }> = {
-    pink:   { bg: "oklch(0.30 0.16 340 / 0.25)", ring: "oklch(0.72 0.24 340)", text: "text-pink-300" },
-    amber:  { bg: "oklch(0.30 0.14 60 / 0.25)",  ring: "oklch(0.80 0.18 80)",  text: "text-yellow-300" },
-    cyan:   { bg: "oklch(0.30 0.14 200 / 0.25)", ring: "oklch(0.72 0.20 200)", text: "text-cyan-300" },
-    violet: { bg: "oklch(0.30 0.14 300 / 0.25)", ring: "oklch(0.72 0.22 305)", text: "text-violet-300" },
+    pink: {
+      bg: "oklch(0.30 0.16 340 / 0.25)",
+      ring: "oklch(0.72 0.24 340)",
+      text: "text-pink-300",
+    },
+    amber: {
+      bg: "oklch(0.30 0.14 60 / 0.25)",
+      ring: "oklch(0.80 0.18 80)",
+      text: "text-yellow-300",
+    },
+    cyan: {
+      bg: "oklch(0.30 0.14 200 / 0.25)",
+      ring: "oklch(0.72 0.20 200)",
+      text: "text-cyan-300",
+    },
+    violet: {
+      bg: "oklch(0.30 0.14 300 / 0.25)",
+      ring: "oklch(0.72 0.22 305)",
+      text: "text-violet-300",
+    },
   };
   const t = tones[tone];
   return (
@@ -1250,7 +1414,12 @@ function SignalBtn({
 }
 
 function ChainStep({
-  index, question, answer, solved, counting, rewarded,
+  index,
+  question,
+  answer,
+  solved,
+  counting,
+  rewarded,
 }: {
   index: number;
   question: string;
@@ -1269,15 +1438,21 @@ function ChainStep({
       <span
         className="absolute -left-9 top-0.5 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-white shadow-lg"
         style={{
-          background: solved ? "linear-gradient(135deg, oklch(0.72 0.18 155), oklch(0.72 0.22 195))" : "var(--gradient-primary)",
+          background: solved
+            ? "linear-gradient(135deg, oklch(0.72 0.18 155), oklch(0.72 0.22 195))"
+            : "var(--gradient-primary)",
         }}
       >
         {solved ? "✓" : index}
       </span>
       <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-        <p className="font-fun font-semibold text-white text-[clamp(1.05rem,2.6vw,1.3rem)]">{question}</p>
+        <p className="font-fun font-semibold text-white text-[clamp(1.05rem,2.6vw,1.3rem)]">
+          {question}
+        </p>
         {answer && (
-          <p className="mt-1.5 font-fun text-white/85 text-[clamp(0.95rem,2.3vw,1.15rem)]">{answer}</p>
+          <p className="mt-1.5 font-fun text-white/85 text-[clamp(0.95rem,2.3vw,1.15rem)]">
+            {answer}
+          </p>
         )}
         {answer && (counting || rewarded) && (
           <div className="mt-2.5" aria-live="polite">
@@ -1310,7 +1485,6 @@ function ChainStep({
   );
 }
 
-
 function ShimmerBar({ className = "" }: { className?: string }) {
   return (
     <div className={`relative overflow-hidden rounded-xl bg-white/[0.06] ${className}`}>
@@ -1326,12 +1500,7 @@ function ShimmerBar({ className = "" }: { className?: string }) {
 
 function FactSkeleton() {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label="Loading next fact"
-      className="space-y-3 py-4"
-    >
+    <div role="status" aria-live="polite" aria-label="Loading next fact" className="space-y-3 py-4">
       <div className="mb-4 flex items-center gap-3">
         <ShimmerBar className="h-9 w-9 rounded-2xl" />
         <ShimmerBar className="h-4 w-32" />
@@ -1368,7 +1537,6 @@ function BottomNavSkeleton() {
   );
 }
 
-
 function capitalize(s: string) {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -1377,8 +1545,6 @@ function capitalize(s: string) {
 // Ensure the fact question reads as a full "Why…?" question.
 // Prepends "Why" (if missing) and appends a "?" (if missing).
 export { asWhyQuestion } from "@/lib/whyQuestion";
-
-
 
 function GuestProgressCard({
   discoveries,
@@ -1414,9 +1580,11 @@ function GuestProgressCard({
             </h3>
           </div>
           <p className="mt-1 text-xs text-white/60">
-            You've discovered{" "}
-            <span className="font-black text-white">{discoveries}</span>{" "}
-            {discoveries === 1 ? "fact" : "facts"} — {nextMilestone - discoveries > 0 ? `${nextMilestone - discoveries} more to your next milestone.` : "milestone unlocked!"}
+            You've discovered <span className="font-black text-white">{discoveries}</span>{" "}
+            {discoveries === 1 ? "fact" : "facts"} —{" "}
+            {nextMilestone - discoveries > 0
+              ? `${nextMilestone - discoveries} more to your next milestone.`
+              : "milestone unlocked!"}
           </p>
         </div>
         <button
@@ -1462,8 +1630,16 @@ function GuestProgressCard({
       {(streak > 0 || points > 0) && (
         <div className="mt-3 flex items-center gap-2 text-[11px] text-white/60">
           <span>Local progress:</span>
-          {streak > 0 && <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-orange-200">🔥 {streak}d</span>}
-          {points > 0 && <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-amber-200">✨ {points} XP</span>}
+          {streak > 0 && (
+            <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-orange-200">
+              🔥 {streak}d
+            </span>
+          )}
+          {points > 0 && (
+            <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-amber-200">
+              ✨ {points} XP
+            </span>
+          )}
           <span className="ml-auto text-white/40">saved on this device</span>
         </div>
       )}
@@ -1496,7 +1672,10 @@ export function WelcomeOverlay({
   }, [open, name]);
 
   const handleBegin = async () => {
-    if (!needsName || !onSubmitName) { onClose(); return; }
+    if (!needsName || !onSubmitName) {
+      onClose();
+      return;
+    }
     const trimmed = nickname.trim();
     if (trimmed.length < 1 || trimmed.length > 60) {
       setErr("Nickname must be 1–60 characters.");
@@ -1543,7 +1722,12 @@ export function WelcomeOverlay({
                     x: [(Math.random() - 0.5) * 40, (Math.random() - 0.5) * 120],
                     scale: [0, 1, 0.5],
                   }}
-                  transition={{ duration: 2.4, delay: i * 0.08, repeat: Infinity, repeatDelay: 0.8 }}
+                  transition={{
+                    duration: 2.4,
+                    delay: i * 0.08,
+                    repeat: Infinity,
+                    repeatDelay: 0.8,
+                  }}
                   className="absolute left-1/2 top-1/2 text-lg"
                 >
                   {["✨", "⭐", "🌟", "💫"][i % 4]}
@@ -1570,7 +1754,10 @@ export function WelcomeOverlay({
 
             {needsName && (
               <div className="relative mt-4 text-left">
-                <label htmlFor="nickname" className="mb-1 block text-[11px] font-black uppercase tracking-wider text-white/60">
+                <label
+                  htmlFor="nickname"
+                  className="mb-1 block text-[11px] font-black uppercase tracking-wider text-white/60"
+                >
                   Your nickname
                 </label>
                 <input
@@ -1579,7 +1766,9 @@ export function WelcomeOverlay({
                   autoFocus
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") void handleBegin(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void handleBegin();
+                  }}
                   maxLength={60}
                   placeholder="e.g. Curious Cat"
                   className="w-full rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-base font-bold text-white placeholder-white/40 outline-none focus:border-white/50"
@@ -1597,7 +1786,9 @@ export function WelcomeOverlay({
                 ].map((x) => (
                   <div key={x.l} className="rounded-2xl border border-white/10 bg-white/5 p-2">
                     <div className="text-lg">{x.i}</div>
-                    <div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/60">{x.l}</div>
+                    <div className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/60">
+                      {x.l}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1684,7 +1875,10 @@ function CategoryScroller({
                     boxShadow: active ? `0 10px 24px -8px ${c.glow}` : undefined,
                   }}
                 >
-                  <span className="leading-none" style={{ fontSize: "clamp(1.25rem, 5vw, 1.6rem)" }}>
+                  <span
+                    className="leading-none"
+                    style={{ fontSize: "clamp(1.25rem, 5vw, 1.6rem)" }}
+                  >
                     {c.emoji}
                   </span>
                 </span>
@@ -1740,4 +1934,3 @@ function CategoryScroller({
     </div>
   );
 }
-

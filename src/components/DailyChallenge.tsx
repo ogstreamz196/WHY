@@ -12,10 +12,7 @@ import { analytics } from "@/lib/analytics";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getDailyChallengeMCQ, type DailyMCQ } from "@/lib/facts.functions";
-import {
-  completeDailyChallenge,
-  hasCompletedDailyChallenge,
-} from "@/lib/store";
+import { completeDailyChallenge, hasCompletedDailyChallenge } from "@/lib/store";
 import { emojiFor, gradientFor } from "@/lib/categories";
 import { asWhyQuestion } from "@/lib/whyQuestion";
 
@@ -158,14 +155,16 @@ export function DailyChallenge({ onCompleted }: Props) {
               <Calendar className="h-4 w-4 text-white" />
             </span>
             <div className="leading-tight">
-              <h2 id="daily-challenge-title" className="text-[10px] font-black uppercase tracking-widest text-white/60">
+              <h2
+                id="daily-challenge-title"
+                className="text-[10px] font-black uppercase tracking-widest text-white/60"
+              >
                 Daily Challenge
               </h2>
               <p className="text-xs font-bold text-white/90">
                 {done ? "Streak locked in ✓" : "Quick fact + 1 question · +25 pts"}
               </p>
             </div>
-
           </div>
           <div className="flex items-center gap-1">
             <FeedbackToggles />
@@ -183,7 +182,6 @@ export function DailyChallenge({ onCompleted }: Props) {
           </div>
         </header>
 
-
         <AnimatePresence initial={false}>
           {!collapsed && (
             <motion.div
@@ -194,7 +192,6 @@ export function DailyChallenge({ onCompleted }: Props) {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-
               <div className="mt-3">
                 {loading ? (
                   <div className="h-24 animate-pulse rounded-2xl bg-white/5" />
@@ -239,11 +236,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                       {asWhyQuestion(fact.question)}
                     </h3>
 
-                    <div
-                      className="mt-4 grid gap-3"
-                      role="radiogroup"
-                      aria-label="Answer choices"
-                    >
+                    <div className="mt-4 grid gap-3" role="radiogroup" aria-label="Answer choices">
                       {mcq.choices.map((choice, i) => {
                         const isPicked = picked === i;
                         const isCorrect = i === mcq.correctIndex;
@@ -346,7 +339,6 @@ export function DailyChallenge({ onCompleted }: Props) {
                         />
                       )}
                     </AnimatePresence>
-
                   </>
                 )}
               </div>
@@ -365,8 +357,7 @@ export function DailyChallenge({ onCompleted }: Props) {
               className="mt-3 flex items-center justify-center gap-3 rounded-2xl border border-yellow-300/20 bg-yellow-300/10 px-3 py-2 text-xs font-black text-yellow-100"
             >
               <span className="inline-flex items-center gap-1">
-                <CoinIcon size={16} aria-hidden />
-                +{awardedFlash.delta} coins
+                <CoinIcon size={16} aria-hidden />+{awardedFlash.delta} coins
               </span>
               <span className="inline-flex items-center gap-1">
                 <Flame className="h-4 w-4 text-orange-300" aria-hidden />
@@ -375,7 +366,6 @@ export function DailyChallenge({ onCompleted }: Props) {
             </motion.div>
           )}
         </AnimatePresence>
-
       </article>
       <StreakMilestoneCelebration
         milestone={milestoneBurst}

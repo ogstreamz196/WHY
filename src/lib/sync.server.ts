@@ -88,14 +88,17 @@ export async function runSheetSync(data: z.infer<typeof SyncInput>): Promise<Syn
     .select("id, question, answer, category, fun_fact, sheet_id, source")
     .like("sheet_id", `${prefix}%`);
 
-  const bySheetId = new Map<string, {
-    id: string;
-    question: string;
-    answer: string;
-    category: string | null;
-    fun_fact: string | null;
-    source: string;
-  }>();
+  const bySheetId = new Map<
+    string,
+    {
+      id: string;
+      question: string;
+      answer: string;
+      category: string | null;
+      fun_fact: string | null;
+      source: string;
+    }
+  >();
   for (const r of existing ?? []) {
     if (r.sheet_id) bySheetId.set(r.sheet_id as string, r as never);
   }
@@ -133,7 +136,10 @@ export async function runSheetSync(data: z.infer<typeof SyncInput>): Promise<Syn
         .maybeSingle();
       if (dup && dup.source !== "sheet") {
         skipped++;
-        errors.push({ row: rowNumber, reason: "question already exists as AI fact — not overwritten" });
+        errors.push({
+          row: rowNumber,
+          reason: "question already exists as AI fact — not overwritten",
+        });
         continue;
       }
       const { error } = await supabaseAdmin.from("facts").insert({

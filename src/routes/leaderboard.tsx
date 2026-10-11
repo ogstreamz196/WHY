@@ -25,9 +25,7 @@ export const Route = createFileRoute("/leaderboard")({
   component: ArenaPage,
 });
 
-type TabKey =
-  | "alltime"
-  | "rising" | "category" | "age" | "streaks" | "weekend" | "new";
+type TabKey = "alltime" | "rising" | "category" | "age" | "streaks" | "weekend" | "new";
 
 type Tab = {
   key: TabKey;
@@ -36,37 +34,40 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { key: "alltime",  label: "All Time", icon: Trophy },
-  { key: "rising",   label: "Rising",   icon: Rocket },
+  { key: "alltime", label: "All Time", icon: Trophy },
+  { key: "rising", label: "Rising", icon: Rocket },
   { key: "category", label: "Category", icon: Sparkles },
-  { key: "age",      label: "Age",      icon: Users },
-  { key: "streaks",  label: "Streaks",  icon: Flame },
-  { key: "weekend",  label: "Weekend",  icon: Sun },
-  { key: "new",      label: "New",      icon: Star },
+  { key: "age", label: "Age", icon: Users },
+  { key: "streaks", label: "Streaks", icon: Flame },
+  { key: "weekend", label: "Weekend", icon: Sun },
+  { key: "new", label: "New", icon: Star },
 ];
 
 // Map UI tab -> server (kind, filter)
-function resolveQuery(tab: TabKey, filter: string | null): { kind: LeaderboardKind; filter: string | null } {
+function resolveQuery(
+  tab: TabKey,
+  filter: string | null,
+): { kind: LeaderboardKind; filter: string | null } {
   if (tab === "alltime") return { kind: "global", filter: null };
   return { kind: tab as LeaderboardKind, filter };
 }
 
 const AGES: Array<{ key: string; label: string }> = [
   { key: "under_10", label: "Under 10" },
-  { key: "10_12",    label: "10–12" },
-  { key: "teen",     label: "Teen" },
-  { key: "adult",    label: "Adult" },
+  { key: "10_12", label: "10–12" },
+  { key: "teen", label: "Teen" },
+  { key: "adult", label: "Adult" },
 ];
 
 // Fun label under the tabs
 const TAB_TAGLINE: Record<TabKey, string> = {
-  alltime:  "Lifetime Curiosity Score",
-  rising:   "Biggest climbers right now",
+  alltime: "Lifetime Curiosity Score",
+  rising: "Biggest climbers right now",
   category: "Category legends",
-  age:      "Compete inside your age band",
-  streaks:  "Longest current fire streaks",
-  weekend:  "Weekend warriors",
-  new:      "Fresh explorers taking off",
+  age: "Compete inside your age band",
+  streaks: "Longest current fire streaks",
+  weekend: "Weekend warriors",
+  new: "Fresh explorers taking off",
 };
 
 function medalClass(rank: number): string {
@@ -87,7 +88,6 @@ const INTERACTIVE_PLAYER =
   "focus-visible:ring-offset-transparent " +
   "disabled:cursor-default disabled:opacity-100 disabled:hover:translate-y-0 disabled:hover:shadow-none";
 
-
 function ArenaPage() {
   const { user } = useCurrentUser();
   const fetchBoard = useServerFn(getLeaderboardPublic);
@@ -103,7 +103,11 @@ function ArenaPage() {
     else setFilter(null);
   }, [tab]);
 
-  const [celebrate, setCelebrate] = useState<{ title: string; subtitle: string; tone: string } | null>(null);
+  const [celebrate, setCelebrate] = useState<{
+    title: string;
+    subtitle: string;
+    tone: string;
+  } | null>(null);
   const [confettiTick, setConfettiTick] = useState(0);
 
   useEffect(() => {
@@ -111,7 +115,9 @@ function ArenaPage() {
     setLoading(true);
     setRankDelta(null);
     const q = resolveQuery(tab, filter);
-    fetchBoard({ data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50, userId: user?.id } })
+    fetchBoard({
+      data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50, userId: user?.id },
+    })
       .then((r) => {
         if (!alive) return;
         setResult(r);
@@ -125,15 +131,51 @@ function ArenaPage() {
 
           const pct = (r.my_rank / r.total_users) * 100;
           const tierOf = (p: number, rank: number) =>
-            rank === 1 ? 6 : p <= 1 ? 5 : p <= 5 ? 4 : rank <= 10 ? 3 : p <= 10 ? 2 : p <= 25 ? 1 : 0;
+            rank === 1
+              ? 6
+              : p <= 1
+                ? 5
+                : p <= 5
+                  ? 4
+                  : rank <= 10
+                    ? 3
+                    : p <= 10
+                      ? 2
+                      : p <= 25
+                        ? 1
+                        : 0;
           const TIER_META = [
             null,
-            { title: "Top 25%!", subtitle: "You just cracked the top quarter.", tone: "from-emerald-400 to-teal-500" },
-            { title: "Top 10%!", subtitle: "You're in elite company now.", tone: "from-cyan-400 to-emerald-400" },
-            { title: "Top 10 rank!", subtitle: "Ten seats from the throne.", tone: "from-fuchsia-500 to-violet-500" },
-            { title: "Top 5%!", subtitle: "Officially a Curiosity legend.", tone: "from-fuchsia-400 to-pink-500" },
-            { title: "Top 1%!", subtitle: "One in a hundred — nice.", tone: "from-amber-400 to-orange-500" },
-            { title: "#1 Champion!", subtitle: "You lead the entire board.", tone: "from-yellow-300 to-amber-500" },
+            {
+              title: "Top 25%!",
+              subtitle: "You just cracked the top quarter.",
+              tone: "from-emerald-400 to-teal-500",
+            },
+            {
+              title: "Top 10%!",
+              subtitle: "You're in elite company now.",
+              tone: "from-cyan-400 to-emerald-400",
+            },
+            {
+              title: "Top 10 rank!",
+              subtitle: "Ten seats from the throne.",
+              tone: "from-fuchsia-500 to-violet-500",
+            },
+            {
+              title: "Top 5%!",
+              subtitle: "Officially a Curiosity legend.",
+              tone: "from-fuchsia-400 to-pink-500",
+            },
+            {
+              title: "Top 1%!",
+              subtitle: "One in a hundred — nice.",
+              tone: "from-amber-400 to-orange-500",
+            },
+            {
+              title: "#1 Champion!",
+              subtitle: "You lead the entire board.",
+              tone: "from-yellow-300 to-amber-500",
+            },
           ] as const;
           const prevTier = Number(store.getItem(tierKey)) || 0;
           const nextTier = tierOf(pct, r.my_rank);
@@ -145,34 +187,40 @@ function ArenaPage() {
           store.setItem(tierKey, String(nextTier));
         }
       })
-      .catch(() => { if (alive) setResult(null); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
+      .catch(() => {
+        if (alive) setResult(null);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [tab, filter, fetchBoard, user?.id]);
 
   const chips = useMemo(() => {
-    if (tab === "age")    return AGES;
-    if (tab === "category") return CATEGORIES.filter((c) => c.key !== "all").map((c) => ({ key: c.key, label: c.label }));
+    if (tab === "age") return AGES;
+    if (tab === "category")
+      return CATEGORIES.filter((c) => c.key !== "all").map((c) => ({ key: c.key, label: c.label }));
     return [] as Array<{ key: string; label: string }>;
   }, [tab]);
 
-  const topPercent = result?.my_rank && result.total_users
-    ? Math.max(0.1, Math.min(100, (result.my_rank / result.total_users) * 100))
-    : null;
-  const percentileLabel = topPercent === null
-    ? null
-    : topPercent < 1
-      ? "Top 1%"
-      : `Top ${Math.round(topPercent)}%`;
-  const percentileTone = topPercent === null
-    ? ""
-    : topPercent <= 1
-      ? "bg-amber-400/25 text-amber-100 shadow-[0_0_28px_rgba(251,191,36,0.45)]"
-      : topPercent <= 5
-        ? "bg-fuchsia-400/25 text-fuchsia-100"
-        : topPercent <= 25
-          ? "bg-emerald-400/20 text-emerald-100"
-          : "bg-white/10 text-white/80";
+  const topPercent =
+    result?.my_rank && result.total_users
+      ? Math.max(0.1, Math.min(100, (result.my_rank / result.total_users) * 100))
+      : null;
+  const percentileLabel =
+    topPercent === null ? null : topPercent < 1 ? "Top 1%" : `Top ${Math.round(topPercent)}%`;
+  const percentileTone =
+    topPercent === null
+      ? ""
+      : topPercent <= 1
+        ? "bg-amber-400/25 text-amber-100 shadow-[0_0_28px_rgba(251,191,36,0.45)]"
+        : topPercent <= 5
+          ? "bg-fuchsia-400/25 text-fuchsia-100"
+          : topPercent <= 25
+            ? "bg-emerald-400/20 text-emerald-100"
+            : "bg-white/10 text-white/80";
   const leaderScore = result?.entries?.[0]?.score ?? 0;
 
   return (
@@ -180,7 +228,11 @@ function ArenaPage() {
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
-          <Link to="/quiz" aria-label="Back to Curiosity Challenge" className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90">
+          <Link
+            to="/quiz"
+            aria-label="Back to Curiosity Challenge"
+            className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90"
+          >
             <ArrowLeft aria-hidden="true" className="h-5 w-5" />
           </Link>
           <div className="flex-1">
@@ -190,8 +242,6 @@ function ArenaPage() {
         </header>
 
         <ChampionCrown />
-
-
 
         {/* Tab strip */}
         <div className="glass-strong mb-3 flex gap-1 overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -252,13 +302,19 @@ function ArenaPage() {
             className={`glass-strong mb-3 flex w-full items-center justify-between rounded-2xl border border-fuchsia-300/40 bg-fuchsia-500/10 p-3 text-left ring-2 ring-fuchsia-300/40 hover:bg-fuchsia-500/15 ${INTERACTIVE_PLAYER}`}
           >
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-100">Your rank</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-100">
+                Your rank
+              </p>
               <p className="font-display text-xl font-black text-white">
                 #{result.my_rank.toLocaleString()}
-                <span className="ml-2 text-xs font-bold text-white/60">of {result.total_users.toLocaleString()}</span>
+                <span className="ml-2 text-xs font-bold text-white/60">
+                  of {result.total_users.toLocaleString()}
+                </span>
               </p>
               {rankDelta !== null && rankDelta !== 0 && (
-                <p className={`mt-0.5 text-[11px] font-black ${rankDelta > 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                <p
+                  className={`mt-0.5 text-[11px] font-black ${rankDelta > 0 ? "text-emerald-300" : "text-rose-300"}`}
+                >
                   {rankDelta > 0
                     ? `▲ Up ${rankDelta.toLocaleString()} since last visit`
                     : `▼ Down ${Math.abs(rankDelta).toLocaleString()} since last visit`}
@@ -317,11 +373,11 @@ function ArenaPage() {
               />
             )}
             <ol className="space-y-2">
-
               <AnimatePresence initial={false}>
                 {result.entries.slice(3).map((r) => {
                   const me = r.user_id === user?.id;
-                  const pct = leaderScore > 0 ? Math.max(4, Math.min(100, (r.score / leaderScore) * 100)) : 0;
+                  const pct =
+                    leaderScore > 0 ? Math.max(4, Math.min(100, (r.score / leaderScore) * 100)) : 0;
                   const barGradient = me
                     ? "var(--gradient-primary)"
                     : "linear-gradient(90deg,rgba(255,255,255,0.35),rgba(255,255,255,0.1))";
@@ -346,7 +402,6 @@ function ArenaPage() {
                             ? "border-fuchsia-300/60 bg-fuchsia-500/15 shadow-[0_0_28px_rgba(217,70,239,0.28)] ring-2 ring-fuchsia-300/40"
                             : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
                         }`}
-
                       >
                         {me && (
                           <motion.span
@@ -357,7 +412,9 @@ function ArenaPage() {
                           />
                         )}
                         <div className="relative flex w-14 shrink-0 flex-col items-center gap-0.5">
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}>
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}
+                          >
                             {honor.label}
                           </span>
                           <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
@@ -375,11 +432,13 @@ function ArenaPage() {
                           <p className="truncate text-sm font-black text-white">
                             {r.display_name || r.username || "Explorer"}
                             {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
-                            {me && <span className="ml-1 text-[10px] font-black text-fuchsia-100">YOU</span>}
+                            {me && (
+                              <span className="ml-1 text-[10px] font-black text-fuchsia-100">
+                                YOU
+                              </span>
+                            )}
                           </p>
-                          <p className="truncate text-[11px] text-white/60">
-                            {honor.cheer}
-                          </p>
+                          <p className="truncate text-[11px] text-white/60">{honor.cheer}</p>
                           <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
                             <motion.div
                               initial={{ width: 0 }}
@@ -391,7 +450,9 @@ function ArenaPage() {
                           </div>
                         </div>
                         <div className="relative text-right">
-                          <p className="text-lg font-black text-white">{r.score.toLocaleString()}</p>
+                          <p className="text-lg font-black text-white">
+                            {r.score.toLocaleString()}
+                          </p>
                           <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
                             {tab === "streaks" ? "days" : "pts"}
                           </p>
@@ -404,7 +465,6 @@ function ArenaPage() {
             </ol>
           </motion.div>
         )}
-
       </div>
       <BottomNav />
       <ConfettiBurst trigger={confettiTick} duration={2200} />
@@ -434,7 +494,9 @@ function ArenaPage() {
               className="glass-strong relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 p-6 text-center shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${celebrate.tone} shadow-[0_10px_40px_rgba(251,191,36,0.5)]`}>
+              <div
+                className={`mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br ${celebrate.tone} shadow-[0_10px_40px_rgba(251,191,36,0.5)]`}
+              >
                 <motion.div
                   animate={{ rotate: [-8, 8, -8], scale: [1, 1.08, 1] }}
                   transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
@@ -445,7 +507,9 @@ function ArenaPage() {
               <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
                 Rank up · {TABS.find((t) => t.key === tab)?.label}
               </p>
-              <h2 className="mt-1 font-display text-3xl font-black text-white">{celebrate.title}</h2>
+              <h2 className="mt-1 font-display text-3xl font-black text-white">
+                {celebrate.title}
+              </h2>
               <p className="mt-2 text-sm text-white/70">{celebrate.subtitle}</p>
               {result?.my_rank && result.total_users && (
                 <div className="mt-5">
@@ -456,7 +520,9 @@ function ArenaPage() {
                   <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${Math.max(2, 100 - (result.my_rank / result.total_users) * 100)}%` }}
+                      animate={{
+                        width: `${Math.max(2, 100 - (result.my_rank / result.total_users) * 100)}%`,
+                      }}
                       transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
                       className={`h-full rounded-full bg-gradient-to-r ${celebrate.tone}`}
                     />
@@ -482,31 +548,36 @@ function ArenaPage() {
 type PodiumEntry = LeaderboardResult["entries"][number];
 
 function honorFor(rank: number, topPct: number): { label: string; cheer: string; tone: string } {
-  if (rank <= 10) return {
-    label: "Top 10",
-    cheer: "Elite of the arena — legends rise here. Keep the throne in sight! 👑",
-    tone: "border-amber-300/40 bg-amber-400/15 text-amber-200",
-  };
-  if (topPct <= 5) return {
-    label: `Top ${topPct}%`,
-    cheer: "Absolute powerhouse — the podium is within striking distance! ⚡",
-    tone: "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100",
-  };
-  if (topPct <= 10) return {
-    label: `Top ${topPct}%`,
-    cheer: "Top-tier curiosity — you're outpacing the pack. Push higher! 🚀",
-    tone: "border-sky-300/40 bg-sky-500/15 text-sky-200",
-  };
-  if (topPct <= 25) return {
-    label: `Top ${topPct}%`,
-    cheer: "Serious climber — the leaderboard is bending your way. 🔥",
-    tone: "border-emerald-300/40 bg-emerald-500/15 text-emerald-200",
-  };
-  if (topPct <= 50) return {
-    label: `Top ${topPct}%`,
-    cheer: "Ahead of the field — momentum is on your side. Keep going! 💪",
-    tone: "border-teal-300/40 bg-teal-500/15 text-teal-200",
-  };
+  if (rank <= 10)
+    return {
+      label: "Top 10",
+      cheer: "Elite of the arena — legends rise here. Keep the throne in sight! 👑",
+      tone: "border-amber-300/40 bg-amber-400/15 text-amber-200",
+    };
+  if (topPct <= 5)
+    return {
+      label: `Top ${topPct}%`,
+      cheer: "Absolute powerhouse — the podium is within striking distance! ⚡",
+      tone: "border-fuchsia-300/40 bg-fuchsia-500/15 text-fuchsia-100",
+    };
+  if (topPct <= 10)
+    return {
+      label: `Top ${topPct}%`,
+      cheer: "Top-tier curiosity — you're outpacing the pack. Push higher! 🚀",
+      tone: "border-sky-300/40 bg-sky-500/15 text-sky-200",
+    };
+  if (topPct <= 25)
+    return {
+      label: `Top ${topPct}%`,
+      cheer: "Serious climber — the leaderboard is bending your way. 🔥",
+      tone: "border-emerald-300/40 bg-emerald-500/15 text-emerald-200",
+    };
+  if (topPct <= 50)
+    return {
+      label: `Top ${topPct}%`,
+      cheer: "Ahead of the field — momentum is on your side. Keep going! 💪",
+      tone: "border-teal-300/40 bg-teal-500/15 text-teal-200",
+    };
   return {
     label: `Top ${topPct}%`,
     cheer: "Every discovery lifts your rank — the climb starts now. ✨",
@@ -514,8 +585,17 @@ function honorFor(rank: number, topPct: number): { label: string; cheer: string;
   };
 }
 
-
-function Podium({ entries, unit, meId, onOpen }: { entries: PodiumEntry[]; unit: string; meId?: string; onOpen: (userId: string, rank: number) => void }) {
+function Podium({
+  entries,
+  unit,
+  meId,
+  onOpen,
+}: {
+  entries: PodiumEntry[];
+  unit: string;
+  meId?: string;
+  onOpen: (userId: string, rank: number) => void;
+}) {
   const byRank = (n: number) => entries.find((e) => e.rank === n);
   const first = byRank(1);
   const second = byRank(2);
@@ -530,17 +610,35 @@ function Podium({ entries, unit, meId, onOpen }: { entries: PodiumEntry[]; unit:
       />
       <div className="relative flex items-end justify-center gap-2 sm:gap-4">
         {second ? (
-          <PodiumColumn entry={second} place={2} unit={unit} isMe={second.user_id === meId} onOpen={onOpen} />
+          <PodiumColumn
+            entry={second}
+            place={2}
+            unit={unit}
+            isMe={second.user_id === meId}
+            onOpen={onOpen}
+          />
         ) : (
           <div className="w-full max-w-[140px]" />
         )}
         {first ? (
-          <PodiumColumn entry={first} place={1} unit={unit} isMe={first.user_id === meId} onOpen={onOpen} />
+          <PodiumColumn
+            entry={first}
+            place={1}
+            unit={unit}
+            isMe={first.user_id === meId}
+            onOpen={onOpen}
+          />
         ) : (
           <div className="w-full max-w-[180px]" />
         )}
         {third ? (
-          <PodiumColumn entry={third} place={3} unit={unit} isMe={third.user_id === meId} onOpen={onOpen} />
+          <PodiumColumn
+            entry={third}
+            place={3}
+            unit={unit}
+            isMe={third.user_id === meId}
+            onOpen={onOpen}
+          />
         ) : (
           <div className="w-full max-w-[130px]" />
         )}
@@ -594,8 +692,19 @@ const PODIUM_CFG = {
   },
 } as const;
 
-
-function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry; place: 1 | 2 | 3; unit: string; isMe: boolean; onOpen: (userId: string, rank: number) => void }) {
+function PodiumColumn({
+  entry,
+  place,
+  unit,
+  isMe,
+  onOpen,
+}: {
+  entry: PodiumEntry;
+  place: 1 | 2 | 3;
+  unit: string;
+  isMe: boolean;
+  onOpen: (userId: string, rank: number) => void;
+}) {
   const cfg = PODIUM_CFG[place];
   const name = entry.display_name || entry.username || "Explorer";
   const initial = name.slice(0, 1).toUpperCase();
@@ -627,11 +736,18 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
         <div className={`relative ${cfg.avatar} rounded-full ${cfg.ring} bg-neutral-950 p-1.5`}>
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-white/10 to-white/0">
             {entry.avatar_id ? (
-              <span className={place === 1 ? "text-6xl sm:text-7xl" : place === 2 ? "text-4xl" : "text-3xl"} aria-hidden>
+              <span
+                className={
+                  place === 1 ? "text-6xl sm:text-7xl" : place === 2 ? "text-4xl" : "text-3xl"
+                }
+                aria-hidden
+              >
                 {avatarEmojiFor(entry.avatar_id)}
               </span>
             ) : (
-              <span className={`font-black text-white ${place === 1 ? "text-3xl" : "text-lg"}`}>{initial}</span>
+              <span className={`font-black text-white ${place === 1 ? "text-3xl" : "text-lg"}`}>
+                {initial}
+              </span>
             )}
           </div>
         </div>
@@ -662,7 +778,9 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
         </p>
         <p className={`mt-1 ${cfg.score}`}>
           {entry.score.toLocaleString()}
-          <span className="ml-1 text-[9px] font-black uppercase tracking-widest text-white/45">{unit}</span>
+          <span className="ml-1 text-[9px] font-black uppercase tracking-widest text-white/45">
+            {unit}
+          </span>
         </p>
 
         <div className="mt-auto pt-3">
@@ -676,5 +794,3 @@ function PodiumColumn({ entry, place, unit, isMe, onOpen }: { entry: PodiumEntry
     </motion.button>
   );
 }
-
-

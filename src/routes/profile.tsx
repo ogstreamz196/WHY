@@ -2,7 +2,21 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Flame, LogOut, Sparkles, Trophy, Zap, Pencil, Loader2, Check, Clock, ArrowRight, ArrowUpDown, ChevronDown, Crown } from "lucide-react";
+import {
+  Flame,
+  LogOut,
+  Sparkles,
+  Trophy,
+  Zap,
+  Pencil,
+  Loader2,
+  Check,
+  Clock,
+  ArrowRight,
+  ArrowUpDown,
+  ChevronDown,
+  Crown,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -14,11 +28,7 @@ import {
 } from "@/lib/account.functions";
 import { getMyRankings } from "@/lib/leaderboard.functions";
 import { getMyQuizStats } from "@/lib/quiz.functions";
-import {
-  getDiscoveryTimeline,
-  getCategoryInterests,
-  listMyChains,
-} from "@/lib/chains.functions";
+import { getDiscoveryTimeline, getCategoryInterests, listMyChains } from "@/lib/chains.functions";
 import { CoinIcon } from "@/components/CoinIcon";
 import { levelFor } from "@/lib/levels";
 import { BottomNav } from "@/components/BottomNav";
@@ -37,33 +47,34 @@ import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { useSubscription } from "@/hooks/useSubscription";
 
 const MILESTONES = [
-  { key: "seen",   label: "Facts discovered", steps: [10, 50, 100, 250, 500, 1000] },
-  { key: "streak", label: "Day streak",       steps: [3, 7, 14, 30, 60, 100] },
+  { key: "seen", label: "Facts discovered", steps: [10, 50, 100, 250, 500, 1000] },
+  { key: "streak", label: "Day streak", steps: [3, 7, 14, 30, 60, 100] },
   { key: "points", label: "Curiosity points", steps: [100, 500, 1000, 5000, 10000, 25000] },
 ] as const;
 
 // Maps local (explorer) badge id → which live stat + numeric target it tracks.
 // Used to render an accurate progress bar in the details modal.
-const LOCAL_BADGE_TARGETS: Record<string, { stat: "seen" | "streak" | "points"; target: number }> = {
-  curious:    { stat: "seen",   target: 5 },
-  explorer:   { stat: "seen",   target: 25 },
-  scientist:  { stat: "seen",   target: 100 },
-  sage:       { stat: "seen",   target: 250 },
-  polymath:   { stat: "seen",   target: 500 },
-  oracle:     { stat: "seen",   target: 1000 },
-  streak3:    { stat: "streak", target: 3 },
-  streak7:    { stat: "streak", target: 7 },
-  streak14:   { stat: "streak", target: 14 },
-  streak30:   { stat: "streak", target: 30 },
-  streak60:   { stat: "streak", target: 60 },
-  streak100:  { stat: "streak", target: 100 },
-  points100:  { stat: "points", target: 100 },
-  points500:  { stat: "points", target: 500 },
-  points1k:   { stat: "points", target: 1000 },
-  points5k:   { stat: "points", target: 5000 },
-  points10k:  { stat: "points", target: 10000 },
-  points25k:  { stat: "points", target: 25000 },
-};
+const LOCAL_BADGE_TARGETS: Record<string, { stat: "seen" | "streak" | "points"; target: number }> =
+  {
+    curious: { stat: "seen", target: 5 },
+    explorer: { stat: "seen", target: 25 },
+    scientist: { stat: "seen", target: 100 },
+    sage: { stat: "seen", target: 250 },
+    polymath: { stat: "seen", target: 500 },
+    oracle: { stat: "seen", target: 1000 },
+    streak3: { stat: "streak", target: 3 },
+    streak7: { stat: "streak", target: 7 },
+    streak14: { stat: "streak", target: 14 },
+    streak30: { stat: "streak", target: 30 },
+    streak60: { stat: "streak", target: 60 },
+    streak100: { stat: "streak", target: 100 },
+    points100: { stat: "points", target: 100 },
+    points500: { stat: "points", target: 500 },
+    points1k: { stat: "points", target: 1000 },
+    points5k: { stat: "points", target: 5000 },
+    points10k: { stat: "points", target: 10000 },
+    points25k: { stat: "points", target: 25000 },
+  };
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -146,7 +157,11 @@ function ProfilePage() {
   }, []);
   const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(localBadges);
   const widgetMilestones = useMemo(() => {
-    const stats: Record<string, number> = { seen: localSeen, streak: localStreak, points: localPoints };
+    const stats: Record<string, number> = {
+      seen: localSeen,
+      streak: localStreak,
+      points: localPoints,
+    };
     return MILESTONES.map((m) => {
       const current = stats[m.key] ?? 0;
       const nextIdx = m.steps.findIndex((s) => current < s);
@@ -159,8 +174,7 @@ function ProfilePage() {
   const localProgressFor = (id: string): { current: number; target: number } | null => {
     const t = LOCAL_BADGE_TARGETS[id];
     if (!t) return null;
-    const current =
-      t.stat === "seen" ? localSeen : t.stat === "streak" ? localStreak : localPoints;
+    const current = t.stat === "seen" ? localSeen : t.stat === "streak" ? localStreak : localPoints;
     return { current, target: t.target };
   };
 
@@ -182,13 +196,7 @@ function ProfilePage() {
     });
   };
 
-  type CollapseKey =
-    | "achievements"
-    | "discoveries"
-    | "interests"
-    | "chains"
-    | "quiz"
-    | "rankings";
+  type CollapseKey = "achievements" | "discoveries" | "interests" | "chains" | "quiz" | "rankings";
   const [collapsed, setCollapsed] = useState<Record<CollapseKey, boolean>>({
     achievements: false,
     discoveries: false,
@@ -206,9 +214,7 @@ function ProfilePage() {
         const parsed = JSON.parse(raw);
         setCollapsed((prev) => ({
           ...prev,
-          ...Object.fromEntries(
-            Object.keys(prev).map((k) => [k, !!parsed[k]]),
-          ),
+          ...Object.fromEntries(Object.keys(prev).map((k) => [k, !!parsed[k]])),
         }));
       }
     } catch {}
@@ -225,7 +231,8 @@ function ProfilePage() {
   };
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth", search: { mode: "signin", redirect: "/profile" } });
+    if (!loading && !user)
+      navigate({ to: "/auth", search: { mode: "signin", redirect: "/profile" } });
   }, [user, loading, navigate]);
 
   useEffect(() => {
@@ -302,7 +309,9 @@ function ProfilePage() {
                 />
               ) : (
                 <h1 className="font-display text-2xl font-black text-white flex items-center gap-2 flex-wrap">
-                  <span className="truncate">{profile.data?.display_name ?? "Curious explorer"}</span>
+                  <span className="truncate">
+                    {profile.data?.display_name ?? "Curious explorer"}
+                  </span>
                   {isVip && <VipBadge size="md" />}
                 </h1>
               )}
@@ -320,7 +329,13 @@ function ProfilePage() {
               className="rounded-full border border-white/10 bg-white/5 p-2 text-white/70"
               aria-label={editing ? "Save" : "Edit profile"}
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : editing ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Pencil className="h-4 w-4" />
+              )}
             </button>
           </div>
 
@@ -356,7 +371,9 @@ function ProfilePage() {
 
           <div className="mt-5">
             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-              <span className="text-white/50">Lvl {level} · <span className="text-white/80">{lvl.title}</span></span>
+              <span className="text-white/50">
+                Lvl {level} · <span className="text-white/80">{lvl.title}</span>
+              </span>
               <span className="text-white/50">
                 {lvl.next ? `${lvl.xpToNext} XP to ${lvl.next.title}` : "Max tier"}
               </span>
@@ -401,19 +418,31 @@ function ProfilePage() {
                 to="/boss"
                 className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-300/40 bg-gradient-to-r from-sky-500/30 via-fuchsia-500/25 to-red-500/25 px-3 py-1.5 text-xs font-black text-white shadow-[0_0_18px_-4px_rgba(217,70,239,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60"
               >
-                <Crown className="h-3.5 w-3.5 fill-amber-300 text-amber-300" aria-hidden="true" /> Boss Dashboard
+                <Crown className="h-3.5 w-3.5 fill-amber-300 text-amber-300" aria-hidden="true" />{" "}
+                Boss Dashboard
               </Link>
             )}
           </nav>
-
         </motion.div>
 
         {/* Stats grid */}
         <section className="mt-4 grid grid-cols-2 gap-3">
           <StatTile icon={<CoinIcon size={20} />} label="Y-Coins" value={s.total_points} />
-          <StatTile icon={<Flame className="h-5 w-5 text-orange-400" />} label="Streak" value={`${s.current_streak} 🔥`} />
-          <StatTile icon={<Zap className="h-5 w-5 text-yellow-300" />} label="Longest streak" value={s.longest_streak} />
-          <StatTile icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />} label="Facts seen" value={s.facts_seen} />
+          <StatTile
+            icon={<Flame className="h-5 w-5 text-orange-400" />}
+            label="Streak"
+            value={`${s.current_streak} 🔥`}
+          />
+          <StatTile
+            icon={<Zap className="h-5 w-5 text-yellow-300" />}
+            label="Longest streak"
+            value={s.longest_streak}
+          />
+          <StatTile
+            icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />}
+            label="Facts seen"
+            value={s.facts_seen}
+          />
         </section>
 
         <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
@@ -434,12 +463,6 @@ function ProfilePage() {
           <MyRankingsSection />
         </CollapsibleWrap>
 
-
-
-
-
-
-
         {/* Category interests */}
         {interests.data && interests.data.length > 0 && (
           <section className="mt-6">
@@ -454,7 +477,10 @@ function ProfilePage() {
             {!collapsed.interests && (
               <div className="flex flex-wrap gap-2">
                 {interests.data.slice(0, 8).map((it) => (
-                  <div key={it.category} className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85">
+                  <div
+                    key={it.category}
+                    className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85"
+                  >
                     <span>{emojiFor(it.category)}</span>
                     <span className="capitalize">{it.category}</span>
                     <span className="text-white/50">·{it.weight}</span>
@@ -480,46 +506,48 @@ function ProfilePage() {
               />
             </div>
           </header>
-          {!collapsed.chains && (() => {
-
-            const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
-            if (items.length === 0) {
+          {!collapsed.chains &&
+            (() => {
+              const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
+              if (items.length === 0) {
+                return (
+                  <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+                    Save your first Why chain from the home screen.
+                  </p>
+                );
+              }
               return (
-                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
-                  Save your first Why chain from the home screen.
-                </p>
+                <div className="space-y-2">
+                  {items.map((c) => (
+                    <Link
+                      key={c.id}
+                      to="/chain/$id"
+                      params={{ id: c.id }}
+                      className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2.5"
+                    >
+                      <Sparkles className="h-4 w-4 text-fuchsia-300" />
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate text-sm font-bold text-white">
+                          {c.title ?? "Untitled chain"}
+                        </div>
+                        <div className="text-[10px] text-white/50">{c.step_count} steps</div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-white/40" />
+                    </Link>
+                  ))}
+                  {chains.hasNextPage && (
+                    <button
+                      type="button"
+                      onClick={() => chains.fetchNextPage()}
+                      disabled={chains.isFetchingNextPage}
+                      className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
+                    >
+                      {chains.isFetchingNextPage ? "Loading…" : "Load more chains"}
+                    </button>
+                  )}
+                </div>
               );
-            }
-            return (
-              <div className="space-y-2">
-                {items.map((c) => (
-                  <Link
-                    key={c.id}
-                    to="/chain/$id"
-                    params={{ id: c.id }}
-                    className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2.5"
-                  >
-                    <Sparkles className="h-4 w-4 text-fuchsia-300" />
-                    <div className="flex-1 min-w-0">
-                      <div className="truncate text-sm font-bold text-white">{c.title ?? "Untitled chain"}</div>
-                      <div className="text-[10px] text-white/50">{c.step_count} steps</div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-white/40" />
-                  </Link>
-                ))}
-                {chains.hasNextPage && (
-                  <button
-                    type="button"
-                    onClick={() => chains.fetchNextPage()}
-                    disabled={chains.isFetchingNextPage}
-                    className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
-                  >
-                    {chains.isFetchingNextPage ? "Loading…" : "Load more chains"}
-                  </button>
-                )}
-              </div>
-            );
-          })()}
+            })()}
         </section>
 
         {(() => {
@@ -571,7 +599,9 @@ function ProfilePage() {
                   data-no-chrome
                   aria-expanded={!collapsed.achievements}
                   aria-controls="achievements-body"
-                  aria-label={collapsed.achievements ? "Expand Achievements" : "Collapse Achievements"}
+                  aria-label={
+                    collapsed.achievements ? "Expand Achievements" : "Collapse Achievements"
+                  }
                   className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 >
                   <ChevronDown
@@ -600,7 +630,8 @@ function ProfilePage() {
                       <div className="text-3xl">🏆</div>
                       <p className="mt-2 text-sm font-black text-white">No achievements yet</p>
                       <p className="mt-1 text-xs text-white/60">
-                        Discover facts, keep a streak going, or take a quiz to start unlocking trophies.
+                        Discover facts, keep a streak going, or take a quiz to start unlocking
+                        trophies.
                       </p>
                     </div>
                   ) : (
@@ -640,7 +671,9 @@ function ProfilePage() {
                   ) : localBadges.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
                       <div className="text-3xl">✨</div>
-                      <p className="mt-2 text-sm font-black text-white">Explorer badges appear here</p>
+                      <p className="mt-2 text-sm font-black text-white">
+                        Explorer badges appear here
+                      </p>
                       <p className="mt-1 text-xs text-white/60">
                         Explore facts on the home screen to earn your first explorer badge.
                       </p>
@@ -689,7 +722,11 @@ function ProfilePage() {
                             )}
                             <div
                               className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-lg"
-                              style={{ background: b.unlocked ? "var(--gradient-primary)" : "oklch(0.25 0.02 285)" }}
+                              style={{
+                                background: b.unlocked
+                                  ? "var(--gradient-primary)"
+                                  : "oklch(0.25 0.02 285)",
+                              }}
                             >
                               {b.emoji}
                             </div>
@@ -739,7 +776,11 @@ function ProfilePage() {
                   data-no-chrome
                   aria-expanded={!collapsed.discoveries}
                   aria-controls="recent-discoveries-body"
-                  aria-label={collapsed.discoveries ? "Expand Recent discoveries" : "Collapse Recent discoveries"}
+                  aria-label={
+                    collapsed.discoveries
+                      ? "Expand Recent discoveries"
+                      : "Collapse Recent discoveries"
+                  }
                   className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                 >
                   <ChevronDown
@@ -750,54 +791,59 @@ function ProfilePage() {
               </div>
               {!collapsed.discoveries && (
                 <div id="recent-discoveries-body">
-
-              {(() => {
-                const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
-                if (entries.length === 0) {
-                  return (
-                    <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
-                      Every fact you reveal shows up here.
-                    </p>
-                  );
-                }
-                return (
-                  <>
-                    <ol className="space-y-2">
-                      {entries.map((entry, i) => (
-                        <motion.li
-                          key={`${entry.fact.id}-${i}`}
-                          initial={{ opacity: 0, x: -4 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: Math.min(i, 10) * 0.02 }}
-                          className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                        >
-                          <span className="mt-0.5 text-base">{emojiFor(entry.fact.category)}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="truncate text-sm text-white/90">{entry.fact.question}</div>
-                            <div className="text-[10px] text-white/40">
-                              {new Date(entry.seen_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                            </div>
-                          </div>
-                        </motion.li>
-                      ))}
-                    </ol>
-                    {timeline.hasNextPage && (
-                      <button
-                        type="button"
-                        onClick={() => timeline.fetchNextPage()}
-                        disabled={timeline.isFetchingNextPage}
-                        className="mt-3 w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
-                      >
-                        {timeline.isFetchingNextPage ? "Loading…" : "Load more history"}
-                      </button>
-                    )}
-                  </>
-                );
-              })()}
+                  {(() => {
+                    const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
+                    if (entries.length === 0) {
+                      return (
+                        <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+                          Every fact you reveal shows up here.
+                        </p>
+                      );
+                    }
+                    return (
+                      <>
+                        <ol className="space-y-2">
+                          {entries.map((entry, i) => (
+                            <motion.li
+                              key={`${entry.fact.id}-${i}`}
+                              initial={{ opacity: 0, x: -4 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: Math.min(i, 10) * 0.02 }}
+                              className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                            >
+                              <span className="mt-0.5 text-base">
+                                {emojiFor(entry.fact.category)}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate text-sm text-white/90">
+                                  {entry.fact.question}
+                                </div>
+                                <div className="text-[10px] text-white/40">
+                                  {new Date(entry.seen_at).toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                                </div>
+                              </div>
+                            </motion.li>
+                          ))}
+                        </ol>
+                        {timeline.hasNextPage && (
+                          <button
+                            type="button"
+                            onClick={() => timeline.fetchNextPage()}
+                            disabled={timeline.isFetchingNextPage}
+                            className="mt-3 w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
+                          >
+                            {timeline.isFetchingNextPage ? "Loading…" : "Load more history"}
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </section>
-
           );
 
           return sectionOrder === "achievements-first"
@@ -838,7 +884,15 @@ function ProfilePage() {
   );
 }
 
-function CollapseChevron({ collapsed, onToggle, label }: { collapsed: boolean; onToggle: () => void; label: string }) {
+function CollapseChevron({
+  collapsed,
+  onToggle,
+  label,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
   return (
     <button
       type="button"
@@ -852,11 +906,23 @@ function CollapseChevron({ collapsed, onToggle, label }: { collapsed: boolean; o
   );
 }
 
-function CollapsibleWrap({ collapsed, onToggle, label, children }: { collapsed: boolean; onToggle: () => void; label: string; children: React.ReactNode }) {
+function CollapsibleWrap({
+  collapsed,
+  onToggle,
+  label,
+  children,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mt-6">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[10px] font-black uppercase tracking-widest text-white/50">{label}</span>
+        <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+          {label}
+        </span>
         <CollapseChevron collapsed={collapsed} onToggle={onToggle} label={label} />
       </div>
       {!collapsed && children}
@@ -864,12 +930,23 @@ function CollapsibleWrap({ collapsed, onToggle, label, children }: { collapsed: 
   );
 }
 
-
-
-function StatTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
+function StatTile({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+}) {
   return (
     <div className="glass rounded-3xl border border-white/10 p-4">
-      <div className="flex items-center gap-2">{icon}<span className="text-[10px] font-black uppercase tracking-widest text-white/50">{label}</span></div>
+      <div className="flex items-center gap-2">
+        {icon}
+        <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
+          {label}
+        </span>
+      </div>
       <div className="mt-1 font-display text-2xl font-black text-white">{value}</div>
     </div>
   );
@@ -892,11 +969,12 @@ function AchievementTile({ a, onSelect }: { a: Achievement; onSelect: () => void
     >
       <div className={`text-3xl ${unlocked ? "" : "grayscale opacity-40"}`}>{a.emoji}</div>
       <div className="mt-1 font-black leading-tight">{a.name}</div>
-      <div className="mt-1 text-[10px] font-medium text-white/50 leading-tight">{a.description}</div>
+      <div className="mt-1 text-[10px] font-medium text-white/50 leading-tight">
+        {a.description}
+      </div>
     </motion.button>
   );
 }
-
 
 function QuizStatsSection() {
   const fetchQuiz = useServerFn(getMyQuizStats);
@@ -910,7 +988,9 @@ function QuizStatsSection() {
         <h2 className="inline-flex items-center gap-2 font-display text-xl font-black text-white">
           <Trophy className="h-5 w-5 text-amber-300" /> Quiz stats
         </h2>
-        <Link to="/leaderboard" className="text-xs font-bold text-fuchsia-200">Leaderboard →</Link>
+        <Link to="/leaderboard" className="text-xs font-bold text-fuchsia-200">
+          Leaderboard →
+        </Link>
       </header>
       {!hasPlayed ? (
         <Link
@@ -920,18 +1000,44 @@ function QuizStatsSection() {
           <span className="text-3xl">🏆</span>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-black text-white">Take your first quiz</div>
-            <div className="text-xs text-white/60">Score points, unlock badges, top the leaderboard.</div>
+            <div className="text-xs text-white/60">
+              Score points, unlock badges, top the leaderboard.
+            </div>
           </div>
           <ArrowRight className="h-4 w-4 text-white/60" />
         </Link>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          <StatTile icon={<Trophy className="h-5 w-5 text-amber-300" />} label="Total score" value={s.total_score} />
-          <StatTile icon={<Zap className="h-5 w-5 text-yellow-300" />} label="Best quiz" value={s.best_score} />
-          <StatTile icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />} label="Questions" value={s.questions_answered} />
-          <StatTile icon={<Check className="h-5 w-5 text-emerald-300" />} label="Accuracy" value={`${s.accuracy}%`} />
-          <StatTile icon={<Flame className="h-5 w-5 text-orange-400" />} label="Best streak" value={s.best_streak} />
-          <StatTile icon={<span className="text-lg">{emojiFor(s.favorite_category)}</span>} label="Top theme" value={s.favorite_category ?? "—"} />
+          <StatTile
+            icon={<Trophy className="h-5 w-5 text-amber-300" />}
+            label="Total score"
+            value={s.total_score}
+          />
+          <StatTile
+            icon={<Zap className="h-5 w-5 text-yellow-300" />}
+            label="Best quiz"
+            value={s.best_score}
+          />
+          <StatTile
+            icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />}
+            label="Questions"
+            value={s.questions_answered}
+          />
+          <StatTile
+            icon={<Check className="h-5 w-5 text-emerald-300" />}
+            label="Accuracy"
+            value={`${s.accuracy}%`}
+          />
+          <StatTile
+            icon={<Flame className="h-5 w-5 text-orange-400" />}
+            label="Best streak"
+            value={s.best_streak}
+          />
+          <StatTile
+            icon={<span className="text-lg">{emojiFor(s.favorite_category)}</span>}
+            label="Top theme"
+            value={s.favorite_category ?? "—"}
+          />
         </div>
       )}
     </section>
@@ -948,7 +1054,9 @@ function MyRankingsSection() {
         <h2 className="inline-flex items-center gap-2 font-display text-xl font-black text-white">
           <Trophy className="h-5 w-5 text-amber-300" /> Your Curiosity Rankings
         </h2>
-        <Link to="/leaderboard" className="text-xs font-bold text-fuchsia-200">Arena →</Link>
+        <Link to="/leaderboard" className="text-xs font-bold text-fuchsia-200">
+          Arena →
+        </Link>
       </header>
       <ul className="space-y-2">
         {q.data.map((r) => (
@@ -968,7 +1076,9 @@ function MyRankingsSection() {
                 {r.rank ? `#${r.rank.toLocaleString()}` : "—"}
               </p>
               {r.percentile !== null && r.percentile <= 25 && (
-                <p className="text-[9px] font-black uppercase tracking-widest text-amber-200">Top {r.percentile}%</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-amber-200">
+                  Top {r.percentile}%
+                </p>
               )}
             </div>
           </motion.li>
@@ -977,4 +1087,3 @@ function MyRankingsSection() {
     </section>
   );
 }
-

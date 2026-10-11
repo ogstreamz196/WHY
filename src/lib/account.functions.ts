@@ -17,7 +17,6 @@ async function admin() {
   return _admin;
 }
 
-
 const DAILY_POINTS = 25;
 const LOGIN_BONUS_BASE = 10;
 const LOGIN_BONUS_STREAK_STEP = 2;
@@ -64,7 +63,6 @@ export const getMyProfile = createServerFn({ method: "GET" })
     return data as ProfileDTO | null;
   });
 
-
 export const updateMyProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
@@ -100,7 +98,9 @@ export const updateMyProfile = createServerFn({ method: "POST" })
       if (item?.vipOnly) {
         if (!(await isVipUser(context))) throw new Error("That avatar is for VIP members.");
       } else if (item && item.cost > 0) {
-        const { data: owned } = await (await admin())
+        const { data: owned } = await (
+          await admin()
+        )
           .from("user_inventory")
           .select("item_id")
           .eq("user_id", context.userId)
@@ -151,50 +151,60 @@ export const listMyLinkedIdentities = createServerFn({ method: "GET" })
  */
 export const syncGoogleIdentityToProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ synced: boolean; patch: { display_name?: string; avatar_url?: string } }> => {
-    const db = await admin();
-    const { data, error } = await db.auth.admin.getUserById(context.userId);
-    if (error) throw new Error(error.message);
-    const google = (data.user?.identities ?? []).find((i) => i.provider === "google");
-    if (!google) return { synced: false, patch: {} };
+  .handler(
+    async ({
+      context,
+    }): Promise<{ synced: boolean; patch: { display_name?: string; avatar_url?: string } }> => {
+      const db = await admin();
+      const { data, error } = await db.auth.admin.getUserById(context.userId);
+      if (error) throw new Error(error.message);
+      const google = (data.user?.identities ?? []).find((i) => i.provider === "google");
+      if (!google) return { synced: false, patch: {} };
 
-    const meta = (google.identity_data ?? {}) as Record<string, unknown>;
-    const rawName = (meta.full_name ?? meta.name ?? meta.given_name) as string | undefined;
-    const rawAvatar = (meta.avatar_url ?? meta.picture) as string | undefined;
+      const meta = (google.identity_data ?? {}) as Record<string, unknown>;
+      const rawName = (meta.full_name ?? meta.name ?? meta.given_name) as string | undefined;
+      const rawAvatar = (meta.avatar_url ?? meta.picture) as string | undefined;
 
-    const patch: { display_name?: string; avatar_url?: string } = {};
-    if (rawAvatar && typeof rawAvatar === "string") patch.avatar_url = rawAvatar;
+      const patch: { display_name?: string; avatar_url?: string } = {};
+      if (rawAvatar && typeof rawAvatar === "string") patch.avatar_url = rawAvatar;
 
-    const { data: existing } = await db
-      .from("profiles")
-      .select("display_name")
-      .eq("id", context.userId)
-      .maybeSingle();
-    const hasName = !!existing?.display_name && existing.display_name.trim().length > 0;
-    if (!hasName && rawName && typeof rawName === "string") patch.display_name = rawName.trim().slice(0, 60);
+      const { data: existing } = await db
+        .from("profiles")
+        .select("display_name")
+        .eq("id", context.userId)
+        .maybeSingle();
+      const hasName = !!existing?.display_name && existing.display_name.trim().length > 0;
+      if (!hasName && rawName && typeof rawName === "string")
+        patch.display_name = rawName.trim().slice(0, 60);
 
-    if (Object.keys(patch).length === 0) return { synced: false, patch: {} };
+      if (Object.keys(patch).length === 0) return { synced: false, patch: {} };
 
-    const { error: updErr } = await db
-      .from("profiles")
-      .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq("id", context.userId);
-    if (updErr) throw new Error(updErr.message);
-    return { synced: true, patch };
-  });
+      const { error: updErr } = await db
+        .from("profiles")
+        .update({ ...patch, updated_at: new Date().toISOString() })
+        .eq("id", context.userId);
+      if (updErr) throw new Error(updErr.message);
+      return { synced: true, patch };
+    },
+  );
 
 // -------------------- XP ledger --------------------
-
 
 type AuthCtx = {
   supabase: import("@supabase/supabase-js").SupabaseClient;
   userId: string;
 };
 
-export type XpSource = "quiz" | "discovery" | "daily" | "streak" | "achievement" | "login" | "mission";
+export type XpSource =
+  "quiz" | "discovery" | "daily" | "streak" | "achievement" | "login" | "mission";
 
 /** Record an XP award in the append-only ledger. Safe to call after `total_points` is bumped. */
-export async function awardXp(ctx: AuthCtx, source: XpSource, points: number, category?: string | null): Promise<void> {
+export async function awardXp(
+  ctx: AuthCtx,
+  source: XpSource,
+  points: number,
+  category?: string | null,
+): Promise<void> {
   if (!points || points <= 0) return;
   await (await admin()).from("xp_events").insert({
     user_id: ctx.userId,
@@ -204,13 +214,18 @@ export async function awardXp(ctx: AuthCtx, source: XpSource, points: number, ca
   });
 }
 
-
 /**
  * Atomically add points (or spend them, with a negative value). Returns the
  * new balance, or null when a debit would take the balance below zero.
  */
-export async function applyPoints(userId: string, points: number, factsSeen = 0): Promise<number | null> {
-  const { data, error } = await (await admin()).rpc("apply_points", {
+export async function applyPoints(
+  userId: string,
+  points: number,
+  factsSeen = 0,
+): Promise<number | null> {
+  const { data, error } = await (
+    await admin()
+  ).rpc("apply_points", {
     _user: userId,
     _points: points,
     _facts_seen: factsSeen,
@@ -223,13 +238,17 @@ const STATS_COLS =
   "total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day";
 
 async function ensureStatsRow(userId: string): Promise<void> {
-  await (await admin())
+  await (
+    await admin()
+  )
     .from("user_stats")
     .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
 }
 
 async function readStats(userId: string): Promise<StatsDTO> {
-  const { data, error } = await (await admin())
+  const { data, error } = await (
+    await admin()
+  )
     .from("user_stats")
     .select(STATS_COLS)
     .eq("user_id", userId)
@@ -270,9 +289,13 @@ export type StatsDTO = {
 export const getMyStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StatsDTO> => {
-    const { data, error } = await (await admin())
+    const { data, error } = await (
+      await admin()
+    )
       .from("user_stats")
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
+      .select(
+        "total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day",
+      )
       .eq("user_id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -293,7 +316,9 @@ export const getMyStats = createServerFn({ method: "GET" })
 export const getMyInventory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<string[]> => {
-    const { data, error } = await (await admin())
+    const { data, error } = await (
+      await admin()
+    )
       .from("user_inventory")
       .select("item_id")
       .eq("user_id", context.userId);
@@ -303,7 +328,11 @@ export const getMyInventory = createServerFn({ method: "GET" })
 
 export type PurchaseResponse =
   | { ok: true; total_points: number }
-  | { ok: false; reason: "insufficient_coins" | "already_owned" | "not_found"; total_points: number };
+  | {
+      ok: false;
+      reason: "insufficient_coins" | "already_owned" | "not_found";
+      total_points: number;
+    };
 
 /** Buy a store item: price comes from the catalog, debit and ownership are recorded in one transaction. */
 export const purchaseStoreItem = createServerFn({ method: "POST" })
@@ -315,7 +344,9 @@ export const purchaseStoreItem = createServerFn({ method: "POST" })
       const stats = await readStats(context.userId).catch(() => null);
       return { ok: false, reason: "not_found", total_points: stats?.total_points ?? 0 };
     }
-    const { data: rows, error } = await (await admin()).rpc("purchase_item", {
+    const { data: rows, error } = await (
+      await admin()
+    ).rpc("purchase_item", {
       _user: context.userId,
       _item: item.id,
       _cost: item.cost,
@@ -331,40 +362,48 @@ export const purchaseStoreItem = createServerFn({ method: "POST" })
     };
   });
 
-
 /** Record that the user completed today's Daily Challenge. Idempotent per day. */
 export const recordDailyChallenge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ awarded: boolean; stats: StatsDTO; newlyUnlocked: string[] }> => {
-    const t = today();
-    const y = yesterday();
+  .handler(
+    async ({
+      context,
+    }): Promise<{ awarded: boolean; stats: StatsDTO; newlyUnlocked: string[] }> => {
+      const t = today();
+      const y = yesterday();
 
-    await ensureStatsRow(context.userId);
-    const existing = await readStats(context.userId);
-    if (existing.last_daily_challenge_day === t) {
-      return { awarded: false, stats: existing, newlyUnlocked: [] };
-    }
+      await ensureStatsRow(context.userId);
+      const existing = await readStats(context.userId);
+      if (existing.last_daily_challenge_day === t) {
+        return { awarded: false, stats: existing, newlyUnlocked: [] };
+      }
 
-    const nextStreak = existing.last_daily_challenge_day === y ? existing.current_streak + 1 : 1;
-    const longest = Math.max(existing.longest_streak, nextStreak);
-    const claimed = await claimDay(context.userId, "last_daily_challenge_day", existing.last_daily_challenge_day, {
-      current_streak: nextStreak,
-      longest_streak: longest,
-      last_active_day: t,
-      last_daily_challenge_day: t,
-    });
-    if (!claimed) {
-      return { awarded: false, stats: await readStats(context.userId), newlyUnlocked: [] };
-    }
+      const nextStreak = existing.last_daily_challenge_day === y ? existing.current_streak + 1 : 1;
+      const longest = Math.max(existing.longest_streak, nextStreak);
+      const claimed = await claimDay(
+        context.userId,
+        "last_daily_challenge_day",
+        existing.last_daily_challenge_day,
+        {
+          current_streak: nextStreak,
+          longest_streak: longest,
+          last_active_day: t,
+          last_daily_challenge_day: t,
+        },
+      );
+      if (!claimed) {
+        return { awarded: false, stats: await readStats(context.userId), newlyUnlocked: [] };
+      }
 
-    const awardedPoints = await awardAmountForUser(context, DAILY_POINTS);
-    await applyPoints(context.userId, awardedPoints);
-    const row = await readStats(context.userId);
+      const awardedPoints = await awardAmountForUser(context, DAILY_POINTS);
+      await applyPoints(context.userId, awardedPoints);
+      const row = await readStats(context.userId);
 
-    await awardXp(context, "daily", awardedPoints);
-    const newlyUnlocked = await checkAchievements(context, row);
-    return { awarded: true, stats: row, newlyUnlocked };
-  });
+      await awardXp(context, "daily", awardedPoints);
+      const newlyUnlocked = await checkAchievements(context, row);
+      return { awarded: true, stats: row, newlyUnlocked };
+    },
+  );
 
 /** Record that the user viewed/discovered a fact. Bumps facts_seen. */
 export const recordDiscovery = createServerFn({ method: "POST" })
@@ -404,7 +443,12 @@ export const recordDiscovery = createServerFn({ method: "POST" })
     await applyPoints(context.userId, awardedPoints, 1);
     const row = await readStats(context.userId);
 
-    await awardXp(context, "discovery", awardedPoints, (fact as { category: string | null } | null)?.category ?? null);
+    await awardXp(
+      context,
+      "discovery",
+      awardedPoints,
+      (fact as { category: string | null } | null)?.category ?? null,
+    );
     const newlyUnlocked = await checkAchievements(context, row);
     return { stats: row, newlyUnlocked };
   });
@@ -471,10 +515,7 @@ export const toggleFavorite = createServerFn({ method: "POST" })
       .eq("fact_id", data.fact_id)
       .maybeSingle();
     if (existing) {
-      const { error } = await context.supabase
-        .from("favorites")
-        .delete()
-        .eq("id", existing.id);
+      const { error } = await context.supabase.from("favorites").delete().eq("id", existing.id);
       if (error) throw new Error(error.message);
       return { favorited: false, newlyUnlocked: [] };
     }
@@ -485,7 +526,6 @@ export const toggleFavorite = createServerFn({ method: "POST" })
     const newlyUnlocked = await runAchievementCheckForUser(context);
     return { favorited: true, newlyUnlocked };
   });
-
 
 // -------------------- Achievements --------------------
 
@@ -533,10 +573,7 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
       .from("favorites")
       .select("id", { count: "exact", head: true })
       .eq("user_id", context.userId),
-    context.supabase
-      .from("why_chains")
-      .select("id, step_count")
-      .eq("user_id", context.userId),
+    context.supabase.from("why_chains").select("id, step_count").eq("user_id", context.userId),
     context.supabase
       .from("discoveries")
       .select("facts:fact_id (category)")
@@ -555,7 +592,9 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
   const missionsCompleted = missionsRes.count ?? 0;
 
   const catCounts = new Map<string, number>();
-  const discRows = (discCatRes.data ?? []) as unknown as Array<{ facts: { category: string | null } | { category: string | null }[] | null }>;
+  const discRows = (discCatRes.data ?? []) as unknown as Array<{
+    facts: { category: string | null } | { category: string | null }[] | null;
+  }>;
   for (const r of discRows) {
     const f = Array.isArray(r.facts) ? r.facts[0] : r.facts;
     const c = f?.category;
@@ -618,7 +657,9 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
     .map(([id]) => id);
   if (candidates.length === 0) return [];
 
-  const { data: already } = await (await admin())
+  const { data: already } = await (
+    await admin()
+  )
     .from("user_achievements")
     .select("achievement_id")
     .eq("user_id", context.userId)
@@ -626,22 +667,27 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
   const have = new Set((already ?? []).map((r) => r.achievement_id));
   const toInsert = candidates.filter((id) => !have.has(id));
   if (toInsert.length === 0) return [];
-  await (await admin())
+  await (
+    await admin()
+  )
     .from("user_achievements")
     .insert(toInsert.map((id) => ({ user_id: context.userId, achievement_id: id })));
   return toInsert;
 }
 
 export async function runAchievementCheckForUser(context: AuthContext): Promise<string[]> {
-  const { data: row } = await (await admin())
+  const { data: row } = await (
+    await admin()
+  )
     .from("user_stats")
-    .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
+    .select(
+      "total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day",
+    )
     .eq("user_id", context.userId)
     .maybeSingle();
   if (!row) return [];
   return checkAchievements(context, row as StatsDTO);
 }
-
 
 // -------------------- Guest migration --------------------
 
@@ -660,26 +706,26 @@ export const migrateGuestData = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: true; imported_favorites: number }> => {
     // Ensure a user_stats row exists but never bump points/streak from guest input.
-    const { data: existing } = await (await admin())
+    const { data: existing } = await (
+      await admin()
+    )
       .from("user_stats")
       .select("*")
       .eq("user_id", context.userId)
       .maybeSingle();
 
     if (!existing) {
-      await (await admin())
-        .from("user_stats")
-        .upsert(
-          {
-            user_id: context.userId,
-            total_points: 0,
-            current_streak: 0,
-            longest_streak: 0,
-            facts_seen: 0,
-            last_active_day: today(),
-          },
-          { onConflict: "user_id" },
-        );
+      await (await admin()).from("user_stats").upsert(
+        {
+          user_id: context.userId,
+          total_points: 0,
+          current_streak: 0,
+          longest_streak: 0,
+          facts_seen: 0,
+          last_active_day: today(),
+        },
+        { onConflict: "user_id" },
+      );
     }
 
     let imported = 0;
@@ -723,7 +769,9 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     const nextAvailable = tomorrow.toISOString();
 
     await ensureStatsRow(context.userId);
-    const { data: existing, error: readErr } = await (await admin())
+    const { data: existing, error: readErr } = await (
+      await admin()
+    )
       .from("user_stats")
       .select(`${STATS_COLS}, login_streak`)
       .eq("user_id", context.userId)
@@ -744,11 +792,16 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     // Login-bonus escalation uses its own login_streak. `current_streak`
     // belongs to the daily-challenge streak (see recordDailyChallenge).
     const loginStreak = existing.last_login_bonus_day === y ? (prevLoginStreak ?? 0) + 1 : 1;
-    const claimed = await claimDay(context.userId, "last_login_bonus_day", existing.last_login_bonus_day, {
-      last_login_bonus_day: t,
-      login_streak: loginStreak,
-      last_active_day: t,
-    });
+    const claimed = await claimDay(
+      context.userId,
+      "last_login_bonus_day",
+      existing.last_login_bonus_day,
+      {
+        last_login_bonus_day: t,
+        login_streak: loginStreak,
+        last_active_day: t,
+      },
+    );
     if (!claimed) {
       return {
         claimed: false,

@@ -48,7 +48,10 @@ export const getAdultStatus = createServerFn({ method: "GET" })
         .eq("user_id", context.userId)
         .maybeSingle(),
     ]);
-    const p = (profile ?? {}) as { adult_verified_at?: string | null; adult_provider?: string | null };
+    const p = (profile ?? {}) as {
+      adult_verified_at?: string | null;
+      adult_provider?: string | null;
+    };
     const s = (settings ?? {}) as { adult_mode_enabled?: boolean };
     return {
       verified: !!p.adult_verified_at,
@@ -60,9 +63,7 @@ export const getAdultStatus = createServerFn({ method: "GET" })
 
 export const verifyAdult = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ confirm_over_18: z.literal(true) }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ confirm_over_18: z.literal(true) }).parse(input))
   .handler(async ({ context }): Promise<AdultStatus> => {
     const providers = await readProviders(context.supabase);
     const matched = providers.find((p) => APPROVED_PROVIDERS.has(p));
@@ -95,7 +96,10 @@ export const setAdultMode = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ mode_enabled: boolean }> => {
     const { error } = await context.supabase
       .from("user_settings")
-      .upsert({ user_id: context.userId, adult_mode_enabled: data.enabled }, { onConflict: "user_id" });
+      .upsert(
+        { user_id: context.userId, adult_mode_enabled: data.enabled },
+        { onConflict: "user_id" },
+      );
     if (error) throw new Error(error.message);
     return { mode_enabled: data.enabled };
   });
@@ -126,20 +130,25 @@ export const listAdultFacts = createServerFn({ method: "GET" })
       })
       .parse(input ?? {}),
   )
-  .handler(async ({ data, context }): Promise<{ items: AdultFact[]; hasMore: boolean; nextOffset: number }> => {
-    const from = data.offset;
-    const to = data.offset + data.limit - 1;
-    const { data: rows, error } = await context.supabase
-      .from("facts")
-      .select("id, question, answer, category, fun_fact, is_adult")
-      .eq("is_adult", true)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-    if (error) throw new Error(error.message);
-    const items = (rows ?? []) as AdultFact[];
-    return {
-      items,
-      hasMore: items.length === data.limit,
-      nextOffset: data.offset + items.length,
-    };
-  });
+  .handler(
+    async ({
+      data,
+      context,
+    }): Promise<{ items: AdultFact[]; hasMore: boolean; nextOffset: number }> => {
+      const from = data.offset;
+      const to = data.offset + data.limit - 1;
+      const { data: rows, error } = await context.supabase
+        .from("facts")
+        .select("id, question, answer, category, fun_fact, is_adult")
+        .eq("is_adult", true)
+        .order("created_at", { ascending: false })
+        .range(from, to);
+      if (error) throw new Error(error.message);
+      const items = (rows ?? []) as AdultFact[];
+      return {
+        items,
+        hasMore: items.length === data.limit,
+        nextOffset: data.offset + items.length,
+      };
+    },
+  );
