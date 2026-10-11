@@ -428,6 +428,8 @@ export const getInventory = (isVip = false): string[] => {
   return Array.from(new Set([...FREE_ITEMS, ...extras, ...owned]));
 };
 export const ownsItem = (id: string, isVip = false) => getInventory(isVip).includes(id);
+/** Replace the cached inventory with the server's list (signed-in users). */
+export const setOwnedItems = (ids: string[]) => write(KEY_INVENTORY, Array.from(new Set(ids)));
 
 export type Equipped = { avatar?: string; theme?: string };
 const defaultEquipped: Equipped = { avatar: "avatar-sprout", theme: "theme-cosmos" };

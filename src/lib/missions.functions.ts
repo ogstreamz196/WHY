@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { runAchievementCheckForUser, awardXp } from "./account.functions";
+import { applyPoints, runAchievementCheckForUser, awardXp } from "./account.functions";
 import { awardAmountForUser } from "./vipStatus";
 
 let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
@@ -123,7 +123,7 @@ export const markMissionTask = createServerFn({ method: "POST" })
     if (data.task === "chain") patch.chain_done = true;
     if (data.task === "category") patch.category_done = true;
 
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (await admin())
       .from("daily_missions")
       .upsert(patch, { onConflict: "user_id,mission_date" })
       .select("mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded")
@@ -149,20 +149,24 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
         .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
       return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
     }
-    await context.supabase
+    // Only the request that flips bonus_awarded false → true gets paid.
+    const { data: claimed, error: claimErr } = await (await admin())
       .from("daily_missions")
       .update({ bonus_awarded: true, completed_at: new Date().toISOString() })
       .eq("user_id", context.userId)
-      .eq("mission_date", t);
+      .eq("mission_date", t)
+      .eq("bonus_awarded", false)
+      .select("user_id");
+    if (claimErr) throw new Error(claimErr.message);
+    if (!claimed || claimed.length === 0) {
+      const { data: s } = await (await admin())
+        .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
+      return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
+    }
 
-    const { data: stats } = await (await admin())
-      .from("user_stats").select("total_points").eq("user_id", context.userId).maybeSingle();
     const awardedPoints = await awardAmountForUser(context, BONUS_POINTS_BASE);
-    const next = (stats?.total_points ?? 0) + awardedPoints;
-    await (await admin()).from("user_stats").upsert(
-      { user_id: context.userId, total_points: next, last_active_day: t },
-      { onConflict: "user_id" },
-    );
+    const next = (await applyPoints(context.userId, awardedPoints)) ?? 0;
+    await (await admin()).from("user_stats").update({ last_active_day: t }).eq("user_id", context.userId);
     await awardXp(context, "mission", awardedPoints);
     const newlyUnlocked = await runAchievementCheckForUser(context);
     return { awarded: true, points: awardedPoints, total_points: next, newlyUnlocked };

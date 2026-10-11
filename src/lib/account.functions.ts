@@ -3,7 +3,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { awardAmountForUser } from "./vipStatus";
+import { awardAmountForUser, isVipUser } from "./vipStatus";
+import { STORE_CATALOG } from "./store";
+import type { Database } from "@/integrations/supabase/types";
 
 let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
 async function loadAdmin() {
@@ -90,13 +92,22 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     // status_message is a VIP-only feature — silently drop for non-VIPs.
     const patch: Record<string, unknown> = { ...data };
     if ("status_message" in patch) {
-      const { data: sub } = await context.supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("user_id", context.userId)
-        .maybeSingle();
-      const isVip = !!sub && (sub.status === "active" || sub.status === "trialing");
-      if (!isVip) delete patch.status_message;
+      if (!(await isVipUser(context))) delete patch.status_message;
+    }
+    // Store avatars must be owned (or, for VIP-exclusive ones, the user must be VIP).
+    if (data.avatar_id) {
+      const item = STORE_CATALOG.find((i) => i.id === data.avatar_id && i.category === "avatar");
+      if (item?.vipOnly) {
+        if (!(await isVipUser(context))) throw new Error("That avatar is for VIP members.");
+      } else if (item && item.cost > 0) {
+        const { data: owned } = await (await admin())
+          .from("user_inventory")
+          .select("item_id")
+          .eq("user_id", context.userId)
+          .eq("item_id", item.id)
+          .maybeSingle();
+        if (!owned) throw new Error("You don't own that avatar yet.");
+      }
     }
     const { data: row, error } = await context.supabase
       .from("profiles")
@@ -194,6 +205,56 @@ export async function awardXp(ctx: AuthCtx, source: XpSource, points: number, ca
 }
 
 
+/**
+ * Atomically add points (or spend them, with a negative value). Returns the
+ * new balance, or null when a debit would take the balance below zero.
+ */
+export async function applyPoints(userId: string, points: number, factsSeen = 0): Promise<number | null> {
+  const { data, error } = await (await admin()).rpc("apply_points", {
+    _user: userId,
+    _points: points,
+    _facts_seen: factsSeen,
+  });
+  if (error) throw new Error(error.message);
+  return data as number | null;
+}
+
+const STATS_COLS =
+  "total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day";
+
+async function ensureStatsRow(userId: string): Promise<void> {
+  await (await admin())
+    .from("user_stats")
+    .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
+}
+
+async function readStats(userId: string): Promise<StatsDTO> {
+  const { data, error } = await (await admin())
+    .from("user_stats")
+    .select(STATS_COLS)
+    .eq("user_id", userId)
+    .single();
+  if (error) throw new Error(error.message);
+  return data as StatsDTO;
+}
+
+/**
+ * Compare-and-set on a per-day column: the update only applies if the column
+ * still holds the value we read, so two concurrent claims can't both win.
+ */
+async function claimDay(
+  userId: string,
+  column: "last_daily_challenge_day" | "last_login_bonus_day",
+  previous: string | null,
+  patch: Database["public"]["Tables"]["user_stats"]["Update"],
+): Promise<boolean> {
+  let q = (await admin()).from("user_stats").update(patch).eq("user_id", userId);
+  q = previous === null ? q.is(column, null) : q.eq(column, previous);
+  const { data, error } = await q.select("user_id");
+  if (error) throw new Error(error.message);
+  return (data?.length ?? 0) > 0;
+}
+
 // -------------------- Stats --------------------
 
 export type StatsDTO = {
@@ -228,28 +289,46 @@ export const getMyStats = createServerFn({ method: "GET" })
     );
   });
 
-/** Debit Y-coins from the signed-in user's balance. Server-authoritative. */
-export const spendCoins = createServerFn({ method: "POST" })
+/** Item ids the signed-in user has bought in the store. */
+export const getMyInventory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ amount: z.number().int().positive(), reason: z.string().max(64).optional() }).parse(input),
-  )
-  .handler(async ({ data, context }): Promise<{ ok: true; total_points: number } | { ok: false; reason: "insufficient_coins"; total_points: number }> => {
-    const db = await admin();
-    const { data: existing, error: readErr } = await db
-      .from("user_stats")
-      .select("total_points")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    if (readErr) throw new Error(readErr.message);
-    const current = existing?.total_points ?? 0;
-    if (current < data.amount) return { ok: false, reason: "insufficient_coins", total_points: current };
-    const next = current - data.amount;
-    const { error: updErr } = await db
-      .from("user_stats")
-      .upsert({ user_id: context.userId, total_points: next }, { onConflict: "user_id" });
-    if (updErr) throw new Error(updErr.message);
-    return { ok: true, total_points: next };
+  .handler(async ({ context }): Promise<string[]> => {
+    const { data, error } = await (await admin())
+      .from("user_inventory")
+      .select("item_id")
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r) => r.item_id);
+  });
+
+export type PurchaseResponse =
+  | { ok: true; total_points: number }
+  | { ok: false; reason: "insufficient_coins" | "already_owned" | "not_found"; total_points: number };
+
+/** Buy a store item: price comes from the catalog, debit and ownership are recorded in one transaction. */
+export const purchaseStoreItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ item_id: z.string().max(60) }).parse(input))
+  .handler(async ({ data, context }): Promise<PurchaseResponse> => {
+    const item = STORE_CATALOG.find((i) => i.id === data.item_id);
+    if (!item || item.vipOnly) {
+      const stats = await readStats(context.userId).catch(() => null);
+      return { ok: false, reason: "not_found", total_points: stats?.total_points ?? 0 };
+    }
+    const { data: rows, error } = await (await admin()).rpc("purchase_item", {
+      _user: context.userId,
+      _item: item.id,
+      _cost: item.cost,
+    });
+    if (error) throw new Error(error.message);
+    const row = rows?.[0];
+    const total = row?.out_total ?? 0;
+    if (row?.out_status === "ok") return { ok: true, total_points: total };
+    return {
+      ok: false,
+      reason: row?.out_status === "already_owned" ? "already_owned" : "insufficient_coins",
+      total_points: total,
+    };
   });
 
 
@@ -260,41 +339,31 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
     const t = today();
     const y = yesterday();
 
-    const { data: existing } = await (await admin())
-      .from("user_stats")
-      .select("*")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-
-    if (existing?.last_daily_challenge_day === t) {
-      return { awarded: false, stats: existing as StatsDTO, newlyUnlocked: [] };
+    await ensureStatsRow(context.userId);
+    const existing = await readStats(context.userId);
+    if (existing.last_daily_challenge_day === t) {
+      return { awarded: false, stats: existing, newlyUnlocked: [] };
     }
 
-    const prevStreak = existing?.current_streak ?? 0;
-    const nextStreak = existing?.last_daily_challenge_day === y ? prevStreak + 1 : 1;
-    const longest = Math.max(existing?.longest_streak ?? 0, nextStreak);
-    const awardedPoints = await awardAmountForUser(context, DAILY_POINTS);
-    const nextPoints = (existing?.total_points ?? 0) + awardedPoints;
-
-    const patch = {
-      user_id: context.userId,
-      total_points: nextPoints,
+    const nextStreak = existing.last_daily_challenge_day === y ? existing.current_streak + 1 : 1;
+    const longest = Math.max(existing.longest_streak, nextStreak);
+    const claimed = await claimDay(context.userId, "last_daily_challenge_day", existing.last_daily_challenge_day, {
       current_streak: nextStreak,
       longest_streak: longest,
-      facts_seen: existing?.facts_seen ?? 0,
       last_active_day: t,
       last_daily_challenge_day: t,
-    };
-    const { data: row, error } = await (await admin())
-      .from("user_stats")
-      .upsert(patch, { onConflict: "user_id" })
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
-      .single();
-    if (error) throw new Error(error.message);
+    });
+    if (!claimed) {
+      return { awarded: false, stats: await readStats(context.userId), newlyUnlocked: [] };
+    }
+
+    const awardedPoints = await awardAmountForUser(context, DAILY_POINTS);
+    await applyPoints(context.userId, awardedPoints);
+    const row = await readStats(context.userId);
 
     await awardXp(context, "daily", awardedPoints);
-    const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
-    return { awarded: true, stats: row as StatsDTO, newlyUnlocked };
+    const newlyUnlocked = await checkAchievements(context, row);
+    return { awarded: true, stats: row, newlyUnlocked };
   });
 
 /** Record that the user viewed/discovered a fact. Bumps facts_seen. */
@@ -302,36 +371,42 @@ export const recordDiscovery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ fact_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<{ stats: StatsDTO; newlyUnlocked: string[] }> => {
+    const db = await admin();
+    // Only the first time a user sees a fact earns a point and counts toward facts_seen;
+    // repeat views are still logged for the timeline.
+    const { data: seenBefore } = await db
+      .from("discoveries")
+      .select("fact_id")
+      .eq("user_id", context.userId)
+      .eq("fact_id", data.fact_id)
+      .limit(1);
+    const firstTime = (seenBefore?.length ?? 0) === 0;
+
     await context.supabase
       .from("discoveries")
       .insert({ user_id: context.userId, fact_id: data.fact_id });
 
-    const [{ data: existing }, { data: fact }] = await Promise.all([
-      (await admin()).from("user_stats").select("*").eq("user_id", context.userId).maybeSingle(),
-      context.supabase.from("facts").select("category").eq("id", data.fact_id).maybeSingle(),
-    ]);
+    await ensureStatsRow(context.userId);
+    await db.from("user_stats").update({ last_active_day: today() }).eq("user_id", context.userId);
+
+    if (!firstTime) {
+      return { stats: await readStats(context.userId), newlyUnlocked: [] };
+    }
+
+    const { data: fact } = await context.supabase
+      .from("facts")
+      .select("category")
+      .eq("id", data.fact_id)
+      .maybeSingle();
 
     const DISCOVERY_POINTS_BASE = 1;
     const awardedPoints = await awardAmountForUser(context, DISCOVERY_POINTS_BASE);
-    const patch = {
-      user_id: context.userId,
-      total_points: (existing?.total_points ?? 0) + awardedPoints,
-      current_streak: existing?.current_streak ?? 0,
-      longest_streak: existing?.longest_streak ?? 0,
-      facts_seen: (existing?.facts_seen ?? 0) + 1,
-      last_active_day: today(),
-      last_daily_challenge_day: existing?.last_daily_challenge_day ?? null,
-    };
-    const { data: row, error } = await (await admin())
-      .from("user_stats")
-      .upsert(patch, { onConflict: "user_id" })
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
-      .single();
-    if (error) throw new Error(error.message);
+    await applyPoints(context.userId, awardedPoints, 1);
+    const row = await readStats(context.userId);
 
     await awardXp(context, "discovery", awardedPoints, (fact as { category: string | null } | null)?.category ?? null);
-    const newlyUnlocked = await checkAchievements(context, row as StatsDTO);
-    return { stats: row as StatsDTO, newlyUnlocked };
+    const newlyUnlocked = await checkAchievements(context, row);
+    return { stats: row, newlyUnlocked };
   });
 
 // -------------------- Favorites --------------------
@@ -647,64 +722,58 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     tomorrow.setUTCHours(0, 0, 0, 0);
     const nextAvailable = tomorrow.toISOString();
 
-    const { data: existing } = await (await admin())
+    await ensureStatsRow(context.userId);
+    const { data: existing, error: readErr } = await (await admin())
       .from("user_stats")
-      .select("*")
+      .select(`${STATS_COLS}, login_streak`)
       .eq("user_id", context.userId)
-      .maybeSingle();
+      .single();
+    if (readErr) throw new Error(readErr.message);
+    const { login_streak: prevLoginStreak, ...prevStats } = existing;
 
-    if (existing?.last_login_bonus_day === t) {
+    if (existing.last_login_bonus_day === t) {
       return {
         claimed: false,
         awarded_points: 0,
-        streak: existing.current_streak ?? 0,
-        stats: existing as StatsDTO,
+        streak: prevLoginStreak ?? 0,
+        stats: prevStats as StatsDTO,
         next_available_at: nextAvailable,
       };
     }
 
-    // Login-bonus escalation is computed from login-bonus dates only.
-    // Do NOT overwrite `current_streak` — that field belongs to the
-    // daily-challenge streak (see recordDailyChallenge). Otherwise a user
-    // who missed yesterday's bonus but is still on a long challenge streak
-    // would see their streak reset to 1 when they claim today's bonus.
-    const loginStreak = existing?.last_login_bonus_day === y
-      ? (existing?.current_streak ?? 0) + 1
-      : 1;
+    // Login-bonus escalation uses its own login_streak. `current_streak`
+    // belongs to the daily-challenge streak (see recordDailyChallenge).
+    const loginStreak = existing.last_login_bonus_day === y ? (prevLoginStreak ?? 0) + 1 : 1;
+    const claimed = await claimDay(context.userId, "last_login_bonus_day", existing.last_login_bonus_day, {
+      last_login_bonus_day: t,
+      login_streak: loginStreak,
+      last_active_day: t,
+    });
+    if (!claimed) {
+      return {
+        claimed: false,
+        awarded_points: 0,
+        streak: prevLoginStreak ?? 0,
+        stats: await readStats(context.userId),
+        next_available_at: nextAvailable,
+      };
+    }
+
     const baseBonus = Math.min(
       LOGIN_BONUS_MAX,
       LOGIN_BONUS_BASE + (loginStreak - 1) * LOGIN_BONUS_STREAK_STEP,
     );
     const bonus = await awardAmountForUser(context, baseBonus);
-    const currentStreak = existing?.current_streak ?? 0;
-    const longest = Math.max(existing?.longest_streak ?? 0, currentStreak);
-
-    const { data: row, error } = await (await admin())
-      .from("user_stats")
-      .upsert(
-        {
-          user_id: context.userId,
-          total_points: (existing?.total_points ?? 0) + bonus,
-          current_streak: currentStreak,
-          longest_streak: longest,
-          facts_seen: existing?.facts_seen ?? 0,
-          last_active_day: t,
-          last_daily_challenge_day: existing?.last_daily_challenge_day ?? null,
-          last_login_bonus_day: t,
-        },
-        { onConflict: "user_id" },
-      )
-      .select("total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day")
-      .single();
-    if (error) throw new Error(error.message);
+    await applyPoints(context.userId, bonus);
+    const row = await readStats(context.userId);
 
     await awardXp(context, "login", bonus);
-    await checkAchievements(context, row as StatsDTO);
+    await checkAchievements(context, row);
     return {
       claimed: true,
       awarded_points: bonus,
-      streak: currentStreak,
-      stats: row as StatsDTO,
+      streak: loginStreak,
+      stats: row,
       next_available_at: nextAvailable,
     };
   });

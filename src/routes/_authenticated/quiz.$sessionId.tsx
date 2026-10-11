@@ -134,7 +134,7 @@ function QuizPlayPage() {
         data: {
           session_id: sessionId,
           fact_id: current.fact_id,
-          picked_index: pickIndex < 0 ? 0 : pickIndex,
+          picked_index: pickIndex < 0 ? -1 : pickIndex,
           ms_taken: msTaken,
         },
       });

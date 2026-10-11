@@ -12,7 +12,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyStats, spendCoins, updateMyProfile } from "@/lib/account.functions";
+import { getMyInventory, getMyStats, purchaseStoreItem, updateMyProfile } from "@/lib/account.functions";
 import {
   COIN_PACKS,
   STORE_CATALOG,
@@ -21,6 +21,7 @@ import {
   getPoints,
   purchaseItem,
   setEquipped,
+  setOwnedItems,
   type StoreCategory,
   type StoreItem,
 } from "@/lib/store";
@@ -63,7 +64,8 @@ function StorePage() {
   const { isVip, subscription } = useSubscription(userId);
   const qc = useQueryClient();
   const fetchStats = useServerFn(getMyStats);
-  const doSpend = useServerFn(spendCoins);
+  const doPurchase = useServerFn(purchaseStoreItem);
+  const fetchInventory = useServerFn(getMyInventory);
   const doUpdateProfile = useServerFn(updateMyProfile);
 
   const serverStats = useQuery({
@@ -98,6 +100,19 @@ function StorePage() {
       previewTheme(null);
     };
   }, [tab]);
+
+  // Signed-in users' purchases live on the server; mirror them into the local cache.
+  const serverInventory = useQuery({
+    queryKey: ["inventory"],
+    queryFn: () => fetchInventory(),
+    enabled: !!userId,
+  });
+  useEffect(() => {
+    if (userId && serverInventory.data) {
+      setOwnedItems(serverInventory.data);
+      setInventory(getInventory());
+    }
+  }, [userId, serverInventory.data]);
 
   // When signed in, mirror server balance into the local display.
   useEffect(() => {
@@ -158,26 +173,28 @@ function StorePage() {
         return;
       }
       try {
-        const res = await doSpend({ data: { amount: item.cost, reason: `store:${item.id}` } });
+        const res = await doPurchase({ data: { item_id: item.id } });
+        setCoins(res.total_points);
         if (!res.ok) {
-          flash(`Need ${item.cost - res.total_points} more coins`);
-          setCoins(res.total_points);
+          flash(
+            res.reason === "insufficient_coins"
+              ? `Need ${item.cost - res.total_points} more coins`
+              : res.reason === "already_owned"
+                ? "Already owned"
+                : "Item not found",
+          );
           return;
         }
-        setCoins(res.total_points);
         qc.invalidateQueries({ queryKey: ["stats"] });
+        qc.invalidateQueries({ queryKey: ["inventory"] });
       } catch (e) {
         console.error(e);
         flash("Purchase failed — try again");
         return;
       }
-      // Grant inventory locally without double-debiting local coins.
-      const inv = getInventory();
-      if (!inv.includes(item.id)) {
-        inv.push(item.id);
-        try { window.sessionStorage.setItem("why:inventory", JSON.stringify(inv)); } catch { /* ignore */ }
-      }
-      setInventory(inv);
+      const inv = Array.from(new Set([...getInventory(), item.id]));
+      setOwnedItems(inv);
+      setInventory(getInventory());
       flash(`${item.emoji} ${item.name} unlocked!`);
       return;
     }
