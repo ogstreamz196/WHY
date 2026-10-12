@@ -13,7 +13,27 @@ The website itself is unchanged. The app is spotted by a `WhyNativeApp` marker i
 If the site moves to a custom domain, change `serverUrl` in `capacitor.config.ts` and the address in `www/offline.html`, then build again.
 
 
-## Getting the Android files
+## What needs a new store release
+
+Changes made in Lovable or on GitHub to the website reach all three versions as soon as the site is published. Nothing needs uploading to the stores.
+
+A new Android/iOS build and store release is only needed for changes inside this `mobile` folder:
+
+- the app icon or launch screen
+- adding a Capacitor plugin
+- native settings
+- the app ID
+- the website address the apps open
+
+
+## Building and signing in Android Studio
+
+1. In this `mobile` folder, run `npm ci`, then `npx cap sync android`.
+2. Open the `mobile/android` folder in Android Studio (or run `npx cap open android`).
+3. Before each Play upload, raise the version code (and, if you like, the version name) in `android/app/build.gradle`. Look for the comment about versionCode.
+4. Use **Build → Generate Signed App Bundle or APK**, choose **Android App Bundle**, and pick your own key.
+
+## Getting the Android files from GitHub instead
 
 You don't need Android Studio. GitHub builds the app for you.
 
@@ -25,9 +45,9 @@ You don't need Android Studio. GitHub builds the app for you.
 
 Each run gets a higher version code automatically, which Google Play needs for every new upload.
 
-### The upload key (needed before your first Play upload)
+### Optional: let GitHub sign the Play bundle
 
-Google Play only accepts bundles signed with your private upload key. Add these four repository secrets on GitHub under **Settings → Secrets and variables → Actions**:
+You don't need this if you sign in Android Studio. Google Play only accepts bundles signed with your private upload key. Add these four repository secrets on GitHub under **Settings → Secrets and variables → Actions**:
 
 - `ANDROID_KEYSTORE_BASE64`
 - `ANDROID_KEYSTORE_PASSWORD`

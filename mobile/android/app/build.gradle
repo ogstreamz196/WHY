@@ -7,7 +7,9 @@ android {
         applicationId "com.ogstreamz196.why"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Play needs a higher versionCode for every upload; CI passes the run number.
+        // Play needs a higher versionCode for every upload. When building in
+        // Android Studio, raise the "1" below (and the version name) before
+        // each release; CI overrides both with environment variables.
         versionCode((System.getenv("WHY_VERSION_CODE") ?: "1").toInteger())
         versionName(System.getenv("WHY_VERSION_NAME") ?: "1.0.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
