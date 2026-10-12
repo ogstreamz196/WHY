@@ -20,6 +20,10 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: "Sign in — Why?" },
       { name: "description", content: "Join a community of curious explorers." },
+      { property: "og:title", content: "Sign in — Why?" },
+      { property: "og:description", content: "Sign in to sync your coins, streak and favourites across devices." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "theme-color", content: "#100c1f" },
     ],
   }),

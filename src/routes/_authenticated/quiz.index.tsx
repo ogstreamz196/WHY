@@ -14,6 +14,10 @@ export const Route = createFileRoute("/_authenticated/quiz/")({
     meta: [
       { title: "Curiosity Challenge — Why?" },
       { name: "description", content: "Test what you know and climb the leaderboards." },
+      { property: "og:title", content: "Curiosity Challenge — Why?" },
+      { property: "og:description", content: "Test what you know with quick quizzes and climb the leaderboards." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: QuizStartPage,

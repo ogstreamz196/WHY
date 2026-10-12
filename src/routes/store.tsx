@@ -491,9 +491,9 @@ function StorePage() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 truncate font-display text-sm font-black text-white">
+                  <h2 className="mt-1 truncate font-display text-sm font-black text-white">
                     {item.name}
-                  </p>
+                  </h2>
                   <p className="line-clamp-2 min-h-8 text-[10px] leading-tight text-white/70">
                     {item.description}
                   </p>
