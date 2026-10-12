@@ -146,7 +146,6 @@ import {
 } from "@/components/WhyChainFx";
 import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
-import { SignInPrompt } from "@/components/SignInPrompt";
 import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
 import { isNativeApp, useIsNativeApp } from "@/lib/platform";
 
@@ -241,7 +240,6 @@ function WhyApp() {
   const [streak, setStreak] = useState(0);
   const [level, setLevel] = useState(1);
   const [displayName, setDisplayName] = useState<string | null>(null);
-  const [signInPrompt, setSignInPrompt] = useState<null | { title: string; message: string }>(null);
   const [celebrate, setCelebrate] = useState<{ points: number } | null>(null);
   const [lastChain, setLastChain] = useState<ChainSummary | null>(null);
   const [savingChain, setSavingChain] = useState(false);
@@ -527,34 +525,6 @@ function WhyApp() {
     return () => window.clearTimeout(t);
   }, [chain.length, chain, fact?.id, user, grantPoints, claimChainReward, showServerBalance]);
 
-  // Guests are never force-redirected into an OAuth flow — that navigates the
-  // whole page away before they can read anything. Instead we surface a gentle,
-  // dismissible sign-in invitation after they've enjoyed a few facts.
-  const guestNudge = useCallback(() => {
-    setSignInPrompt({
-      title: "Keep your curiosity safe",
-      message: isNativeApp()
-        ? "Create a free account to save your streak, coins, favourites and daily rewards. It takes a second and we never post anything."
-        : "Sign in free with Google or Apple to save your streak, coins, favourites and daily rewards. It takes a second and we never post anything.",
-    });
-  }, []);
-
-  useEffect(() => {
-    if (user) return;
-    if (!fact?.id) return;
-    guestFactCount.current += 1;
-    if (guestFactCount.current === 3) guestNudge();
-  }, [fact?.id, user, guestNudge]);
-
-  useEffect(() => {
-    if (user) return;
-    const REPROMPT_MS = 5 * 60_000;
-    const t = window.setInterval(() => {
-      guestNudge();
-    }, REPROMPT_MS);
-    return () => window.clearInterval(t);
-  }, [user, guestNudge]);
-
   useEffect(() => {
     void loadNext();
   }, []);
@@ -626,10 +596,9 @@ function WhyApp() {
   const handleSaveChain = async () => {
     if (!fact || chain.length === 0) return;
     if (isGuest) {
-      setSignInPrompt({
-        title: "Save this trail",
-        message: "Sign up to keep your Favourites, share them, and pick up where you left off.",
-      });
+      if (!isFavorite(fact.id)) toggleFavorite(fact);
+      setFav(true);
+      toast.success("⭐ Saved on this device. Sign in at the top to sync across devices.");
       return;
     }
     setSavingChain(true);
@@ -858,13 +827,7 @@ function WhyApp() {
             discoveries={getSeen()}
             streak={streak}
             points={points}
-            onSignUp={() =>
-              setSignInPrompt({
-                title: "Save your curiosity",
-                message:
-                  "Create a free account to keep your streak, coins, favourites and daily rewards forever.",
-              })
-            }
+            onSignUp={() => navigate({ to: "/auth", search: { mode: "signup" } })}
           />
         )}
 
@@ -1414,12 +1377,6 @@ function WhyApp() {
         points={celebrate?.points ?? 0}
         streak={streak}
         onClose={() => setCelebrate(null)}
-      />
-      <SignInPrompt
-        open={!!signInPrompt}
-        onClose={() => setSignInPrompt(null)}
-        title={signInPrompt?.title}
-        message={signInPrompt?.message}
       />
       <WelcomeOverlay
         open={welcome}

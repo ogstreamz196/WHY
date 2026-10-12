@@ -1,5 +1,5 @@
 // Client-side session state: favorites, curiosity points, streak, offline cache.
-// Guests: state lives ONLY in sessionStorage — it clears when the browser
+// Guests: state lives in localStorage on this device (survives restarts and app updates); previously it cleared when the browser
 // (or last tab of this origin) is closed. No progress is persisted for guests.
 // Signed-in users: canonical progress lives on the server; this is a cache.
 
@@ -17,11 +17,11 @@ const CACHE_MAX = 40;
 
 const isBrowser = () => typeof window !== "undefined";
 
-// Session-only storage: cleared on browser exit. Falls back safely on SSR.
+// Device storage: persists on this device. Falls back safely on SSR.
 function storage(): Storage | null {
   if (!isBrowser()) return null;
   try {
-    return window.sessionStorage;
+    return window.localStorage;
   } catch {
     return null;
   }
@@ -48,31 +48,25 @@ function write<T>(key: string, value: T) {
   }
 }
 
-// One-time migration: if legacy guest data lives in localStorage from a prior
-// build, move it into this session and wipe localStorage so nothing persists
-// across browser exits going forward.
-(function migrateLegacyLocalStorage() {
+// One-time migration: older builds kept guest data in sessionStorage. Copy it
+// into localStorage so the current session's progress isn't lost.
+function migrateSessionToLocal() {
   if (!isBrowser()) return;
   try {
-    const ls = window.localStorage;
-    const keys: string[] = [];
-    for (let i = 0; i < ls.length; i++) {
-      const k = ls.key(i);
-      if (k && k.startsWith("why:")) keys.push(k);
-    }
-    if (keys.length === 0) return;
     const ss = window.sessionStorage;
-    for (const k of keys) {
-      if (ss.getItem(k) == null) {
-        const v = ls.getItem(k);
-        if (v != null) ss.setItem(k, v);
+    const ls = window.localStorage;
+    for (let i = 0; i < ss.length; i++) {
+      const k = ss.key(i);
+      if (k && k.startsWith("why:") && ls.getItem(k) == null) {
+        const v = ss.getItem(k);
+        if (v != null) ls.setItem(k, v);
       }
-      ls.removeItem(k);
     }
   } catch {
     /* ignore */
   }
-})();
+}
+migrateSessionToLocal();
 
 // ------- Settings -------
 export type Settings = {

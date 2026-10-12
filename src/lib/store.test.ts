@@ -9,7 +9,7 @@ function setToday(iso: string) {
 describe("Daily Challenge — points & streak", () => {
   beforeEach(() => {
     localStorage.clear();
-    sessionStorage.clear();
+    localStorage.clear(); sessionStorage.clear();
     vi.useFakeTimers();
     setToday("2026-07-08T09:00:00Z");
   });
