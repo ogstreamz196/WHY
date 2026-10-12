@@ -196,7 +196,7 @@ type AuthCtx = {
 };
 
 export type XpSource =
-  "quiz" | "discovery" | "daily" | "streak" | "achievement" | "login" | "mission";
+  "quiz" | "discovery" | "daily" | "streak" | "achievement" | "login" | "mission" | "chain";
 
 /** Record an XP award in the append-only ledger. Safe to call after `total_points` is bumped. */
 export async function awardXp(
@@ -451,6 +451,60 @@ export const recordDiscovery = createServerFn({ method: "POST" })
     );
     const newlyUnlocked = await checkAchievements(context, row);
     return { stats: row, newlyUnlocked };
+  });
+
+// -------------------- "But… Why?" chain rewards --------------------
+
+const CHAIN_LAYER_POINTS_BASE = 3;
+const CHAIN_REWARDS_PER_DAY = 30;
+// The client waits 3s before claiming; allow a little clock slack.
+const CHAIN_MIN_READ_MS = 2500;
+const CHAIN_REWARD_TTL_MS = 60 * 60 * 1000;
+
+export type ChainRewardResult =
+  | { awarded: true; points: number; total_points: number }
+  | { awarded: false; reason: "daily_cap" | "invalid"; points: 0; total_points: number };
+
+/** Claim the coins for a chain layer issued by generateWhyLayer. Each layer pays once. */
+export const claimChainLayerReward = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ reward_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<ChainRewardResult> => {
+    const db = await admin();
+    const now = Date.now();
+
+    const { count } = await db
+      .from("chain_layer_rewards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", context.userId)
+      .gte("claimed_at", `${today()}T00:00:00Z`);
+    if ((count ?? 0) >= CHAIN_REWARDS_PER_DAY) {
+      await ensureStatsRow(context.userId);
+      const stats = await readStats(context.userId);
+      return { awarded: false, reason: "daily_cap", points: 0, total_points: stats.total_points };
+    }
+
+    // Compare-and-set: unclaimed, owned by the caller, old enough to have been read.
+    const { data: claimed, error } = await db
+      .from("chain_layer_rewards")
+      .update({ claimed_at: new Date(now).toISOString() })
+      .eq("id", data.reward_id)
+      .eq("user_id", context.userId)
+      .is("claimed_at", null)
+      .lte("issued_at", new Date(now - CHAIN_MIN_READ_MS).toISOString())
+      .gte("issued_at", new Date(now - CHAIN_REWARD_TTL_MS).toISOString())
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (!claimed || claimed.length === 0) {
+      await ensureStatsRow(context.userId);
+      const stats = await readStats(context.userId);
+      return { awarded: false, reason: "invalid", points: 0, total_points: stats.total_points };
+    }
+
+    const points = await awardAmountForUser(context, CHAIN_LAYER_POINTS_BASE);
+    const total = (await applyPoints(context.userId, points)) ?? 0;
+    await awardXp(context, "chain", points);
+    return { awarded: true, points, total_points: total };
   });
 
 // -------------------- Favorites --------------------

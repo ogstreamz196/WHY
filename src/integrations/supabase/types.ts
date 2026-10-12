@@ -224,6 +224,27 @@ export type Database = {
         }
         Relationships: []
       }
+      chain_layer_rewards: {
+        Row: {
+          claimed_at: string | null
+          id: string
+          issued_at: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          id?: string
+          issued_at?: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          id?: string
+          issued_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       champion_title_history: {
         Row: {
           claimed_at: string
