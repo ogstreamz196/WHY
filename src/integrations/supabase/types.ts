@@ -497,36 +497,6 @@ export type Database = {
           },
         ]
       }
-      plus_entitlements: {
-        Row: {
-          billing_issue: boolean
-          expires_at: string | null
-          product_id: string | null
-          store: string | null
-          updated_at: string
-          user_id: string
-          will_renew: boolean
-        }
-        Insert: {
-          billing_issue?: boolean
-          expires_at?: string | null
-          product_id?: string | null
-          store?: string | null
-          updated_at?: string
-          user_id: string
-          will_renew?: boolean
-        }
-        Update: {
-          billing_issue?: boolean
-          expires_at?: string | null
-          product_id?: string | null
-          store?: string | null
-          updated_at?: string
-          user_id?: string
-          will_renew?: boolean
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           adult_provider: string | null
