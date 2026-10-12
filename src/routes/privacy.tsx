@@ -59,8 +59,9 @@ function PrivacyPage() {
 
         <Section title="What we collect when you have an account">
           <p>
-            <b>Account details:</b> your email address and password (stored securely by our
-            authentication provider, never in plain text). On the website you can instead sign in
+            <b>Account details:</b> a username and password (stored securely by our
+            authentication provider, never in plain text). Adding an email is optional and it is
+            only used to reset a forgotten password — never for marketing. On the website you can instead sign in
             with Google or Apple, in which case we receive your name, email and profile picture from
             them.
           </p>
