@@ -15,8 +15,10 @@ import { Route as AdultRouteImport } from './routes/adult'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BadgesRouteImport } from './routes/badges'
 import { Route as ChainsRouteImport } from './routes/chains'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -62,6 +64,11 @@ const ChainsRoute = ChainsRouteImport.update({
   path: '/chains',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
@@ -70,6 +77,11 @@ const FavoritesRoute = FavoritesRouteImport.update({
 const LeaderboardRoute = LeaderboardRouteImport.update({
   id: '/leaderboard',
   path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -157,8 +169,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/favorites': typeof FavoritesRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
@@ -181,8 +195,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/favorites': typeof FavoritesRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
@@ -207,8 +223,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/badges': typeof BadgesRoute
   '/chains': typeof ChainsRoute
+  '/delete-account': typeof DeleteAccountRoute
   '/favorites': typeof FavoritesRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
@@ -233,8 +251,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/badges'
     | '/chains'
+    | '/delete-account'
     | '/favorites'
     | '/leaderboard'
+    | '/privacy'
     | '/profile'
     | '/reset-password'
     | '/settings'
@@ -257,8 +277,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/badges'
     | '/chains'
+    | '/delete-account'
     | '/favorites'
     | '/leaderboard'
+    | '/privacy'
     | '/profile'
     | '/reset-password'
     | '/settings'
@@ -282,8 +304,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/badges'
     | '/chains'
+    | '/delete-account'
     | '/favorites'
     | '/leaderboard'
+    | '/privacy'
     | '/profile'
     | '/reset-password'
     | '/settings'
@@ -308,8 +332,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   BadgesRoute: typeof BadgesRoute
   ChainsRoute: typeof ChainsRoute
+  DeleteAccountRoute: typeof DeleteAccountRoute
   FavoritesRoute: typeof FavoritesRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
@@ -364,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChainsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/favorites': {
       id: '/favorites'
       path: '/favorites'
@@ -376,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/leaderboard'
       fullPath: '/leaderboard'
       preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -524,8 +564,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   BadgesRoute: BadgesRoute,
   ChainsRoute: ChainsRoute,
+  DeleteAccountRoute: DeleteAccountRoute,
   FavoritesRoute: FavoritesRoute,
   LeaderboardRoute: LeaderboardRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,

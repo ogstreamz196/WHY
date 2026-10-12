@@ -35,6 +35,34 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  // Neutral age screen for sign-up (store rules for apps children may use):
+  // ask for birth month/year without hinting at the cut-off. Under-13s can
+  // keep using guest mode, which collects no personal information.
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthYear, setBirthYear] = useState("");
+  const [underAge, setUnderAge] = useState(false);
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(AGE_GATE_KEY) === "under") setUnderAge(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const ageKnown = birthMonth !== "" && birthYear !== "";
+  const ageOk = ageKnown && !underAge && ageFrom(Number(birthYear), Number(birthMonth)) >= 13;
+  function chooseBirth(month: string, year: string) {
+    setBirthMonth(month);
+    setBirthYear(year);
+    if (month !== "" && year !== "" && ageFrom(Number(year), Number(month)) < 13) {
+      setUnderAge(true);
+      try {
+        window.sessionStorage.setItem(AGE_GATE_KEY, "under");
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  const signupBlocked = mode === "signup" && !ageOk;
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
@@ -101,6 +129,10 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        if (!ageOk) {
+          setLoading(false);
+          return;
+        }
         const parsed = z
           .object({
             email: z.string().email(),
@@ -186,109 +218,133 @@ function AuthPage() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Google and Apple sign-in are web-only: inside the Android/iOS apps
-              the OAuth pages would open in the phone's browser (and Google
-              blocks its sign-in in app web views), so the apps use email. */}
-          {isNative === false && (
-            <>
-              <div className="mt-5 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => handleOAuth("google")}
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
-                >
-                  <GoogleIcon />
-                  Continue with Google
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOAuth("apple")}
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-4 py-3 text-sm font-bold text-white shadow-md transition disabled:opacity-60"
-                >
-                  <AppleIcon />
-                  Continue with Apple
-                </button>
-              </div>
-
-              <div className="my-4 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
-                <div className="h-px flex-1 bg-white/10" />
-                or
-                <div className="h-px flex-1 bg-white/10" />
-              </div>
-            </>
-          )}
-          {isNative === null && <div className="mt-5" />}
-
-          <form onSubmit={submit} className="space-y-3">
-            {mode === "signup" && (
-              <Field
-                label="Your name"
-                value={name}
-                onChange={setName}
-                placeholder="Curious Explorer"
-                autoComplete="name"
-              />
-            )}
-            <Field
-              label="Email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              placeholder="you@example.com"
-              icon={<Mail className="h-4 w-4 text-white/40" />}
-              autoComplete="email"
-            />
-            {mode !== "reset" && (
-              <Field
-                label="Password"
-                type="password"
-                value={password}
-                onChange={setPassword}
-                placeholder="••••••••"
-                icon={<Lock className="h-4 w-4 text-white/40" />}
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              />
-            )}
-
-            {message && (
-              <div
-                className={`rounded-2xl px-3 py-2 text-xs font-semibold ${
-                  message.type === "error"
-                    ? "bg-rose-500/10 text-rose-300"
-                    : "bg-emerald-500/10 text-emerald-300"
-                }`}
+          {mode === "signup" && underAge && (
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-sm leading-relaxed text-white/85">
+              <p className="font-bold text-white">Thanks for telling us!</p>
+              <p className="mt-1">
+                Accounts are for explorers aged 13 and up. You can keep discovering facts as a guest
+                — no account needed, and nothing personal is collected.
+              </p>
+              <Link
+                to="/"
+                className="mt-3 inline-block rounded-full px-4 py-2 text-sm font-black text-white"
+                style={{ background: "var(--gradient-primary)" }}
               >
-                {message.text}
-              </div>
-            )}
+                Keep exploring as a guest
+              </Link>
+            </div>
+          )}
+          {mode === "signup" && !underAge && (
+            <BirthDateQuestion month={birthMonth} year={birthYear} onChange={chooseBirth} />
+          )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] transition disabled:opacity-60"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
+          {!signupBlocked && (
+            <>
+              {/* Google and Apple sign-in are web-only: inside the Android/iOS apps
+                the OAuth pages would open in the phone's browser (and Google
+                blocks its sign-in in app web views), so the apps use email. */}
+              {isNative === false && (
                 <>
-                  {mode === "signup" && (
-                    <>
-                      Create account <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                  {mode === "signin" && (
-                    <>
-                      Sign in <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                  {mode === "reset" && "Send reset link"}
+                  <div className="mt-5 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOAuth("google")}
+                      disabled={loading}
+                      className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
+                    >
+                      <GoogleIcon />
+                      Continue with Google
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOAuth("apple")}
+                      disabled={loading}
+                      className="flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-4 py-3 text-sm font-bold text-white shadow-md transition disabled:opacity-60"
+                    >
+                      <AppleIcon />
+                      Continue with Apple
+                    </button>
+                  </div>
+
+                  <div className="my-4 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
+                    <div className="h-px flex-1 bg-white/10" />
+                    or
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
                 </>
               )}
-            </button>
-          </form>
+              {isNative === null && <div className="mt-5" />}
+
+              <form onSubmit={submit} className="space-y-3">
+                {mode === "signup" && (
+                  <Field
+                    label="Your name"
+                    value={name}
+                    onChange={setName}
+                    placeholder="Curious Explorer"
+                    autoComplete="name"
+                  />
+                )}
+                <Field
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={setEmail}
+                  placeholder="you@example.com"
+                  icon={<Mail className="h-4 w-4 text-white/40" />}
+                  autoComplete="email"
+                />
+                {mode !== "reset" && (
+                  <Field
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="••••••••"
+                    icon={<Lock className="h-4 w-4 text-white/40" />}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  />
+                )}
+
+                {message && (
+                  <div
+                    className={`rounded-2xl px-3 py-2 text-xs font-semibold ${
+                      message.type === "error"
+                        ? "bg-rose-500/10 text-rose-300"
+                        : "bg-emerald-500/10 text-emerald-300"
+                    }`}
+                  >
+                    {message.text}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] transition disabled:opacity-60"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      {mode === "signup" && (
+                        <>
+                          Create account <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                      {mode === "signin" && (
+                        <>
+                          Sign in <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                      {mode === "reset" && "Send reset link"}
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
             {mode !== "signin" && (
@@ -387,5 +443,79 @@ function AppleIcon() {
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
       <path d="M16.365 1.43c0 1.14-.42 2.23-1.24 3.03-.88.87-2.06 1.44-3.14 1.35-.13-1.1.42-2.24 1.2-2.98.88-.86 2.28-1.47 3.18-1.4zM20.5 17.36c-.55 1.27-1.22 2.48-2.13 3.4-.79.8-1.79 1.79-3.07 1.79-1.24.02-1.65-.79-3.26-.79s-2.05.78-3.24.81c-1.28.05-2.25-.87-3.05-1.67-2.19-2.19-3.87-6.19-1.61-9.03 1.13-1.4 3.15-2.29 4.98-2.32 1.31-.03 2.55.88 3.36.88.79 0 2.31-1.09 3.9-.93.66.03 2.53.27 3.72 2.02-.09.06-2.23 1.3-2.21 3.87.03 3.08 2.71 4.1 2.61 3.97z" />
     </svg>
+  );
+}
+
+const AGE_GATE_KEY = "why:ageGate";
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** Whole years of age today for someone born in the given month (1-12). */
+function ageFrom(year: number, month: number): number {
+  const now = new Date();
+  let age = now.getFullYear() - year;
+  if (now.getMonth() + 1 < month) age -= 1;
+  return age;
+}
+
+function BirthDateQuestion({
+  month,
+  year,
+  onChange,
+}: {
+  month: string;
+  year: string;
+  onChange: (month: string, year: string) => void;
+}) {
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => String(thisYear - i));
+  const selectCls =
+    "w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-400";
+  return (
+    <fieldset className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <legend className="px-1 text-[10px] font-black uppercase tracking-widest text-white/50">
+        When were you born?
+      </legend>
+      <div className="grid grid-cols-2 gap-2">
+        <select
+          aria-label="Birth month"
+          value={month}
+          onChange={(e) => onChange(e.target.value, year)}
+          className={selectCls}
+        >
+          <option value="">Month</option>
+          {MONTHS.map((m, i) => (
+            <option key={m} value={String(i + 1)} className="text-slate-900">
+              {m}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Birth year"
+          value={year}
+          onChange={(e) => onChange(month, e.target.value)}
+          className={selectCls}
+        >
+          <option value="">Year</option>
+          {years.map((y) => (
+            <option key={y} value={y} className="text-slate-900">
+              {y}
+            </option>
+          ))}
+        </select>
+      </div>
+    </fieldset>
   );
 }

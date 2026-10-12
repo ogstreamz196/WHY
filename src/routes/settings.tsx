@@ -129,6 +129,20 @@ function SettingsPage() {
 
         {/* Linking Google is web-only (Google blocks its sign-in inside apps). */}
         {user && isNative === false && <LinkedAccounts />}
+        {user && (
+          <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
+            <h2 className="text-lg font-extrabold text-slate-900">Delete account</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Permanently remove your account and everything saved with it.
+            </p>
+            <Link
+              to="/delete-account"
+              className="mt-3 inline-block rounded-full bg-rose-600 px-4 py-2 text-sm font-bold text-white"
+            >
+              Delete my account
+            </Link>
+          </section>
+        )}
 
         <section className="mb-6 space-y-2 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <Toggle
@@ -242,8 +256,14 @@ function SettingsPage() {
         <section className="rounded-3xl bg-white/90 p-5 text-sm leading-relaxed text-slate-700 shadow-md ring-1 ring-black/5">
           <h2 className="text-lg font-extrabold text-slate-900">🔒 Privacy</h2>
           <p className="mt-2">
-            Why? does not collect personal information. No accounts. No chat between users. No
-            comments. Your favorites, streak, and points are stored only on this device.
+            Guests don't share any personal information, and their progress stays on this device
+            until the app is closed. With an account, we save your profile and progress so you can
+            pick up anywhere. No ads, no tracking, no chat between users.
+          </p>
+          <p className="mt-2">
+            <Link to="/privacy" className="font-bold text-violet-700 underline">
+              Read the privacy policy
+            </Link>
           </p>
           <p className="mt-2">
             Facts are written by AI and reviewed with automatic child-safety checks before being
