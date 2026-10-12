@@ -20,6 +20,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestoneWatcher";
 import { TopSignInBar } from "@/components/TopSignInBar";
+import { RecoveryEmailPrompt } from "@/components/RecoveryEmailPrompt";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { GoogleIdentitySync } from "@/components/GoogleIdentitySync";
 import { EditModeProvider } from "@/lib/editMode";
@@ -194,6 +195,7 @@ function RootComponent() {
           Skip to content
         </a>
         <TopSignInBar />
+        <RecoveryEmailPrompt />
         <div id="main" tabIndex={-1}>
           <Outlet />
         </div>
