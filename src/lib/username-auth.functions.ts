@@ -88,7 +88,6 @@ export const signUpWithUsername = createServerFn({ method: "POST" })
       user_metadata: { display_name: data.username, username: data.username },
     });
     if (error) {
-      console.error("[signUpWithUsername]", error.message);
       const msg = /already/i.test(error.message)
         ? "That username is taken — try another."
         : /weak|guess|pwned/i.test(error.message)
