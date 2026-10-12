@@ -91,7 +91,9 @@ export const signUpWithUsername = createServerFn({ method: "POST" })
       console.error("[signUpWithUsername]", error.message);
       const msg = /already/i.test(error.message)
         ? "That username is taken — try another."
-        : "Couldn't create the account. Please try again.";
+        : /weak|guess|pwned/i.test(error.message)
+          ? "That password is too easy to guess — try a stronger one."
+          : "Couldn't create the account. Please try again.";
       return { error: msg } as const;
     }
     return signInByEmail(email, data.password);
