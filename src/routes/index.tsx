@@ -148,6 +148,7 @@ import { DailyChallenge } from "@/components/DailyChallenge";
 import { CoinIcon } from "@/components/CoinIcon";
 import { SignInPrompt } from "@/components/SignInPrompt";
 import { LinkGoogleBanner } from "@/components/LinkGoogleBanner";
+import { isNativeApp, useIsNativeApp } from "@/lib/platform";
 
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/lib/auth";
@@ -223,6 +224,7 @@ function WhyApp() {
   const updateProfile = useServerFn(updateMyProfile);
 
   const { user, isGuest } = useCurrentUser();
+  const isNative = useIsNativeApp();
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
 
@@ -531,8 +533,9 @@ function WhyApp() {
   const guestNudge = useCallback(() => {
     setSignInPrompt({
       title: "Keep your curiosity safe",
-      message:
-        "Sign in free with Google or Apple to save your streak, coins, favourites and daily rewards. It takes a second and we never post anything.",
+      message: isNativeApp()
+        ? "Create a free account to save your streak, coins, favourites and daily rewards. It takes a second and we never post anything."
+        : "Sign in free with Google or Apple to save your streak, coins, favourites and daily rewards. It takes a second and we never post anything.",
     });
   }, []);
 
@@ -729,7 +732,7 @@ function WhyApp() {
       <CosmicBackground />
 
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:max-w-3xl lg:max-w-4xl lg:px-8">
-        <LinkGoogleBanner />
+        {isNative === false && <LinkGoogleBanner />}
         {/* ── GAMIFIED HEADER ─────────────────────────────── */}
         <header className="mb-3 flex flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">

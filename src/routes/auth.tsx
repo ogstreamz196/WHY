@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useIsNativeApp } from "@/lib/platform";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight, Mail, Lock, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -30,6 +31,7 @@ function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>(search.mode ?? "signup");
+  const isNative = useIsNativeApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -184,32 +186,40 @@ function AuthPage() {
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-5 space-y-2">
-            <button
-              type="button"
-              onClick={() => handleOAuth("google")}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOAuth("apple")}
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-4 py-3 text-sm font-bold text-white shadow-md transition disabled:opacity-60"
-            >
-              <AppleIcon />
-              Continue with Apple
-            </button>
-          </div>
+          {/* Google and Apple sign-in are web-only: inside the Android/iOS apps
+              the OAuth pages would open in the phone's browser (and Google
+              blocks its sign-in in app web views), so the apps use email. */}
+          {isNative === false && (
+            <>
+              <div className="mt-5 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleOAuth("google")}
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 shadow-md transition disabled:opacity-60"
+                >
+                  <GoogleIcon />
+                  Continue with Google
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuth("apple")}
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-black px-4 py-3 text-sm font-bold text-white shadow-md transition disabled:opacity-60"
+                >
+                  <AppleIcon />
+                  Continue with Apple
+                </button>
+              </div>
 
-          <div className="my-4 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
-            <div className="h-px flex-1 bg-white/10" />
-            or
-            <div className="h-px flex-1 bg-white/10" />
-          </div>
+              <div className="my-4 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
+                <div className="h-px flex-1 bg-white/10" />
+                or
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+            </>
+          )}
+          {isNative === null && <div className="mt-5" />}
 
           <form onSubmit={submit} className="space-y-3">
             {mode === "signup" && (

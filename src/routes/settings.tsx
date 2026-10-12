@@ -16,6 +16,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyProfile, updateMyProfile } from "@/lib/account.functions";
 import { bossAmIBoss } from "@/lib/boss.functions";
 import { LinkedAccounts } from "@/components/LinkedAccounts";
+import { useIsNativeApp } from "@/lib/platform";
 import { CATEGORIES } from "@/lib/categories";
 
 export const Route = createFileRoute("/settings")({
@@ -37,6 +38,7 @@ function SettingsPage() {
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const runSync = useServerFn(syncFactsFromSheet);
   const { user } = useCurrentUser();
+  const isNative = useIsNativeApp();
   const navigate = useNavigate();
   const amIBoss = useServerFn(bossAmIBoss);
   // The sheet sync is an admin tool; only show it to the Boss account.
@@ -125,7 +127,8 @@ function SettingsPage() {
           )}
         </section>
 
-        {user && <LinkedAccounts />}
+        {/* Linking Google is web-only (Google blocks its sign-in inside apps). */}
+        {user && isNative === false && <LinkedAccounts />}
 
         <section className="mb-6 space-y-2 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
           <Toggle
