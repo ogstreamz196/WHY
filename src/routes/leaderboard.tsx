@@ -59,10 +59,16 @@ const AGES: Array<{ key: string; label: string }> = [
   { key: "adult", label: "Adult" },
 ];
 
+function defaultFilterFor(tab: TabKey): string | null {
+  if (tab === "age") return "adult";
+  if (tab === "category") return CATEGORIES.find((c) => c.key !== "all")?.key ?? "animals";
+  return null;
+}
+
 // Fun label under the tabs
 const TAB_TAGLINE: Record<TabKey, string> = {
   alltime: "Lifetime Curiosity Score",
-  rising: "Biggest climbers right now",
+  rising: "Most points in the last 7 days",
   category: "Category legends",
   age: "Compete inside your age band",
   streaks: "Longest current fire streaks",
@@ -95,13 +101,17 @@ function ArenaPage() {
   const [filter, setFilter] = useState<string | null>(null);
   const [result, setResult] = useState<LeaderboardResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const [rankDelta, setRankDelta] = useState<number | null>(null);
   const [selected, setSelected] = useState<{ userId: string; rank: number } | null>(null);
-  useEffect(() => {
-    if (tab === "age") setFilter("adult");
-    else if (tab === "category") setFilter(CATEGORIES[1]?.key ?? "animals");
-    else setFilter(null);
-  }, [tab]);
+  // Change tab and its default filter in one update. Setting the filter in an
+  // effect afterwards fetched every board twice, the first time with the
+  // wrong filter (a category board with no category listed players twice).
+  const selectTab = (next: TabKey) => {
+    setTab(next);
+    setFilter(defaultFilterFor(next));
+  };
 
   const [celebrate, setCelebrate] = useState<{
     title: string;
@@ -113,6 +123,7 @@ function ArenaPage() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
+    setLoadFailed(false);
     setRankDelta(null);
     const q = resolveQuery(tab, filter);
     fetchBoard({
@@ -125,7 +136,13 @@ function ArenaPage() {
         if (r?.my_rank && r.total_users && typeof window !== "undefined") {
           const rankKey = `lb:rank:${tab}:${filter ?? ""}`;
           const tierKey = `lb:tier:${tab}:${filter ?? ""}`;
-          const store = window.sessionStorage;
+          // localStorage so the celebration doesn't replay every session.
+          let store: Storage;
+          try {
+            store = window.localStorage;
+          } catch {
+            return;
+          }
           const prevRank = Number(store.getItem(rankKey));
           if (Number.isFinite(prevRank) && prevRank > 0) setRankDelta(prevRank - r.my_rank);
 
@@ -177,9 +194,11 @@ function ArenaPage() {
               tone: "from-yellow-300 to-amber-500",
             },
           ] as const;
-          const prevTier = Number(store.getItem(tierKey)) || 0;
+          const storedTier = store.getItem(tierKey);
+          const prevTier = Number(storedTier) || 0;
           const nextTier = tierOf(pct, r.my_rank);
-          if (nextTier > prevTier && TIER_META[nextTier]) {
+          // Only celebrate a climb we saw happen, not the first look at a board.
+          if (storedTier !== null && nextTier > prevTier && TIER_META[nextTier]) {
             setCelebrate(TIER_META[nextTier]);
             setConfettiTick((n) => n + 1);
           }
@@ -188,7 +207,9 @@ function ArenaPage() {
         }
       })
       .catch(() => {
-        if (alive) setResult(null);
+        if (!alive) return;
+        setResult(null);
+        setLoadFailed(true);
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -196,7 +217,7 @@ function ArenaPage() {
     return () => {
       alive = false;
     };
-  }, [tab, filter, fetchBoard, user?.id]);
+  }, [tab, filter, fetchBoard, user?.id, reloadTick]);
 
   const chips = useMemo(() => {
     if (tab === "age") return AGES;
@@ -229,8 +250,8 @@ function ArenaPage() {
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
           <Link
-            to="/quiz"
-            aria-label="Back to Curiosity Challenge"
+            to="/"
+            aria-label="Back to facts"
             className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90"
           >
             <ArrowLeft aria-hidden="true" className="h-5 w-5" />
@@ -252,7 +273,7 @@ function ArenaPage() {
               <button
                 key={t.key}
                 type="button"
-                onClick={() => setTab(t.key)}
+                onClick={() => selectTab(t.key)}
                 className={`flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-wider transition ${
                   active ? "text-white shadow-[var(--shadow-glow)]" : "text-white/50"
                 }`}
@@ -320,6 +341,15 @@ function ArenaPage() {
                     : `▼ Down ${Math.abs(rankDelta).toLocaleString()} since last visit`}
                 </p>
               )}
+              {result.points_to_next !== null &&
+                result.points_to_next !== undefined &&
+                result.my_rank > 1 && (
+                  <p className="mt-0.5 text-[11px] font-bold text-white/70">
+                    {result.points_to_next.toLocaleString()}{" "}
+                    {tab === "streaks" ? "more days" : "pts"} to pass #
+                    {(result.my_rank - 1).toLocaleString()}
+                  </p>
+                )}
             </div>
             {percentileLabel && (
               <motion.span
@@ -337,12 +367,51 @@ function ArenaPage() {
           </motion.button>
         )}
 
+        {user && !loading && result && !result.my_rank && result.entries.length > 0 && (
+          <p className="glass-strong mb-3 rounded-2xl border border-white/10 p-3 text-sm font-bold text-white/80">
+            {tab === "streaks"
+              ? "Finish today's Daily Challenge to start a streak and join this board."
+              : "You're not on this board yet. Earn some points to join the race!"}
+          </p>
+        )}
+        {!user && !loading && (
+          <Link
+            to="/auth"
+            search={{ mode: "signup" }}
+            className="glass-strong mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 p-3"
+          >
+            <span className="text-sm font-bold text-white/85">
+              Create a free account to get your name on the board.
+            </span>
+            <span
+              className="shrink-0 rounded-full px-3 py-1.5 text-xs font-black text-white"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              Join
+            </span>
+          </Link>
+        )}
+
         {/* Rows */}
         {loading ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-14 animate-pulse rounded-2xl bg-white/5" />
             ))}
+          </div>
+        ) : loadFailed ? (
+          <div className="glass-strong rounded-3xl p-8 text-center">
+            <p className="text-sm text-white/70">
+              Couldn't load this board. Check your connection.
+            </p>
+            <button
+              type="button"
+              onClick={() => setReloadTick((n) => n + 1)}
+              className="mt-3 inline-block rounded-full px-4 py-2 text-xs font-black text-white"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              Try again
+            </button>
           </div>
         ) : !result || result.entries.length === 0 ? (
           <div className="glass-strong rounded-3xl p-8 text-center">
@@ -463,6 +532,55 @@ function ArenaPage() {
                 })}
               </AnimatePresence>
             </ol>
+
+            {/* The viewer's neighbourhood when they're outside the top list */}
+            {result.nearby && result.nearby.length > 0 && (
+              <section className="mt-5" aria-label="Players around you">
+                <p className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/50">
+                  <span className="h-px flex-1 bg-white/10" />
+                  Around you
+                  <span className="h-px flex-1 bg-white/10" />
+                </p>
+                <ol className="space-y-1.5">
+                  {result.nearby.map((r) => (
+                    <li key={r.user_id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
+                        aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
+                        className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left ${INTERACTIVE_PLAYER} ${
+                          r.is_me
+                            ? "border-fuchsia-300/60 bg-fuchsia-500/15 ring-2 ring-fuchsia-300/40"
+                            : "border-white/10 bg-white/[0.04]"
+                        }`}
+                      >
+                        <span className="w-12 shrink-0 text-xs font-black text-white/60">
+                          #{r.rank.toLocaleString()}
+                        </span>
+                        <span className="text-lg" aria-hidden>
+                          {r.avatar_id ? avatarEmojiFor(r.avatar_id) : "🌱"}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-black text-white">
+                          {r.display_name || r.username || "Explorer"}
+                          {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
+                          {r.is_me && (
+                            <span className="ml-1 text-[10px] font-black text-fuchsia-100">
+                              YOU
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-sm font-black text-white">
+                          {r.score.toLocaleString()}
+                          <span className="ml-1 text-[9px] uppercase tracking-widest text-white/40">
+                            {tab === "streaks" ? "days" : "pts"}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
           </motion.div>
         )}
       </div>
