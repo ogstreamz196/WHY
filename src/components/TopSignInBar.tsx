@@ -12,6 +12,7 @@ const HIDDEN_ON = [
   "/profile",
   "/privacy",
   "/delete-account",
+  "/leaderboard",
 ];
 
 /**
