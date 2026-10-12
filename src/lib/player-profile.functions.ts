@@ -49,20 +49,8 @@ export const getPlayerProfilePublic = createServerFn({ method: "GET" })
         .eq("user_id", uid)
         .maybeSingle(),
       (async () => {
-        const env = (process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "").startsWith("test_")
-          ? "sandbox"
-          : "live";
-        const { data: subs } = await supabaseAdmin
-          .from("subscriptions")
-          .select("current_period_end")
-          .eq("user_id", uid)
-          .eq("environment", env)
-          .in("status", ["active", "trialing"]);
-        const now = Date.now();
-        return (subs ?? []).some(
-          (s: { current_period_end: string | null }) =>
-            !s.current_period_end || new Date(s.current_period_end).getTime() > now,
-        );
+        const { plusUserIds } = await import("./plus.server");
+        return (await plusUserIds([uid])).has(uid);
       })(),
     ]);
 

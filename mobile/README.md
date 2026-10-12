@@ -33,6 +33,13 @@ A new Android/iOS build and store release is only needed for changes inside this
 3. Before each Play upload, raise the version code (and, if you like, the version name) in `android/app/build.gradle`. Look for the comment about versionCode.
 4. Use **Build → Generate Signed App Bundle or APK**, choose **Android App Bundle**, and pick your own key.
 
+### RevenueCat in Android builds
+
+- **Debug builds** use the RevenueCat Test Store key, so in-app purchases are simulated and free.
+- **Release builds** need your Google Play key (`goog_…`). Add `revenuecatAndroidKey=goog_…` to `~/.gradle/gradle.properties` on your computer, or set it as the `REVENUECAT_ANDROID_KEY` environment variable. Without it, the release app simply hides Why? Plus.
+
+See `docs/WHY_PLUS.md` for the full setup.
+
 ## Getting the Android files from GitHub instead
 
 You don't need Android Studio. GitHub builds the app for you.

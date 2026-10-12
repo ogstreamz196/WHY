@@ -2,6 +2,8 @@
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_PER_WINDOW = 30;
+// Why? Plus members get more deep dives (see docs/WHY_PLUS.md).
+const PLUS_MAX_PER_WINDOW = 100;
 
 /**
  * Records one AI action for the user and returns true, or returns false when
@@ -20,7 +22,11 @@ export async function consumeAiQuota(userId: string, kind: string): Promise<bool
     console.warn("[ai-quota] usage check failed, allowing:", error.message);
     return true;
   }
-  if ((count ?? 0) >= MAX_PER_WINDOW) return false;
+  if ((count ?? 0) >= MAX_PER_WINDOW) {
+    const { getPlusStatus } = await import("./plus.server");
+    const plus = await getPlusStatus(userId).catch(() => null);
+    if (!plus?.active || (count ?? 0) >= PLUS_MAX_PER_WINDOW) return false;
+  }
   await supabaseAdmin.from("ai_usage").insert({ user_id: userId, kind });
   return true;
 }

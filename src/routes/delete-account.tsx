@@ -60,7 +60,9 @@ function DeleteAccountPage() {
         <p className="mt-2 text-sm leading-relaxed text-white/75">
           Deleting your account is permanent. We remove your profile, coins, streaks, favourites,
           saved chains, quiz history, achievements and store items straight away, and you'll be
-          signed out. If you have VIP, the subscription is cancelled at the same time.
+          signed out. A Why? Plus subscription bought on the website is cancelled at the same time.
+          If you subscribed through the App Store or Google Play, cancel it there first; we can't
+          cancel store subscriptions for you.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-white/75">
           Payment records kept by our payment provider (Paddle) for tax and legal reasons are not

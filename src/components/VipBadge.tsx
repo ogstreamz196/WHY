@@ -10,8 +10,8 @@ const SIZES: Record<Size, { pad: string; text: string; icon: string; gap: string
 };
 
 /**
- * Special VIP badge shown next to VIP users' names across the app.
- * Uses a shimmering gold gradient with a crown to make VIPs feel special.
+ * Why? Plus badge shown next to Plus members' names across the app.
+ * Uses a shimmering gold gradient with a crown.
  */
 export function VipBadge({ size = "sm", className = "" }: { size?: Size; className?: string }) {
   const s = SIZES[size];
@@ -21,11 +21,11 @@ export function VipBadge({ size = "sm", className = "" }: { size?: Size; classNa
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 380, damping: 22 }}
       className={`inline-flex items-center ${s.gap} ${s.pad} ${s.text} rounded-full font-black uppercase tracking-widest align-middle text-amber-950 border border-amber-300/70 shadow-[0_0_10px_rgba(251,191,36,0.45)] shimmer-gold ${className}`}
-      title="VIP member"
-      aria-label="VIP member"
+      title="Why? Plus member"
+      aria-label="Why? Plus member"
     >
       <Crown className={`${s.icon} fill-amber-900/60`} strokeWidth={2.4} />
-      VIP
+      Plus
     </motion.span>
   );
 }

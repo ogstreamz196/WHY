@@ -45,20 +45,6 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
   });
 
 async function fetchVipSet(userIds: string[]): Promise<Set<string>> {
-  const env = (process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "").startsWith("test_")
-    ? "sandbox"
-    : "live";
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("subscriptions")
-    .select("user_id, status, current_period_end")
-    .in("user_id", userIds)
-    .eq("environment", env)
-    .in("status", ["active", "trialing"]);
-  const now = Date.now();
-  const set = new Set<string>();
-  for (const r of data ?? []) {
-    if (!r.current_period_end || new Date(r.current_period_end).getTime() > now) set.add(r.user_id);
-  }
-  return set;
+  const { plusUserIds } = await import("./plus.server");
+  return plusUserIds(userIds);
 }

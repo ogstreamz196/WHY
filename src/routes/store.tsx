@@ -8,8 +8,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { useIsNativeApp } from "@/lib/platform";
-import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
-import { useSubscription } from "@/hooks/useSubscription";
+import { usePlus } from "@/hooks/usePlus";
+import { PlusPanel } from "@/components/PlusPanel";
+import { isNativePurchasesAvailable } from "@/lib/nativePurchases";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,7 +21,6 @@ import {
   updateMyProfile,
 } from "@/lib/account.functions";
 import {
-  COIN_PACKS,
   STORE_CATALOG,
   getEquipped,
   getInventory,
@@ -54,15 +54,18 @@ type Tab = StoreCategory | "vip";
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: "avatar", label: "Avatars", emoji: "🧑‍🚀" },
   { id: "theme", label: "Themes", emoji: "🎨" },
-  { id: "vip", label: "VIP & Coins", emoji: "👑" },
+  { id: "vip", label: "Why? Plus", emoji: "✨" },
 ];
 
 function StorePage() {
   const [tab, setTab] = useState<Tab>("avatar");
-  // App-store rules: digital goods in the apps must use Google Play / Apple
-  // billing, so the web-only VIP & coin purchases are hidden there.
+  // Why? Plus is sold with Paddle on the website and with Google Play / App
+  // Store billing in the apps; app builds without the RevenueCat plugin hide it.
   const isNative = useIsNativeApp();
-  const visibleTabs = TABS.filter((t) => t.id !== "vip" || isNative === false);
+  const [nativePlus, setNativePlus] = useState(false);
+  useEffect(() => setNativePlus(isNativePurchasesAvailable()), []);
+  const plusAvailable = isNative === false || (isNative === true && nativePlus);
+  const visibleTabs = TABS.filter((t) => t.id !== "vip" || plusAvailable);
   const [coins, setCoins] = useState(0);
   const [inventory, setInventory] = useState<string[]>([]);
   const [equipped, setEquip] = useState(getEquipped());
@@ -72,8 +75,7 @@ function StorePage() {
   const [confetti, setConfetti] = useState(0);
   const [preview, setPreview] = useState<StoreItem | null>(null);
   const longPressRef = useRef<number | null>(null);
-  const { openCheckout, loading: checkoutLoading } = usePaddleCheckout();
-  const { isVip, subscription } = useSubscription(userId);
+  const { isPlus: isVip } = usePlus(userId);
   const qc = useQueryClient();
   const fetchStats = useServerFn(getMyStats);
   const doPurchase = useServerFn(purchaseStoreItem);
@@ -144,7 +146,7 @@ function StorePage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("checkout") === "success") {
-      setToast("👑 Welcome to VIP! +500 bonus coins");
+      setToast("✨ Welcome to Why? Plus!");
       setConfetti((n) => n + 1);
       window.setTimeout(() => setToast(null), 3500);
       // clean the query param
@@ -157,24 +159,6 @@ function StorePage() {
   const flash = (msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 2200);
-  };
-
-  const buyVip = async () => {
-    if (!userId) {
-      flash("Please sign in first");
-      return;
-    }
-    try {
-      await openCheckout({
-        priceId: "vip_monthly",
-        customerEmail: userEmail,
-        customData: { userId },
-        successUrl: `${window.location.origin}/store?checkout=success`,
-      });
-    } catch (e) {
-      console.error(e);
-      flash("Checkout failed — try again");
-    }
   };
 
   const buy = async (item: StoreItem) => {
@@ -303,104 +287,22 @@ function StorePage() {
         </div>
 
         {/* Content */}
-        {tab === "vip" && isNative === false ? (
+        {tab === "vip" && plusAvailable ? (
           <section className="space-y-3">
-            <div className="glass-strong relative overflow-hidden rounded-3xl p-5">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 -z-10 opacity-60"
-                style={{
-                  background:
-                    "radial-gradient(circle at 20% 10%, rgba(255,200,80,0.35), transparent 60%), radial-gradient(circle at 90% 90%, rgba(180,80,255,0.25), transparent 60%)",
-                }}
-              />
-              <div className="flex items-center gap-2">
-                <Crown className="h-6 w-6 text-yellow-300" />
-                <h2 className="font-display text-2xl font-black text-white">VIP Membership</h2>
-              </div>
-              <p className="mt-2 text-sm text-white/85">
-                Double your coin drops on every fact, quiz and mission — plus a one-time{" "}
-                <b>500 coin</b> welcome bonus.
-              </p>
-              <ul className="mt-3 space-y-1.5 text-sm text-white/85">
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-300" /> 2× coins on all activity
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-300" /> 500 welcome coins
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-emerald-300" /> Cancel anytime
-                </li>
-              </ul>
-
-              {isVip ? (
-                <div className="mt-4 rounded-full bg-emerald-500/20 px-4 py-2.5 text-center text-sm font-black text-emerald-200">
-                  ✨ You're a VIP
-                  {subscription?.current_period_end
-                    ? ` — renews ${new Date(subscription.current_period_end).toLocaleDateString()}`
-                    : ""}
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={buyVip}
-                  disabled={checkoutLoading || !userId}
-                  className="mt-4 w-full rounded-full px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  {!userId
-                    ? "Sign in to subscribe"
-                    : checkoutLoading
-                      ? "Opening checkout…"
-                      : "Go VIP — $4.99 / month"}
-                </button>
-              )}
-            </div>
-
+            <PlusPanel
+              userId={userId}
+              userEmail={userEmail}
+              onActivated={() => setConfetti((n) => n + 1)}
+            />
             <div className="glass-strong rounded-3xl p-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                Earn free coins
+                Earn coins by exploring
               </p>
               <p className="mt-1 text-sm text-white/90">
-                +1 per fact • +2 for revealing • +3 for asking <em>but why?</em> • <b>+25</b> for
-                the Daily Challenge.
+                Coins come from reading facts, asking <em>but why?</em>, quizzes, missions and the
+                Daily Challenge — they can't be bought.
               </p>
             </div>
-            <p className="pt-2 text-[10px] font-black uppercase tracking-widest text-white/60">
-              Or top up
-            </p>
-            {COIN_PACKS.map((pack) => (
-              <div
-                key={pack.id}
-                className="glass-strong flex items-center justify-between gap-3 rounded-3xl p-4"
-              >
-                <div>
-                  <p className="font-display text-base font-black text-white">{pack.label}</p>
-                  <p className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-white/80">
-                    <CoinIcon size={16} />
-                    <span className="font-black">{pack.coins.toLocaleString()}</span>
-                    {pack.bonus && (
-                      <span className="ml-1 rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-black text-emerald-300">
-                        +{pack.bonus} bonus
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  disabled
-                  title="Payments coming soon"
-                  className="rounded-full px-4 py-2 text-sm font-black text-white opacity-60"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  ${pack.priceUSD.toFixed(2)}
-                </button>
-              </div>
-            ))}
-            <p className="pt-1 text-center text-[11px] text-white/50">
-              💳 Payments coming soon — Stripe checkout will be wired up here.
-            </p>
           </section>
         ) : (
           <section
@@ -408,7 +310,8 @@ function StorePage() {
             onPointerLeave={tab === "theme" ? () => previewTheme(null) : undefined}
           >
             {items.map((item) => {
-              const owned = inventory.includes(item.id);
+              // Plus-only items are unlocked for every Plus member.
+              const owned = inventory.includes(item.id) || (isVip && !!item.vipOnly);
               const isEquipped =
                 (item.category === "avatar" && equipped.avatar === item.id) ||
                 (item.category === "theme" && equipped.theme === item.id);
@@ -520,11 +423,11 @@ function StorePage() {
                   ) : item.vipOnly ? (
                     <button
                       type="button"
-                      onClick={() => isNative === false && setTab("vip")}
-                      disabled={isNative !== false}
+                      onClick={() => plusAvailable && setTab("vip")}
+                      disabled={!plusAvailable}
                       className="mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-amber-300/15 px-2 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-200 disabled:opacity-80"
                     >
-                      <Crown className="h-3 w-3" aria-hidden /> VIP only
+                      <Crown className="h-3 w-3" aria-hidden /> Plus only
                     </button>
                   ) : (
                     <button

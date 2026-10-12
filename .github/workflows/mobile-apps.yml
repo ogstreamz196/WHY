@@ -80,6 +80,9 @@ jobs:
           WHY_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           WHY_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           WHY_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # RevenueCat Google Play key (goog_…) for release builds; debug builds
+          # use the Test Store key in build.gradle.
+          REVENUECAT_ANDROID_KEY: ${{ secrets.REVENUECAT_ANDROID_KEY }}
         run: ./gradlew --no-daemon assembleDebug bundleRelease
 
       - uses: actions/upload-artifact@v4
