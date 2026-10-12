@@ -3,7 +3,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace = "com.ogstreamz196.why"
-    compileSdk = rootProject.ext.compileSdkVersion
+    compileSdk = libs.versions.compileSdk.get().toInteger()
     defaultConfig {
         applicationId "com.ogstreamz196.why"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -72,16 +72,16 @@ repositories {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
-    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
-    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.coordinatorlayout
+    implementation libs.androidx.core.splashscreen
     // RevenueCat Android SDK. Keep in step with the version the Capacitor
     // plugin brings in (purchases-hybrid-common 19.10.0 -> purchases 10.26.0).
-    implementation "com.revenuecat.purchases:purchases:10.26.0"
+    implementation libs.purchases
     implementation project(':capacitor-android')
-    testImplementation "junit:junit:$junitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
     implementation project(':capacitor-cordova-android-plugins')
 }
 
