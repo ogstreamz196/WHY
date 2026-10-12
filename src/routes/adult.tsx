@@ -9,6 +9,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useCurrentUser } from "@/lib/auth";
+import { useIsNativeApp } from "@/lib/platform";
 import {
   getAdultStatus,
   verifyAdult,
@@ -51,7 +52,30 @@ function GoogleGlyph({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+// 18+ mode is web-only: the Android/iOS apps are listed for a general and
+// young audience, so the page is unavailable inside them.
 function AdultPage() {
+  const isNative = useIsNativeApp();
+  if (isNative === null) return null;
+  if (isNative) {
+    return (
+      <main className="grid min-h-[100dvh] place-items-center p-6 text-center text-white">
+        <div className="max-w-sm">
+          <p className="text-4xl" aria-hidden>
+            🔒
+          </p>
+          <h1 className="mt-3 font-display text-2xl font-black">Not available in the app</h1>
+          <Link to="/" className="mt-6 inline-block rounded-full bg-white/10 px-5 py-2 font-bold">
+            Back to facts
+          </Link>
+        </div>
+      </main>
+    );
+  }
+  return <AdultModeContent />;
+}
+
+function AdultModeContent() {
   const { user, loading } = useCurrentUser();
   const navigate = useNavigate();
   const qc = useQueryClient();

@@ -10,6 +10,8 @@ const HIDDEN_ON = [
   "/badges",
   "/chains",
   "/profile",
+  "/privacy",
+  "/delete-account",
 ];
 
 /**

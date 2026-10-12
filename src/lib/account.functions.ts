@@ -507,6 +507,45 @@ export const claimChainLayerReward = createServerFn({ method: "POST" })
     return { awarded: true, points, total_points: total };
   });
 
+// -------------------- Account deletion --------------------
+
+/**
+ * Permanently delete the signed-in user's account. Required by Google Play
+ * and the App Store. Active VIP billing is cancelled first so nobody keeps
+ * paying for a deleted account; all user tables cascade from auth.users.
+ */
+export const deleteMyAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ confirm: z.literal("DELETE") }).parse(input))
+  .handler(async ({ context }): Promise<{ ok: true }> => {
+    const db = await admin();
+    const { data: subs, error: subErr } = await db
+      .from("subscriptions")
+      .select("paddle_subscription_id, environment")
+      .eq("user_id", context.userId)
+      .in("status", ["active", "trialing", "past_due", "paused"]);
+    if (subErr) throw new Error(subErr.message);
+    if (subs && subs.length > 0) {
+      const { getPaddleClient } = await import("@/lib/paddle.server");
+      for (const sub of subs) {
+        try {
+          await getPaddleClient(
+            sub.environment === "live" ? "live" : "sandbox",
+          ).subscriptions.cancel(sub.paddle_subscription_id, { effectiveFrom: "immediately" });
+        } catch (e) {
+          console.error("[delete-account] couldn't cancel subscription", e);
+          throw new Error(
+            "We couldn't cancel your VIP subscription, so your account wasn't deleted. Please try again in a moment.",
+          );
+        }
+      }
+    }
+
+    const { error } = await db.auth.admin.deleteUser(context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // -------------------- Favorites --------------------
 
 export type FavoriteFact = {

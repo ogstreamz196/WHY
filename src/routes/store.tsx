@@ -7,6 +7,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
 import { ConfettiBurst } from "@/components/ConfettiBurst";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { useIsNativeApp } from "@/lib/platform";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +59,10 @@ const TABS: { id: Tab; label: string; emoji: string }[] = [
 
 function StorePage() {
   const [tab, setTab] = useState<Tab>("avatar");
+  // App-store rules: digital goods in the apps must use Google Play / Apple
+  // billing, so the web-only VIP & coin purchases are hidden there.
+  const isNative = useIsNativeApp();
+  const visibleTabs = TABS.filter((t) => t.id !== "vip" || isNative === false);
   const [coins, setCoins] = useState(0);
   const [inventory, setInventory] = useState<string[]>([]);
   const [equipped, setEquip] = useState(getEquipped());
@@ -252,7 +257,7 @@ function StorePage() {
   return (
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
       <CosmicBackground />
-      <PaymentTestModeBanner />
+      {isNative === false && <PaymentTestModeBanner />}
 
       <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center justify-between gap-3">
@@ -274,8 +279,10 @@ function StorePage() {
         </header>
 
         {/* Tabs */}
-        <div className="mb-4 grid grid-cols-3 gap-2">
-          {TABS.map((t) => (
+        <div
+          className={`mb-4 grid gap-2 ${visibleTabs.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}
+        >
+          {visibleTabs.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -296,7 +303,7 @@ function StorePage() {
         </div>
 
         {/* Content */}
-        {tab === "vip" ? (
+        {tab === "vip" && isNative === false ? (
           <section className="space-y-3">
             <div className="glass-strong relative overflow-hidden rounded-3xl p-5">
               <div
@@ -509,6 +516,15 @@ function StorePage() {
                       ) : (
                         "Equip"
                       )}
+                    </button>
+                  ) : item.vipOnly ? (
+                    <button
+                      type="button"
+                      onClick={() => isNative === false && setTab("vip")}
+                      disabled={isNative !== false}
+                      className="mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-amber-300/15 px-2 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-200 disabled:opacity-80"
+                    >
+                      <Crown className="h-3 w-3" aria-hidden /> VIP only
                     </button>
                   ) : (
                     <button
