@@ -21,7 +21,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestoneWatcher";
 import { TopSignInBar } from "@/components/TopSignInBar";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
-import { FloatingEditToggle } from "@/components/FloatingEditToggle";
 import { GoogleIdentitySync } from "@/components/GoogleIdentitySync";
 import { EditModeProvider } from "@/lib/editMode";
 import { useBossTheme } from "@/lib/useBossTheme";
@@ -200,7 +199,6 @@ function RootComponent() {
         </div>
         <GlobalStreakMilestoneWatcher />
         <GoogleIdentitySync />
-        <FloatingEditToggle />
         <ThemeDebugger />
         <Toaster theme="dark" position="top-center" richColors closeButton />
       </EditModeProvider>
