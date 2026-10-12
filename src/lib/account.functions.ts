@@ -231,6 +231,8 @@ export async function applyPoints(
     _facts_seen: factsSeen,
   });
   if (error) throw new Error(error.message);
+  const { syncPeopleSoon } = await import("@/lib/backup.server");
+  await syncPeopleSoon();
   return data as number | null;
 }
 
@@ -354,7 +356,11 @@ export const purchaseStoreItem = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const row = rows?.[0];
     const total = row?.out_total ?? 0;
-    if (row?.out_status === "ok") return { ok: true, total_points: total };
+    if (row?.out_status === "ok") {
+      const { syncPeopleSoon } = await import("@/lib/backup.server");
+      await syncPeopleSoon();
+      return { ok: true, total_points: total };
+    }
     return {
       ok: false,
       reason: row?.out_status === "already_owned" ? "already_owned" : "insufficient_coins",

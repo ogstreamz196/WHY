@@ -74,7 +74,8 @@ function paddleEnv(): "sandbox" | "live" {
 
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
+  // plus_entitlements is not in generated types until its migration is applied.
+  return supabaseAdmin as any;
 }
 
 export async function getPlusStatus(userId: string): Promise<PlusStatus> {
