@@ -92,6 +92,7 @@ export const Route = createFileRoute("/profile")({
 });
 
 function ProfilePage() {
+  const [tab, setTab] = useState<"overview" | "trophies" | "history">("overview");
   const { user, loading } = useCurrentUser();
   const { isPlus: isVip } = usePlus(user?.id);
   const navigate = useNavigate();
@@ -408,31 +409,46 @@ function ProfilePage() {
             <ArrowRight className="h-4 w-4 text-white/60" />
           </Link>
 
-          <nav aria-label="Jump to profile section" className="mt-3 flex flex-wrap gap-2">
-            <a
-              href="#achievements"
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/25 bg-amber-400/10 px-3 py-1.5 text-xs font-black text-amber-100 transition hover:bg-amber-400/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+          {user?.email?.toLowerCase() === "ogstreamz196@gmail.com" && (
+            <Link
+              to="/boss"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-fuchsia-300/40 bg-gradient-to-r from-sky-500/30 via-fuchsia-500/25 to-red-500/25 px-3 py-1.5 text-xs font-black text-white shadow-[0_0_18px_-4px_rgba(217,70,239,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60"
             >
-              <Trophy className="h-3.5 w-3.5" aria-hidden="true" /> Achievements
-            </a>
-            <a
-              href="#recent-discoveries"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-white/85 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-            >
-              <Clock className="h-3.5 w-3.5" aria-hidden="true" /> Recent discoveries
-            </a>
-            {user?.email?.toLowerCase() === "ogstreamz196@gmail.com" && (
-              <Link
-                to="/boss"
-                className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-300/40 bg-gradient-to-r from-sky-500/30 via-fuchsia-500/25 to-red-500/25 px-3 py-1.5 text-xs font-black text-white shadow-[0_0_18px_-4px_rgba(217,70,239,0.6)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60"
-              >
-                <Crown className="h-3.5 w-3.5 fill-amber-300 text-amber-300" aria-hidden="true" />{" "}
-                Boss Dashboard
-              </Link>
-            )}
-          </nav>
+              <Crown className="h-3.5 w-3.5 fill-amber-300 text-amber-300" aria-hidden="true" />{" "}
+              Boss Dashboard &amp; Drive backup
+            </Link>
+          )}
         </motion.div>
 
+        <div
+          role="tablist"
+          aria-label="Profile sections"
+          className="sticky top-2 z-20 mt-4 grid grid-cols-3 gap-1 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur"
+        >
+          {(
+            [
+              ["overview", "📊 Overview"],
+              ["trophies", "🏆 Trophies"],
+              ["history", "🕒 History"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`rounded-full px-2 py-2 text-sm font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+                tab === key ? "bg-white text-slate-900 shadow" : "text-white/75 hover:bg-white/10"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "overview" && (
+        <>
         {/* Stats grid */}
         <section className="mt-4 grid grid-cols-2 gap-3">
           <StatTile icon={<CoinIcon size={20} />} label="Y-Coins" value={s.total_points} />
@@ -498,8 +514,11 @@ function ProfilePage() {
             )}
           </section>
         )}
+        </>
+        )}
 
         {/* Saved chains */}
+        {tab === "history" && (
         <section className="mt-6">
           <header className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
@@ -557,6 +576,7 @@ function ProfilePage() {
               );
             })()}
         </section>
+        )}
 
         {(() => {
           const achievementsSection = (
@@ -588,19 +608,6 @@ function ProfilePage() {
                 <span className="inline-flex h-7 shrink-0 items-center rounded-full border border-amber-300/25 bg-amber-400/10 px-2.5 text-xs font-black text-amber-100">
                   {unlockedCount}/{achievements.data?.length ?? 0}
                 </span>
-                <button
-                  type="button"
-                  onClick={toggleSectionOrder}
-                  data-no-chrome
-                  className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 text-[10px] font-black uppercase tracking-wider text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                  aria-label={
-                    sectionOrder === "achievements-first"
-                      ? "Show Recent discoveries above Achievements"
-                      : "Show Achievements above Recent discoveries"
-                  }
-                >
-                  <ArrowUpDown className="h-3 w-3" aria-hidden="true" /> Swap
-                </button>
                 <button
                   type="button"
                   onClick={() => toggleCollapsed("achievements")}
@@ -854,9 +861,12 @@ function ProfilePage() {
             </section>
           );
 
-          return sectionOrder === "achievements-first"
-            ? [achievementsSection, discoveriesSection]
-            : [discoveriesSection, achievementsSection];
+          void sectionOrder;
+          return tab === "trophies"
+            ? achievementsSection
+            : tab === "history"
+              ? discoveriesSection
+              : null;
         })()}
 
         <div className="mt-8 flex flex-wrap gap-2">
