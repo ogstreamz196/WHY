@@ -74,9 +74,10 @@ function PrivacyPage() {
             answers and scores, daily missions, streaks, coins, achievements and store items.
           </p>
           <p>
-            <b>Purchases (website only):</b> if you buy VIP, payment is handled by Paddle. We
-            receive and store your subscription status and Paddle reference numbers, never your card
-            details. The Android and iOS apps don't sell anything.
+            <b>Purchases:</b> Why? Plus is bought by a grown-up. On the website, Paddle handles the
+            payment; in the apps, Google Play or the App Store does, with RevenueCat keeping track
+            of the subscription for us. We store whether you have Plus, which plan, when it renews
+            or ends, and reference numbers, never your card details.
           </p>
         </Section>
 
@@ -102,11 +103,16 @@ function PrivacyPage() {
           <ul className="list-disc space-y-1 pl-5">
             <li>Lovable Cloud and Supabase — hosting, database and sign-in.</li>
             <li>
-              AI providers — Groq, OpenRouter, Pollinations and Lovable AI Gateway (Google Gemini)
-              — write facts and "But… Why?" answers. Only the question text is sent, not your name
-              or email.
+              AI providers — Groq, OpenRouter, Pollinations and Lovable AI Gateway (Google Gemini) —
+              write facts and "But… Why?" answers. Only the question text is sent, not your name or
+              email.
             </li>
             <li>Paddle — payments on the website.</li>
+            <li>
+              Google Play, the App Store and RevenueCat — Why? Plus subscriptions bought in the
+              apps. RevenueCat receives your account ID (not your name or email) to link a purchase
+              to your account.
+            </li>
             <li>Google and Apple — only if you choose to sign in with them on the website.</li>
           </ul>
           <p>We don't sell or rent personal data to anyone.</p>

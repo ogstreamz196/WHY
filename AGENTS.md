@@ -19,13 +19,19 @@ the apps within Google Play and App Store rules.
 Inside the apps (`useIsNativeApp()` / `isNativeApp()` from `src/lib/platform.ts`):
 
 - No Google or Apple sign-in, and no Google account linking. Email sign-in only.
-- No payments or purchase links for digital goods (VIP, coin packs, Paddle
-  checkout, "upgrade" buttons). Store rules require Play/App Store billing.
+- Digital purchases only through Google Play / App Store billing via
+  RevenueCat (`src/lib/nativePurchases.ts`), never Paddle checkout or links to
+  web payment. Why? Plus is the only thing sold (see `docs/WHY_PLUS.md`).
 - No 18+ content or links to `/adult`.
 - Render web-only UI only when `useIsNativeApp() === false`, so it never
   flashes in the apps while the value is still unknown.
 
 For everyone (web and apps):
+
+- Every purchase starts with `ParentGate` (grown-up check). Never sell coins,
+  random rewards or anything that changes leaderboard score; Plus perks are
+  cosmetic or convenience only. Plus status always comes from
+  `getPlusStatus()` (`src/lib/plus.server.ts`).
 
 - Keep account deletion working (`/delete-account`, Settings).
 - Keep `/privacy` accurate. If you start collecting, storing or sharing new

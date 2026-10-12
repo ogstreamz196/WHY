@@ -44,7 +44,7 @@ import { STORE_CATALOG } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
 import { VipBadge } from "@/components/VipBadge";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
-import { useSubscription } from "@/hooks/useSubscription";
+import { usePlus } from "@/hooks/usePlus";
 
 const MILESTONES = [
   { key: "seen", label: "Facts discovered", steps: [10, 50, 100, 250, 500, 1000] },
@@ -93,7 +93,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { user, loading } = useCurrentUser();
-  const { isVip } = useSubscription(user?.id);
+  const { isPlus: isVip } = usePlus(user?.id);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -360,7 +360,7 @@ function ProfilePage() {
               {isVip && (
                 <label className="mt-3 block">
                   <span className="text-[10px] font-black uppercase tracking-widest text-amber-200/80">
-                    VIP status · speech bubble
+                    Plus status · speech bubble
                   </span>
                   <input
                     value={status}

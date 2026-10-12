@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { verifyWebhook, EventName, type PaddleEnv } from "@/lib/paddle.server";
-import { computeCoinDrop } from "@/lib/coinDrop";
-
-const SIGNUP_BONUS_COINS_BASE = 500;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _supabase: any = null;
@@ -58,39 +55,6 @@ async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
       { onConflict: "paddle_subscription_id" },
     ),
     "upsert subscription",
-  );
-
-  // Award a one-time signup bonus on the user's first subscription.
-  if (status !== "active" && status !== "trialing") return;
-  const { data: anyPrior } = check(
-    await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("signup_bonus_awarded", true)
-      .limit(1),
-    "check prior bonus",
-  );
-  if (anyPrior && anyPrior.length > 0) return;
-
-  // Flip the flag first; only the delivery that flips it pays the bonus, so
-  // Paddle retries or duplicate events can't award it twice.
-  const { data: claimed } = check(
-    await supabase
-      .from("subscriptions")
-      .update({ signup_bonus_awarded: true })
-      .eq("paddle_subscription_id", id)
-      .eq("signup_bonus_awarded", false)
-      .select("id"),
-    "claim signup bonus",
-  );
-  if (!claimed || claimed.length === 0) return;
-
-  // User just purchased VIP → award bonus at VIP rate (isVip: true).
-  const bonus = computeCoinDrop(SIGNUP_BONUS_COINS_BASE, { isVip: true });
-  check(
-    await supabase.rpc("apply_points", { _user: userId, _points: bonus, _facts_seen: 0 }),
-    "award signup bonus",
   );
 }
 

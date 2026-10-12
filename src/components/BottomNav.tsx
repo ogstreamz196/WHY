@@ -3,7 +3,7 @@ import { Home, Store, User, Sparkles, Medal, Crown, ArrowLeft, ArrowRight } from
 import { useMemo } from "react";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useCurrentUser } from "@/lib/auth";
-import { useSubscription } from "@/hooks/useSubscription";
+import { usePlus } from "@/hooks/usePlus";
 import { useEditMode } from "@/lib/editMode";
 import { EditableText } from "@/components/EditableText";
 
@@ -23,7 +23,7 @@ const NAV_ORDER_KEY = "nav.bottom.order";
 export function BottomNav() {
   const isBoss = useBossTheme();
   const { user } = useCurrentUser();
-  const { isVip } = useSubscription(user?.id);
+  const { isPlus: isVip } = usePlus(user?.id);
   const { editMode, overrides, saveOverride } = useEditMode();
 
   const ordered = useMemo(() => {
@@ -101,8 +101,8 @@ export function BottomNav() {
                         />
                         {label === "You" && isVip && (
                           <span
-                            aria-label="VIP"
-                            title="VIP member"
+                            aria-label="Why? Plus"
+                            title="Why? Plus member"
                             className="inline-flex items-center rounded-full border border-amber-300/70 bg-gradient-to-br from-amber-300 to-yellow-500 px-1 py-[1px] text-[7px] font-black text-amber-950 shadow-[0_0_6px_rgba(251,191,36,0.55)]"
                           >
                             <Crown className="h-2 w-2" strokeWidth={2.5} />

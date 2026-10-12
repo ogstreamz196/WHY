@@ -1,91 +1,106 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { isVipUser, awardAmountForUser } from "./vipStatus";
+import { describe, it, expect } from "vitest";
+import { awardAmountForUser } from "./vipStatus";
+import { decidePlus, entitlementFromRevenueCat, NO_PLUS } from "./plus.server";
 
-type MockRow = { status: string; current_period_end: string | null } | null;
+const ctx = { supabase: {} as never, userId: "user-1" };
+const day = 86400_000;
+const future = new Date(Date.now() + 30 * day).toISOString();
+const past = new Date(Date.now() - day).toISOString();
 
-function makeCtx(row: MockRow) {
-  const query = {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    in: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn().mockResolvedValue({ data: row, error: null }),
-  };
-  const supabase = { from: vi.fn().mockReturnValue(query) };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return { ctx: { supabase: supabase as any, userId: "user-1" }, query, supabase };
-}
-
-describe("isVipUser", () => {
-  beforeEach(() => {
-    process.env.VITE_PAYMENTS_CLIENT_TOKEN = "test_abc123";
-  });
-
-  it("returns false when the user has no subscription row", async () => {
-    const { ctx, supabase } = makeCtx(null);
-    await expect(isVipUser(ctx)).resolves.toBe(false);
-    expect(supabase.from).toHaveBeenCalledWith("subscriptions");
-  });
-
-  it("returns true for an active subscription that has not expired", async () => {
-    const future = new Date(Date.now() + 30 * 86400_000).toISOString();
-    const { ctx } = makeCtx({ status: "active", current_period_end: future });
-    await expect(isVipUser(ctx)).resolves.toBe(true);
-  });
-
-  it("returns true for a trialing subscription", async () => {
-    const future = new Date(Date.now() + 7 * 86400_000).toISOString();
-    const { ctx } = makeCtx({ status: "trialing", current_period_end: future });
-    await expect(isVipUser(ctx)).resolves.toBe(true);
-  });
-
-  it("returns false when the period has already ended", async () => {
-    const past = new Date(Date.now() - 86400_000).toISOString();
-    const { ctx } = makeCtx({ status: "active", current_period_end: past });
-    await expect(isVipUser(ctx)).resolves.toBe(false);
-  });
-
-  it("filters by the current Paddle environment", async () => {
-    const { ctx, query } = makeCtx(null);
-    await isVipUser(ctx);
-    // sandbox env because token starts with "test_"
-    expect(query.eq).toHaveBeenCalledWith("environment", "sandbox");
-    expect(query.eq).toHaveBeenCalledWith("user_id", "user-1");
-    expect(query.in).toHaveBeenCalledWith("status", ["active", "trialing"]);
+describe("awardAmountForUser", () => {
+  it("gives everyone the same coins (Plus doesn't multiply them)", async () => {
+    await expect(awardAmountForUser(ctx, 100)).resolves.toBe(50);
+    await expect(awardAmountForUser(ctx, 25)).resolves.toBe(13);
   });
 });
 
-describe("awardAmountForUser", () => {
-  beforeEach(() => {
-    process.env.VITE_PAYMENTS_CLIENT_TOKEN = "test_abc123";
+describe("decidePlus", () => {
+  const paddle = (status: string, end: string | null, cancel = false) => ({
+    status,
+    current_period_end: end,
+    cancel_at_period_end: cancel,
+  });
+  const store = (expires: string | null, s = "app_store") => ({
+    expires_at: expires,
+    store: s,
+    will_renew: true,
+    billing_issue: false,
   });
 
-  it("halves the base drop for non-VIP users", async () => {
-    const { ctx } = makeCtx(null);
-    await expect(awardAmountForUser(ctx, 100)).resolves.toBe(50);
+  it("is off with no subscriptions", () => {
+    expect(decidePlus(null, null)).toEqual(NO_PLUS);
   });
 
-  it("gives VIP users the full base (0.5 × 2)", async () => {
-    const future = new Date(Date.now() + 86400_000).toISOString();
-    const { ctx } = makeCtx({ status: "active", current_period_end: future });
-    await expect(awardAmountForUser(ctx, 100)).resolves.toBe(100);
+  it("is on for an active or trialing website subscription", () => {
+    expect(decidePlus(paddle("active", future), null)).toMatchObject({
+      active: true,
+      source: "web",
+    });
+    expect(decidePlus(paddle("trialing", future), null).active).toBe(true);
   });
 
-  it("VIP earns exactly 2× a free user for the same base", async () => {
-    const future = new Date(Date.now() + 86400_000).toISOString();
-    for (const base of [10, 32, 76, 250, 1000]) {
-      const free = await awardAmountForUser(makeCtx(null).ctx, base);
-      const vip = await awardAmountForUser(
-        makeCtx({ status: "active", current_period_end: future }).ctx,
-        base,
-      );
-      expect(vip).toBe(free * 2);
-    }
+  it("is off when the website period has ended or it was cancelled", () => {
+    expect(decidePlus(paddle("active", past), null).active).toBe(false);
+    expect(decidePlus(paddle("canceled", future), null).active).toBe(false);
   });
 
-  it("canceled subscription drops back to non-VIP amount", async () => {
-    const { ctx } = makeCtx(null); // canceled rows are filtered out by .in()
-    await expect(awardAmountForUser(ctx, 200)).resolves.toBe(100);
+  it("reports a cancelled-but-running website subscription as not renewing", () => {
+    expect(decidePlus(paddle("active", future, true), null)).toMatchObject({
+      active: true,
+      will_renew: false,
+    });
+  });
+
+  it("is on for an unexpired app-store subscription", () => {
+    expect(decidePlus(null, store(future, "play_store"))).toMatchObject({
+      active: true,
+      source: "play_store",
+    });
+  });
+
+  it("is off once the app-store subscription has expired", () => {
+    expect(decidePlus(null, store(past)).active).toBe(false);
+  });
+});
+
+describe("entitlementFromRevenueCat", () => {
+  it("returns null when the subscriber never had Plus", () => {
+    expect(entitlementFromRevenueCat({ subscriber: { entitlements: {} } })).toBeNull();
+  });
+
+  it("reads expiry, store, cancellation and billing issues", () => {
+    const row = entitlementFromRevenueCat({
+      subscriber: {
+        entitlements: { plus: { expires_date: future, product_identifier: "why_plus_monthly" } },
+        subscriptions: {
+          why_plus_monthly: {
+            store: "play_store",
+            unsubscribe_detected_at: past,
+            billing_issues_detected_at: null,
+          },
+        },
+      },
+    });
+    expect(row).toEqual({
+      product_id: "why_plus_monthly",
+      store: "play_store",
+      expires_at: future,
+      will_renew: false,
+      billing_issue: false,
+    });
+  });
+
+  it("uses the grace period expiry while a store retries payment", () => {
+    const grace = new Date(Date.now() + 3 * day).toISOString();
+    const row = entitlementFromRevenueCat({
+      subscriber: {
+        entitlements: {
+          plus: { expires_date: past, grace_period_expires_date: grace, product_identifier: "p" },
+        },
+        subscriptions: { p: { store: "app_store", billing_issues_detected_at: past } },
+      },
+    });
+    expect(row?.expires_at).toBe(grace);
+    expect(row?.billing_issue).toBe(true);
   });
 });
