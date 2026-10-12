@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace = "com.ogstreamz196.why"
@@ -32,14 +33,34 @@ android {
             }
         }
     }
+    buildFeatures {
+        buildConfig = true
+    }
+    // RevenueCat public SDK keys (see WhyApplication.kt). Debug builds use the
+    // RevenueCat Test Store, so purchases are simulated and free. Release builds
+    // need the Google Play key (starts "goog_"), passed as REVENUECAT_ANDROID_KEY
+    // (environment variable) or revenuecatAndroidKey (gradle.properties). Without
+    // it a release build simply hides Why? Plus.
+    def revenueCatTestKey = "test_TwmOFXskCaKQSjPSNqPdUNazNDe"
+    def revenueCatReleaseKey = System.getenv("REVENUECAT_ANDROID_KEY") ?: (project.findProperty("revenuecatAndroidKey") ?: "")
     buildTypes {
+        debug {
+            buildConfigField "String", "REVENUECAT_API_KEY", "\"${revenueCatTestKey}\""
+        }
         release {
+            buildConfigField "String", "REVENUECAT_API_KEY", "\"${revenueCatReleaseKey}\""
             if (keystorePath) {
                 signingConfig signingConfigs.release
             }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
     }
 }
 
@@ -54,6 +75,9 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    // RevenueCat Android SDK. Keep in step with the version the Capacitor
+    // plugin brings in (purchases-hybrid-common 19.10.0 -> purchases 10.26.0).
+    implementation "com.revenuecat.purchases:purchases:10.26.0"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

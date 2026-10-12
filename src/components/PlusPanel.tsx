@@ -1,35 +1,31 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Crown, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ParentGate } from "@/components/ParentGate";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
 import { usePlus } from "@/hooks/usePlus";
 import { refreshMyPlus } from "@/lib/plus.functions";
 import {
-  buyPlusPlan,
   isNativePurchasesAvailable,
-  loadPlusPlans,
+  presentPlusCustomerCenter,
+  presentPlusPaywall,
   restorePlus,
-  type PlusPlan,
 } from "@/lib/nativePurchases";
 import { useIsNativeApp } from "@/lib/platform";
-import { APPLE_EULA_URL, PLUS_PERKS, PLUS_TRIAL_LABEL, WEB_PLUS_PLANS } from "@/lib/plusPlans";
+import { PLUS_PERKS, PLUS_TRIAL_LABEL, WEB_PLUS_PLANS } from "@/lib/plusPlans";
 
-type Plan = {
-  id: "monthly" | "annual";
-  priceString: string;
-  period: "month" | "year";
-  trialLabel: string | null;
-  native?: PlusPlan;
-  paddlePriceId?: string;
-};
+type GatedAction = "paywall" | "web-checkout" | "customer-center";
 
 /**
- * Why? Plus sign-up and status. Website: Paddle checkout. Android/iOS apps:
- * Google Play / App Store billing through RevenueCat. Every purchase starts
- * with the grown-up check. See docs/WHY_PLUS.md.
+ * Why? Plus sign-up and status.
+ * - Website: our plan picker and Paddle checkout.
+ * - Android/iOS apps: the RevenueCat Paywall (prices, trial and subscription
+ *   terms come from the stores and the dashboard), Restore purchases, and the
+ *   RevenueCat Customer Center for managing a store subscription.
+ * Every purchase or subscription change starts with the grown-up check.
+ * See docs/WHY_PLUS.md.
  */
 export function PlusPanel({
   userId,
@@ -41,64 +37,51 @@ export function PlusPanel({
   onActivated?: () => void;
 }) {
   const isNative = useIsNativeApp();
+  const nativeStore = isNative === true && isNativePurchasesAvailable();
   const { plus, isPlus, refetch } = usePlus(userId);
   const refresh = useServerFn(refreshMyPlus);
   const { openCheckout } = usePaddleCheckout();
-  const [plans, setPlans] = useState<Plan[] | null>(null);
-  const [selected, setSelected] = useState<Plan["id"]>("annual");
-  const [gateOpen, setGateOpen] = useState(false);
+  const [webPlan, setWebPlan] = useState<(typeof WEB_PLUS_PLANS)[number]["id"]>("annual");
+  const [gated, setGated] = useState<GatedAction | null>(null);
   const [busy, setBusy] = useState(false);
-  const platform =
-    typeof window !== "undefined"
-      ? (window as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.()
-      : undefined;
 
-  useEffect(() => {
-    if (isNative === null) return;
-    if (!isNative) {
-      setPlans(WEB_PLUS_PLANS.map((p) => ({ ...p, trialLabel: PLUS_TRIAL_LABEL })));
-      return;
+  async function syncAfterStoreChange(successText: string, emptyText: string) {
+    const status = await refresh();
+    await refetch();
+    if (status.active) {
+      onActivated?.();
+      toast.success(successText);
+    } else {
+      toast(emptyText);
     }
-    if (!userId || !isNativePurchasesAvailable()) {
-      setPlans([]);
-      return;
-    }
-    loadPlusPlans(userId)
-      .then((ps) =>
-        setPlans(
-          ps.map((p) => ({
-            id: p.id,
-            priceString: p.priceString,
-            period: p.id === "annual" ? "year" : "month",
-            trialLabel: p.trialLabel,
-            native: p,
-          })),
-        ),
-      )
-      .catch((e) => {
-        console.warn("[plus] couldn't load store plans", e);
-        setPlans([]);
-      });
-  }, [isNative, userId]);
+  }
 
-  const plan = plans?.find((p) => p.id === selected) ?? plans?.[0];
-
-  async function purchase() {
-    if (!userId || !plan) return;
+  async function run(action: GatedAction) {
+    if (!userId) return;
     setBusy(true);
     try {
-      if (plan.native) {
-        const bought = await buyPlusPlan(userId, plan.native);
-        if (!bought) return;
-        const status = await refresh();
-        await refetch();
-        if (status.active) {
-          onActivated?.();
-          toast.success("✨ Welcome to Why? Plus!");
-        } else {
-          toast("Thanks! Your Plus will switch on in a moment.");
+      if (action === "paywall") {
+        const outcome = await presentPlusPaywall(userId);
+        if (outcome === "purchased") {
+          await syncAfterStoreChange(
+            "✨ Welcome to Why? Plus!",
+            "Thanks! Your Plus will switch on in a moment.",
+          );
+        } else if (outcome === "restored" || outcome === "already_plus") {
+          await syncAfterStoreChange(
+            "✨ Why? Plus restored!",
+            "No Why? Plus purchase found for this account.",
+          );
+        } else if (outcome === "error") {
+          toast.error("Something went wrong with the store. Please try again.");
         }
-      } else if (plan.paddlePriceId) {
+      } else if (action === "customer-center") {
+        await presentPlusCustomerCenter(userId);
+        // They may have cancelled, changed plan or restored.
+        await refresh();
+        await refetch();
+      } else {
+        const plan = WEB_PLUS_PLANS.find((p) => p.id === webPlan) ?? WEB_PLUS_PLANS[0];
         await openCheckout({
           priceId: plan.paddlePriceId,
           customerEmail: userEmail,
@@ -108,7 +91,11 @@ export function PlusPanel({
       }
     } catch (e) {
       console.error(e);
-      toast.error("Checkout didn't open — please try again.");
+      toast.error(
+        action === "web-checkout"
+          ? "Checkout didn't open — please try again."
+          : "The store isn't available right now — please try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -119,10 +106,9 @@ export function PlusPanel({
     setBusy(true);
     try {
       await restorePlus(userId);
-      const status = await refresh();
-      await refetch();
-      toast(
-        status.active ? "✨ Why? Plus restored!" : "No Why? Plus purchase found for this account.",
+      await syncAfterStoreChange(
+        "✨ Why? Plus restored!",
+        "No Why? Plus purchase found for this account.",
       );
     } catch (e) {
       console.error(e);
@@ -132,15 +118,7 @@ export function PlusPanel({
     }
   }
 
-  const manageHint =
-    plus?.source === "app_store"
-      ? { href: "https://apps.apple.com/account/subscriptions", label: "Manage in the App Store" }
-      : plus?.source === "play_store"
-        ? {
-            href: "https://play.google.com/store/account/subscriptions?package=com.ogstreamz196.why",
-            label: "Manage in Google Play",
-          }
-        : null;
+  const storeSubscription = plus?.source === "app_store" || plus?.source === "play_store";
 
   return (
     <div className="glass-strong relative overflow-hidden rounded-3xl p-5">
@@ -176,14 +154,22 @@ export function PlusPanel({
               {plus.will_renew ? "Renews" : "Ends"} {new Date(plus.expires_at).toLocaleDateString()}
             </p>
           )}
-          {manageHint ? (
-            <a href={manageHint.href} className="mt-1 inline-block text-xs font-bold underline">
-              {manageHint.label}
-            </a>
+          {nativeStore && storeSubscription ? (
+            <button
+              type="button"
+              onClick={() => setGated("customer-center")}
+              disabled={busy}
+              className="mt-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-black text-white"
+            >
+              Manage subscription
+            </button>
+          ) : storeSubscription ? (
+            <p className="mt-1 text-xs">
+              Manage it in your {plus?.source === "app_store" ? "App Store" : "Google Play"}{" "}
+              account.
+            </p>
           ) : (
-            plus?.source === "web" && (
-              <p className="mt-1 text-xs">Cancel anytime from the link in your receipt email.</p>
-            )
+            <p className="mt-1 text-xs">Cancel anytime from the link in your receipt email.</p>
           )}
         </div>
       ) : !userId ? (
@@ -195,26 +181,48 @@ export function PlusPanel({
         >
           Sign in to get Why? Plus
         </Link>
-      ) : plans === null ? (
+      ) : isNative === null ? (
         <div className="mt-4 flex justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-white/60" />
         </div>
-      ) : plans.length === 0 ? (
-        <p className="mt-4 rounded-2xl bg-white/5 p-3 text-center text-sm text-white/70">
-          Why? Plus isn't available here yet. Check back soon!
-        </p>
+      ) : isNative ? (
+        nativeStore ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setGated("paywall")}
+              disabled={busy}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "See Why? Plus plans"}
+            </button>
+            <button
+              type="button"
+              onClick={restore}
+              disabled={busy}
+              className="mt-2 w-full text-xs font-bold text-white/70 underline"
+            >
+              Restore purchases
+            </button>
+          </>
+        ) : (
+          <p className="mt-4 rounded-2xl bg-white/5 p-3 text-center text-sm text-white/70">
+            Why? Plus isn't available in this version of the app yet.
+          </p>
+        )
       ) : (
         <>
           <div className="mt-4 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Choose a plan">
-            {plans.map((p) => {
-              const active = plan?.id === p.id;
+            {WEB_PLUS_PLANS.map((p) => {
+              const active = webPlan === p.id;
               return (
                 <button
                   key={p.id}
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  onClick={() => setSelected(p.id)}
+                  onClick={() => setWebPlan(p.id)}
                   className={`rounded-2xl border p-3 text-left transition ${
                     active
                       ? "border-amber-300/70 bg-amber-300/15 ring-2 ring-amber-300/40"
@@ -228,67 +236,39 @@ export function PlusPanel({
                     {p.priceString}
                     <span className="text-xs font-bold text-white/60"> / {p.period}</span>
                   </p>
-                  {p.trialLabel && (
-                    <p className="text-[11px] font-bold text-emerald-200">{p.trialLabel}</p>
-                  )}
+                  <p className="text-[11px] font-bold text-emerald-200">{PLUS_TRIAL_LABEL}</p>
                 </button>
               );
             })}
           </div>
           <button
             type="button"
-            onClick={() => setGateOpen(true)}
-            disabled={busy || !plan}
+            onClick={() => setGated("web-checkout")}
+            disabled={busy}
             className="mt-3 flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)] disabled:opacity-60"
             style={{ background: "var(--gradient-primary)" }}
           >
-            {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : plan?.trialLabel ? (
-              `Start ${plan.trialLabel}`
-            ) : (
-              `Get Why? Plus — ${plan?.priceString} / ${plan?.period}`
-            )}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Start ${PLUS_TRIAL_LABEL}`}
           </button>
-          {isNative && (
-            <button
-              type="button"
-              onClick={restore}
-              disabled={busy}
-              className="mt-2 w-full text-xs font-bold text-white/70 underline"
-            >
-              Restore purchases
-            </button>
-          )}
-          {plan && (
-            <p className="mt-3 text-[10px] leading-relaxed text-white/55">
-              {plan.trialLabel ? `After the ${plan.trialLabel}, ` : ""}Why? Plus renews
-              automatically at {plan.priceString} per {plan.period} until cancelled.{" "}
-              {isNative
-                ? `Payment is charged to your ${platform === "ios" ? "Apple ID" : "Google Play"} account. Cancel at least 24 hours before the end of a period to avoid the next charge; manage it in your ${platform === "ios" ? "App Store" : "Google Play"} account settings.`
-                : "Cancel anytime from the link in your receipt email."}{" "}
-              <Link to="/privacy" className="underline">
-                Privacy policy
-              </Link>
-              {platform === "ios" && (
-                <>
-                  {" · "}
-                  <a href={APPLE_EULA_URL} className="underline">
-                    Terms of use
-                  </a>
-                </>
-              )}
-            </p>
-          )}
+          <p className="mt-3 text-[10px] leading-relaxed text-white/55">
+            After the {PLUS_TRIAL_LABEL}, Why? Plus renews automatically at{" "}
+            {(WEB_PLUS_PLANS.find((p) => p.id === webPlan) ?? WEB_PLUS_PLANS[0]).priceString} per{" "}
+            {(WEB_PLUS_PLANS.find((p) => p.id === webPlan) ?? WEB_PLUS_PLANS[0]).period} until
+            cancelled. Cancel anytime from the link in your receipt email.{" "}
+            <Link to="/privacy" className="underline">
+              Privacy policy
+            </Link>
+          </p>
         </>
       )}
 
       <ParentGate
-        open={gateOpen}
-        onClose={() => setGateOpen(false)}
+        open={gated !== null}
+        onClose={() => setGated(null)}
         onPass={() => {
-          setGateOpen(false);
-          void purchase();
+          const action = gated;
+          setGated(null);
+          if (action) void run(action);
         }}
       />
     </div>

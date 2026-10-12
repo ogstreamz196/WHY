@@ -71,7 +71,9 @@ describe("entitlementFromRevenueCat", () => {
   it("reads expiry, store, cancellation and billing issues", () => {
     const row = entitlementFromRevenueCat({
       subscriber: {
-        entitlements: { plus: { expires_date: future, product_identifier: "why_plus_monthly" } },
+        entitlements: {
+          why_plus_pro: { expires_date: future, product_identifier: "why_plus_monthly" },
+        },
         subscriptions: {
           why_plus_monthly: {
             store: "play_store",
@@ -90,12 +92,37 @@ describe("entitlementFromRevenueCat", () => {
     });
   });
 
+  it("ignores Test Store purchases unless testing is switched on", () => {
+    const body = {
+      subscriber: {
+        entitlements: {
+          why_plus_pro: { expires_date: future, product_identifier: "why_plus_monthly" },
+        },
+        subscriptions: { why_plus_monthly: { store: "test_store" } },
+      },
+    };
+    expect(entitlementFromRevenueCat(body)).toBeNull();
+    expect(entitlementFromRevenueCat(body, { allowTestStore: true })?.store).toBe("test_store");
+  });
+
+  it("ignores entitlements other than why_plus_pro", () => {
+    expect(
+      entitlementFromRevenueCat({
+        subscriber: { entitlements: { plus: { expires_date: future, product_identifier: "x" } } },
+      }),
+    ).toBeNull();
+  });
+
   it("uses the grace period expiry while a store retries payment", () => {
     const grace = new Date(Date.now() + 3 * day).toISOString();
     const row = entitlementFromRevenueCat({
       subscriber: {
         entitlements: {
-          plus: { expires_date: past, grace_period_expires_date: grace, product_identifier: "p" },
+          why_plus_pro: {
+            expires_date: past,
+            grace_period_expires_date: grace,
+            product_identifier: "p",
+          },
         },
         subscriptions: { p: { store: "app_store", billing_issues_detected_at: past } },
       },

@@ -51,6 +51,7 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@revenuecat/purchases-capacitor": "13.7.3",
+    "@revenuecat/purchases-capacitor-ui": "13.7.3",
     "@supabase/supabase-js": "^2.110.0",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.101.1",

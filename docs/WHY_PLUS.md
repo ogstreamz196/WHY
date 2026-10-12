@@ -56,10 +56,18 @@ Prices are set in each store (Google Play, App Store) and in Paddle for the webs
 
 - `plus_entitlements` holds subscriptions bought through the app stores, synced from RevenueCat. Paddle (website) subscriptions stay in `subscriptions`.
 - `src/lib/plus.server.ts` decides whether someone has Plus by checking both. Everything asks it: the store, badges, AI limits, Plus avatars and the status bubble.
-- RevenueCat's app user ID is the Supabase user ID. The apps call `logIn(userId)` when someone signs in.
-- `/api/public/revenuecat/webhook` receives RevenueCat events. On each one, the server re-reads that subscriber from RevenueCat's API and stores the result, so events arriving late or twice don't matter.
-- After a purchase or restore in the app, the page calls `refreshMyPlus` so Plus switches on immediately, without waiting for the webhook.
-- The RevenueCat entitlement must be called **`plus`**.
+- The RevenueCat entitlement is **`why_plus_pro`**. Both products unlock it.
+- **Android:** `mobile/android/app/src/main/java/com/ogstreamz196/why/WhyApplication.kt` configures the RevenueCat SDK (`com.revenuecat.purchases:purchases`, the same version the Capacitor plugin uses) when the app starts:
+  - Debug builds use the RevenueCat **Test Store** key, so purchases are simulated and free.
+  - Release builds use your Google Play key. Without one they hide Plus, and they refuse a `test_` key.
+- **iOS** still configures from the web app, using `VITE_REVENUECAT_IOS_KEY`.
+- RevenueCat's app user ID is the Supabase user ID. The web app calls `logIn(userId)` once someone signs in (`src/lib/nativePurchases.ts`).
+- **Buying:** the app shows the **RevenueCat Paywall** (`presentPaywallIfNeeded` for `why_plus_pro`) after the grown-up check. Prices, trial text and subscription terms come from the store and your paywall design.
+- **Managing:** Plus members who subscribed in an app get **Manage subscription**, which opens the **RevenueCat Customer Center**, also behind the grown-up check. There is also a **Restore purchases** button.
+- **Server sync:**
+  - `/api/public/revenuecat/webhook` re-reads the subscriber from RevenueCat's API on every event, so late or repeated events don't matter.
+  - The app also asks the server to re-sync straight after a purchase, a restore, a Customer Center visit, or a change pushed by the store.
+- **Test Store purchases never grant Plus on the server** unless `REVENUECAT_ALLOW_TEST_STORE=true` is set. Only set it while testing.
 
 ## What you need to set up
 
@@ -74,28 +82,37 @@ On iOS, put them in one subscription group called "Why? Plus".
 
 ### 2. RevenueCat
 
-1. Add the Android and iOS apps: package and bundle ID `com.ogstreamz196.why`.
-2. Import both products.
-3. Create an entitlement with the identifier `plus`, and attach both products to it.
-4. Create an offering called `default` with two packages: **Monthly** (`$rc_monthly`, `why_plus_monthly`) and **Annual** (`$rc_annual`, `why_plus_yearly`). Make it the current offering.
-5. Under **Integrations → Webhooks**, add `https://package-your-dreams.lovable.app/api/public/revenuecat/webhook`. Set the Authorization header to a long random password you make up.
-6. Under **API keys**, copy:
-   - the Android public SDK key (starts `goog_`)
-   - the iOS public SDK key (starts `appl_`)
-   - a secret API key (starts `sk_`)
+1. **Apps.** Add the Android and iOS apps (package and bundle ID `com.ogstreamz196.why`) and connect them to Google Play and App Store Connect. The Test Store is already there for testing.
+2. **Products.** Import `why_plus_monthly` and `why_plus_yearly` for each store, and add matching products in the Test Store.
+3. **Entitlement.** Create one with the identifier **`why_plus_pro`**, and attach every product to it.
+4. **Offering.** Create an offering called `default` with two packages, and make it the **current** offering:
+   - **Monthly** (`$rc_monthly`): the monthly product
+   - **Annual** (`$rc_annual`): the yearly product
+5. **Paywall.** Under **Paywalls**, create one for the `default` offering. Show the perks from "What Why? Plus adds" above. Keep it calm and clear: it's for parents, so no countdowns or pressure.
+6. **Customer Center.** Under **Customer Center**, switch it on and add a support email.
+7. **Webhook.** Under **Integrations → Webhooks**, add `https://package-your-dreams.lovable.app/api/public/revenuecat/webhook`. Set the Authorization header to a long random password you make up.
+8. **Keys.** Under **API keys**, copy:
+   - the Google Play public SDK key (`goog_…`)
+   - the App Store public SDK key (`appl_…`)
+   - a secret API key (`sk_…`)
 
-### 3. Secrets in Lovable
+The Test Store key (`test_…`) is already in the Android debug build.
 
-Add these under Cloud → Secrets:
+### 3. Secrets
+
+In Lovable (Cloud → Secrets):
 
 | Name | Value |
 |---|---|
 | `REVENUECAT_SECRET_API_KEY` | the `sk_` key |
-| `REVENUECAT_WEBHOOK_AUTH` | the webhook password from step 2.5 |
-| `VITE_REVENUECAT_ANDROID_KEY` | the `goog_` key |
+| `REVENUECAT_WEBHOOK_AUTH` | the webhook password from step 2.7 |
 | `VITE_REVENUECAT_IOS_KEY` | the `appl_` key |
+| `REVENUECAT_ALLOW_TEST_STORE` | `true` while you test with the Test Store, then delete it |
 
-The two `VITE_` keys are public by design. RevenueCat expects them to be in the app.
+For Android release builds, give the build your `goog_` key:
+
+- **Android Studio:** add `revenuecatAndroidKey=goog_…` to your personal Gradle settings file, `~/.gradle/gradle.properties` (on Windows, `C:\Users\<you>\.gradle\gradle.properties`). It stays on your computer, not in the project.
+- **GitHub builds:** add a repository secret named `REVENUECAT_ANDROID_KEY`.
 
 ### 4. Paddle (website)
 
@@ -106,6 +123,11 @@ Create two prices on a "Why? Plus" product, each with a 7-day trial:
 
 Existing `vip_monthly` subscribers keep Plus.
 
-### 5. Rebuild the apps
+### 5. Test, then release
 
-The RevenueCat plugin is native code. The Android and iOS apps need a new build and store release before they can sell Plus. The website works as soon as it's published. Until the new app builds are out, the Plus tab stays hidden in the apps.
+1. Set `REVENUECAT_ALLOW_TEST_STORE=true`. Build a **debug** app in Android Studio, sign in, open Store → Why? Plus, pass the grown-up check, and buy from the Paywall. The Test Store purchase dialog appears, Plus switches on, and **Manage subscription** opens the Customer Center.
+2. Delete `REVENUECAT_ALLOW_TEST_STORE` again.
+3. Test real billing with Google Play licence testers or Apple sandbox accounts.
+4. Ship **release** builds that include the `goog_` key, and the iOS build with `VITE_REVENUECAT_IOS_KEY` set.
+
+The RevenueCat plugins are native code, so the apps need a new store release before they can sell Plus. Until then, the Plus tab stays hidden in the apps.

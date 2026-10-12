@@ -24,7 +24,7 @@ export const NO_PLUS: PlusStatus = {
 };
 
 /** RevenueCat entitlement identifier that unlocks Plus. */
-export const PLUS_ENTITLEMENT = "plus";
+export const PLUS_ENTITLEMENT = "why_plus_pro";
 
 type PaddleRow = {
   status: string;
@@ -125,7 +125,10 @@ type RcSubscriber = {
 };
 
 /** Turn a RevenueCat subscriber into a plus_entitlements row (null = never had Plus). */
-export function entitlementFromRevenueCat(body: RcSubscriber): {
+export function entitlementFromRevenueCat(
+  body: RcSubscriber,
+  opts: { allowTestStore?: boolean } = {},
+): {
   product_id: string | null;
   store: string | null;
   expires_at: string | null;
@@ -138,6 +141,9 @@ export function entitlementFromRevenueCat(body: RcSubscriber): {
   const sub = product ? body.subscriber?.subscriptions?.[product] : undefined;
   // Store billing grace periods keep access while a payment is retried.
   const expires = ent.grace_period_expires_date ?? ent.expires_date ?? null;
+  // RevenueCat Test Store purchases are free and simulated (debug builds). They
+  // only count when REVENUECAT_ALLOW_TEST_STORE=true, never by accident.
+  if (sub?.store === "test_store" && !opts.allowTestStore) return null;
   return {
     product_id: product,
     store: sub?.store ?? null,
@@ -159,7 +165,9 @@ export async function syncRevenueCat(userId: string): Promise<void> {
     { headers: { Authorization: `Bearer ${key}`, Accept: "application/json" } },
   );
   if (!res.ok) throw new Error(`RevenueCat subscriber lookup failed [${res.status}]`);
-  const row = entitlementFromRevenueCat((await res.json()) as RcSubscriber);
+  const row = entitlementFromRevenueCat((await res.json()) as RcSubscriber, {
+    allowTestStore: process.env.REVENUECAT_ALLOW_TEST_STORE === "true",
+  });
   const db = await admin();
   if (!row) {
     await db.from("plus_entitlements").delete().eq("user_id", userId);

@@ -14,6 +14,3 @@ export const PLUS_PERKS = [
   "Plus badge and a status bubble on your profile",
   "Supports new facts, topics and features",
 ];
-
-/** Apple's standard licence agreement, linked from the subscription terms. */
-export const APPLE_EULA_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";

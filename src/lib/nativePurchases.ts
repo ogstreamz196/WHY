@@ -1,9 +1,13 @@
-// Why? Plus purchases inside the Android/iOS apps, through RevenueCat
-// (Google Play / App Store billing, as the stores require). The plugin is
-// native code added in mobile/, so this only works in app builds that include
-// it; everywhere else isNativePurchasesAvailable() is false and the website's
+// Why? Plus inside the Android/iOS apps, through RevenueCat (Google Play /
+// App Store billing, as the stores require). The native SDK is added in
+// mobile/ by the Capacitor plugins; on Android it's configured with the right
+// key as the app starts (mobile/android/.../WhyApplication.kt). Here we log the
+// signed-in user in, check the "why_plus_pro" entitlement, and show the
+// RevenueCat Paywall and Customer Center. On the website none of this runs and
 // Paddle checkout is used instead. See docs/WHY_PLUS.md.
-import type { PurchasesPackage } from "@revenuecat/purchases-capacitor";
+
+/** RevenueCat entitlement that unlocks Why? Plus (must match the dashboard). */
+export const PLUS_ENTITLEMENT_ID = "why_plus_pro";
 
 type CapacitorGlobal = {
   getPlatform?: () => string;
@@ -15,7 +19,8 @@ function capacitor(): CapacitorGlobal | undefined {
   return (window as { Capacitor?: CapacitorGlobal }).Capacitor;
 }
 
-function apiKey(): string | undefined {
+/** Key for builds that don't configure RevenueCat natively (today: iOS). */
+function webSideKey(): string | undefined {
   const platform = capacitor()?.getPlatform?.();
   if (platform === "ios") return import.meta.env.VITE_REVENUECAT_IOS_KEY as string | undefined;
   if (platform === "android")
@@ -23,94 +28,98 @@ function apiKey(): string | undefined {
   return undefined;
 }
 
-/** True in an app build that has the RevenueCat plugin and a key configured. */
+/** True in an app build that includes the RevenueCat plugins. */
 export function isNativePurchasesAvailable(): boolean {
   const cap = capacitor();
-  return !!cap?.isPluginAvailable?.("Purchases") && !!apiKey();
+  return !!cap?.isPluginAvailable?.("Purchases") && !!cap?.isPluginAvailable?.("RevenueCatUI");
 }
 
-let configuredFor: string | null = null;
+let loggedInAs: string | null = null;
 
-async function purchases(userId: string) {
+/**
+ * Make sure the SDK is configured and identifies this account. RevenueCat's
+ * app user ID is the Supabase user ID, which is how the server finds a
+ * purchase (webhook and refreshMyPlus).
+ */
+async function purchasesFor(userId: string) {
   const { Purchases } = await import("@revenuecat/purchases-capacitor");
-  const key = apiKey();
-  if (!key) throw new Error("In-app purchases aren't set up in this build.");
-  if (configuredFor === null) {
-    // RevenueCat's app user ID is the Supabase user ID (the server syncs by it).
+  const { isConfigured } = await Purchases.isConfigured();
+  if (!isConfigured) {
+    const key = webSideKey();
+    if (!key) throw new Error("In-app purchases aren't set up in this build.");
     await Purchases.configure({ apiKey: key, appUserID: userId });
-    configuredFor = userId;
-  } else if (configuredFor !== userId) {
+    loggedInAs = userId;
+  } else if (loggedInAs !== userId) {
     await Purchases.logIn({ appUserID: userId });
-    configuredFor = userId;
+    loggedInAs = userId;
   }
   return Purchases;
 }
 
-export type PlusPlan = {
-  id: "monthly" | "annual";
-  priceString: string;
-  /** e.g. "7-day free trial", when the store offers one to this person. */
-  trialLabel: string | null;
-  pkg: PurchasesPackage;
-};
-
-function trialLabelFor(pkg: PurchasesPackage): string | null {
-  const product = pkg.product as PurchasesPackage["product"] & {
-    defaultOption?: { freePhase?: { billingPeriod?: { iso8601?: string } } | null } | null;
-  };
-  const intro = product.introPrice;
-  if (intro && intro.price === 0) {
-    const unit = intro.periodUnit.toLowerCase();
-    return `${intro.periodNumberOfUnits}-${unit} free trial`;
-  }
-  const iso = product.defaultOption?.freePhase?.billingPeriod?.iso8601;
-  const m = iso?.match(/^P(\d+)([DWM])$/);
-  if (m) {
-    const unit = m[2] === "D" ? "day" : m[2] === "W" ? "week" : "month";
-    return `${m[1]}-${unit} free trial`;
-  }
-  return null;
+/** Whether the store says this account has Plus right now (customer info). */
+export async function hasNativePlus(userId: string): Promise<boolean> {
+  const p = await purchasesFor(userId);
+  const { customerInfo } = await p.getCustomerInfo();
+  return !!customerInfo.entitlements.active[PLUS_ENTITLEMENT_ID];
 }
 
-/** Monthly and yearly plans from the current RevenueCat offering, with store prices. */
-export async function loadPlusPlans(userId: string): Promise<PlusPlan[]> {
-  const p = await purchases(userId);
-  const offerings = await p.getOfferings();
-  const current = offerings.current;
-  const plans: PlusPlan[] = [];
-  if (current?.monthly) {
-    plans.push({
-      id: "monthly",
-      priceString: current.monthly.product.priceString,
-      trialLabel: trialLabelFor(current.monthly),
-      pkg: current.monthly,
-    });
+export type PaywallOutcome = "purchased" | "restored" | "cancelled" | "already_plus" | "error";
+
+/**
+ * Show the RevenueCat Paywall (designed in the dashboard, current offering),
+ * unless this account already has why_plus_pro.
+ */
+export async function presentPlusPaywall(userId: string): Promise<PaywallOutcome> {
+  await purchasesFor(userId);
+  const { RevenueCatUI, PAYWALL_RESULT } = await import("@revenuecat/purchases-capacitor-ui");
+  const { result } = await RevenueCatUI.presentPaywallIfNeeded({
+    requiredEntitlementIdentifier: PLUS_ENTITLEMENT_ID,
+    displayCloseButton: true,
+  });
+  switch (result) {
+    case PAYWALL_RESULT.PURCHASED:
+      return "purchased";
+    case PAYWALL_RESULT.RESTORED:
+      return "restored";
+    case PAYWALL_RESULT.NOT_PRESENTED:
+      return "already_plus";
+    case PAYWALL_RESULT.ERROR:
+      return "error";
+    default:
+      return "cancelled";
   }
-  if (current?.annual) {
-    plans.push({
-      id: "annual",
-      priceString: current.annual.product.priceString,
-      trialLabel: trialLabelFor(current.annual),
-      pkg: current.annual,
-    });
-  }
-  return plans;
 }
 
-/** Buy a plan. Resolves false if the person cancelled the store sheet. */
-export async function buyPlusPlan(userId: string, plan: PlusPlan): Promise<boolean> {
-  const p = await purchases(userId);
-  try {
-    await p.purchasePackage({ aPackage: plan.pkg });
-    return true;
-  } catch (e) {
-    if ((e as { userCancelled?: boolean | null }).userCancelled) return false;
-    throw e;
-  }
+/**
+ * RevenueCat Customer Center: manage or cancel the subscription, restore
+ * purchases, request help. Only for subscriptions bought in the app stores.
+ */
+export async function presentPlusCustomerCenter(userId: string): Promise<void> {
+  await purchasesFor(userId);
+  const { RevenueCatUI } = await import("@revenuecat/purchases-capacitor-ui");
+  await RevenueCatUI.presentCustomerCenter();
 }
 
 /** "Restore purchases", required by Apple. */
 export async function restorePlus(userId: string): Promise<void> {
-  const p = await purchases(userId);
+  const p = await purchasesFor(userId);
   await p.restorePurchases();
+}
+
+/**
+ * Call `onChange` whenever the store reports new customer info for this
+ * account (renewal, expiry, refund, a purchase on another device). Returns a
+ * function that stops listening.
+ */
+export async function watchNativeCustomerInfo(
+  userId: string,
+  onChange: (hasPlus: boolean) => void,
+): Promise<() => void> {
+  const p = await purchasesFor(userId);
+  const id = await p.addCustomerInfoUpdateListener((info) => {
+    onChange(!!info.entitlements.active[PLUS_ENTITLEMENT_ID]);
+  });
+  return () => {
+    void p.removeCustomerInfoUpdateListener({ listenerToRemove: id });
+  };
 }
