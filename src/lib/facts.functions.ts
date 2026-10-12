@@ -159,13 +159,15 @@ CONTENT RULES (non-negotiable):
 - No brand promotion, no personal opinions.
 - Concise. No filler.`;
 
-async function callJson<T>(
-  apiKey: string,
-  prompt: string,
-  model = "google/gemini-2.5-flash",
-): Promise<T | null> {
-  const gateway = createLovableAiGatewayProvider(apiKey);
-  const { text } = await generateText({ model: gateway(model), prompt });
+async function callJson<T>(apiKey: string, prompt: string): Promise<T | null> {
+  const { generateWithCascade } = await import("@/lib/ai-cascade.server");
+  let text: string;
+  try {
+    text = await generateWithCascade(prompt, apiKey || undefined);
+  } catch (err) {
+    console.error("[why?] all AI providers failed", err);
+    return null;
+  }
   const cleaned = text
     .trim()
     .replace(/^```(?:json)?/i, "")
