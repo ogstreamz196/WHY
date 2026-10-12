@@ -90,9 +90,9 @@ vi.mock("@supabase/supabase-js", () => ({
 // AI: force qualityCheck to pass and generation to return a raw question that
 // the normalizer must clean before saving.
 const generateTextMock = vi.fn();
-vi.mock("ai", () => ({ generateText: (...a: unknown[]) => generateTextMock(...a) }));
-vi.mock("@/lib/ai-gateway.server", () => ({
-  createLovableAiGatewayProvider: () => () => ({}),
+vi.mock("@/lib/ai-cascade.server", () => ({
+  generateWithCascade: async (...a: unknown[]) =>
+    ((await generateTextMock(...a)) as { text: string }).text,
 }));
 
 // sheets.server is fire-and-forget; stub it so tests don't touch network.
