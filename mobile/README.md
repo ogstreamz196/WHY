@@ -1,0 +1,87 @@
+# Why? for Android and iOS
+
+This folder holds the Android and iOS apps. They are built with Capacitor and open the live Why? website (`https://package-your-dreams.lovable.app`) inside a native app, with its own icon, launch screen and offline page. Changes you make to the website show up in the apps straight away, without a new store release.
+
+Inside the apps, the website hides the things the stores don't allow there:
+
+- Google and Apple sign-in (people sign in with email instead)
+- the VIP subscription and coin packs, which are paid through Paddle
+- the 18+ mode
+
+The website itself is unchanged. The app is spotted by a `WhyNativeApp` marker it adds to its browser identity; the code is in `src/lib/platform.ts`.
+
+If the site moves to a custom domain, change `serverUrl` in `capacitor.config.ts` and the address in `www/offline.html`, then build again.
+
+
+## Getting the Android files
+
+You don't need Android Studio. GitHub builds the app for you.
+
+1. On GitHub, open the repository and go to **Actions**, then **Mobile apps**.
+2. Click **Run workflow**. You can type the version people will see, such as `1.0.0`.
+3. When the run finishes, scroll to **Artifacts** at the bottom of the run page. You'll find two downloads:
+   - **why-android-test-apk**: install this on an Android phone to try the app. You may need to allow "install unknown apps".
+   - **why-android-play-bundle**: the `.aab` file you upload to Google Play.
+
+Each run gets a higher version code automatically, which Google Play needs for every new upload.
+
+### The upload key (needed before your first Play upload)
+
+Google Play only accepts bundles signed with your private upload key. Add these four repository secrets on GitHub under **Settings → Secrets and variables → Actions**:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+Without them, the build still works but the Play bundle is unsigned and Play will reject it. Keep the key file and password safe: every future update must be signed with the same key. If it's ever lost, Google can reset it through Play Console support.
+
+
+## Publishing on Google Play
+
+You'll need a Google Play developer account. Personal accounts created after November 2023 must first run a **closed test with at least 12 testers for 14 days** before Google allows a production release, so plan for that.
+
+In Play Console, create the app, upload the `.aab` to a testing track, and fill in **App content**. Here is what this app does, so you can answer accurately:
+
+- **Privacy policy:** `https://package-your-dreams.lovable.app/privacy`. Fill in `CONTACT_EMAIL` in `src/lib/legal.ts` first.
+- **Ads:** the app contains no ads.
+- **App access:** sign-in is optional, but give reviewers a working email and password so they can see the account features.
+- **Account deletion:** in the app under Settings → Delete account. Web link: `https://package-your-dreams.lovable.app/delete-account`.
+- **Data safety:**
+  - Collected: email address, name (display name and username), user IDs, app activity (facts viewed, quiz answers, favourites, scores), and anything people type in search or "But… Why?" (sent to the AI provider to answer).
+  - Not sold, not used for advertising, encrypted in transit, and people can delete their data.
+  - Guests give no personal information.
+- **Target audience and content:** accounts are 13+, with a neutral age check at sign-up, and younger children can use guest mode. Content is written for 8 to 12 year olds, so Google will treat the app as appealing to children and the **Families policy** applies. Choose the age groups carefully; this is your decision.
+- **Content rating:** complete the questionnaire. The app has no violence, gambling or chat. It does have user names on public leaderboards and AI-generated text.
+- **Store listing:**
+  - App icon: `assets/icon-only.png`, resized to 512×512.
+  - Feature graphic: 1024×500.
+  - At least two phone screenshots.
+
+
+## Building and publishing for iOS
+
+Apple only lets apps be signed and uploaded from a Mac with Xcode, or from a build service linked to your Apple Developer account ($99 a year). GitHub checks that the iOS project compiles on every change, but it can't upload it for you without your Apple certificates.
+
+On a Mac with Xcode installed:
+
+1. Clone the repository. In this `mobile` folder, run `npm ci`, then `npx cap sync ios`, then `npx cap open ios`.
+2. In Xcode, select the **App** target. Under **Signing & Capabilities**, choose your team. The bundle ID is `com.ogstreamz196.why`; change it here before your first upload if you want a different one.
+3. Choose **Product → Archive**, then **Distribute App → App Store Connect**.
+
+In App Store Connect, fill in:
+
+- the privacy policy URL
+- the App Privacy answers (the same data as above)
+- the age rating
+- a demo account for the reviewer
+
+Apple sometimes rejects apps that are mostly a website in a wrapper (guideline 4.2). The offline page, launch screen and app-only behaviour help, but be ready to explain what the app offers if they ask.
+
+
+## Developer notes
+
+- `capacitor.config.ts` holds the app ID (`com.ogstreamz196.why`), app name, server URL, splash screen and status bar settings.
+- To regenerate icons and splash screens after changing anything in `assets/`, run `npm run assets`.
+- `android/app/build.gradle` reads `WHY_VERSION_CODE`, `WHY_VERSION_NAME` and the `WHY_KEYSTORE_*` variables from the environment. CI sets them.
+- Android targets API level 36 and iOS 15+. The only Android permission is internet access.
