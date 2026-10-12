@@ -20,6 +20,10 @@ export const Route = createFileRoute("/leaderboard")({
     meta: [
       { title: "Curiosity Arena — Why?" },
       { name: "description", content: "Rank on global, age, category and activity boards." },
+      { property: "og:title", content: "Curiosity Arena — Why?" },
+      { property: "og:description", content: "See the top curious explorers and climb the global leaderboard." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ArenaPage,

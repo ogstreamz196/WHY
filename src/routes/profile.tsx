@@ -78,7 +78,15 @@ const LOCAL_BADGE_TARGETS: Record<string, { stat: "seen" | "streak" | "points"; 
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
-    meta: [{ title: "Your profile — Why?" }, { name: "theme-color", content: "#100c1f" }],
+    meta: [
+      { title: "Your profile — Why?" },
+      { name: "description", content: "Your curiosity progress: level, badges, streak, coins and discoveries." },
+      { property: "og:title", content: "Your profile — Why?" },
+      { property: "og:description", content: "Track your level, badges, streak and discoveries on Why?." },
+      { property: "og:type", content: "profile" },
+      { name: "twitter:card", content: "summary" },
+      { name: "theme-color", content: "#100c1f" },
+    ],
   }),
   component: ProfilePage,
 });
