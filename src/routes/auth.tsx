@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useIsNativeApp } from "@/lib/platform";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight, Mail, Lock, Loader2 } from "lucide-react";
+import { Sparkles, ArrowRight, Mail, Lock, Loader2, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { CosmicBackground } from "@/components/CosmicBackground";
+import { signInWithUsername, signUpWithUsername } from "@/lib/username-auth.functions";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -34,37 +35,32 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>(search.mode ?? "signup");
+  const [mode, setModeRaw] = useState<Mode>(search.mode ?? "signup");
   const isNative = useIsNativeApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   // Neutral age screen for sign-up (store rules for apps children may use):
   // ask for birth month/year without hinting at the cut-off. Under-13s can
   // keep using guest mode, which collects no personal information.
   const [birthMonth, setBirthMonth] = useState("");
   const [birthYear, setBirthYear] = useState("");
-  const [underAge, setUnderAge] = useState(false);
-  useEffect(() => {
-    try {
-      if (window.sessionStorage.getItem(AGE_GATE_KEY) === "under") setUnderAge(true);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  // The age question is asked fresh every time Sign Up opens — nothing is
+  // remembered, so a mis-tap never locks anyone out.
   const ageKnown = birthMonth !== "" && birthYear !== "";
-  const ageOk = ageKnown && !underAge && ageFrom(Number(birthYear), Number(birthMonth)) >= 13;
+  const underAge = ageKnown && ageFrom(Number(birthYear), Number(birthMonth)) < 13;
+  const ageOk = ageKnown && !underAge;
   function chooseBirth(month: string, year: string) {
     setBirthMonth(month);
     setBirthYear(year);
-    if (month !== "" && year !== "" && ageFrom(Number(year), Number(month)) < 13) {
-      setUnderAge(true);
-      try {
-        window.sessionStorage.setItem(AGE_GATE_KEY, "under");
-      } catch {
-        /* ignore */
-      }
+  }
+  function setMode(next: Mode) {
+    if (next === "signup") {
+      setBirthMonth("");
+      setBirthYear("");
     }
+    setMessage(null);
+    setModeRaw(next);
   }
   const signupBlocked = mode === "signup" && !ageOk;
   const [loading, setLoading] = useState(false);
@@ -84,10 +80,10 @@ function AuthPage() {
         : "Reset your password";
   const sub =
     mode === "signup"
-      ? "Save your streak, favourites and Y-Coins across every device."
+      ? "Just a username and password — save your streak and coins everywhere."
       : mode === "signin"
         ? "Continue your curiosity journey."
-        : "We'll email you a magic link to set a new password.";
+        : "Only works if you added a recovery email to your account.";
 
   function nextDestination(): string {
     try {
@@ -137,34 +133,29 @@ function AuthPage() {
           setLoading(false);
           return;
         }
-        const parsed = z
-          .object({
-            email: z.string().email(),
-            password: z.string().min(8, "at least 8 characters"),
-            name: z.string().trim().min(1).max(60),
-          })
-          .safeParse({ email, password, name });
-        if (!parsed.success) {
-          setMessage({ type: "error", text: parsed.error.issues[0]?.message ?? "Invalid input" });
-          setLoading(false);
-          return;
+        const u = username.trim();
+        if (!/^[A-Za-z0-9_.-]{3,20}$/.test(u)) {
+          throw new Error("Username: 3–20 letters, numbers, dots, dashes or underscores.");
         }
-        const { error } = await supabase.auth.signUp({
-          email: parsed.data.email,
-          password: parsed.data.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { display_name: parsed.data.name },
-          },
+        if (password.length < 8) throw new Error("Password needs at least 8 characters.");
+        const res = await signUpWithUsername({
+          data: { username: u, password, birthYear: Number(birthYear), birthMonth: Number(birthMonth) },
         });
+        if ("error" in res) throw new Error(res.error);
+        const { error } = await supabase.auth.setSession(res);
         if (error) throw error;
-        setMessage({
-          type: "success",
-          text: "Check your email to confirm — then sign in and your curiosity journey begins.",
-        });
+        window.location.assign(nextDestination());
       } else if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const id = email.trim();
+        if (id.includes("@")) {
+          const { error } = await supabase.auth.signInWithPassword({ email: id, password });
+          if (error) throw new Error("Wrong username or password.");
+        } else {
+          const res = await signInWithUsername({ data: { username: id, password } });
+          if ("error" in res) throw new Error(res.error);
+          const { error } = await supabase.auth.setSession(res);
+          if (error) throw error;
+        }
         window.location.assign(nextDestination());
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -229,6 +220,13 @@ function AuthPage() {
                 Accounts are for explorers aged 13 and up. You can keep discovering facts as a guest
                 — no account needed, and nothing personal is collected.
               </p>
+              <button
+                type="button"
+                onClick={() => chooseBirth("", "")}
+                className="mt-3 mr-3 text-xs font-semibold text-white/60 underline"
+              >
+                Change answer
+              </button>
               <Link
                 to="/"
                 className="mt-3 inline-block rounded-full px-4 py-2 text-sm font-black text-white"
@@ -280,24 +278,26 @@ function AuthPage() {
               {isNative === null && <div className="mt-5" />}
 
               <form onSubmit={submit} className="space-y-3">
-                {mode === "signup" && (
+                {mode === "signup" ? (
                   <Field
-                    label="Your name"
-                    value={name}
-                    onChange={setName}
-                    placeholder="Curious Explorer"
-                    autoComplete="name"
+                    label="Username"
+                    value={username}
+                    onChange={setUsername}
+                    placeholder="CuriousExplorer"
+                    icon={<User className="h-4 w-4 text-white/40" />}
+                    autoComplete="username"
+                  />
+                ) : (
+                  <Field
+                    label={mode === "signin" ? "Username or email" : "Recovery email"}
+                    type={mode === "signin" ? "text" : "email"}
+                    value={email}
+                    onChange={setEmail}
+                    placeholder={mode === "signin" ? "CuriousExplorer" : "you@example.com"}
+                    icon={<Mail className="h-4 w-4 text-white/40" />}
+                    autoComplete={mode === "signin" ? "username" : "email"}
                   />
                 )}
-                <Field
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={setEmail}
-                  placeholder="you@example.com"
-                  icon={<Mail className="h-4 w-4 text-white/40" />}
-                  autoComplete="email"
-                />
                 {mode !== "reset" && (
                   <Field
                     label="Password"
@@ -450,7 +450,6 @@ function AppleIcon() {
   );
 }
 
-const AGE_GATE_KEY = "why:ageGate";
 const MONTHS = [
   "January",
   "February",
