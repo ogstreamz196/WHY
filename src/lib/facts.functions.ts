@@ -1,8 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
-import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeAiQuota, consumeGuestAiQuota, optionalUserId } from "@/lib/aiQuota.server";
 
@@ -15,6 +13,22 @@ function getSupabase() {
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
+}
+
+/** Facts a signed-in user has already seen on any device. */
+async function serverSeenIds(userId: string | null): Promise<string[]> {
+  if (!userId) return [];
+  try {
+    const admin = await getAdmin();
+    const { data } = await admin
+      .from("discoveries")
+      .select("fact_id")
+      .eq("user_id", userId)
+      .limit(5000);
+    return (data ?? []).map((r) => r.fact_id as string);
+  } catch {
+    return [];
+  }
 }
 
 export type Fact = {
@@ -100,6 +114,7 @@ export const getRandomFact = createServerFn({ method: "GET" })
     const supabase = getSupabase();
     // Build a set of ids to skip: caller's seen list + the current fact.
     const skip = new Set<string>(data.seenIds ?? []);
+    for (const id of await serverSeenIds(await optionalUserId().catch(() => null))) skip.add(id);
     if (data.excludeId) skip.add(data.excludeId);
 
     const base = () => {
@@ -238,6 +253,7 @@ export const generateAndStoreFact = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<Fact | null> => {
     const supabase = getSupabase();
     const skip = new Set<string>(data.seenIds ?? []);
+    for (const id of await serverSeenIds(context.userId)) skip.add(id);
 
     // CYCLE FIRST: only generate a new fact when the caller has genuinely
     // exhausted the existing pool for this scope. This keeps the sheets DB
