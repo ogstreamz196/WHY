@@ -593,8 +593,12 @@ nav[aria-label="Primary"] button:focus-visible {
 }
 @media (prefers-color-scheme: light) {
   .shimmer-gold-text {
+    /* The `background` shorthand resets background-clip, so the text clip
+       must be repeated here or the name renders transparent on light themes. */
     background: linear-gradient(90deg, #92610a 0%, #d97706 25%, #b45309 50%, #d97706 75%, #92610a 100%);
     background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
   }
 }
 
