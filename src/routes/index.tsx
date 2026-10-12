@@ -164,6 +164,7 @@ import {
   migrateGuestData,
   recordDiscovery,
   recordDailyChallenge,
+  claimChainLayerReward,
   claimDailyLoginBonus,
   toggleFavorite as toggleFavoriteServer,
   updateMyProfile,
@@ -212,6 +213,7 @@ function WhyApp() {
   const fetchProfile = useServerFn(getMyProfile);
   const fetchStats = useServerFn(getMyStats);
   const recordDailyServer = useServerFn(recordDailyChallenge);
+  const claimChainReward = useServerFn(claimChainLayerReward);
   const recordDiscoveryServer = useServerFn(recordDiscovery);
   const toggleFavServer = useServerFn(toggleFavoriteServer);
   const fetchLastChain = useServerFn(resumeLastChain);
@@ -262,13 +264,15 @@ function WhyApp() {
   const tapCount = useRef<number>(0);
   const lastMilestone = useRef<number>(0);
 
-  const [chain, setChain] = useState<{ question: string; answer: string; terminal?: boolean }[]>(
-    [],
-  );
+  const [chain, setChain] = useState<
+    { question: string; answer: string; terminal?: boolean; reward_id?: string | null }[]
+  >([]);
   const [chainLoading, setChainLoading] = useState(false);
   const [chainConfetti, setChainConfetti] = useState(0);
   const [chainDwellKey, setChainDwellKey] = useState<string | null>(null);
   const chainRewardedRef = useRef<Set<string>>(new Set());
+  // Coins actually earned per chain layer key (server- or guest-credited).
+  const [chainEarned, setChainEarned] = useState<Record<string, number>>({});
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -334,9 +338,13 @@ function WhyApp() {
     };
   }, [user, migrateGuest, fetchProfile, fetchStats, fetchLastChain]);
 
-  const grantPoints = useCallback((delta: number) => {
-    const prev = getPoints();
-    const next = addPoints(delta);
+  // Shared display update: level-up and every-50 milestone celebrations.
+  const pointsRef = useRef(0);
+  useEffect(() => {
+    pointsRef.current = points;
+  }, [points]);
+  const applyBalance = useCallback((prev: number, next: number) => {
+    pointsRef.current = next;
     setPoints(next);
     const prevInfo = levelFor(prev);
     const nextInfo = levelFor(next);
@@ -352,6 +360,27 @@ function WhyApp() {
       setCelebrate({ points: 50 });
     }
   }, []);
+
+  // Guest coins live in the browser. Signed-in balances only change through
+  // the server, so the counter never shows coins that don't really exist.
+  const grantPoints = useCallback(
+    (delta: number) => {
+      if (user) return;
+      const prev = getPoints();
+      const next = addPoints(delta);
+      applyBalance(prev, next);
+    },
+    [user, applyBalance],
+  );
+
+  /** Show a balance the server just returned for a signed-in user. */
+  const showServerBalance = useCallback(
+    (total: number) => {
+      if (total === pointsRef.current) return;
+      applyBalance(pointsRef.current, total);
+    },
+    [applyBalance],
+  );
 
   const handleClaimBonus = useCallback(async () => {
     if (bonusClaiming || !bonusAvailable) return;
@@ -443,12 +472,15 @@ function WhyApp() {
       grantPoints(3);
       if (user) {
         recordDiscoveryServer({ data: { fact_id: id } })
-          .then((r) => notifyAchievements(r?.newlyUnlocked))
+          .then((r) => {
+            if (r?.stats) showServerBalance(r.stats.total_points);
+            notifyAchievements(r?.newlyUnlocked);
+          })
           .catch((e) => console.warn(e));
       }
     }, 3000);
     return () => window.clearTimeout(t);
-  }, [fact?.id, revealed, user, grantPoints, recordDiscoveryServer]);
+  }, [fact?.id, revealed, user, grantPoints, recordDiscoveryServer, showServerBalance]);
 
   // Same 3-second dwell reward for each "But… Why?" chain layer.
   // Guarded by chainRewardedRef so a single dwell session can only award once
@@ -464,7 +496,9 @@ function WhyApp() {
       return;
     }
     const key = `${fact?.id ?? "x"}::${chain.length}`;
-    if (chainRewardedRef.current.has(key)) {
+    // Signed-in users only earn on layers the server issued a reward for
+    // (not on chains reopened from history).
+    if (chainRewardedRef.current.has(key) || (user && !last.reward_id)) {
       setChainDwellKey(null);
       return;
     }
@@ -472,11 +506,24 @@ function WhyApp() {
     const t = window.setTimeout(() => {
       if (chainRewardedRef.current.has(key)) return;
       chainRewardedRef.current.add(key);
-      grantPoints(3);
       setChainDwellKey(null);
+      if (!user) {
+        grantPoints(3);
+        setChainEarned((m) => ({ ...m, [key]: 3 }));
+        return;
+      }
+      if (!last.reward_id) return;
+      claimChainReward({ data: { reward_id: last.reward_id } })
+        .then((r) => {
+          showServerBalance(r.total_points);
+          if (r.awarded) setChainEarned((m) => ({ ...m, [key]: r.points }));
+          else if (r.reason === "daily_cap")
+            toast("🪙 You've earned all your chain coins for today — keep digging for fun!");
+        })
+        .catch((e) => console.warn(e));
     }, 3000);
     return () => window.clearTimeout(t);
-  }, [chain.length, chain, fact?.id, grantPoints]);
+  }, [chain.length, chain, fact?.id, user, grantPoints, claimChainReward, showServerBalance]);
 
   // Guests are never force-redirected into an OAuth flow — that navigates the
   // whole page away before they can read anything. Instead we surface a gentle,
@@ -551,7 +598,7 @@ function WhyApp() {
         );
         return;
       }
-      const layer = { question: res.question, answer: res.answer };
+      const layer = { question: res.question, answer: res.answer, reward_id: res.reward_id };
       const depth = chain.length + 1;
       setChain((c) => [...c, layer]);
       if (depth >= 3) markMission("chain");
@@ -890,15 +937,24 @@ function WhyApp() {
 
         <DailyChallenge
           onCompleted={(r) => {
-            setStreak(r.streak);
-            setPoints(r.points);
-            setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
-            setCelebrate({ points: r.pointsDelta });
-            if (user) {
-              recordDailyServer()
-                .then((r) => notifyAchievements(r?.newlyUnlocked))
-                .catch((e) => console.warn(e));
+            if (!user) {
+              setStreak(r.streak);
+              setPoints(r.points);
+              setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
+              setCelebrate({ points: r.pointsDelta });
+              return;
             }
+            // Signed in: the server decides the streak and the coins.
+            const before = pointsRef.current;
+            recordDailyServer()
+              .then((res) => {
+                setStreak(res.stats.current_streak);
+                showServerBalance(res.stats.total_points);
+                const gained = res.stats.total_points - before;
+                if (res.awarded && gained > 0) setCelebrate({ points: gained });
+                notifyAchievements(res?.newlyUnlocked);
+              })
+              .catch((e) => console.warn(e));
           }}
         />
 
@@ -1191,7 +1247,7 @@ function WhyApp() {
                                     {chain.map((layer, i) => {
                                       const isLast = i === chain.length - 1;
                                       const key = `${fact?.id ?? "x"}::${i + 1}`;
-                                      const rewarded = chainRewardedRef.current.has(key);
+                                      const earned = chainEarned[key];
                                       const counting = isLast && chainDwellKey === key;
                                       return (
                                         <ChainStep
@@ -1200,7 +1256,7 @@ function WhyApp() {
                                           question={layer.question}
                                           answer={layer.answer}
                                           counting={counting}
-                                          rewarded={rewarded}
+                                          earned={earned}
                                         />
                                       );
                                     })}
@@ -1450,15 +1506,17 @@ function ChainStep({
   answer,
   solved,
   counting,
-  rewarded,
+  earned,
 }: {
   index: number;
   question: string;
   answer?: string;
   solved?: boolean;
   counting?: boolean;
-  rewarded?: boolean;
+  /** Coins credited for reading this layer, once they land. */
+  earned?: number;
 }) {
+  const rewarded = (earned ?? 0) > 0;
   return (
     <motion.li
       initial={{ opacity: 0, x: -16, scale: 0.94 }}
@@ -1519,13 +1577,15 @@ function ChainStep({
                 >
                   🪙
                 </motion.span>
-                <span>Coin earned!</span>
+                <span>
+                  +{earned} {earned === 1 ? "coin" : "coins"} earned!
+                </span>
               </motion.div>
             ) : (
               <>
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-white/60">
                   <span>Keep reading…</span>
-                  <span>+1 🪙 in 3s</span>
+                  <span>🪙 in 3s</span>
                 </div>
                 <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <motion.div

@@ -489,7 +489,7 @@ export const decodeFactCode = createServerFn({ method: "POST" })
 // -------------------- "But… Why?" endless chain --------------------
 
 export type WhyLayerResult =
-  | { ok: true; question: string; answer: string }
+  | { ok: true; question: string; answer: string; reward_id: string | null }
   | { ok: false; reason: "rate_limited" | "unavailable" };
 
 // Open to guests too: the home page shows "But… Why?" before anyone signs in.
@@ -533,7 +533,21 @@ Return STRICT JSON only, no prose, no markdown:
       return { ok: false, reason: "unavailable" };
     }
     if (!res?.question || !res?.answer) return { ok: false, reason: "unavailable" };
-    return { ok: true, question: res.question.trim(), answer: res.answer.trim() };
+
+    // Signed-in readers get a one-time reward ticket, claimed after the 3s read
+    // via claimChainLayerReward. Guests earn local-only coins.
+    let reward_id: string | null = null;
+    if (userId) {
+      const admin = await getAdmin();
+      const { data: row, error } = await admin
+        .from("chain_layer_rewards")
+        .insert({ user_id: userId })
+        .select("id")
+        .single();
+      if (error) console.warn("[why?] couldn't issue chain reward:", error.message);
+      else reward_id = row.id;
+    }
+    return { ok: true, question: res.question.trim(), answer: res.answer.trim(), reward_id };
   });
 
 // -------------------- Daily featured fact --------------------
