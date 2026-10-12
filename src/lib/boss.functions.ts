@@ -603,3 +603,40 @@ export const bossBackfillNormalizeQuestions = createServerFn({ method: "POST" })
     }
     return result;
   });
+
+// -------------------- Google Drive master backup --------------------
+
+export const bossBackupStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertBoss(context);
+    const { backupStatus } = await import("@/lib/backup.server");
+    return backupStatus();
+  });
+
+export const bossBackupNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertBoss(context);
+    const { fullBackup } = await import("@/lib/backup.server");
+    const result = await fullBackup();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await writeAudit(supabaseAdmin, context.userId, "drive_backup", null, result);
+    return result;
+  });
+
+export const bossRestoreBackup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { sheetId?: string }) =>
+    z
+      .object({ sheetId: z.string().regex(/^[A-Za-z0-9_-]{10,100}$/).optional() })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertBoss(context);
+    const { restoreFromBackup } = await import("@/lib/backup.server");
+    const result = await restoreFromBackup(data.sheetId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await writeAudit(supabaseAdmin, context.userId, "drive_restore", null, result);
+    return result;
+  });
