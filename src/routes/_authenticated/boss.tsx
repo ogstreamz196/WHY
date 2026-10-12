@@ -14,6 +14,9 @@ import {
   bossListAudit,
   getGuestPromptSeconds,
   bossSetGuestPromptSeconds,
+  bossBackupStatus,
+  bossBackupNow,
+  bossRestoreBackup,
   type Privileges,
 } from "@/lib/boss.functions";
 
@@ -146,6 +149,7 @@ function BossDashboard() {
       </section>
 
       <FactCodeDecoder />
+      <DriveBackupPanel />
       <BulkImportSheet />
       <NormalizeBackfill />
       <AuditLogSection />
@@ -998,6 +1002,93 @@ function NormalizeBackfill() {
           )}
         </div>
       )}
+    </section>
+  );
+}
+
+function DriveBackupPanel() {
+  const qc = useQueryClient();
+  const status = useServerFn(bossBackupStatus);
+  const backup = useServerFn(bossBackupNow);
+  const restore = useServerFn(bossRestoreBackup);
+  const [link, setLink] = useState("");
+  const st = useQuery({ queryKey: ["boss:backup"], queryFn: () => status() });
+  const backupMut = useMutation({
+    mutationFn: () => backup(),
+    onSuccess: (r) => {
+      toast.success(`Backed up ${r.facts} facts, ${r.users} users, ${r.purchases} purchases`);
+      qc.invalidateQueries({ queryKey: ["boss:backup"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Backup failed"),
+  });
+  const restoreMut = useMutation({
+    mutationFn: () => {
+      const m = link.match(/\/d\/([A-Za-z0-9_-]+)/);
+      const sheetId = m?.[1] ?? (link.trim() || undefined);
+      return restore({ data: { sheetId } });
+    },
+    onSuccess: (r) => {
+      toast.success(
+        `Restored ${r.factsRestored} facts, ${r.usersRestored} coin balances, ${r.itemsRestored} items`,
+      );
+      qc.invalidateQueries({ queryKey: ["boss:backup"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Restore failed"),
+  });
+  const d = st.data;
+  return (
+    <section className="mt-6">
+      <div className="mb-3 flex items-center gap-2">
+        <Save className="h-4 w-4 text-emerald-300" />
+        <h2 className="text-lg font-black text-white">Google Drive backup</h2>
+      </div>
+      <div className="space-y-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white/80">
+        {st.isLoading ? (
+          <p>Checking…</p>
+        ) : !d?.connected ? (
+          <p>Google Sheets isn't connected, so backups are paused.</p>
+        ) : d.url ? (
+          <p>
+            File:{" "}
+            <a href={d.url} target="_blank" rel="noreferrer" className="font-bold underline">
+              WHY App - Master Backup
+            </a>
+            {d.lastSyncAt && ` · last synced ${new Date(d.lastSyncAt).toLocaleString()}`}
+          </p>
+        ) : (
+          <p>No backup file yet — the first backup creates it in your Google Drive.</p>
+        )}
+        <button
+          onClick={() => backupMut.mutate()}
+          disabled={backupMut.isPending || !d?.connected}
+          className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 font-black text-emerald-100 disabled:opacity-60"
+        >
+          {backupMut.isPending ? "Backing up…" : "Back up everything now"}
+        </button>
+        <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+          <input
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="Backup file link (blank = current file)"
+            aria-label="Backup file link"
+            className="min-w-[220px] flex-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-white outline-none"
+          />
+          <button
+            onClick={() => {
+              if (confirm("Restore facts, coins and store items from the backup file?"))
+                restoreMut.mutate();
+            }}
+            disabled={restoreMut.isPending || !d?.connected}
+            className="rounded-full border border-amber-400/30 bg-amber-500/15 px-4 py-2 font-black text-amber-100 disabled:opacity-60"
+          >
+            {restoreMut.isPending ? "Restoring…" : "Restore from backup"}
+          </button>
+        </div>
+        <p className="text-xs text-white/50">
+          New facts are added instantly; coins and purchases refresh at most once a minute.
+          Restore adds missing facts and brings back coins and items for accounts that exist here.
+        </p>
+      </div>
     </section>
   );
 }
