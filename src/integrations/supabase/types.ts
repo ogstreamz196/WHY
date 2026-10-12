@@ -47,6 +47,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           key: string
@@ -199,6 +220,27 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chain_layer_rewards: {
+        Row: {
+          claimed_at: string | null
+          id: string
+          issued_at: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          id?: string
+          issued_at?: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          id?: string
+          issued_at?: string
           user_id?: string
         }
         Relationships: []
@@ -789,6 +831,27 @@ export type Database = {
           },
         ]
       }
+      user_inventory: {
+        Row: {
+          acquired_at: string
+          cost: number
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          cost?: number
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          cost?: number
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -853,6 +916,7 @@ export type Database = {
           last_active_day: string | null
           last_daily_challenge_day: string | null
           last_login_bonus_day: string | null
+          login_streak: number
           longest_streak: number
           total_points: number
           updated_at: string
@@ -864,6 +928,7 @@ export type Database = {
           last_active_day?: string | null
           last_daily_challenge_day?: string | null
           last_login_bonus_day?: string | null
+          login_streak?: number
           longest_streak?: number
           total_points?: number
           updated_at?: string
@@ -875,6 +940,7 @@ export type Database = {
           last_active_day?: string | null
           last_daily_challenge_day?: string | null
           last_login_bonus_day?: string | null
+          login_streak?: number
           longest_streak?: number
           total_points?: number
           updated_at?: string
@@ -1143,6 +1209,10 @@ export type Database = {
       }
     }
     Functions: {
+      apply_points: {
+        Args: { _facts_seen?: number; _points: number; _user: string }
+        Returns: number
+      }
       boss_decode_fact_code: {
         Args: { _code: string }
         Returns: {
@@ -1197,6 +1267,13 @@ export type Database = {
       }
       is_adult_verified: { Args: { _uid: string }; Returns: boolean }
       is_boss: { Args: { _uid: string }; Returns: boolean }
+      purchase_item: {
+        Args: { _cost: number; _item: string; _user: string }
+        Returns: {
+          out_status: string
+          out_total: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
