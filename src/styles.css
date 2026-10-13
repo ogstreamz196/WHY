@@ -885,3 +885,33 @@ body.edit-mode-danger::before {
 @media (prefers-reduced-motion: reduce) {
   body.edit-mode-danger::before { animation: none; }
 }
+
+/* ── 18+ mode (website only): dark, high-contrast red / blue / silver ── */
+.adult-theme {
+  --adult-red: #ef233c;
+  --adult-blue: #2563eb;
+  --adult-silver: #cbd5e1;
+  background:
+    radial-gradient(60rem 30rem at 0% 0%, rgba(239, 35, 60, 0.22), transparent 60%),
+    radial-gradient(50rem 30rem at 100% 100%, rgba(37, 99, 235, 0.25), transparent 60%),
+    #040406;
+  color: #e2e8f0;
+  color-scheme: dark;
+}
+.adult-silver-text {
+  background: linear-gradient(180deg, #ffffff 0%, #94a3b8 55%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.adult-card {
+  background: linear-gradient(160deg, rgba(22, 22, 30, 0.96), rgba(8, 8, 12, 0.96));
+  border: 1px solid rgba(203, 213, 225, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(239, 35, 60, 0.28),
+    0 24px 60px rgba(37, 99, 235, 0.2);
+}
+.adult-button {
+  background: linear-gradient(90deg, var(--adult-red), var(--adult-blue));
+  color: #fff;
+}

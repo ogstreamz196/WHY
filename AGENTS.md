@@ -22,7 +22,9 @@ Inside the apps (`useIsNativeApp()` / `isNativeApp()` from `src/lib/platform.ts`
 - Digital purchases only through Google Play / App Store billing via
   RevenueCat (`src/lib/nativePurchases.ts`), never Paddle checkout or links to
   web payment. Why? Plus is the only thing sold (see `docs/WHY_PLUS.md`).
-- No 18+ content or links to `/adult`.
+- No 18+ content or links to `/adult`. 18+ mode is website only (see
+  `docs/ADULT_MODE.md`): its switch shows only when `useAdultStatus().show` is
+  true, and every 18+ server function refuses requests from the apps.
 - Render web-only UI only when `useIsNativeApp() === false`, so it never
   flashes in the apps while the value is still unknown.
 
@@ -37,7 +39,11 @@ For everyone (web and apps):
 - Keep `/privacy` accurate. If you start collecting, storing or sharing new
   data (a new table, analytics, ads, another AI or third-party service),
   update the privacy policy in the same change.
-- Keep the neutral age screen on sign-up; accounts are 13+.
+- Keep the neutral age screen on sign-up; accounts are 13+. The birth month and
+  year live in the account's `app_metadata` (server-written, can't be changed).
+- 18+ content lives only in `adult_facts`, which only the server reads, and is
+  served only after `requireAdultMode` (18+ birthday, switch on, not the app).
+  Never put adult content in `facts` or any kids' feed.
 - No ads or tracking SDKs, and no deceptive UI (dodging close buttons, buttons
   that move under the user's tap, forced countdowns). The app is used by
   children.

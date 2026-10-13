@@ -86,6 +86,9 @@ export const signUpWithUsername = createServerFn({ method: "POST" })
       password: data.password,
       email_confirm: true,
       user_metadata: { display_name: data.username, username: data.username },
+      // Only the server can write app_metadata, so the age can't be edited
+      // later to unlock adults-only features (see src/lib/adultGate.ts).
+      app_metadata: { birth_year: data.birthYear, birth_month: data.birthMonth },
     });
     if (error) {
       const msg = /already/i.test(error.message)
