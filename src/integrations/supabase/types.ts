@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      adult_facts: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string
+          fun_fact: string | null
+          id: string
+          question: string
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string
+          fun_fact?: string | null
+          id?: string
+          question: string
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string
+          fun_fact?: string | null
+          id?: string
+          question?: string
+        }
+        Relationships: []
+      }
       ai_usage: {
         Row: {
           created_at: string
