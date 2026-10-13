@@ -17,6 +17,9 @@ import { LinkedAccounts } from "@/components/LinkedAccounts";
 import { useIsNativeApp } from "@/lib/platform";
 import { CATEGORIES } from "@/lib/categories";
 import { isSoundEnabled, setSoundEnabled } from "@/lib/feedback";
+import { AdultModeSwitch } from "@/components/AdultModeSwitch";
+import { useAdultStatus } from "@/hooks/useAdultStatus";
+import { saveMyBirthDate } from "@/lib/adult.functions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -118,6 +121,8 @@ function SettingsPage() {
             </div>
           )}
         </section>
+
+        {user && <BirthdayAndAdultSections userId={user.id} />}
 
         {/* Linking Google is web-only (Google blocks its sign-in inside apps). */}
         {user && isNative === false && <LinkedAccounts />}
@@ -341,5 +346,113 @@ function ArenaPreferences() {
         />
       </div>
     </section>
+  );
+}
+
+const BIRTH_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/**
+ * A one-time, neutral birthday question for accounts that don't have one
+ * (for example Google sign-ins), and, on the website for 18+ accounts only,
+ * the 18+ mode switch. Nothing about 18+ shows to anyone else.
+ */
+function BirthdayAndAdultSections({ userId }: { userId: string }) {
+  const { status, show, refetch } = useAdultStatus(userId);
+  const save = useServerFn(saveMyBirthDate);
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const thisYear = new Date().getFullYear();
+
+  if (!status) return null;
+
+  return (
+    <>
+      {!status.birthdate_known && (
+        <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
+          <h2 className="text-lg font-extrabold text-slate-900">🎂 Your birthday</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            We ask once so Why? fits your age. It can't be changed later.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <select
+              aria-label="Birth month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+            >
+              <option value="">Month</option>
+              {BIRTH_MONTHS.map((m, i) => (
+                <option key={m} value={String(i + 1)}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            <select
+              aria-label="Birth year"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+            >
+              <option value="">Year</option>
+              {Array.from({ length: 100 }, (_, i) => String(thisYear - i)).map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            disabled={!month || !year || saving}
+            onClick={async () => {
+              setSaving(true);
+              setMessage(null);
+              try {
+                const res = await save({ data: { year: Number(year), month: Number(month) } });
+                if (!res.ok) setMessage(res.error);
+                else await refetch();
+              } catch {
+                setMessage("Couldn't save that. Please try again.");
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="mt-3 rounded-full bg-violet-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+          {message && <p className="mt-2 text-sm text-rose-600">{message}</p>}
+        </section>
+      )}
+
+      {show && (
+        <section className="mb-6 rounded-3xl bg-slate-950 p-5 text-white shadow-md ring-1 ring-red-500/40">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-extrabold">🔞 Adults only</h2>
+              <p className="mt-1 text-sm text-slate-300">
+                18+ mode: crude, gross and sweary facts, and OG, a foul-mouthed bot. Website only.
+              </p>
+            </div>
+            <AdultModeSwitch on={status.mode_enabled} userId={userId} />
+          </div>
+        </section>
+      )}
+    </>
   );
 }

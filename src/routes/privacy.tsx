@@ -59,10 +59,10 @@ function PrivacyPage() {
 
         <Section title="What we collect when you have an account">
           <p>
-            <b>Account details:</b> a username and password (stored securely by our
-            authentication provider, never in plain text). Adding an email is optional and it is
-            only used to reset a forgotten password — never for marketing. On the website you can instead sign in
-            with Google or Apple, in which case we receive your name, email and profile picture from
+            <b>Account details:</b> a username and password (stored securely by our authentication
+            provider, never in plain text). Adding an email is optional and it is only used to reset
+            a forgotten password — never for marketing. On the website you can instead sign in with
+            Google or Apple, in which case we receive your name, email and profile picture from
             them.
           </p>
           <p>
@@ -70,6 +70,11 @@ function PrivacyPage() {
             and status message you choose, your age range and favourite topic if you set them, and
             your privacy choices (such as hiding from leaderboards). We also keep the store items
             you own, whether bought with coins or received as free gifts.
+          </p>
+          <p>
+            <b>Birthday:</b> the month and year you were born, asked once when you sign up (or in
+            Settings). We use it to check you're old enough for an account and, on the website only,
+            for the adults-only section. It can't be changed afterwards.
           </p>
           <p>
             <b>Activity:</b> facts you've discovered, favourites, saved "But… Why?" chains, quiz
@@ -111,6 +116,11 @@ function PrivacyPage() {
             </li>
             <li>Paddle — payments on the website.</li>
             <li>
+              Adults-only section (website, 18+ only) — questions you ask OG are sent to our AI
+              providers and to our own "OG" chat service to be answered, with an anonymous code
+              instead of your account details. We don't keep these chats.
+            </li>
+            <li>
               Google Play, the App Store and RevenueCat — Why? Plus subscriptions bought in the
               apps. RevenueCat receives your account ID (not your name or email) to link a purchase
               to your account.
@@ -125,7 +135,8 @@ function PrivacyPage() {
             Why? is made for curious minds of all ages. Accounts are for people aged 13 and over;
             younger explorers can use guest mode, which doesn't collect personal information. If
             you're a parent and think your child under 13 created an account, contact us and we'll
-            delete it.
+            delete it. The website has an optional adults-only section for accounts whose birthday
+            shows they're 18 or over. It's never available in the Android or iPhone apps.
           </p>
         </Section>
 

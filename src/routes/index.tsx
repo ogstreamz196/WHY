@@ -139,6 +139,8 @@ import { rollDailyReward } from "@/lib/avatarItems";
 import { HomePlayerCard } from "@/components/HomePlayerCard";
 import { AvatarFigure } from "@/components/AvatarFigure";
 import { useMyAvatar } from "@/hooks/useMyAvatar";
+import { AdultModeSwitch } from "@/components/AdultModeSwitch";
+import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
@@ -231,6 +233,8 @@ function WhyApp() {
 
   const { user, isGuest } = useCurrentUser();
   const myAvatar = useMyAvatar(user?.id ?? null);
+  // 18+ switch: website only, and only for accounts whose saved birthday is 18+.
+  const adult = useAdultStatus(user?.id);
   const isNative = useIsNativeApp();
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
@@ -723,6 +727,7 @@ function WhyApp() {
             </button>
 
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+              {adult.show && user && <AdultModeSwitch on={false} userId={user.id} size="sm" />}
               <div className="glass flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <Flame className="h-4 w-4 text-orange-400" />
                 <span className="text-sm font-black text-white">{streak}</span>
