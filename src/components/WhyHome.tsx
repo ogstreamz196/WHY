@@ -1326,7 +1326,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
 
                                   <motion.button
                                     type="button"
-                                    onClick={askWhy}
+                                    onClick={() => askWhy()}
                                     disabled={
                                       chainLoading ||
                                       chain.length >= MAX_CHAIN_DEPTH ||
@@ -1400,7 +1400,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                         >
                                           <input
                                             type="text"
-                                            enterKeyHint="ask"
+                                            enterKeyHint="send"
                                             aria-label="Type your own why question"
                                             value={customWhy}
                                             onChange={(e) => setCustomWhy(e.target.value)}
