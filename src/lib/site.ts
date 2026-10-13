@@ -6,9 +6,9 @@
 export const SITE_URL = "https://why.ogbot.co.uk";
 export const SITE_NAME = "Why?";
 export const SITE_TAGLINE = "Fun facts for curious kids";
-export const DEFAULT_TITLE = "Why? | Fun facts and “why” questions for curious kids";
+export const DEFAULT_TITLE = "Why? — Fun Facts & Big Questions for Curious Kids";
 export const DEFAULT_DESCRIPTION =
-  "Do you know why the sky is blue? Fun, true and child-friendly facts, “But why?” deep dives, quizzes and daily challenges for curious kids and families.";
+  "Why is the sky blue? Why do cats purr? Why? turns every question into a fun, true, kid-friendly fact — with quizzes, daily challenges and “But why?” deep dives the whole family can enjoy.";
 export const OG_IMAGE = `${SITE_URL}/og-image.png`;
 export const LOGO_URL = `${SITE_URL}/icon-512.png`;
 
