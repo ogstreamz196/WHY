@@ -267,6 +267,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   const chainRewardedRef = useRef<Set<string>>(new Set());
   // Coins actually earned per chain layer key (server- or guest-credited).
   const [chainEarned, setChainEarned] = useState<Record<string, number>>({});
+  const [customWhy, setCustomWhy] = useState("");
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -1360,6 +1361,64 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                       </>
                                     )}
                                   </motion.button>
+
+                                  {chain.length < MAX_CHAIN_DEPTH &&
+                                    !chain[chain.length - 1]?.terminal && (
+                                      <div className="mt-3 space-y-2">
+                                        <p className="text-center text-[10px] font-black uppercase tracking-widest text-white/50">
+                                          Or pick a question
+                                        </p>
+                                        <div className="flex flex-wrap justify-center gap-2">
+                                          {[
+                                            "But why does that happen?",
+                                            "How does it work?",
+                                            "When did it start?",
+                                            "Where does it come from?",
+                                            "What if it didn't exist?",
+                                            "Who discovered it?",
+                                          ].map((q) => (
+                                            <button
+                                              key={q}
+                                              type="button"
+                                              disabled={chainLoading}
+                                              onClick={() => askWhy(q)}
+                                              className="rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold text-white/85 transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
+                                            >
+                                              {q}
+                                            </button>
+                                          ))}
+                                        </div>
+                                        <form
+                                          className="glass flex items-center gap-2 rounded-2xl p-1.5"
+                                          onSubmit={(e) => {
+                                            e.preventDefault();
+                                            const q = customWhy.trim();
+                                            if (q.length < 3 || chainLoading) return;
+                                            setCustomWhy("");
+                                            askWhy(q);
+                                          }}
+                                        >
+                                          <input
+                                            type="text"
+                                            enterKeyHint="ask"
+                                            aria-label="Type your own why question"
+                                            value={customWhy}
+                                            onChange={(e) => setCustomWhy(e.target.value)}
+                                            placeholder="Or type your own why…"
+                                            maxLength={200}
+                                            className="flex-1 bg-transparent px-2 py-2 text-sm text-white placeholder-white/40 outline-none"
+                                          />
+                                          <button
+                                            type="submit"
+                                            disabled={chainLoading || customWhy.trim().length < 3}
+                                            className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                                            style={{ background: "var(--gradient-primary)" }}
+                                          >
+                                            Ask
+                                          </button>
+                                        </form>
+                                      </div>
+                                    )}
 
                                   {chain.length > 0 && (
                                     <button
