@@ -216,6 +216,7 @@ function RootComponent() {
           Skip to content
         </a>
         <TopSignInBar />
+        <AdultHeaderBar />
         <RecoveryEmailPrompt />
         <div id="main" tabIndex={-1}>
           <Outlet />
