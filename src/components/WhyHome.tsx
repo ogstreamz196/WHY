@@ -908,116 +908,6 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
           streak={streak}
           points={points}
         />
-        {user ? null : (
-          <GuestProgressCard
-            discoveries={getSeen()}
-            streak={streak}
-            points={points}
-            onSignUp={() => navigate({ to: "/auth", search: { mode: "signup" } })}
-          />
-        )}
-
-        {/* Daily login bonus */}
-        {user && bonusAvailable && (
-          <motion.button
-            type="button"
-            onClick={handleClaimBonus}
-            disabled={bonusClaiming}
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            className="mb-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-300/30 bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-pink-500/15 px-4 py-3 text-left shadow-[0_0_24px_rgba(251,191,36,0.15)] transition disabled:opacity-60"
-          >
-            <span className="flex items-center gap-3">
-              <motion.span
-                animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
-                transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2 }}
-                className="text-2xl"
-              >
-                🎁
-              </motion.span>
-              <span>
-                <span className="block text-sm font-black text-white">Daily login bonus</span>
-                <span className="block text-xs text-white/70">
-                  Tap to claim today's curiosity reward
-                </span>
-              </span>
-            </span>
-            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-black text-amber-200">
-              <CoinIcon className="h-3.5 w-3.5" />
-              claim
-            </span>
-          </motion.button>
-        )}
-
-        {/* Continue last favourite */}
-        {user && lastChain && lastChain.step_count > 1 && (
-          <Link
-            to="/chain/$id"
-            params={{ id: lastChain.id }}
-            className="mb-3 flex items-center gap-3 rounded-2xl border border-fuchsia-400/25 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 px-4 py-3"
-          >
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              🧵
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">
-                Continue your favourite
-              </div>
-              <div className="truncate text-sm font-bold text-white">
-                {lastChain.title ??
-                  lastChain.last_question ??
-                  "Pick up your favourite where you left off"}
-              </div>
-              <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-white/60" />
-          </Link>
-        )}
-
-        <DailyMission
-          onOpenCategory={(k) => setCategory(k as CategoryKey)}
-          onCelebrate={(pts) => setCelebrate({ points: pts })}
-          registerMarker={(fn) => {
-            missionMarkerRef.current = fn;
-          }}
-        />
-
-        <DailyChallenge
-          userId={user?.id ?? null}
-          onCompleted={async (r) => {
-            if (!user) {
-              // Guests: the mystery reward stays on this device.
-              const reward = rollDailyReward(getInventory(), STORE_CATALOG);
-              const total = reward.kind === "coins" ? addPoints(reward.amount) : r.points;
-              if (reward.kind === "item") grantLocalItem(reward.itemId);
-              setStreak(r.streak);
-              setPoints(total);
-              setLevel(Math.max(1, Math.floor(total / 100) + 1));
-              setCelebrate({ points: r.pointsDelta });
-              return reward;
-            }
-            // Signed in: the server decides the streak, the coins and the reward.
-            const before = pointsRef.current;
-            try {
-              const res = await recordDailyServer();
-              setStreak(res.stats.current_streak);
-              showServerBalance(res.stats.total_points);
-              const gained = res.stats.total_points - before;
-              if (res.awarded && gained > 0) setCelebrate({ points: gained });
-              notifyAchievements(res?.newlyUnlocked);
-              return res.reward ?? null;
-            } catch (e) {
-              console.warn(e);
-              return null;
-            }
-          }}
-        />
-
         {/* ── FACT CARD ───────────────────────────────────── */}
         <section className="flex flex-1 flex-col">
           <AnimatePresence mode="wait">
@@ -1487,6 +1377,117 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
             />
           </motion.button>
         </div>
+
+        {/* Daily activities sit below the fact so it shows first */}
+        {user ? null : (
+          <GuestProgressCard
+            discoveries={getSeen()}
+            streak={streak}
+            points={points}
+            onSignUp={() => navigate({ to: "/auth", search: { mode: "signup" } })}
+          />
+        )}
+
+        {/* Daily login bonus */}
+        {user && bonusAvailable && (
+          <motion.button
+            type="button"
+            onClick={handleClaimBonus}
+            disabled={bonusClaiming}
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            className="mb-3 flex w-full items-center justify-between gap-3 rounded-2xl border border-amber-300/30 bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-pink-500/15 px-4 py-3 text-left shadow-[0_0_24px_rgba(251,191,36,0.15)] transition disabled:opacity-60"
+          >
+            <span className="flex items-center gap-3">
+              <motion.span
+                animate={{ rotate: [0, -8, 8, -4, 4, 0] }}
+                transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2 }}
+                className="text-2xl"
+              >
+                🎁
+              </motion.span>
+              <span>
+                <span className="block text-sm font-black text-white">Daily login bonus</span>
+                <span className="block text-xs text-white/70">
+                  Tap to claim today's curiosity reward
+                </span>
+              </span>
+            </span>
+            <span className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-black text-amber-200">
+              <CoinIcon className="h-3.5 w-3.5" />
+              claim
+            </span>
+          </motion.button>
+        )}
+
+        {/* Continue last favourite */}
+        {user && lastChain && lastChain.step_count > 1 && (
+          <Link
+            to="/chain/$id"
+            params={{ id: lastChain.id }}
+            className="mb-3 flex items-center gap-3 rounded-2xl border border-fuchsia-400/25 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 px-4 py-3"
+          >
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              🧵
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">
+                Continue your favourite
+              </div>
+              <div className="truncate text-sm font-bold text-white">
+                {lastChain.title ??
+                  lastChain.last_question ??
+                  "Pick up your favourite where you left off"}
+              </div>
+              <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
+            </div>
+            <ArrowRight className="h-4 w-4 text-white/60" />
+          </Link>
+        )}
+
+        <DailyMission
+          onOpenCategory={(k) => setCategory(k as CategoryKey)}
+          onCelebrate={(pts) => setCelebrate({ points: pts })}
+          registerMarker={(fn) => {
+            missionMarkerRef.current = fn;
+          }}
+        />
+
+        <DailyChallenge
+          userId={user?.id ?? null}
+          onCompleted={async (r) => {
+            if (!user) {
+              // Guests: the mystery reward stays on this device.
+              const reward = rollDailyReward(getInventory(), STORE_CATALOG);
+              const total = reward.kind === "coins" ? addPoints(reward.amount) : r.points;
+              if (reward.kind === "item") grantLocalItem(reward.itemId);
+              setStreak(r.streak);
+              setPoints(total);
+              setLevel(Math.max(1, Math.floor(total / 100) + 1));
+              setCelebrate({ points: r.pointsDelta });
+              return reward;
+            }
+            // Signed in: the server decides the streak, the coins and the reward.
+            const before = pointsRef.current;
+            try {
+              const res = await recordDailyServer();
+              setStreak(res.stats.current_streak);
+              showServerBalance(res.stats.total_points);
+              const gained = res.stats.total_points - before;
+              if (res.awarded && gained > 0) setCelebrate({ points: gained });
+              notifyAchievements(res?.newlyUnlocked);
+              return res.reward ?? null;
+            } catch (e) {
+              console.warn(e);
+              return null;
+            }
+          }}
+        />
 
         {user && (
           <section aria-labelledby="curiosity-challenge-title">
