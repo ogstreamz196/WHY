@@ -51,25 +51,25 @@ export function HomePlayerCard({ userId, name, level, streak, points, isPlus }: 
     <motion.section
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative mb-3 flex items-center gap-3"
+      className="relative mb-4 flex items-center gap-4"
       aria-label="Your explorer"
     >
       <Link
         to="/store"
         aria-label="Dress up your avatar"
-        className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/5"
+        className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl border border-white/15 bg-white/5"
       >
-        <AvatarFigure avatarId={avatar.avatarId} outfit={avatar.outfit} className="text-4xl" />
+        <AvatarFigure avatarId={avatar.avatarId} outfit={avatar.outfit} className="text-7xl" />
         <span
           aria-hidden
-          className="absolute -bottom-1 -right-1 rounded-full bg-white/90 px-1 text-[10px] shadow"
+          className="absolute -bottom-1.5 -right-1.5 rounded-full bg-white/90 px-1.5 py-0.5 text-xs shadow"
         >
           🎨
         </span>
       </Link>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold text-white/60">Ready to explore?</p>
-        <p className="flex items-center gap-1.5 truncate font-display text-lg font-black text-white">
+        <p className="text-sm font-bold text-white/60">Ready to explore?</p>
+        <p className="flex items-center gap-2 truncate font-display text-2xl font-black text-white">
           <span className="truncate">{name}</span>
           {isPlus && <VipBadge size="xs" />}
         </p>
@@ -82,7 +82,7 @@ export function HomePlayerCard({ userId, name, level, streak, points, isPlus }: 
           aria-label="Open this week's free special drop"
           animate={{ rotate: [0, -10, 10, -6, 6, 0] }}
           transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2.5 }}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-300/40 bg-amber-400/20 text-2xl disabled:opacity-60"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/40 bg-amber-400/20 text-3xl disabled:opacity-60"
         >
           🎁
         </motion.button>
