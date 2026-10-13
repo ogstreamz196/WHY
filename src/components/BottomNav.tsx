@@ -6,6 +6,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { usePlus } from "@/hooks/usePlus";
 import { useEditMode } from "@/lib/editMode";
 import { EditableText } from "@/components/EditableText";
+import { useAdultStatus } from "@/hooks/useAdultStatus";
 
 const ICONS = { Home, Store, User, Sparkles, Medal } as const;
 type IconKey = keyof typeof ICONS;
@@ -25,6 +26,9 @@ export function BottomNav() {
   const { user } = useCurrentUser();
   const { isPlus: isVip } = usePlus(user?.id);
   const { editMode, overrides, saveOverride } = useEditMode();
+  const adult = useAdultStatus(user?.id);
+  // 18+ mode on (website only): the Home tab opens the 18+ page instead.
+  const adultOn = adult.show && !!adult.status?.mode_enabled;
 
   const ordered = useMemo(() => {
     const savedOrder = overrides[NAV_ORDER_KEY] as string[] | undefined;
@@ -69,7 +73,7 @@ export function BottomNav() {
             return (
               <div key={to} className="flex flex-1 flex-col items-center">
                 <Link
-                  to={to}
+                  to={to === "/" ? (adultOn ? "/adult" : "/home") : to}
                   activeOptions={{ exact: to === "/" }}
                   activeProps={{ "data-active": "true" } as never}
                   className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 text-[var(--muted-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:text-white active:scale-90 data-[active=true]:text-foreground"
