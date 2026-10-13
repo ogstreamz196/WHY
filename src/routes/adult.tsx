@@ -9,6 +9,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { useIsNativeApp } from "@/lib/platform";
 import { adultWhyLayer, askOg, nextAdultFact, type AdultFact } from "@/lib/adult.functions";
 import { seo } from "@/lib/site";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/adult")({
   head: () => seo({ title: "Why? 18+", noindex: true, themeColor: "#040406" }),
@@ -218,7 +219,7 @@ function AdultFactCard() {
                 {fact.category ?? "18+"}
               </span>
               <h2 className="mt-3 font-display text-[clamp(1.5rem,4.5vw,2.2rem)] font-black leading-tight text-white">
-                Do you know why {fact.question}?
+                {asWhyQuestion(fact.question)}
               </h2>
 
               {!revealed ? (
@@ -386,7 +387,7 @@ function AskWhy() {
               className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 l.role === "user"
                   ? "rounded-br-sm bg-blue-600 text-white"
-                  : "rounded-bl-sm border border-red-500/30 bg-red-950/40 text-slate-100"
+                  : "rounded-bl-sm border border-red-500/30 bg-red-950/40 text-slate-100 [font-family:var(--font-fun)] text-base font-medium tracking-normal"
               }`}
             >
               {l.role === "og" && (

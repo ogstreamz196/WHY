@@ -4,6 +4,8 @@ import { asWhyQuestion } from "@/lib/whyQuestion";
 const variants = [
   ["do we have different blood types?", "Why do we have different blood types?"],
   ["Do you know why the sky is blue?", "Why the sky is blue?"],
+  ["Do you know why Do you know why the hagfish erupts slime that can choke a shark?", "Why the hagfish erupts slime that can choke a shark?"],
+  ["DO YOU KNOW WHY do you know why why do cats purr??", "Why do cats purr?"],
   ["Why is the sky blue?", "Why is the sky blue?"],
   ["why why do cats purr", "Why do cats purr?"],
   ["WHY WHY WHY do we yawn?", "Why do we yawn?"],
