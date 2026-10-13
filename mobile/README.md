@@ -5,7 +5,7 @@ This folder holds the Android and iOS apps. They are built with Capacitor and op
 Inside the apps, the website hides the things the stores don't allow there:
 
 - Google and Apple sign-in (people sign in with email instead)
-- the VIP subscription and coin packs, which are paid through Paddle
+- Paddle checkout for Why? Plus (the apps sell Plus through Google Play and the App Store instead, see `docs/WHY_PLUS.md`)
 - the 18+ mode
 
 The website itself is unchanged. The app is spotted by a `WhyNativeApp` marker it adds to its browser identity; the code is in `src/lib/platform.ts`.

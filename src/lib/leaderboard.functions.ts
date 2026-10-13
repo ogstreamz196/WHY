@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Outfit } from "./avatarItems";
 
 export type LeaderboardKind =
   "global" | "age" | "category" | "window" | "rising" | "streaks" | "weekend" | "new" | "quiz";
@@ -12,6 +13,7 @@ export type LeaderboardEntry = {
   username: string | null;
   display_name: string | null;
   avatar_id: string | null;
+  avatar_outfit?: Outfit;
   age_band: string | null;
   favorite_category: string | null;
   score: number;

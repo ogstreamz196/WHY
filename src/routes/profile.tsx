@@ -299,14 +299,24 @@ function ProfilePage() {
             style={{ background: "var(--gradient-primary)" }}
           />
           <div className="flex items-start gap-5">
-            <div className="relative shrink-0 h-24 w-24 sm:h-28 sm:w-28">
-              <ProfileAvatar
-                avatarId={profile.data?.avatar_id}
-                isVip={isVip}
-                statusMessage={profile.data?.status_message}
-                className="h-full w-full"
-                emojiClassName="text-6xl sm:text-7xl"
-              />
+            <div className="flex shrink-0 flex-col items-center gap-2">
+              <div className="relative h-28 w-28 sm:h-32 sm:w-32">
+                <ProfileAvatar
+                  avatarId={profile.data?.avatar_id}
+                  outfit={profile.data?.avatar_outfit}
+                  isVip={isVip}
+                  statusMessage={profile.data?.status_message}
+                  className="h-full w-full"
+                  emojiClassName="text-7xl sm:text-8xl"
+                />
+              </div>
+              <Link
+                to="/store"
+                className="rounded-full px-3 py-1 text-[11px] font-black text-white shadow"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                🎨 Dress up
+              </Link>
             </div>
             <div className="flex-1 min-w-0">
               {editing ? (

@@ -1,8 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { AnimatedAvatar } from "@/components/AnimatedAvatar";
+import { AvatarFigure } from "@/components/AvatarFigure";
+import type { Outfit } from "@/lib/avatarItems";
 
 type Props = {
   avatarId: string | null | undefined;
+  outfit?: Outfit | null;
   isVip?: boolean;
   statusMessage?: string | null;
   /** Tailwind size classes for the outer square container (defaults to full width). */
@@ -17,6 +19,7 @@ type Props = {
  */
 export function ProfileAvatar({
   avatarId,
+  outfit,
   isVip = false,
   statusMessage,
   className = "aspect-square w-full",
@@ -93,10 +96,8 @@ export function ProfileAvatar({
         <span
           className={`leading-none ${emojiClassName}`}
           style={{ filter: isVip ? "drop-shadow(0 0 10px rgba(255,215,0,0.7))" : undefined }}
-          role="img"
-          aria-label={avatarId ?? "avatar"}
         >
-          <AnimatedAvatar avatarId={avatarId} className="text-[1em]" />
+          <AvatarFigure avatarId={avatarId} outfit={outfit} className="text-[0.66em]" />
         </span>
       </div>
 

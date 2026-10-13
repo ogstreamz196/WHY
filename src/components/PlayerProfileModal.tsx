@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { VipBadge } from "@/components/VipBadge";
 import { emojiFor } from "@/lib/categories";
-import { avatarEmojiFor } from "@/lib/store";
+import { AvatarFigure } from "@/components/AvatarFigure";
 import { getPlayerProfilePublic, type PlayerProfilePublic } from "@/lib/player-profile.functions";
 
 type Props = {
@@ -136,12 +136,14 @@ export function PlayerProfileModal({ userId, rank, totalUsers, boardLabel, isMe,
                   initial={{ scale: 0.7, rotate: -8 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                  className="relative flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white/70 bg-neutral-950 shadow-xl"
+                  className="relative flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white/70 bg-neutral-950 shadow-xl"
                 >
                   {data?.avatar_id ? (
-                    <span className="text-4xl" aria-hidden>
-                      {avatarEmojiFor(data.avatar_id)}
-                    </span>
+                    <AvatarFigure
+                      avatarId={data.avatar_id}
+                      outfit={data.avatar_outfit}
+                      className="text-[2.6rem]"
+                    />
                   ) : (
                     <span className="text-3xl font-black text-white">{initial}</span>
                   )}
