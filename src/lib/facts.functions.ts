@@ -554,7 +554,12 @@ The user is on a curiosity journey. Root question: "${data.rootQuestion}"
 So far they've dug through these follow-ups (each one asked "but why?" about the previous answer):
 ${data.previousChain.length ? data.previousChain.map((s, i) => `${i + 1}. ${s}`).join("\n") : "(none yet — this is the first 'but why?')"}
 
-Now write the NEXT layer: a natural "but why…" follow-up question AND a short kid-friendly answer that goes one level deeper.
+${
+  data.customQuestion
+    ? `The user picked their own follow-up question: "${data.customQuestion}"
+Use THEIR question as the next layer's question (lightly reworded to be a clear, kid-friendly question ending with ? if needed) and answer it.`
+    : `Now write the NEXT layer: a natural "but why…" follow-up question AND a short kid-friendly answer that goes one level deeper.`
+}
 
 Return STRICT JSON only, no prose, no markdown:
 {"question":"<a short 'but why…' style follow-up question, ending with ?>","answer":"<2-3 short sentences an 8-12 year old can understand>"}`;
