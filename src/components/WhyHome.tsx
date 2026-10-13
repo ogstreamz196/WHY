@@ -551,13 +551,17 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     }, 480);
   };
 
-  const askWhy = async () => {
+  const askWhy = async (customQuestion?: string) => {
     if (!fact || chainLoading) return;
     setChainLoading(true);
     try {
       const prev = chain.flatMap((c) => [c.question, c.answer]);
       const res = await generateLayer({
-        data: { rootQuestion: fact.question, previousChain: prev },
+        data: {
+          rootQuestion: fact.question,
+          previousChain: prev,
+          ...(customQuestion?.trim() ? { customQuestion: customQuestion.trim() } : {}),
+        },
       });
       if (!res.ok) {
         toast(
