@@ -32,7 +32,7 @@ export function AdultModeSwitch({
       await save({ data: { enabled, confirm_over_18: enabled } });
       await qc.invalidateQueries({ queryKey: ["adult-status", userId] });
       setConfirming(false);
-      await navigate({ to: enabled ? "/adult" : "/" });
+      await navigate({ to: enabled ? "/adult" : "/home" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Couldn't switch modes. Please try again.");
     } finally {

@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as HomeRouteImport } from './routes/home'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as ChainsRouteImport } from './routes/chains'
@@ -71,6 +72,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const LeaderboardRoute = LeaderboardRouteImport.update({
   id: '/leaderboard',
   path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/chains': typeof ChainsRoute
   '/delete-account': typeof DeleteAccountRoute
   '/favorites': typeof FavoritesRoute
+  '/home': typeof HomeRoute
   '/leaderboard': typeof LeaderboardRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/chains': typeof ChainsRoute
   '/delete-account': typeof DeleteAccountRoute
   '/favorites': typeof FavoritesRoute
+  '/home': typeof HomeRoute
   '/leaderboard': typeof LeaderboardRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/chains': typeof ChainsRoute
   '/delete-account': typeof DeleteAccountRoute
   '/favorites': typeof FavoritesRoute
+  '/home': typeof HomeRoute
   '/leaderboard': typeof LeaderboardRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/chains'
     | '/delete-account'
     | '/favorites'
+    | '/home'
     | '/leaderboard'
     | '/privacy'
     | '/profile'
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/chains'
     | '/delete-account'
     | '/favorites'
+    | '/home'
     | '/leaderboard'
     | '/privacy'
     | '/profile'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/chains'
     | '/delete-account'
     | '/favorites'
+    | '/home'
     | '/leaderboard'
     | '/privacy'
     | '/profile'
@@ -371,6 +383,7 @@ export interface RootRouteChildren {
   ChainsRoute: typeof ChainsRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
   FavoritesRoute: typeof FavoritesRoute
+  HomeRoute: typeof HomeRoute
   LeaderboardRoute: typeof LeaderboardRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
@@ -435,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/leaderboard'
       fullPath: '/leaderboard'
       preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -627,6 +647,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChainsRoute: ChainsRoute,
   DeleteAccountRoute: DeleteAccountRoute,
   FavoritesRoute: FavoritesRoute,
+  HomeRoute: HomeRoute,
   LeaderboardRoute: LeaderboardRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,

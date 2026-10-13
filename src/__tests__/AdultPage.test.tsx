@@ -13,6 +13,7 @@ const fns = vi.hoisted(() => ({
   askOg: vi.fn(),
 }));
 
+vi.mock("@/components/BottomNav", () => ({ BottomNav: () => null }));
 vi.mock("@/lib/adult.functions", () => fns);
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/auth", () => ({

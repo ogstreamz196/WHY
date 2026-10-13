@@ -5,6 +5,7 @@ import { Loader2, MessageCircle, RefreshCw, Send, Sparkles } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdultModeSwitch } from "@/components/AdultModeSwitch";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
+import { BottomNav } from "@/components/BottomNav";
 import { useCurrentUser } from "@/lib/auth";
 import { useIsNativeApp } from "@/lib/platform";
 import { adultWhyLayer, askOg, nextAdultFact, type AdultFact } from "@/lib/adult.functions";
@@ -46,7 +47,7 @@ function AdultPage() {
       <main className="grid min-h-[100dvh] place-items-center p-6 text-center text-white">
         <div className="max-w-sm">
           <h1 className="font-display text-2xl font-black">Page not found</h1>
-          <Link to="/" className="mt-6 inline-block rounded-full bg-white/10 px-5 py-2 font-bold">
+          <Link to="/home" className="mt-6 inline-block rounded-full bg-white/10 px-5 py-2 font-bold">
             Back to facts
           </Link>
         </div>
@@ -81,7 +82,7 @@ function AdultGate() {
           <h1 className="font-display text-2xl font-black text-white">
             This area isn't available for your account
           </h1>
-          <Link to="/" className="mt-6 inline-block rounded-full bg-white/10 px-5 py-2 font-bold">
+          <Link to="/home" className="mt-6 inline-block rounded-full bg-white/10 px-5 py-2 font-bold">
             Back to facts
           </Link>
         </div>
@@ -93,7 +94,7 @@ function AdultGate() {
     <main className="adult-theme relative min-h-[100dvh] w-full pb-16">
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:max-w-3xl">
         <header className="mb-4 flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-baseline gap-2" aria-label="Why? home">
+          <Link to="/home" className="flex items-baseline gap-2" aria-label="Why? home">
             <span className="adult-silver-text font-display text-3xl font-black tracking-tight">
               WHY?
             </span>
@@ -128,6 +129,8 @@ function AdultGate() {
           </section>
         )}
       </div>
+      <div className="h-20" aria-hidden />
+      <BottomNav />
     </main>
   );
 }
