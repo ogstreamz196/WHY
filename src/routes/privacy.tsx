@@ -2,21 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { CONTACT_EMAIL, PRIVACY_POLICY_UPDATED } from "@/lib/legal";
+import { seo } from "@/lib/site";
 
 // Plain-language privacy policy written from what the code actually stores
 // and shares. Have it reviewed before relying on it legally, and update it
 // whenever data handling changes.
 export const Route = createFileRoute("/privacy")({
-  head: () => ({
-    meta: [
-      { title: "Privacy policy — Why?" },
-      { name: "description", content: "What Why? collects, why, and how to delete it." },
-      { property: "og:title", content: "Privacy policy — Why?" },
-      { property: "og:description", content: "What Why? collects, why, and how to delete it." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Privacy policy | Why?",
+      description: "What Why? collects, why we collect it, and how to delete it.",
+      path: "/privacy",
+    }),
   component: PrivacyPage,
 });
 

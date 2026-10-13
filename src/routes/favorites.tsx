@@ -3,15 +3,10 @@ import { useEffect, useState } from "react";
 import type { Fact } from "@/lib/facts.functions";
 import { getFavorites, toggleFavorite } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/favorites")({
-  head: () => ({
-    meta: [
-      { title: "Favorites — Why?" },
-      { name: "description", content: "Your saved 'Do you know why…' facts." },
-      { name: "theme-color", content: "#7c3aed" },
-    ],
-  }),
+  head: () => seo({ title: "Favourites | Why?", noindex: true, themeColor: "#7c3aed" }),
   component: FavoritesPage,
 });
 

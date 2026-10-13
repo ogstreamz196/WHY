@@ -20,15 +20,10 @@ import { isSoundEnabled, setSoundEnabled } from "@/lib/feedback";
 import { AdultModeSwitch } from "@/components/AdultModeSwitch";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { saveMyBirthDate } from "@/lib/adult.functions";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({
-    meta: [
-      { title: "Settings — Why?" },
-      { name: "description", content: "Preferences and privacy for the Why? app." },
-      { name: "theme-color", content: "#7c3aed" },
-    ],
-  }),
+  head: () => seo({ title: "Settings | Why?", noindex: true, themeColor: "#7c3aed" }),
   component: SettingsPage,
 });
 

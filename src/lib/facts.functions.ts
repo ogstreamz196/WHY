@@ -390,10 +390,11 @@ async function pickExistingFact(supabase: PublicClient, skip: Set<string>): Prom
 
 // -------------------- Search or generate --------------------
 
+// Works for guests too (they get the smaller guest AI allowance), so search
+// never just fails for someone who hasn't signed in.
 export const searchOrGenerateFact = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ query: z.string().min(2).max(200) }).parse(input))
-  .handler(async ({ data, context }): Promise<Fact | null> => {
+  .handler(async ({ data }): Promise<Fact | null> => {
     const apiKey = process.env.LOVABLE_API_KEY;
     const supabase = getSupabase();
     const q = data.query
@@ -401,17 +402,31 @@ export const searchOrGenerateFact = createServerFn({ method: "POST" })
       .replace(/^why\s+/i, "")
       .replace(/\?+$/, "");
 
-    // 1. Try text match in DB first (question ilike)
-    const { data: matches } = await supabase
-      .from("facts")
-      .select(FACT_COLS)
-      .ilike("question", `%${q}%`)
-      .limit(1);
-    if (matches && matches[0]) return matches[0] as Fact;
+    // 1. The best existing fact, matched on the meaningful words.
+    const { searchTerms, rankFacts } = await import("@/lib/searchRank");
+    const terms = searchTerms(q);
+    if (terms.length > 0) {
+      const { data: matches } = await supabase
+        .from("facts")
+        .select(FACT_COLS)
+        .or(terms.flatMap((t) => [`question.ilike.%${t}%`, `answer.ilike.%${t}%`]).join(","))
+        .limit(80);
+      const best = rankFacts((matches ?? []) as Fact[], q, 1)[0];
+      // Only take it if it really answers this question (most words in its question).
+      if (
+        best &&
+        terms.filter((t) => best.question.toLowerCase().includes(t)).length >=
+          Math.ceil(terms.length * 0.6)
+      ) {
+        return best;
+      }
+    }
 
     // 2. Ask AI to reformulate then generate + validate + store
     if (!apiKey) return null;
-    if (!(await consumeAiQuota(context.userId, "search"))) return null;
+    const userId = await optionalUserId().catch(() => null);
+    const allowed = userId ? await consumeAiQuota(userId, "search") : await consumeGuestAiQuota();
+    if (!allowed) return null;
     const admin = await getAdmin();
     const { data: recent } = await admin
       .from("facts")

@@ -65,6 +65,7 @@ function chain(returnRows: unknown = null, opts: { count?: number } = {}) {
     }),
     eq: vi.fn(() => q),
     ilike: vi.fn(() => q),
+    or: vi.fn(() => q),
     order: vi.fn(() => q),
     limit: vi.fn(async () => ({ data: returnRows, count: opts.count ?? 0, error: null })),
   };

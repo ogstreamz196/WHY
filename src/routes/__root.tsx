@@ -28,6 +28,14 @@ import { useBossTheme } from "@/lib/useBossTheme";
 import { useEquippedTheme } from "@/lib/useEquippedTheme";
 
 import appCss from "../styles.css?url";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  LOGO_URL,
+  SITE_NAME,
+  SITE_URL,
+  seo,
+} from "../lib/site";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CosmicBackground } from "../components/CosmicBackground";
 
@@ -95,52 +103,65 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "Why? — A pocket-sized universe of curiosity" },
-      {
-        name: "description",
-        content:
-          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
-      },
-      { name: "theme-color", content: "#100c1f" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "Why?" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { property: "og:title", content: "Why? — A pocket-sized universe of curiosity" },
-      {
-        property: "og:description",
-        content:
-          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Why? — A pocket-sized universe of curiosity" },
-      {
-        name: "twitter:description",
-        content:
-          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
-      },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2e6a6b5-651b-46d0-b961-f1c8157d7e00/id-preview-86c535ee--c58b4bae-8420-4813-8e35-37776e764a70.lovable.app-1783527414073.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2e6a6b5-651b-46d0-b961-f1c8157d7e00/id-preview-86c535ee--c58b4bae-8420-4813-8e35-37776e764a70.lovable.app-1783527414073.png",
-      },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/manifest.webmanifest" },
-      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { rel: "apple-touch-icon", href: "/icon-192.png" },
-    ],
-  }),
+  head: () => {
+    // Defaults for every page; each route sets its own title, description and
+    // canonical link with seo() from src/lib/site.ts (child values win).
+    const base = seo({ title: DEFAULT_TITLE });
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+        ...base.meta,
+        { property: "og:site_name", content: SITE_NAME },
+        { property: "og:locale", content: "en_GB" },
+        { name: "application-name", content: SITE_NAME },
+        { name: "theme-color", content: "#100c1f" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-title", content: SITE_NAME },
+        { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+        { name: "format-detection", content: "telephone=no" },
+      ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        { rel: "manifest", href: "/manifest.webmanifest" },
+        { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+        { rel: "icon", href: "/logo.svg", type: "image/svg+xml" },
+        { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: SITE_NAME,
+              alternateName: "Why? Fun facts",
+              url: SITE_URL,
+              description: DEFAULT_DESCRIPTION,
+              inLanguage: "en",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+                },
+                "query-input": "required name=search_term_string",
+              },
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: SITE_NAME,
+              url: SITE_URL,
+              logo: LOGO_URL,
+            },
+          ]),
+        },
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

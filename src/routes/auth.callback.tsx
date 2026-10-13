@@ -3,11 +3,10 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CosmicBackground } from "@/components/CosmicBackground";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/auth/callback")({
-  head: () => ({
-    meta: [{ title: "Signing you in… — Why?" }, { name: "robots", content: "noindex" }],
-  }),
+  head: () => seo({ title: "Signing you in… | Why?", noindex: true }),
   component: AuthCallback,
 });
 

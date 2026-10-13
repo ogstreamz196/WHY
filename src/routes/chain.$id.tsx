@@ -18,9 +18,10 @@ import { BottomNav } from "@/components/BottomNav";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { useCurrentUser } from "@/lib/auth";
 import { getChain, regenerateChainSlug, setChainShared } from "@/lib/chains.functions";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/chain/$id")({
-  head: () => ({ meta: [{ title: "Why chain" }] }),
+  head: () => seo({ title: "“But why?” chain | Why?", noindex: true }),
   component: ChainDetailPage,
 });
 

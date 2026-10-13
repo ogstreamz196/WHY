@@ -34,19 +34,17 @@ import {
 import { RARITY_STYLE, rarityOf, type Outfit, type OutfitSlot } from "@/lib/avatarItems";
 import { PLUS_TRIAL_LABEL } from "@/lib/plusPlans";
 import { previewTheme } from "@/lib/useEquippedTheme";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/store")({
-  head: () => ({
-    meta: [
-      { title: "Store — Why?" },
-      {
-        name: "description",
-        content:
-          "Dress up your avatar with hats, swords, flowers, jewellery, pets and auras, all bought with coins you earn by exploring.",
-      },
-      { name: "theme-color", content: "#0b0518" },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Avatar store: dress up your explorer | Why?",
+      description:
+        "Spend the coins you earn by learning on characters, hats, pets, auras and themes for your Why? avatar. Coins can't be bought.",
+      path: "/store",
+      themeColor: "#0b0518",
+    }),
   component: StorePage,
 });
 

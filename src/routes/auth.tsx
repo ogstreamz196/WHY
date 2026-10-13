@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { signInWithUsername, signUpWithUsername } from "@/lib/username-auth.functions";
+import { seo } from "@/lib/site";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -17,17 +18,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({
-    meta: [
-      { title: "Sign in — Why?" },
-      { name: "description", content: "Join a community of curious explorers." },
-      { property: "og:title", content: "Sign in — Why?" },
-      { property: "og:description", content: "Sign in to sync your coins, streak and favourites across devices." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "theme-color", content: "#100c1f" },
-    ],
-  }),
+  head: () => seo({ title: "Sign in or sign up | Why?", path: "/auth", noindex: true }),
   validateSearch: searchSchema,
   component: AuthPage,
 });
@@ -139,7 +130,12 @@ function AuthPage() {
         }
         if (password.length < 8) throw new Error("Password needs at least 8 characters.");
         const res = await signUpWithUsername({
-          data: { username: u, password, birthYear: Number(birthYear), birthMonth: Number(birthMonth) },
+          data: {
+            username: u,
+            password,
+            birthYear: Number(birthYear),
+            birthMonth: Number(birthMonth),
+          },
         });
         if ("error" in res) throw new Error(res.error);
         const { error } = await supabase.auth.setSession(res);

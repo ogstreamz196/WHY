@@ -1,14 +1,18 @@
 {
-  "name": "Why? — Fun facts for curious minds",
+  "name": "Why? Fun facts for curious kids",
   "short_name": "Why?",
-  "description": "A never-ending stream of child-friendly, fun and educational 'Do you know why…' facts.",
+  "description": "Fun, true and child-friendly “Do you know why…” facts, “But why?” deep dives, quizzes and daily challenges.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ede9fe",
-  "theme_color": "#7c3aed",
-  "categories": ["education", "kids", "entertainment"],
+  "background_color": "#100c1f",
+  "theme_color": "#100c1f",
+  "categories": [
+    "education",
+    "kids",
+    "entertainment"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -23,10 +27,16 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -34,19 +44,39 @@
       "name": "Next fact",
       "short_name": "Next",
       "url": "/",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Favorites",
       "short_name": "Favorites",
       "url": "/favorites",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Settings",
       "short_name": "Settings",
       "url": "/settings",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
-  ]
+  ],
+  "id": "/",
+  "lang": "en"
 }

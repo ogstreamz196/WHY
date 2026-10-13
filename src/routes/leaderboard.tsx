@@ -14,18 +14,16 @@ import { AvatarFigure } from "@/components/AvatarFigure";
 import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
 import { ChampionCrown } from "@/components/ChampionCrown";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/leaderboard")({
-  head: () => ({
-    meta: [
-      { title: "Curiosity Arena — Why?" },
-      { name: "description", content: "Rank on global, age, category and activity boards." },
-      { property: "og:title", content: "Curiosity Arena — Why?" },
-      { property: "og:description", content: "See the top curious explorers and climb the global leaderboard." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Curiosity leaderboard: the most curious explorers | Why?",
+      description:
+        "See who's the most curious! Global, age, topic and weekly leaderboards for Why? explorers, who earn points by learning fun, true facts.",
+      path: "/leaderboard",
+    }),
   component: ArenaPage,
 });
 

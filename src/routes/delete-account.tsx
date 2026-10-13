@@ -7,19 +7,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { useCurrentUser } from "@/lib/auth";
+import { seo } from "@/lib/site";
 
 // Public page so it can be given to Google Play / the App Store as the
 // "delete your account" link. Works on the web and inside the apps.
 export const Route = createFileRoute("/delete-account")({
-  head: () => ({
-    meta: [
-      { title: "Delete your account — Why?" },
-      {
-        name: "description",
-        content: "How to permanently delete your Why? account and the data that goes with it.",
-      },
-    ],
-  }),
+  head: () =>
+    seo({
+      title: "Delete your account | Why?",
+      description: "How to permanently delete your Why? account and the data that goes with it.",
+      path: "/delete-account",
+    }),
   component: DeleteAccountPage,
 });
 

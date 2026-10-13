@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Why?</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="0.55" stop-color="#db2777"/>
+      <stop offset="1" stop-color="#f97316"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.3" cy="0.2" r="0.8">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="116" fill="url(#shine)"/>
+  <ellipse cx="256" cy="262" rx="204" ry="74" transform="rotate(-22 256 262)" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="12"/>
+  <circle cx="430" cy="170" r="24" fill="#fde047"/>
+  <circle cx="422" cy="162" r="8" fill="#ffffff" fill-opacity="0.7"/>
+  <path d="M168 190 C168 124 214 92 262 92 C318 92 352 130 352 178 C352 226 314 246 290 262 C268 277 260 292 260 326" fill="none" stroke="#ffffff" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M260 360 Q268 398 306 406 Q268 414 260 452 Q252 414 214 406 Q252 398 260 360 Z" fill="#fde047" stroke="#fde047" stroke-width="10" stroke-linejoin="round"/>
+</svg>
