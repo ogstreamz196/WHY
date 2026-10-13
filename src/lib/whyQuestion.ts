@@ -164,7 +164,7 @@ function insertDoes(afterWhy: string): string {
 
 export function asWhyQuestion(raw: string) {
   if (!raw) return raw;
-  let q = raw.trim().replace(/^(do you know\s+)/i, "");
+  let q = raw.trim().replace(/^(?:do you know\s+(?:why\s+)?)+/i, "");
   // Collapse accidental repeated leading "why why ..."
   q = q.replace(/^(?:why\b[\s,?.!-]*)+/i, "why ").replace(/^why\s+(?=[?.!]|$)/i, "why");
 
