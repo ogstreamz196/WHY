@@ -81,7 +81,7 @@ export function InstallAppBanner() {
   return (
     <div
       role="region"
-      aria-label="Install the Why? app"
+      aria-label="Add the Why? shortcut"
       className="fixed inset-x-0 z-50 px-3"
       style={{ bottom: "calc(6rem + env(safe-area-inset-bottom))" }}
     >
@@ -89,7 +89,7 @@ export function InstallAppBanner() {
         <div className="flex items-center gap-3">
           <img src="/icon-192.png" alt="" className="h-11 w-11 shrink-0 rounded-2xl" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-foreground">Get the Why? app</p>
+            <p className="text-sm font-bold text-foreground">Add the Why? shortcut</p>
             <p className="text-xs text-muted-foreground">One tap from your home screen. Free!</p>
           </div>
           <button
@@ -98,7 +98,7 @@ export function InstallAppBanner() {
             className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-primary-foreground shadow-[var(--shadow-glow)]"
             style={{ background: "var(--gradient-primary)" }}
           >
-            <Download className="h-4 w-4" /> Install
+            <Download className="h-4 w-4" /> Add shortcut
           </button>
           <button
             type="button"
@@ -118,8 +118,7 @@ export function InstallAppBanner() {
               </>
             ) : (
               <>
-                Open your browser menu (⋮) and choose <b>Install app</b> or{" "}
-                <b>Add to Home screen</b>.
+                Open your browser menu (⋮) and choose <b>Add to Home screen</b>.
               </>
             )}
           </p>
