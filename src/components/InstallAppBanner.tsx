@@ -42,6 +42,8 @@ export function InstallAppBanner() {
     setShow(true);
 
     const onPrompt = (e: Event) => {
+      // Stop the browser's own mini-infobar; we keep the event so our button
+      // can trigger the real install dialog directly.
       e.preventDefault();
       setPrompt(e as PromptEvent);
     };
@@ -60,6 +62,8 @@ export function InstallAppBanner() {
   if (!show) return null;
 
   const install = async () => {
+    // Direct install: browsers that support beforeinstallprompt (Android,
+    // Chrome, Edge) open their own install dialog — no instructions needed.
     if (prompt) {
       await prompt.prompt();
       const { outcome } = await prompt.userChoice;
@@ -70,6 +74,8 @@ export function InstallAppBanner() {
       }
       return;
     }
+    // iPhone/iPad only: Apple never lets a website trigger installation, so
+    // the Share → Add to Home Screen steps are the only path Apple allows.
     setIosHelp((v) => !v);
   };
 
