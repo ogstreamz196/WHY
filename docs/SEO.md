@@ -20,7 +20,7 @@ The logo is a question mark in a little orbit with a star for its dot. It's draw
 - `icon-maskable-512.png` (for Android home screens)
 - `og-image.png`
 
-The Android and iPhone app icons (in `mobile/assets`) haven't changed. Changing them needs a new store release. When you're ready, copy the logo into `mobile/assets` and run `npm run assets` in `mobile/`.
+The Android and iPhone app icons and launch screens use the same logo (made from `mobile/assets`, see `mobile/README.md`). They reach phones with the next store release.
 
 ## Search in the app
 

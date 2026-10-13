@@ -4,7 +4,7 @@
   "description": "Android and iOS shells for the Why? app (Capacitor). The app itself is the hosted web app.",
   "scripts": {
     "sync": "cap sync",
-    "assets": "capacitor-assets generate --iconBackgroundColor '#ff3d7f' --iconBackgroundColorDark '#ff3d7f' --splashBackgroundColor '#0b0518' --splashBackgroundColorDark '#0b0518'"
+    "assets": "capacitor-assets generate --iconBackgroundColor '#7c3aed' --iconBackgroundColorDark '#7c3aed' --splashBackgroundColor '#0b0518' --splashBackgroundColorDark '#0b0518'"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

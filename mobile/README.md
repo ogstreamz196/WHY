@@ -80,10 +80,11 @@ In Play Console, create the app, upload the `.aab` to a testing track, and fill 
   - Guests give no personal information.
 - **Target audience and content:** accounts are 13+, with a neutral age check at sign-up, and younger children can use guest mode. Content is written for 8 to 12 year olds, so Google will treat the app as appealing to children and the **Families policy** applies. Choose the age groups carefully; this is your decision.
 - **Content rating:** complete the questionnaire. The app has no violence, gambling or chat. It does have user names on public leaderboards and AI-generated text.
-- **Store listing:**
-  - App icon: `assets/icon-only.png`, resized to 512×512.
-  - Feature graphic: 1024×500.
-  - At least two phone screenshots.
+- **Store listing:** ready-made images are in `assets/store/`.
+  - App icon: `play-store-icon-512.png` (512×512, square; Google rounds the corners).
+  - Feature graphic: `feature-graphic-1024x500.png`.
+  - You still need at least two phone screenshots. Take them from the app itself, and don't show 18+ mode, which isn't in the app.
+- **Advertising ID:** answer "No, my app doesn't use an advertising ID". The app removes the `AD_ID` permission, and the GitHub build fails if a library ever adds it back.
 
 
 ## Building and publishing for iOS
@@ -105,6 +106,30 @@ In App Store Connect, fill in:
 
 Apple sometimes rejects apps that are mostly a website in a wrapper (guideline 4.2). The offline page, launch screen and app-only behaviour help, but be ready to explain what the app offers if they ask.
 
+
+## Google Play Families policy (children and young teens)
+
+Children use Why? (accounts are 13+, younger explorers play as guests, and the facts are written for 8 to 12 year olds), so Google applies its Families policy. Here's how the app meets it:
+
+- **No ads, and no advertising ID.** The `AD_ID` permission is removed in `AndroidManifest.xml`, and CI checks the final app's permissions on every build. Only internet, network state and Play Billing are allowed.
+- **No data from children beyond what the app needs.** Guests give no personal information. Accounts need only a username, a password and a birth month and year (asked neutrally).
+- **No Google or Apple sign-in in the app,** and no links out to web payments.
+- **A grown-up check before every purchase.** Why? Plus is sold through Google Play Billing only, and coins can't be bought.
+- **No 18+ content.** 18+ mode is website only, and the server refuses it from the app.
+- **The icon and store images suit children:** no "free", "#1" or ranking claims, no fake badges, nothing scary.
+- **Account deletion** is in the app and on the web.
+
+In Play Console, under **Target audience and content**, choose the age groups honestly. If you include any under-13 group, the Families policy applies in full, and the answers above are what you'll need.
+
+## Changing the app icon or launch screen
+
+The source images are in `assets/`, made from the logo in `../public/logo.svg`:
+
+- `icon-only.png`: the full icon
+- `icon-foreground.png` and `icon-background.png`: Android's adaptive icon layers
+- `splash.png` and `splash-dark.png`: the launch screen
+
+To regenerate every size, run `npm run assets` in this folder. The new icon only reaches people's phones with a new store release.
 
 ## Developer notes
 
