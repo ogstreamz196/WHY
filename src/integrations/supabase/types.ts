@@ -533,7 +533,6 @@ export type Database = {
           adult_verified_at: string | null
           age_band: string | null
           avatar_id: string
-          avatar_outfit: Json
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -551,7 +550,6 @@ export type Database = {
           adult_verified_at?: string | null
           age_band?: string | null
           avatar_id?: string
-          avatar_outfit?: Json
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -569,7 +567,6 @@ export type Database = {
           adult_verified_at?: string | null
           age_band?: string | null
           avatar_id?: string
-          avatar_outfit?: Json
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
