@@ -19,9 +19,10 @@ import {
   bossRestoreBackup,
   type Privileges,
 } from "@/lib/boss.functions";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/_authenticated/boss")({
-  head: () => ({ meta: [{ title: "Boss Dashboard" }, { name: "robots", content: "noindex" }] }),
+  head: () => seo({ title: "Boss dashboard | Why?", noindex: true }),
   component: BossDashboard,
 });
 
@@ -1085,8 +1086,8 @@ function DriveBackupPanel() {
           </button>
         </div>
         <p className="text-xs text-white/50">
-          New facts are added instantly; coins and purchases refresh at most once a minute.
-          Restore adds missing facts and brings back coins and items for accounts that exist here.
+          New facts are added instantly; coins and purchases refresh at most once a minute. Restore
+          adds missing facts and brings back coins and items for accounts that exist here.
         </p>
       </div>
     </section>

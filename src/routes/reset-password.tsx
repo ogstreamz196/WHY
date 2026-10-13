@@ -3,11 +3,10 @@ import { useState } from "react";
 import { Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CosmicBackground } from "@/components/CosmicBackground";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/reset-password")({
-  head: () => ({
-    meta: [{ title: "Set a new password — Why?" }],
-  }),
+  head: () => seo({ title: "Set a new password | Why?", noindex: true }),
   component: ResetPage,
 });
 

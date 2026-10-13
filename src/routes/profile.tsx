@@ -45,6 +45,7 @@ import { emojiFor } from "@/lib/categories";
 import { VipBadge } from "@/components/VipBadge";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { usePlus } from "@/hooks/usePlus";
+import { seo } from "@/lib/site";
 
 const MILESTONES = [
   { key: "seen", label: "Facts discovered", steps: [10, 50, 100, 250, 500, 1000] },
@@ -77,17 +78,7 @@ const LOCAL_BADGE_TARGETS: Record<string, { stat: "seen" | "streak" | "points"; 
   };
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({
-    meta: [
-      { title: "Your profile — Why?" },
-      { name: "description", content: "Your curiosity progress: level, badges, streak, coins and discoveries." },
-      { property: "og:title", content: "Your profile — Why?" },
-      { property: "og:description", content: "Track your level, badges, streak and discoveries on Why?." },
-      { property: "og:type", content: "profile" },
-      { name: "twitter:card", content: "summary" },
-      { name: "theme-color", content: "#100c1f" },
-    ],
-  }),
+  head: () => seo({ title: "Your profile | Why?", noindex: true }),
   component: ProfilePage,
 });
 
@@ -458,134 +449,134 @@ function ProfilePage() {
         </div>
 
         {tab === "overview" && (
-        <>
-        {/* Stats grid */}
-        <section className="mt-4 grid grid-cols-2 gap-3">
-          <StatTile icon={<CoinIcon size={20} />} label="Y-Coins" value={s.total_points} />
-          <StatTile
-            icon={<Flame className="h-5 w-5 text-orange-400" />}
-            label="Streak"
-            value={`${s.current_streak} 🔥`}
-          />
-          <StatTile
-            icon={<Zap className="h-5 w-5 text-yellow-300" />}
-            label="Longest streak"
-            value={s.longest_streak}
-          />
-          <StatTile
-            icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />}
-            label="Facts seen"
-            value={s.facts_seen}
-          />
-        </section>
-
-        <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
-
-        <CollapsibleWrap
-          collapsed={collapsed.quiz}
-          onToggle={() => toggleCollapsed("quiz")}
-          label="Quiz stats"
-        >
-          <QuizStatsSection />
-        </CollapsibleWrap>
-
-        <CollapsibleWrap
-          collapsed={collapsed.rankings}
-          onToggle={() => toggleCollapsed("rankings")}
-          label="Your Curiosity Rankings"
-        >
-          <MyRankingsSection />
-        </CollapsibleWrap>
-
-        {/* Category interests */}
-        {interests.data && interests.data.length > 0 && (
-          <section className="mt-6">
-            <header className="mb-3 flex items-center justify-between">
-              <h2 className="font-display text-lg font-black text-white">Your curiosity map</h2>
-              <CollapseChevron
-                collapsed={collapsed.interests}
-                onToggle={() => toggleCollapsed("interests")}
-                label="curiosity map"
+          <>
+            {/* Stats grid */}
+            <section className="mt-4 grid grid-cols-2 gap-3">
+              <StatTile icon={<CoinIcon size={20} />} label="Y-Coins" value={s.total_points} />
+              <StatTile
+                icon={<Flame className="h-5 w-5 text-orange-400" />}
+                label="Streak"
+                value={`${s.current_streak} 🔥`}
               />
-            </header>
-            {!collapsed.interests && (
-              <div className="flex flex-wrap gap-2">
-                {interests.data.slice(0, 8).map((it) => (
-                  <div
-                    key={it.category}
-                    className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85"
-                  >
-                    <span>{emojiFor(it.category)}</span>
-                    <span className="capitalize">{it.category}</span>
-                    <span className="text-white/50">·{it.weight}</span>
+              <StatTile
+                icon={<Zap className="h-5 w-5 text-yellow-300" />}
+                label="Longest streak"
+                value={s.longest_streak}
+              />
+              <StatTile
+                icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />}
+                label="Facts seen"
+                value={s.facts_seen}
+              />
+            </section>
+
+            <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
+
+            <CollapsibleWrap
+              collapsed={collapsed.quiz}
+              onToggle={() => toggleCollapsed("quiz")}
+              label="Quiz stats"
+            >
+              <QuizStatsSection />
+            </CollapsibleWrap>
+
+            <CollapsibleWrap
+              collapsed={collapsed.rankings}
+              onToggle={() => toggleCollapsed("rankings")}
+              label="Your Curiosity Rankings"
+            >
+              <MyRankingsSection />
+            </CollapsibleWrap>
+
+            {/* Category interests */}
+            {interests.data && interests.data.length > 0 && (
+              <section className="mt-6">
+                <header className="mb-3 flex items-center justify-between">
+                  <h2 className="font-display text-lg font-black text-white">Your curiosity map</h2>
+                  <CollapseChevron
+                    collapsed={collapsed.interests}
+                    onToggle={() => toggleCollapsed("interests")}
+                    label="curiosity map"
+                  />
+                </header>
+                {!collapsed.interests && (
+                  <div className="flex flex-wrap gap-2">
+                    {interests.data.slice(0, 8).map((it) => (
+                      <div
+                        key={it.category}
+                        className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85"
+                      >
+                        <span>{emojiFor(it.category)}</span>
+                        <span className="capitalize">{it.category}</span>
+                        <span className="text-white/50">·{it.weight}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </section>
             )}
-          </section>
-        )}
-        </>
+          </>
         )}
 
         {/* Saved chains */}
         {tab === "history" && (
-        <section className="mt-6">
-          <header className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
-            <div className="flex items-center gap-2">
-              <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
-                View all →
-              </Link>
-              <CollapseChevron
-                collapsed={collapsed.chains}
-                onToggle={() => toggleCollapsed("chains")}
-                label="Saved chains"
-              />
-            </div>
-          </header>
-          {!collapsed.chains &&
-            (() => {
-              const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
-              if (items.length === 0) {
+          <section className="mt-6">
+            <header className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
+              <div className="flex items-center gap-2">
+                <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
+                  View all →
+                </Link>
+                <CollapseChevron
+                  collapsed={collapsed.chains}
+                  onToggle={() => toggleCollapsed("chains")}
+                  label="Saved chains"
+                />
+              </div>
+            </header>
+            {!collapsed.chains &&
+              (() => {
+                const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
+                if (items.length === 0) {
+                  return (
+                    <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+                      Save your first Why chain from the home screen.
+                    </p>
+                  );
+                }
                 return (
-                  <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
-                    Save your first Why chain from the home screen.
-                  </p>
-                );
-              }
-              return (
-                <div className="space-y-2">
-                  {items.map((c) => (
-                    <Link
-                      key={c.id}
-                      to="/chain/$id"
-                      params={{ id: c.id }}
-                      className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2.5"
-                    >
-                      <Sparkles className="h-4 w-4 text-fuchsia-300" />
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate text-sm font-bold text-white">
-                          {c.title ?? "Untitled chain"}
+                  <div className="space-y-2">
+                    {items.map((c) => (
+                      <Link
+                        key={c.id}
+                        to="/chain/$id"
+                        params={{ id: c.id }}
+                        className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2.5"
+                      >
+                        <Sparkles className="h-4 w-4 text-fuchsia-300" />
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate text-sm font-bold text-white">
+                            {c.title ?? "Untitled chain"}
+                          </div>
+                          <div className="text-[10px] text-white/50">{c.step_count} steps</div>
                         </div>
-                        <div className="text-[10px] text-white/50">{c.step_count} steps</div>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-white/40" />
-                    </Link>
-                  ))}
-                  {chains.hasNextPage && (
-                    <button
-                      type="button"
-                      onClick={() => chains.fetchNextPage()}
-                      disabled={chains.isFetchingNextPage}
-                      className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
-                    >
-                      {chains.isFetchingNextPage ? "Loading…" : "Load more chains"}
-                    </button>
-                  )}
-                </div>
-              );
-            })()}
-        </section>
+                        <ArrowRight className="h-4 w-4 text-white/40" />
+                      </Link>
+                    ))}
+                    {chains.hasNextPage && (
+                      <button
+                        type="button"
+                        onClick={() => chains.fetchNextPage()}
+                        disabled={chains.isFetchingNextPage}
+                        className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
+                      >
+                        {chains.isFetchingNextPage ? "Loading…" : "Load more chains"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+          </section>
         )}
 
         {(() => {

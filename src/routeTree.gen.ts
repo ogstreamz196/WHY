@@ -9,86 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StoreRouteImport } from './routes/store'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LeaderboardRouteImport } from './routes/leaderboard'
-import { Route as FavoritesRouteImport } from './routes/favorites'
-import { Route as DeleteAccountRouteImport } from './routes/delete-account'
-import { Route as ChainsRouteImport } from './routes/chains'
-import { Route as BadgesRouteImport } from './routes/badges'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AdultRouteImport } from './routes/adult'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChainIdRouteImport } from './routes/chain.$id'
-import { Route as CSlugRouteImport } from './routes/c.$slug'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
-import { Route as AuthenticatedImportGuestRouteImport } from './routes/_authenticated/import-guest'
-import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AdultRouteImport } from './routes/adult'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BadgesRouteImport } from './routes/badges'
+import { Route as ChainsRouteImport } from './routes/chains'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
+import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StoreRouteImport } from './routes/store'
 import { Route as AuthenticatedBossRouteImport } from './routes/_authenticated/boss'
+import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
+import { Route as AuthenticatedImportGuestRouteImport } from './routes/_authenticated/import-guest'
+import { Route as AuthenticatedRecapRouteImport } from './routes/_authenticated/recap'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as CSlugRouteImport } from './routes/c.$slug'
+import { Route as ChainIdRouteImport } from './routes/chain.$id'
+import { Route as FactSlugRouteImport } from './routes/fact.$slug'
 import { Route as AuthenticatedQuizIndexRouteImport } from './routes/_authenticated/quiz.index'
 import { Route as AuthenticatedQuizSessionIdRouteImport } from './routes/_authenticated/quiz.$sessionId'
-import { Route as ApiPublicRevenuecatWebhookRouteImport } from './routes/api/public/revenuecat/webhook'
-import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicRevenuecatWebhookRouteImport } from './routes/api/public/revenuecat/webhook'
 
-const StoreRoute = StoreRouteImport.update({
-  id: '/store',
-  path: '/store',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LeaderboardRoute = LeaderboardRouteImport.update({
-  id: '/leaderboard',
-  path: '/leaderboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FavoritesRoute = FavoritesRouteImport.update({
-  id: '/favorites',
-  path: '/favorites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DeleteAccountRoute = DeleteAccountRouteImport.update({
-  id: '/delete-account',
-  path: '/delete-account',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChainsRoute = ChainsRouteImport.update({
-  id: '/chains',
-  path: '/chains',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BadgesRoute = BadgesRouteImport.update({
-  id: '/badges',
-  path: '/badges',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdultRoute = AdultRouteImport.update({
@@ -96,33 +52,74 @@ const AdultRoute = AdultRouteImport.update({
   path: '/adult',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const BadgesRoute = BadgesRouteImport.update({
+  id: '/badges',
+  path: '/badges',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChainIdRoute = ChainIdRouteImport.update({
-  id: '/chain/$id',
-  path: '/chain/$id',
+const ChainsRoute = ChainsRouteImport.update({
+  id: '/chains',
+  path: '/chains',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CSlugRoute = CSlugRouteImport.update({
-  id: '/c/$slug',
-  path: '/c/$slug',
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => AuthRoute,
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRecapRoute = AuthenticatedRecapRouteImport.update({
-  id: '/recap',
-  path: '/recap',
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreRoute = StoreRouteImport.update({
+  id: '/store',
+  path: '/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBossRoute = AuthenticatedBossRouteImport.update({
+  id: '/boss',
+  path: '/boss',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedImportGuestRoute =
@@ -131,15 +128,30 @@ const AuthenticatedImportGuestRoute =
     path: '/import-guest',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
+const AuthenticatedRecapRoute = AuthenticatedRecapRouteImport.update({
+  id: '/recap',
+  path: '/recap',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBossRoute = AuthenticatedBossRouteImport.update({
-  id: '/boss',
-  path: '/boss',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
+const CSlugRoute = CSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChainIdRoute = ChainIdRouteImport.update({
+  id: '/chain/$id',
+  path: '/chain/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FactSlugRoute = FactSlugRouteImport.update({
+  id: '/fact/$slug',
+  path: '/fact/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedQuizIndexRoute = AuthenticatedQuizIndexRouteImport.update({
   id: '/quiz/',
@@ -152,23 +164,23 @@ const AuthenticatedQuizSessionIdRoute =
     path: '/quiz/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiPublicRevenuecatWebhookRoute =
-  ApiPublicRevenuecatWebhookRouteImport.update({
-    id: '/api/public/revenuecat/webhook',
-    path: '/api/public/revenuecat/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
+  id: '/api/public/hooks/sync-sheet',
+  path: '/api/public/hooks/sync-sheet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksSyncSheetRoute = ApiPublicHooksSyncSheetRouteImport.update({
-  id: '/api/public/hooks/sync-sheet',
-  path: '/api/public/hooks/sync-sheet',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const ApiPublicRevenuecatWebhookRoute =
+  ApiPublicRevenuecatWebhookRouteImport.update({
+    id: '/api/public/revenuecat/webhook',
+    path: '/api/public/revenuecat/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -183,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/store': typeof StoreRoute
   '/boss': typeof AuthenticatedBossRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -191,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
+  '/fact/$slug': typeof FactSlugRoute
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/quiz/': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -210,6 +224,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/store': typeof StoreRoute
   '/boss': typeof AuthenticatedBossRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -218,6 +233,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
+  '/fact/$slug': typeof FactSlugRoute
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/quiz': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -239,6 +255,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/store': typeof StoreRoute
   '/_authenticated/boss': typeof AuthenticatedBossRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
@@ -247,6 +264,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
+  '/fact/$slug': typeof FactSlugRoute
   '/_authenticated/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/_authenticated/quiz/': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -268,6 +286,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/settings'
+    | '/sitemap.xml'
     | '/store'
     | '/boss'
     | '/history'
@@ -276,6 +295,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/c/$slug'
     | '/chain/$id'
+    | '/fact/$slug'
     | '/quiz/$sessionId'
     | '/quiz/'
     | '/api/public/hooks/sync-sheet'
@@ -295,6 +315,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/settings'
+    | '/sitemap.xml'
     | '/store'
     | '/boss'
     | '/history'
@@ -303,6 +324,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/c/$slug'
     | '/chain/$id'
+    | '/fact/$slug'
     | '/quiz/$sessionId'
     | '/quiz'
     | '/api/public/hooks/sync-sheet'
@@ -323,6 +345,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/settings'
+    | '/sitemap.xml'
     | '/store'
     | '/_authenticated/boss'
     | '/_authenticated/history'
@@ -331,6 +354,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/c/$slug'
     | '/chain/$id'
+    | '/fact/$slug'
     | '/_authenticated/quiz/$sessionId'
     | '/_authenticated/quiz/'
     | '/api/public/hooks/sync-sheet'
@@ -352,9 +376,11 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StoreRoute: typeof StoreRoute
   CSlugRoute: typeof CSlugRoute
   ChainIdRoute: typeof ChainIdRoute
+  FactSlugRoute: typeof FactSlugRoute
   ApiPublicHooksSyncSheetRoute: typeof ApiPublicHooksSyncSheetRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicRevenuecatWebhookRoute: typeof ApiPublicRevenuecatWebhookRoute
@@ -362,88 +388,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/store': {
-      id: '/store'
-      path: '/store'
-      fullPath: '/store'
-      preLoaderRoute: typeof StoreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/leaderboard': {
-      id: '/leaderboard'
-      path: '/leaderboard'
-      fullPath: '/leaderboard'
-      preLoaderRoute: typeof LeaderboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/favorites': {
-      id: '/favorites'
-      path: '/favorites'
-      fullPath: '/favorites'
-      preLoaderRoute: typeof FavoritesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/delete-account': {
-      id: '/delete-account'
-      path: '/delete-account'
-      fullPath: '/delete-account'
-      preLoaderRoute: typeof DeleteAccountRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chains': {
-      id: '/chains'
-      path: '/chains'
-      fullPath: '/chains'
-      preLoaderRoute: typeof ChainsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/badges': {
-      id: '/badges'
-      path: '/badges'
-      fullPath: '/badges'
-      preLoaderRoute: typeof BadgesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/adult': {
-      id: '/adult'
-      path: '/adult'
-      fullPath: '/adult'
-      preLoaderRoute: typeof AdultRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -453,46 +402,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/adult': {
+      id: '/adult'
+      path: '/adult'
+      fullPath: '/adult'
+      preLoaderRoute: typeof AdultRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chain/$id': {
-      id: '/chain/$id'
-      path: '/chain/$id'
-      fullPath: '/chain/$id'
-      preLoaderRoute: typeof ChainIdRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/c/$slug': {
-      id: '/c/$slug'
-      path: '/c/$slug'
-      fullPath: '/c/$slug'
-      preLoaderRoute: typeof CSlugRouteImport
+    '/badges': {
+      id: '/badges'
+      path: '/badges'
+      fullPath: '/badges'
+      preLoaderRoute: typeof BadgesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof AuthRoute
+    '/chains': {
+      id: '/chains'
+      path: '/chains'
+      fullPath: '/chains'
+      preLoaderRoute: typeof ChainsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/recap': {
-      id: '/_authenticated/recap'
-      path: '/recap'
-      fullPath: '/recap'
-      preLoaderRoute: typeof AuthenticatedRecapRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/import-guest': {
-      id: '/_authenticated/import-guest'
-      path: '/import-guest'
-      fullPath: '/import-guest'
-      preLoaderRoute: typeof AuthenticatedImportGuestRouteImport
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store': {
+      id: '/store'
+      path: '/store'
+      fullPath: '/store'
+      preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/boss': {
+      id: '/_authenticated/boss'
+      path: '/boss'
+      fullPath: '/boss'
+      preLoaderRoute: typeof AuthenticatedBossRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/history': {
@@ -502,12 +507,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/boss': {
-      id: '/_authenticated/boss'
-      path: '/boss'
-      fullPath: '/boss'
-      preLoaderRoute: typeof AuthenticatedBossRouteImport
+    '/_authenticated/import-guest': {
+      id: '/_authenticated/import-guest'
+      path: '/import-guest'
+      fullPath: '/import-guest'
+      preLoaderRoute: typeof AuthenticatedImportGuestRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recap': {
+      id: '/_authenticated/recap'
+      path: '/recap'
+      fullPath: '/recap'
+      preLoaderRoute: typeof AuthenticatedRecapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/c/$slug': {
+      id: '/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof CSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chain/$id': {
+      id: '/chain/$id'
+      path: '/chain/$id'
+      fullPath: '/chain/$id'
+      preLoaderRoute: typeof ChainIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fact/$slug': {
+      id: '/fact/$slug'
+      path: '/fact/$slug'
+      fullPath: '/fact/$slug'
+      preLoaderRoute: typeof FactSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/quiz/': {
       id: '/_authenticated/quiz/'
@@ -523,11 +563,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuizSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/revenuecat/webhook': {
-      id: '/api/public/revenuecat/webhook'
-      path: '/api/public/revenuecat/webhook'
-      fullPath: '/api/public/revenuecat/webhook'
-      preLoaderRoute: typeof ApiPublicRevenuecatWebhookRouteImport
+    '/api/public/hooks/sync-sheet': {
+      id: '/api/public/hooks/sync-sheet'
+      path: '/api/public/hooks/sync-sheet'
+      fullPath: '/api/public/hooks/sync-sheet'
+      preLoaderRoute: typeof ApiPublicHooksSyncSheetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/webhook': {
@@ -537,11 +577,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/sync-sheet': {
-      id: '/api/public/hooks/sync-sheet'
-      path: '/api/public/hooks/sync-sheet'
-      fullPath: '/api/public/hooks/sync-sheet'
-      preLoaderRoute: typeof ApiPublicHooksSyncSheetRouteImport
+    '/api/public/revenuecat/webhook': {
+      id: '/api/public/revenuecat/webhook'
+      path: '/api/public/revenuecat/webhook'
+      fullPath: '/api/public/revenuecat/webhook'
+      preLoaderRoute: typeof ApiPublicRevenuecatWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -592,9 +632,11 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StoreRoute: StoreRoute,
   CSlugRoute: CSlugRoute,
   ChainIdRoute: ChainIdRoute,
+  FactSlugRoute: FactSlugRoute,
   ApiPublicHooksSyncSheetRoute: ApiPublicHooksSyncSheetRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicRevenuecatWebhookRoute: ApiPublicRevenuecatWebhookRoute,

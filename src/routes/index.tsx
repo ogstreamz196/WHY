@@ -141,6 +141,9 @@ import { AvatarFigure } from "@/components/AvatarFigure";
 import { useMyAvatar } from "@/hooks/useMyAvatar";
 import { AdultModeSwitch } from "@/components/AdultModeSwitch";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
+import { WhyLogo } from "@/components/WhyLogo";
+import { searchFacts, type PublicFact } from "@/lib/factPages.functions";
+import { SITE_URL, factPath } from "@/lib/site";
 import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
@@ -186,27 +189,15 @@ import {
 } from "@/lib/chains.functions";
 
 import mascotImg from "@/assets/mascot.png";
+import { DEFAULT_TITLE, seo } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Why? — A pocket-sized universe of curiosity" },
-      {
-        name: "description",
-        content:
-          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
-      },
-      { property: "og:title", content: "Why? — A pocket-sized universe of curiosity" },
-      {
-        property: "og:description",
-        content:
-          "Do you know why…? A never-ending stream of child-friendly, fun and educational facts.",
-      },
-      { property: "og:type", content: "website" },
-    ],
+  head: () => seo({ title: DEFAULT_TITLE, path: "/" }),
+  // ?q= opens search with that question (used by Google's search box).
+  validateSearch: (s: Record<string, unknown>): { welcome?: true; q?: string } => ({
+    ...(s.welcome === "1" || s.welcome === 1 || s.welcome === true ? { welcome: true } : {}),
+    ...(typeof s.q === "string" && s.q.trim() ? { q: s.q.trim().slice(0, 200) } : {}),
   }),
-  validateSearch: (s: Record<string, unknown>): { welcome?: true } =>
-    s.welcome === "1" || s.welcome === 1 || s.welcome === true ? { welcome: true } : {},
 
   component: WhyApp,
 });
@@ -218,6 +209,7 @@ function WhyApp() {
   const generateNew = useServerFn(generateAndStoreFact);
   const generateLayer = useServerFn(generateWhyLayer);
   const searchOrGen = useServerFn(searchOrGenerateFact);
+  const findFacts = useServerFn(searchFacts);
   const migrateGuest = useServerFn(migrateGuestData);
   const fetchProfile = useServerFn(getMyProfile);
   const fetchStats = useServerFn(getMyStats);
@@ -289,6 +281,8 @@ function WhyApp() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<PublicFact[] | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
 
   // Local (guest) initial hydration
   useEffect(() => {
@@ -646,7 +640,8 @@ function WhyApp() {
 
   const handleShare = async () => {
     if (!fact) return;
-    const url = typeof window !== "undefined" ? window.location.origin : "https://why.app";
+    // Share the fact's own page: it opens with a proper preview card.
+    const url = fact.code ? `${SITE_URL}${factPath(fact.question, fact.code)}` : SITE_URL;
     const text = `🤔 WHY?\n\n${asWhyQuestion(fact.question)}\n\nTap to discover.\n${url}`;
     try {
       if (navigator.share) await navigator.share({ title: "Why?", text, url });
@@ -684,6 +679,41 @@ function WhyApp() {
     }
   };
 
+  // Live results from the fact library while typing (no AI needed).
+  useEffect(() => {
+    const q = search.trim();
+    if (!searchOpen || q.length < 2) {
+      setResults(null);
+      return;
+    }
+    let cancelled = false;
+    setLookingUp(true);
+    const t = window.setTimeout(() => {
+      findFacts({ data: { query: q } })
+        .then((r) => !cancelled && setResults(r))
+        .catch(() => !cancelled && setResults([]))
+        .finally(() => !cancelled && setLookingUp(false));
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [search, searchOpen, findFacts]);
+
+  // Arriving with ?q= (e.g. from Google): open search with that question.
+  useEffect(() => {
+    if (!routeSearch.q) return;
+    setSearch(routeSearch.q);
+    setSearchOpen(true);
+  }, [routeSearch.q]);
+
+  const pickResult = (f: PublicFact) => {
+    showFact(f);
+    setSearch("");
+    setResults(null);
+    setSearchOpen(false);
+  };
+
   const doSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     const q = search.trim();
@@ -717,14 +747,20 @@ function WhyApp() {
         {/* ── GAMIFIED HEADER ─────────────────────────────── */}
         <header className="mb-3 flex flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setSearchOpen((v) => !v)}
-              aria-label="Search"
-              className="glass flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-foreground/90 transition active:scale-95"
-            >
-              {searchOpen ? <X className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Link to="/" aria-label="Why? home" className="shrink-0 active:scale-95 transition">
+                <WhyLogo size={44} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSearchOpen((v) => !v)}
+                aria-label="Search facts"
+                aria-expanded={searchOpen}
+                className="glass flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-foreground/90 transition active:scale-95"
+              >
+                {searchOpen ? <X className="h-5 w-5" /> : <SearchIcon className="h-5 w-5" />}
+              </button>
+            </div>
 
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
               {adult.show && user && <AdultModeSwitch on={false} userId={user.id} size="sm" />}
@@ -802,11 +838,14 @@ function WhyApp() {
                   <SearchIcon className="ml-2 h-4 w-4 text-white/60" />
                   <input
                     autoFocus
+                    type="search"
+                    enterKeyHint="search"
+                    aria-label="Search facts or ask a why question"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Ask a why question…"
+                    placeholder="Why do cats purr? Try a topic too…"
                     maxLength={200}
-                    className="flex-1 bg-transparent px-1 py-2 text-base text-white placeholder-white/40 outline-none"
+                    className="flex-1 bg-transparent px-1 py-2 text-base text-white placeholder-white/40 outline-none [&::-webkit-search-cancel-button]:hidden"
                   />
                   <button
                     type="submit"
@@ -817,6 +856,50 @@ function WhyApp() {
                     {searching ? "…" : "Ask"}
                   </button>
                 </div>
+                {search.trim().length >= 2 && (
+                  <div
+                    className="glass mt-1.5 overflow-hidden rounded-2xl"
+                    role="listbox"
+                    aria-label="Matching facts"
+                  >
+                    {lookingUp && !results ? (
+                      <p className="px-4 py-3 text-sm text-white/60">Looking…</p>
+                    ) : (
+                      <>
+                        {(results ?? []).map((r) => (
+                          <button
+                            key={r.id}
+                            type="button"
+                            role="option"
+                            aria-selected={false}
+                            onClick={() => pickResult(r)}
+                            className="flex w-full items-center gap-3 border-b border-white/5 px-4 py-2.5 text-left text-sm font-bold text-white hover:bg-white/10"
+                          >
+                            <span aria-hidden>{emojiFor(r.category)}</span>
+                            <span className="min-w-0 flex-1 truncate">
+                              {asWhyQuestion(r.question)}
+                            </span>
+                          </button>
+                        ))}
+                        {results && results.length === 0 && (
+                          <p className="px-4 pt-3 text-xs text-white/60">
+                            No facts about that yet.
+                          </p>
+                        )}
+                        <button
+                          type="submit"
+                          disabled={searching}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-black text-amber-200 hover:bg-white/10 disabled:opacity-60"
+                        >
+                          <span aria-hidden>✨</span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {searching ? "Thinking…" : `Make a new fact: “${search.trim()}”`}
+                          </span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </motion.form>
             )}
           </AnimatePresence>

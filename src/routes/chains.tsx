@@ -27,11 +27,10 @@ import {
   type ChainSummary,
   type CollectionSummary,
 } from "@/lib/chains.functions";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/chains")({
-  head: () => ({
-    meta: [{ title: "Your Favourites — Why?" }],
-  }),
+  head: () => seo({ title: "Your “But why?” chains | Why?", noindex: true }),
   component: ChainsPage,
 });
 

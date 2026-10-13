@@ -8,16 +8,10 @@ import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { useCurrentUser } from "@/lib/auth";
 import { useIsNativeApp } from "@/lib/platform";
 import { adultWhyLayer, askOg, nextAdultFact, type AdultFact } from "@/lib/adult.functions";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/adult")({
-  head: () => ({
-    meta: [
-      { title: "Why? 18+" },
-      { name: "description", content: "Adults only." },
-      { name: "robots", content: "noindex, nofollow" },
-      { name: "theme-color", content: "#040406" },
-    ],
-  }),
+  head: () => seo({ title: "Why? 18+", noindex: true, themeColor: "#040406" }),
   component: AdultPage,
 });
 

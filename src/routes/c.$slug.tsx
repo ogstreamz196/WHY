@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { getPublicChain, type PublicChain } from "@/lib/chains.functions";
 import { STORE_CATALOG } from "@/lib/store";
+import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/c/$slug")({
   loader: async ({ params }): Promise<PublicChain> => {
@@ -11,19 +12,15 @@ export const Route = createFileRoute("/c/$slug")({
     if (!chain) throw notFound();
     return chain;
   },
-  head: ({ loaderData }) => {
-    const title = loaderData?.title ?? "A Why chain";
+  head: ({ loaderData, params }) => {
+    const title = loaderData?.title ?? "A “But why?” chain";
     const first = loaderData?.steps?.[0]?.question ?? "Follow the curiosity trail";
-    return {
-      meta: [
-        { title: `${title} — Why?` },
-        { name: "description", content: first.slice(0, 155) },
-        { property: "og:title", content: `${title} — Why?` },
-        { property: "og:description", content: first.slice(0, 200) },
-        { property: "og:type", content: "article" },
-        { name: "twitter:card", content: "summary_large_image" },
-      ],
-    };
+    return seo({
+      title: `${title} | Why?`,
+      description: first,
+      path: `/c/${params.slug}`,
+      type: "article",
+    });
   },
   errorComponent: () => (
     <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">

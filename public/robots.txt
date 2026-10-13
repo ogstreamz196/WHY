@@ -1,4 +1,14 @@
+# Why? fun facts for curious kids
 User-agent: *
 Allow: /
+Disallow: /adult
+Disallow: /settings
+Disallow: /profile
+Disallow: /favorites
+Disallow: /chains
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /api/
+Disallow: /_serverFn/
 
 Sitemap: https://why.ogbot.co.uk/sitemap.xml
