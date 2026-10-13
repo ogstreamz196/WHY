@@ -1,10 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Flame } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AvatarFigure } from "@/components/AvatarFigure";
-import { CoinIcon } from "@/components/CoinIcon";
 import { RewardReveal, type RevealPrize } from "@/components/RewardReveal";
 import { VipBadge } from "@/components/VipBadge";
 import { useDressUp, useMyAvatar, useWeeklyDrop } from "@/hooks/useMyAvatar";
