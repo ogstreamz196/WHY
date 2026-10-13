@@ -24,6 +24,7 @@ import { AdultHeaderBar } from "@/components/AdultHeaderBar";
 import { RecoveryEmailPrompt } from "@/components/RecoveryEmailPrompt";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { GoogleIdentitySync } from "@/components/GoogleIdentitySync";
+import { InstallAppBanner } from "@/components/InstallAppBanner";
 import { EditModeProvider } from "@/lib/editMode";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useEquippedTheme } from "@/lib/useEquippedTheme";
@@ -224,6 +225,7 @@ function RootComponent() {
         </div>
         <GlobalStreakMilestoneWatcher />
         <GoogleIdentitySync />
+        <InstallAppBanner />
         <ThemeDebugger />
         <Toaster theme="dark" position="top-center" richColors closeButton />
       </EditModeProvider>
