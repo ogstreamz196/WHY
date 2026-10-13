@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { awardAmountForUser, isVipUser } from "./vipStatus";
 import { STORE_CATALOG } from "./store";
+import { rollDailyReward, weeklyDropId, type DailyReward, type Outfit } from "./avatarItems";
 import type { Database } from "@/integrations/supabase/types";
 
 let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
@@ -46,6 +47,8 @@ export type ProfileDTO = {
   leaderboard_opt_out: boolean;
   hide_from_public: boolean;
   status_message: string | null;
+  /** What the avatar is wearing (hat, face, hand, neck, pet, aura). */
+  avatar_outfit: Outfit;
 };
 
 const PROFILE_COLS =
@@ -60,7 +63,9 @@ export const getMyProfile = createServerFn({ method: "GET" })
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return data as ProfileDTO | null;
+    if (!data) return null;
+    const { readOutfit } = await import("./avatarOutfit.server");
+    return { ...data, avatar_outfit: await readOutfit(context.userId) } as ProfileDTO;
   });
 
 export const updateMyProfile = createServerFn({ method: "POST" })
@@ -83,12 +88,18 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         leaderboard_opt_out: z.boolean().optional(),
         hide_from_public: z.boolean().optional(),
         status_message: z.string().trim().max(60).nullable().optional(),
+        avatar_outfit: z.record(z.string().max(20), z.string().max(60)).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }): Promise<ProfileDTO> => {
+    const { avatar_outfit: requestedOutfit, ...rest } = data;
+    const { readOutfit, saveOutfit } = await import("./avatarOutfit.server");
+    const outfit = requestedOutfit
+      ? await saveOutfit(context.userId, requestedOutfit, () => isVipUser(context))
+      : null;
     // status_message is a VIP-only feature — silently drop for non-VIPs.
-    const patch: Record<string, unknown> = { ...data };
+    const patch: Record<string, unknown> = { ...rest };
     if ("status_message" in patch) {
       if (!(await isVipUser(context))) delete patch.status_message;
     }
@@ -116,7 +127,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
       .select(PROFILE_COLS)
       .single();
     if (error) throw new Error(error.message);
-    return row as ProfileDTO;
+    return { ...row, avatar_outfit: outfit ?? (await readOutfit(context.userId)) } as ProfileDTO;
   });
 
 // -------------------- Linked identities --------------------
@@ -342,7 +353,7 @@ export const purchaseStoreItem = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ item_id: z.string().max(60) }).parse(input))
   .handler(async ({ data, context }): Promise<PurchaseResponse> => {
     const item = STORE_CATALOG.find((i) => i.id === data.item_id);
-    if (!item || item.vipOnly) {
+    if (!item || item.vipOnly || item.dropOnly) {
       const stats = await readStats(context.userId).catch(() => null);
       return { ok: false, reason: "not_found", total_points: stats?.total_points ?? 0 };
     }
@@ -368,13 +379,57 @@ export const purchaseStoreItem = createServerFn({ method: "POST" })
     };
   });
 
+export type DropClaimResult =
+  { ok: true; item_id: string } | { ok: false; reason: "already_owned" };
+
+/** Claim this week's free special drop. Each drop can be claimed once. */
+export const claimWeeklyDrop = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<DropClaimResult> => {
+    const itemId = weeklyDropId();
+    const status = await grantItem(context.userId, itemId);
+    return status === "ok" ? { ok: true, item_id: itemId } : { ok: false, reason: "already_owned" };
+  });
+
+/** Give a player an item for free (drops and rewards). */
+async function grantItem(userId: string, itemId: string): Promise<"ok" | "already_owned"> {
+  const { data: rows, error } = await (
+    await admin()
+  ).rpc("purchase_item", { _user: userId, _item: itemId, _cost: 0 });
+  if (error) throw new Error(error.message);
+  return rows?.[0]?.out_status === "ok" ? "ok" : "already_owned";
+}
+
+/** Roll and hand out the Daily Challenge mystery reward. */
+async function giveDailyReward(userId: string): Promise<DailyReward> {
+  const { data } = await (
+    await admin()
+  )
+    .from("user_inventory")
+    .select("item_id")
+    .eq("user_id", userId);
+  const reward = rollDailyReward(
+    (data ?? []).map((r) => r.item_id),
+    STORE_CATALOG,
+  );
+  if (reward.kind === "item" && (await grantItem(userId, reward.itemId)) === "ok") return reward;
+  const coins = reward.kind === "coins" ? reward : { kind: "coins" as const, amount: 10 };
+  await applyPoints(userId, coins.amount);
+  return coins;
+}
+
 /** Record that the user completed today's Daily Challenge. Idempotent per day. */
 export const recordDailyChallenge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(
     async ({
       context,
-    }): Promise<{ awarded: boolean; stats: StatsDTO; newlyUnlocked: string[] }> => {
+    }): Promise<{
+      awarded: boolean;
+      stats: StatsDTO;
+      newlyUnlocked: string[];
+      reward?: DailyReward;
+    }> => {
       const t = today();
       const y = yesterday();
 
@@ -403,11 +458,16 @@ export const recordDailyChallenge = createServerFn({ method: "POST" })
 
       const awardedPoints = await awardAmountForUser(context, DAILY_POINTS);
       await applyPoints(context.userId, awardedPoints);
+      // The challenge is already won; a hiccup with the bonus mustn't undo that.
+      const reward = await giveDailyReward(context.userId).catch((e) => {
+        console.error("daily reward failed", e);
+        return undefined;
+      });
       const row = await readStats(context.userId);
 
       await awardXp(context, "daily", awardedPoints);
       const newlyUnlocked = await checkAchievements(context, row);
-      return { awarded: true, stats: row, newlyUnlocked };
+      return { awarded: true, stats: row, newlyUnlocked, reward };
     },
   );
 

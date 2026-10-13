@@ -1,6 +1,7 @@
 // Shared leaderboard data for the Ranks page and the profile rankings.
 // Reads through get_public_leaderboard (service role), which already applies
 // leaderboard opt-outs and hidden profiles.
+import type { Outfit } from "./avatarItems";
 import type { LeaderboardEntry } from "./leaderboard.functions";
 
 export type BoardKind =
@@ -11,6 +12,7 @@ export type LbRow = {
   username: string | null;
   display_name: string | null;
   avatar_id: string | null;
+  avatar_outfit?: Outfit;
   age_band: string | null;
   favorite_category: string | null;
   score: number;
@@ -72,6 +74,14 @@ export async function getBoardRows(
     .sort((a, b) => b.score - a.score);
 
   if (safeKind === "streaks" && rows.length > 0) rows = await dropBrokenStreaks(rows);
+
+  // Dress everyone up. Only the visible top of the board needs outfits, but
+  // "nearby" rows can come from anywhere, so fetch them all (one query).
+  if (rows.length > 0) {
+    const { readOutfits } = await import("./avatarOutfit.server");
+    const outfits = await readOutfits(rows.map((r) => r.user_id));
+    rows = rows.map((r) => ({ ...r, avatar_outfit: outfits[r.user_id] ?? {} }));
+  }
 
   let windowLabel: string | null = null;
   if (safeKind === "category") windowLabel = safeFilter;

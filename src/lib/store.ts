@@ -4,6 +4,7 @@
 // Signed-in users: canonical progress lives on the server; this is a cache.
 
 import type { Fact } from "@/lib/facts.functions";
+import { AVATAR_ITEMS, sanitizeOutfit, type Outfit, type OutfitSlot } from "@/lib/avatarItems";
 
 const KEY_FAV = "why:favorites";
 const KEY_POINTS = "why:points";
@@ -234,7 +235,8 @@ export function getBadges(): Badge[] {
 const KEY_INVENTORY = "why:inventory"; // array of owned item ids
 const KEY_EQUIPPED = "why:equipped"; // { avatar?: id, theme?: id }
 
-export type StoreCategory = "avatar" | "theme" | "boost";
+export type StoreCategory =
+  "avatar" | "theme" | "boost" | "hat" | "face" | "hand" | "neck" | "pet" | "aura";
 export type AnimatedAvatarKind =
   | "orbit-stars"
   | "flame-swirl"
@@ -255,6 +257,7 @@ export type StoreItem = {
   gradient?: string; // CSS gradient for preview / theme application
   vipOnly?: boolean; // Exclusive to Why? Plus members (never purchasable with coins)
   animation?: AnimatedAvatarKind; // Optional animated FX (typically VIP avatars)
+  dropOnly?: boolean; // Special drop: only ever gifted (weekly drop, Daily Challenge), never sold
 };
 
 export const STORE_CATALOG: StoreItem[] = [
@@ -1146,10 +1149,18 @@ export const STORE_CATALOG: StoreItem[] = [
     vipOnly: true,
     gradient: "linear-gradient(135deg, #1e3c72 0%, #a044ff 50%, #f7b733 100%)",
   },
+
+  // ===== Dress-up: characters, wearables, pets, auras and special drops =====
+  ...AVATAR_ITEMS,
 ];
 
+export const itemById = (id: string | null | undefined): StoreItem | undefined =>
+  id ? STORE_CATALOG.find((i) => i.id === id) : undefined;
+
 // Free items every user owns automatically (excluding VIP-only unlocks).
-const FREE_ITEMS = STORE_CATALOG.filter((i) => i.cost === 0 && !i.vipOnly).map((i) => i.id);
+const FREE_ITEMS = STORE_CATALOG.filter((i) => i.cost === 0 && !i.vipOnly && !i.dropOnly).map(
+  (i) => i.id,
+);
 // VIP-exclusive items granted while the user has an active subscription.
 const VIP_ITEMS = STORE_CATALOG.filter((i) => i.vipOnly).map((i) => i.id);
 
@@ -1178,12 +1189,30 @@ export const ownsItem = (id: string, isVip = false) => getInventory(isVip).inclu
 /** Replace the cached inventory with the server's list (signed-in users). */
 export const setOwnedItems = (ids: string[]) => write(KEY_INVENTORY, Array.from(new Set(ids)));
 
-export type Equipped = { avatar?: string; theme?: string };
-const defaultEquipped: Equipped = { avatar: "avatar-sprout", theme: "theme-cosmos" };
-export const getEquipped = (): Equipped => ({
-  ...defaultEquipped,
-  ...read<Equipped>(KEY_EQUIPPED, {}),
-});
+export type Equipped = { avatar?: string; theme?: string; outfit?: Outfit };
+const defaultEquipped: Equipped = { avatar: "avatar-sprout", theme: "theme-cosmos", outfit: {} };
+export const getEquipped = (): Equipped => {
+  const saved = read<Equipped>(KEY_EQUIPPED, {});
+  return {
+    ...defaultEquipped,
+    ...saved,
+    outfit: sanitizeOutfit(saved.outfit, STORE_CATALOG),
+  };
+};
+
+/** Put on (or, with null, take off) one wearable. */
+export const wearItem = (slot: OutfitSlot, id: string | null): Equipped => {
+  const outfit: Outfit = { ...getEquipped().outfit };
+  if (id) outfit[slot] = id;
+  else delete outfit[slot];
+  return setEquipped({ outfit });
+};
+
+/** Add a gifted item (weekly drop, Daily Challenge reward) to this device's inventory. */
+export const grantLocalItem = (id: string) => {
+  const owned = read<string[]>(KEY_INVENTORY, []);
+  write(KEY_INVENTORY, Array.from(new Set([...owned, id])));
+};
 export const setEquipped = (patch: Equipped) => {
   const next = { ...getEquipped(), ...patch };
   write(KEY_EQUIPPED, next);
@@ -1211,7 +1240,7 @@ export type PurchaseResult =
 export function purchaseItem(id: string): PurchaseResult {
   const item = STORE_CATALOG.find((i) => i.id === id);
   if (!item) return { ok: false, reason: "not_found" };
-  if (item.vipOnly) return { ok: false, reason: "not_found" }; // VIP-only, never coin-purchasable
+  if (item.vipOnly || item.dropOnly) return { ok: false, reason: "not_found" }; // never coin-purchasable
   if (ownsItem(id)) return { ok: false, reason: "already_owned" };
   const balance = getPoints();
   if (balance < item.cost) return { ok: false, reason: "insufficient_coins" };
@@ -1230,20 +1259,6 @@ export function purchaseItem(id: string): PurchaseResult {
   }
   return { ok: true, item, coinsLeft: remaining };
 }
-
-// Coin packs available for purchase with real money (Stripe wiring later).
-export type CoinPack = {
-  id: string;
-  coins: number;
-  priceUSD: number;
-  bonus?: number;
-  label: string;
-};
-export const COIN_PACKS: CoinPack[] = [
-  { id: "pack-starter", coins: 100, priceUSD: 0.99, label: "Starter Pouch" },
-  { id: "pack-plus", coins: 550, priceUSD: 4.99, bonus: 50, label: "Explorer Pack" },
-  { id: "pack-mega", coins: 1200, priceUSD: 9.99, bonus: 200, label: "Cosmic Chest" },
-];
 
 // ------- Achievements (future-ready structure) -------
 // Grouped: streak milestones, coin/level milestones, unlocked cosmetics.

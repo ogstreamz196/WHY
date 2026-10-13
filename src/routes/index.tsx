@@ -131,7 +131,14 @@ import {
   getStreak,
   isFavorite,
   toggleFavorite,
+  getInventory,
+  grantLocalItem,
+  STORE_CATALOG,
 } from "@/lib/store";
+import { rollDailyReward } from "@/lib/avatarItems";
+import { HomePlayerCard } from "@/components/HomePlayerCard";
+import { AvatarFigure } from "@/components/AvatarFigure";
+import { useMyAvatar } from "@/hooks/useMyAvatar";
 import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { BottomNav } from "@/components/BottomNav";
@@ -223,6 +230,7 @@ function WhyApp() {
   const updateProfile = useServerFn(updateMyProfile);
 
   const { user, isGuest } = useCurrentUser();
+  const myAvatar = useMyAvatar(user?.id ?? null);
   const isNative = useIsNativeApp();
   const navigate = useNavigate();
   const routeSearch = Route.useSearch();
@@ -728,14 +736,12 @@ function WhyApp() {
                 className="glass flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl overflow-hidden active:scale-95 transition"
               >
                 {user ? (
-                  <span
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-lg"
-                    style={{ background: "var(--gradient-primary)" }}
-                  >
-                    <span className="font-black text-white">
-                      {(displayName ?? user.email ?? "?").slice(0, 1).toUpperCase()}
-                    </span>
-                  </span>
+                  <AvatarFigure
+                    avatarId={myAvatar.avatarId}
+                    outfit={myAvatar.outfit}
+                    className="text-[1.45rem]"
+                    still
+                  />
                 ) : (
                   <img
                     src={mascotImg}
@@ -811,18 +817,15 @@ function WhyApp() {
           </AnimatePresence>
         </header>
 
-        {/* Welcome / signup banner */}
-        {user ? (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm"
-          >
-            <span className="text-white/80">Welcome back, </span>
-            <span className="font-black text-white">{displayName ?? "explorer"}</span>
-            <span className="text-white/60"> — your streak is safe.</span>
-          </motion.div>
-        ) : (
+        {/* Your explorer: dressed-up avatar, quick stats and the weekly drop */}
+        <HomePlayerCard
+          userId={user?.id ?? null}
+          name={user ? (displayName ?? "Explorer") : "Guest explorer"}
+          level={level}
+          streak={streak}
+          points={points}
+        />
+        {user ? null : (
           <GuestProgressCard
             discoveries={getSeen()}
             streak={streak}
@@ -902,25 +905,33 @@ function WhyApp() {
         />
 
         <DailyChallenge
-          onCompleted={(r) => {
+          userId={user?.id ?? null}
+          onCompleted={async (r) => {
             if (!user) {
+              // Guests: the mystery reward stays on this device.
+              const reward = rollDailyReward(getInventory(), STORE_CATALOG);
+              const total = reward.kind === "coins" ? addPoints(reward.amount) : r.points;
+              if (reward.kind === "item") grantLocalItem(reward.itemId);
               setStreak(r.streak);
-              setPoints(r.points);
-              setLevel(Math.max(1, Math.floor(r.points / 100) + 1));
+              setPoints(total);
+              setLevel(Math.max(1, Math.floor(total / 100) + 1));
               setCelebrate({ points: r.pointsDelta });
-              return;
+              return reward;
             }
-            // Signed in: the server decides the streak and the coins.
+            // Signed in: the server decides the streak, the coins and the reward.
             const before = pointsRef.current;
-            recordDailyServer()
-              .then((res) => {
-                setStreak(res.stats.current_streak);
-                showServerBalance(res.stats.total_points);
-                const gained = res.stats.total_points - before;
-                if (res.awarded && gained > 0) setCelebrate({ points: gained });
-                notifyAchievements(res?.newlyUnlocked);
-              })
-              .catch((e) => console.warn(e));
+            try {
+              const res = await recordDailyServer();
+              setStreak(res.stats.current_streak);
+              showServerBalance(res.stats.total_points);
+              const gained = res.stats.total_points - before;
+              if (res.awarded && gained > 0) setCelebrate({ points: gained });
+              notifyAchievements(res?.newlyUnlocked);
+              return res.reward ?? null;
+            } catch (e) {
+              console.warn(e);
+              return null;
+            }
           }}
         />
 

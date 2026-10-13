@@ -10,7 +10,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
 import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
 import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
-import { avatarEmojiFor } from "@/lib/store";
+import { AvatarFigure } from "@/components/AvatarFigure";
 import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
 import { ChampionCrown } from "@/components/ChampionCrown";
@@ -492,9 +492,14 @@ function ArenaPage() {
                           </span>
                           <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
                         </div>
-                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-xl">
+                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
                           {r.avatar_id ? (
-                            <span aria-hidden>{avatarEmojiFor(r.avatar_id)}</span>
+                            <AvatarFigure
+                              avatarId={r.avatar_id}
+                              outfit={r.avatar_outfit}
+                              className="text-[1.6rem]"
+                              still={!me}
+                            />
                           ) : (
                             <span className="text-sm font-black text-white/80">
                               {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
@@ -561,9 +566,12 @@ function ArenaPage() {
                         <span className="w-12 shrink-0 text-xs font-black text-white/60">
                           #{r.rank.toLocaleString()}
                         </span>
-                        <span className="text-lg" aria-hidden>
-                          {r.avatar_id ? avatarEmojiFor(r.avatar_id) : "🌱"}
-                        </span>
+                        <AvatarFigure
+                          avatarId={r.avatar_id}
+                          outfit={r.avatar_outfit}
+                          className="text-xl"
+                          still
+                        />
                         <span className="min-w-0 flex-1 truncate text-sm font-black text-white">
                           {r.display_name || r.username || "Explorer"}
                           {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
@@ -858,14 +866,17 @@ function PodiumColumn({
         <div className={`relative ${cfg.avatar} rounded-full ${cfg.ring} bg-neutral-950 p-1.5`}>
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-white/10 to-white/0">
             {entry.avatar_id ? (
-              <span
+              <AvatarFigure
+                avatarId={entry.avatar_id}
+                outfit={entry.avatar_outfit}
                 className={
-                  place === 1 ? "text-6xl sm:text-7xl" : place === 2 ? "text-4xl" : "text-3xl"
+                  place === 1
+                    ? "text-5xl sm:text-6xl"
+                    : place === 2
+                      ? "text-3xl sm:text-4xl"
+                      : "text-2xl sm:text-3xl"
                 }
-                aria-hidden
-              >
-                {avatarEmojiFor(entry.avatar_id)}
-              </span>
+              />
             ) : (
               <span className={`font-black text-white ${place === 1 ? "text-3xl" : "text-lg"}`}>
                 {initial}

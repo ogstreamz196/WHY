@@ -2,12 +2,14 @@
 // signed-out users) can look up another player's public leaderboard card.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { Outfit } from "./avatarItems";
 
 export type PlayerProfilePublic = {
   user_id: string;
   username: string | null;
   display_name: string | null;
   avatar_id: string | null;
+  avatar_outfit: Outfit;
   age_band: string | null;
   favorite_category: string | null;
   bio: string | null;
@@ -32,7 +34,8 @@ export const getPlayerProfilePublic = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const uid = data.userId;
 
-    const [profileRes, lbRes, quizRes, vipRes] = await Promise.all([
+    const { readOutfit } = await import("./avatarOutfit.server");
+    const [profileRes, lbRes, quizRes, vipRes, outfit] = await Promise.all([
       supabaseAdmin
         .from("profiles_public")
         .select("id, username, display_name, avatar_id, favorite_category, bio, created_at")
@@ -52,6 +55,7 @@ export const getPlayerProfilePublic = createServerFn({ method: "GET" })
         const { plusUserIds } = await import("./plus.server");
         return (await plusUserIds([uid])).has(uid);
       })(),
+      readOutfit(uid),
     ]);
 
     const profile = profileRes.data;
@@ -67,6 +71,7 @@ export const getPlayerProfilePublic = createServerFn({ method: "GET" })
       username: profile.username ?? null,
       display_name: profile.display_name ?? null,
       avatar_id: profile.avatar_id ?? null,
+      avatar_outfit: outfit,
       age_band: lb?.age_band ?? null,
       favorite_category: profile.favorite_category ?? null,
       bio: profile.bio ?? null,

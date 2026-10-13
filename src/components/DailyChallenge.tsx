@@ -1,6 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
-import { Calendar, Check, Flame, Sparkles, X } from "lucide-react";
+import { BookOpen, Calendar, Check, Flame, Gift, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { CoinIcon } from "@/components/CoinIcon";
 import { AnswerSummary } from "@/components/AnswerSummary";
@@ -15,22 +15,39 @@ import { getDailyChallengeMCQ, type DailyMCQ } from "@/lib/facts.functions";
 import { completeDailyChallenge, hasCompletedDailyChallenge } from "@/lib/store";
 import { emojiFor, gradientFor } from "@/lib/categories";
 import { asWhyQuestion } from "@/lib/whyQuestion";
+import { RewardReveal, type RevealPrize } from "@/components/RewardReveal";
+import { useDressUp, useMyAvatar } from "@/hooks/useMyAvatar";
+import type { DailyReward } from "@/lib/avatarItems";
+import { itemById } from "@/lib/store";
+import { readingTimeMs } from "@/lib/readingTime";
 
 type Props = {
-  onCompleted?: (result: { streak: number; points: number; pointsDelta: number }) => void;
+  userId?: string | null;
+  /** Records the win and returns the mystery reward the player won, if any. */
+  onCompleted?: (result: {
+    streak: number;
+    points: number;
+    pointsDelta: number;
+  }) => Promise<DailyReward | null | undefined> | void;
 };
 
 /**
- * Daily Challenge — shows a "quick fact" teaser, then a multiple-choice
- * question. Awards +25 curiosity points and advances the streak the first
- * time the user answers correctly. Wrong answers can be retried, but only
- * the first correct answer counts.
+ * Daily Challenge — the player reads today's fact (with time to read it
+ * properly), then answers a multiple-choice question about it. The first
+ * correct answer of the day awards +25 coins, advances the streak and opens a
+ * free mystery reward. Wrong answers can be retried and there's no timer.
  */
-export function DailyChallenge({ onCompleted }: Props) {
+export function DailyChallenge({ onCompleted, userId = null }: Props) {
   const fetchMCQ = useServerFn(getDailyChallengeMCQ);
   const [mcq, setMCQ] = useState<DailyMCQ | null>(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<"teaser" | "quiz" | "result">("teaser");
+  const [readReady, setReadReady] = useState(false);
+  const [wrongTries, setWrongTries] = useState(0);
+  const [reward, setReward] = useState<RevealPrize | null>(null);
+  const [revealOpen, setRevealOpen] = useState(false);
+  const myAvatar = useMyAvatar(userId);
+  const dressUp = useDressUp(userId);
   const [picked, setPicked] = useState<number | null>(null);
   const [done, setDone] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -43,7 +60,11 @@ export function DailyChallenge({ onCompleted }: Props) {
   const [focusIdx, setFocusIdx] = useState(0);
   const choiceRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+  // Load once. (Re-running this after the player answers would fold the card
+  // away mid-celebration, because by then today's challenge counts as done.)
+  const fetchRef = useRef(fetchMCQ);
   useEffect(() => {
+    const fetchMCQ = fetchRef.current;
     let cancelled = false;
     const alreadyDone = hasCompletedDailyChallenge();
     setDone(alreadyDone);
@@ -61,9 +82,23 @@ export function DailyChallenge({ onCompleted }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [fetchMCQ]);
+  }, []);
 
   const fact = mcq?.fact ?? null;
+
+  // Give a reading pause before the question unlocks (no pressure: it's the
+  // question that waits, never the player).
+  const readMs = fact ? readingTimeMs(`${fact.question} ${fact.answer} ${fact.fun_fact ?? ""}`) : 0;
+  useEffect(() => {
+    if (!fact || phase !== "teaser") return;
+    if (done) {
+      setReadReady(true);
+      return;
+    }
+    setReadReady(false);
+    const t = setTimeout(() => setReadReady(true), readMs);
+    return () => clearTimeout(t);
+  }, [fact, phase, done, readMs]);
 
   const answer = useCallback(
     (idx: number) => {
@@ -72,6 +107,7 @@ export function DailyChallenge({ onCompleted }: Props) {
       const isCorrect = idx === mcq.correctIndex;
       if (!isCorrect) {
         feedback("wrong");
+        setWrongTries((n) => n + 1);
         setTimeout(() => setPicked(null), 900);
         return;
       }
@@ -82,11 +118,21 @@ export function DailyChallenge({ onCompleted }: Props) {
         setDone(true);
         setPointsAwarded(result.pointsDelta);
         setAwardedFlash({ streak: result.streak, delta: result.pointsDelta });
-        onCompleted?.({
+        const pending = onCompleted?.({
           streak: result.streak,
           points: result.points,
           pointsDelta: result.pointsDelta,
         });
+        Promise.resolve(pending)
+          .then((r) => {
+            if (!r) return;
+            if (r.kind === "coins") setReward({ kind: "coins", amount: r.amount });
+            else {
+              const item = itemById(r.itemId);
+              if (item) setReward({ kind: "item", item });
+            }
+          })
+          .catch((e) => console.warn("daily reward failed", e));
         const milestone = newlyReachedMilestone(result.streak);
         if (milestone) {
           toast.success(
@@ -162,7 +208,7 @@ export function DailyChallenge({ onCompleted }: Props) {
                 Daily Challenge
               </h2>
               <p className="text-xs font-bold text-white/90">
-                {done ? "Streak locked in ✓" : "Quick fact + 1 question · +25 pts"}
+                {done ? "Streak locked in ✓" : "Read, answer, win a mystery reward 🎁"}
               </p>
             </div>
           </div>
@@ -201,37 +247,81 @@ export function DailyChallenge({ onCompleted }: Props) {
                   </p>
                 ) : phase === "teaser" ? (
                   <>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
-                      ⚡ Quick fact
+                    <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-white/50">
+                      <BookOpen className="h-3.5 w-3.5" aria-hidden /> Read this first, the question
+                      is about it
                     </p>
                     <h3 className="mt-1 font-fun text-[clamp(1.15rem,3vw,1.5rem)] font-bold leading-snug text-white">
                       {asWhyQuestion(fact.question)}{" "}
                       <span aria-hidden>{emojiFor(fact.category)}</span>
                     </h3>
+                    <motion.p
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 }}
+                      className="mt-2 font-fun text-[clamp(1rem,2.5vw,1.2rem)] leading-relaxed text-white/90"
+                    >
+                      {fact.answer}
+                    </motion.p>
 
                     {fact.fun_fact && (
                       <p className="mt-2 font-fun text-[clamp(0.95rem,2.4vw,1.15rem)] italic text-yellow-100">
                         ⭐ {fact.fun_fact}
                       </p>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        feedback("reveal");
-                        setPhase("quiz");
-                      }}
-                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-                      style={{ background: "var(--gradient-primary)" }}
-                    >
-                      <Sparkles className="h-4 w-4" aria-hidden />
-                      {done ? "Replay the question" : "Take the challenge"}
-                    </button>
+                    <div className="relative mt-4 overflow-hidden rounded-full">
+                      {!readReady && (
+                        <motion.span
+                          aria-hidden
+                          className="absolute inset-y-0 left-0 bg-white/15"
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: readMs / 1000, ease: "linear" }}
+                        />
+                      )}
+                      <motion.button
+                        type="button"
+                        disabled={!readReady}
+                        onClick={() => {
+                          feedback("reveal");
+                          setPhase("quiz");
+                        }}
+                        animate={readReady && !done ? { scale: [1, 1.03, 1] } : undefined}
+                        transition={{ duration: 1.4, repeat: Infinity }}
+                        className="relative inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-black text-white transition-opacity disabled:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                        style={{
+                          background: readReady
+                            ? "var(--gradient-primary)"
+                            : "rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        {readReady ? (
+                          <>
+                            <Sparkles className="h-4 w-4" aria-hidden />
+                            {done ? "Replay the question" : "I've read it, quiz me!"}
+                          </>
+                        ) : (
+                          <>📖 Take your time reading…</>
+                        )}
+                      </motion.button>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
-                      🤔 Pick the real reason
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                        🤔 Pick the real reason
+                      </p>
+                      {phase === "quiz" && (
+                        <button
+                          type="button"
+                          onClick={() => setPhase("teaser")}
+                          className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white/70"
+                        >
+                          📖 Read again
+                        </button>
+                      )}
+                    </div>
                     <h3 className="mt-1 font-fun text-[clamp(1.1rem,2.9vw,1.4rem)] font-bold leading-snug text-white">
                       {asWhyQuestion(fact.question)}
                     </h3>
@@ -324,6 +414,38 @@ export function DailyChallenge({ onCompleted }: Props) {
                       })}
                     </div>
 
+                    {phase === "quiz" && wrongTries > 0 && (
+                      <motion.p
+                        key={wrongTries}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3 text-center text-sm font-bold text-white/80"
+                        role="status"
+                      >
+                        {
+                          [
+                            "Not quite! Have another go 💪",
+                            "So close! Try a different one 🤔",
+                            "Tip: tap 📖 Read again to peek at the fact",
+                          ][Math.min(wrongTries - 1, 2)]
+                        }
+                      </motion.p>
+                    )}
+
+                    {phase === "result" && reward && (
+                      <motion.button
+                        type="button"
+                        onClick={() => setRevealOpen(true)}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: [1, 1.05, 1], rotate: [0, -2, 2, 0] }}
+                        transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.6 }}
+                        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/50 bg-gradient-to-r from-amber-400/30 via-pink-500/25 to-violet-500/30 px-4 py-3 text-sm font-black text-white shadow-[0_0_28px_rgba(251,191,36,0.35)]"
+                      >
+                        <Gift className="h-5 w-5 text-amber-200" aria-hidden />
+                        Open your mystery reward!
+                      </motion.button>
+                    )}
+
                     <AnimatePresence>
                       {phase === "result" && (
                         <AnswerSummary
@@ -367,6 +489,23 @@ export function DailyChallenge({ onCompleted }: Props) {
           )}
         </AnimatePresence>
       </article>
+      <RewardReveal
+        prize={revealOpen ? reward : null}
+        title="Daily Challenge reward"
+        avatar={myAvatar}
+        onWear={async (item) => {
+          try {
+            await dressUp(item);
+            toast.success(`${item.emoji} ${item.name} on!`);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Couldn't put that on");
+          }
+        }}
+        onClose={() => {
+          setRevealOpen(false);
+          setReward(null);
+        }}
+      />
       <StreakMilestoneCelebration
         milestone={milestoneBurst}
         source="daily_challenge"

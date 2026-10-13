@@ -66,9 +66,10 @@ function PrivacyPage() {
             them.
           </p>
           <p>
-            <b>Profile:</b> the display name, username, avatar, short bio and status message you
-            choose, your age range and favourite topic if you set them, and your privacy choices
-            (such as hiding from leaderboards).
+            <b>Profile:</b> the display name, username, avatar (and what it's wearing), short bio
+            and status message you choose, your age range and favourite topic if you set them, and
+            your privacy choices (such as hiding from leaderboards). We also keep the store items
+            you own, whether bought with coins or received as free gifts.
           </p>
           <p>
             <b>Activity:</b> facts you've discovered, favourites, saved "But… Why?" chains, quiz
@@ -92,8 +93,8 @@ function PrivacyPage() {
 
         <Section title="What other people can see">
           <p>
-            Your display name or username, avatar and scores can appear on leaderboards and your
-            public profile. You can turn this off in Settings with "Hide me from public
+            Your display name or username, dressed-up avatar and scores can appear on leaderboards
+            and your public profile. You can turn this off in Settings with "Hide me from public
             leaderboards" and "Hide profile from public pages". A "But… Why?" chain is only public
             if you choose to share it.
           </p>
