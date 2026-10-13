@@ -14,33 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      adult_facts: {
-        Row: {
-          answer: string
-          category: string | null
-          created_at: string
-          fun_fact: string | null
-          id: string
-          question: string
-        }
-        Insert: {
-          answer: string
-          category?: string | null
-          created_at?: string
-          fun_fact?: string | null
-          id?: string
-          question: string
-        }
-        Update: {
-          answer?: string
-          category?: string | null
-          created_at?: string
-          fun_fact?: string | null
-          id?: string
-          question?: string
-        }
-        Relationships: []
-      }
       achievements: {
         Row: {
           category: string
@@ -71,6 +44,33 @@ export type Database = {
           name?: string
           sort_order?: number
           threshold?: number | null
+        }
+        Relationships: []
+      }
+      adult_facts: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string
+          fun_fact: string | null
+          id: string
+          question: string
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string
+          fun_fact?: string | null
+          id?: string
+          question: string
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string
+          fun_fact?: string | null
+          id?: string
+          question?: string
         }
         Relationships: []
       }
