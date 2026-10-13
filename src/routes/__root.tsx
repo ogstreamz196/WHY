@@ -20,6 +20,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { GlobalStreakMilestoneWatcher } from "@/components/GlobalStreakMilestoneWatcher";
 import { TopSignInBar } from "@/components/TopSignInBar";
+import { AdultHeaderBar } from "@/components/AdultHeaderBar";
 import { RecoveryEmailPrompt } from "@/components/RecoveryEmailPrompt";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { GoogleIdentitySync } from "@/components/GoogleIdentitySync";
