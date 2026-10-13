@@ -533,6 +533,7 @@ export const generateWhyLayer = createServerFn({ method: "POST" })
       .object({
         rootQuestion: z.string().min(1).max(300),
         previousChain: z.array(z.string().max(1000)).max(12).default([]),
+        customQuestion: z.string().trim().min(3).max(200).optional(),
       })
       .parse(input),
   )
