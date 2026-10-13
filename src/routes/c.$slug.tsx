@@ -15,12 +15,32 @@ export const Route = createFileRoute("/c/$slug")({
   head: ({ loaderData, params }) => {
     const title = loaderData?.title ?? "A “But why?” chain";
     const first = loaderData?.steps?.[0]?.question ?? "Follow the curiosity trail";
-    return seo({
+    const base = seo({
       title: `${title} | Why?`,
       description: first,
       path: `/c/${params.slug}`,
       type: "article",
     });
+    // FAQ structured data: each step of the curiosity trail is a Q&A pair.
+    const steps = (loaderData?.steps ?? []).filter((s) => s.question && s.answer);
+    if (steps.length === 0) return base;
+    return {
+      ...base,
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: steps.map((s) => ({
+              "@type": "Question",
+              name: s.question,
+              acceptedAnswer: { "@type": "Answer", text: s.answer },
+            })),
+          }),
+        },
+      ],
+    };
   },
   errorComponent: () => (
     <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
