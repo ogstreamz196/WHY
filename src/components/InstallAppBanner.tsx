@@ -88,7 +88,7 @@ export function InstallAppBanner() {
     <div
       role="region"
       aria-label="Add the Why? shortcut"
-      className="safe-x fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-50 short:bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
+      className="safe-x fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-50 wide:bottom-[calc(1rem+env(safe-area-inset-bottom))] wide:left-[var(--rail-w)]"
     >
       <div className="glass-strong mx-auto flex max-w-2xl flex-col gap-2 rounded-3xl p-3 shadow-[var(--shadow-card)] short:rounded-2xl short:py-1.5">
         <div className="flex items-center gap-3">

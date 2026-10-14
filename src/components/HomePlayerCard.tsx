@@ -69,8 +69,10 @@ export function HomePlayerCard({ userId, name, level, streak, points, isPlus }: 
       </Link>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-white/60">Ready to explore?</p>
-        <p className="flex items-center gap-2 truncate font-display text-2xl font-black text-white">
-          <span className="truncate">{name}</span>
+        <p className="flex items-center gap-2 truncate font-display text-2xl wide:whitespace-normal wide:text-xl font-black text-white">
+          <span className="truncate wide:line-clamp-2 wide:whitespace-normal wide:break-words">
+            {name}
+          </span>
           {isPlus && <VipBadge size="xs" />}
         </p>
       </div>

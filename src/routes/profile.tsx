@@ -276,22 +276,22 @@ function ProfilePage() {
   }
 
   return (
-    <main className="relative min-h-[100dvh] w-full pb-32">
-      <div className="mx-auto max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+    <main className="relative min-h-[100dvh] w-full pb-32 wide:pb-10">
+      <div className="mx-auto max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 wide:grid wide:max-w-6xl wide:grid-cols-[340px_minmax(0,1fr)] wide:items-start wide:gap-8 lg:px-8 xl:grid-cols-[380px_minmax(0,1fr)] 2xl:max-w-7xl">
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-strong relative overflow-hidden rounded-4xl border border-white/10 p-6"
+          className="own-heading-sizes wide:sticky wide:top-4 wide:col-start-1 wide:row-start-1 glass-strong relative overflow-hidden rounded-4xl border border-white/10 p-6"
         >
           <div
             aria-hidden
             className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-40 blur-3xl"
             style={{ background: "var(--gradient-primary)" }}
           />
-          <div className="flex items-start gap-5">
+          <div className="flex items-start gap-5 wide:flex-col wide:items-center wide:text-center">
             <div className="flex shrink-0 flex-col items-center gap-2">
-              <div className="relative h-28 w-28 sm:h-32 sm:w-32">
+              <div className="relative h-28 w-28 sm:h-32 sm:w-32 wide:h-40 wide:w-40">
                 <ProfileAvatar
                   avatarId={profile.data?.avatar_id}
                   outfit={profile.data?.avatar_outfit}
@@ -309,7 +309,7 @@ function ProfilePage() {
                 🎨 Dress up
               </Link>
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 wide:w-full">
               {editing ? (
                 <input
                   value={name}
@@ -318,7 +318,7 @@ function ProfilePage() {
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-2 py-1 font-display text-xl font-black text-white outline-none"
                 />
               ) : (
-                <h1 className="font-display text-2xl font-black text-white flex items-center gap-2 flex-wrap">
+                <h1 className="font-display text-2xl font-black text-white flex items-center gap-2 flex-wrap wide:justify-center">
                   <span className="truncate">
                     {profile.data?.display_name ?? "Curious explorer"}
                   </span>
@@ -421,473 +421,477 @@ function ProfilePage() {
           )}
         </motion.div>
 
-        <div
-          role="tablist"
-          aria-label="Profile sections"
-          className="sticky top-2 z-20 mt-4 grid grid-cols-3 gap-1 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur"
-        >
-          {(
-            [
-              ["overview", "📊 Overview"],
-              ["trophies", "🏆 Trophies"],
-              ["history", "🕒 History"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={tab === key}
-              onClick={() => setTab(key)}
-              className={`rounded-full px-2 py-2 text-sm font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
-                tab === key ? "bg-white text-slate-900 shadow" : "text-white/75 hover:bg-white/10"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <div className="min-w-0 wide:col-start-2 wide:row-start-1">
+          <div
+            role="tablist"
+            aria-label="Profile sections"
+            className="sticky top-2 z-20 mt-4 grid grid-cols-3 gap-1 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur"
+          >
+            {(
+              [
+                ["overview", "📊 Overview"],
+                ["trophies", "🏆 Trophies"],
+                ["history", "🕒 History"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={tab === key}
+                onClick={() => setTab(key)}
+                className={`rounded-full px-2 py-2 text-sm font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+                  tab === key ? "bg-white text-slate-900 shadow" : "text-white/75 hover:bg-white/10"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-        {tab === "overview" && (
-          <>
-            {/* Stats grid */}
-            <section className="mt-4 grid grid-cols-2 gap-3">
-              <StatTile icon={<CoinIcon size={20} />} label="Y-Coins" value={s.total_points} />
-              <StatTile
-                icon={<Flame className="h-5 w-5 text-orange-400" />}
-                label="Streak"
-                value={`${s.current_streak} 🔥`}
-              />
-              <StatTile
-                icon={<Zap className="h-5 w-5 text-yellow-300" />}
-                label="Longest streak"
-                value={s.longest_streak}
-              />
-              <StatTile
-                icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />}
-                label="Facts seen"
-                value={s.facts_seen}
-              />
-            </section>
-
-            <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
-
-            <CollapsibleWrap
-              collapsed={collapsed.quiz}
-              onToggle={() => toggleCollapsed("quiz")}
-              label="Quiz stats"
-            >
-              <QuizStatsSection />
-            </CollapsibleWrap>
-
-            <CollapsibleWrap
-              collapsed={collapsed.rankings}
-              onToggle={() => toggleCollapsed("rankings")}
-              label="Your Curiosity Rankings"
-            >
-              <MyRankingsSection />
-            </CollapsibleWrap>
-
-            {/* Category interests */}
-            {interests.data && interests.data.length > 0 && (
-              <section className="mt-6">
-                <header className="mb-3 flex items-center justify-between">
-                  <h2 className="font-display text-lg font-black text-white">Your curiosity map</h2>
-                  <CollapseChevron
-                    collapsed={collapsed.interests}
-                    onToggle={() => toggleCollapsed("interests")}
-                    label="curiosity map"
-                  />
-                </header>
-                {!collapsed.interests && (
-                  <div className="flex flex-wrap gap-2">
-                    {interests.data.slice(0, 8).map((it) => (
-                      <div
-                        key={it.category}
-                        className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85"
-                      >
-                        <span>{emojiFor(it.category)}</span>
-                        <span className="capitalize">{it.category}</span>
-                        <span className="text-white/50">·{it.weight}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
-          </>
-        )}
-
-        {/* Saved chains */}
-        {tab === "history" && (
-          <section className="mt-6">
-            <header className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
-              <div className="flex items-center gap-2">
-                <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
-                  View all →
-                </Link>
-                <CollapseChevron
-                  collapsed={collapsed.chains}
-                  onToggle={() => toggleCollapsed("chains")}
-                  label="Saved chains"
+          {tab === "overview" && (
+            <>
+              {/* Stats grid */}
+              <section className="mt-4 grid grid-cols-2 gap-3">
+                <StatTile icon={<CoinIcon size={20} />} label="Y-Coins" value={s.total_points} />
+                <StatTile
+                  icon={<Flame className="h-5 w-5 text-orange-400" />}
+                  label="Streak"
+                  value={`${s.current_streak} 🔥`}
                 />
-              </div>
-            </header>
-            {!collapsed.chains &&
-              (() => {
-                const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
-                if (items.length === 0) {
-                  return (
-                    <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
-                      Save your first Why chain from the home screen.
-                    </p>
-                  );
-                }
-                return (
-                  <div className="space-y-2">
-                    {items.map((c) => (
-                      <Link
-                        key={c.id}
-                        to="/chain/$id"
-                        params={{ id: c.id }}
-                        className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2.5"
-                      >
-                        <Sparkles className="h-4 w-4 text-fuchsia-300" />
-                        <div className="flex-1 min-w-0">
-                          <div className="truncate text-sm font-bold text-white">
-                            {c.title ?? "Untitled chain"}
-                          </div>
-                          <div className="text-[10px] text-white/50">{c.step_count} steps</div>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-white/40" />
-                      </Link>
-                    ))}
-                    {chains.hasNextPage && (
-                      <button
-                        type="button"
-                        onClick={() => chains.fetchNextPage()}
-                        disabled={chains.isFetchingNextPage}
-                        className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
-                      >
-                        {chains.isFetchingNextPage ? "Loading…" : "Load more chains"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
-          </section>
-        )}
+                <StatTile
+                  icon={<Zap className="h-5 w-5 text-yellow-300" />}
+                  label="Longest streak"
+                  value={s.longest_streak}
+                />
+                <StatTile
+                  icon={<Sparkles className="h-5 w-5 text-fuchsia-300" />}
+                  label="Facts seen"
+                  value={s.facts_seen}
+                />
+              </section>
 
-        {(() => {
-          const achievementsSection = (
-            <section
-              key="achievements"
-              id="achievements"
-              aria-labelledby="achievements-heading"
-              className="mt-14 scroll-mt-24 pt-8"
-            >
-              <div
-                aria-hidden="true"
-                className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
-              />
-              <div className="mb-5 flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 text-amber-200 shadow-[0_0_20px_-6px_rgba(251,191,36,0.6)]">
-                  <Trophy className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/70">
-                    Section
-                  </p>
-                  <h2
-                    id="achievements-heading"
-                    className="font-display text-xl font-black leading-tight text-white"
-                  >
-                    Achievements
-                  </h2>
-                </div>
-                <span className="inline-flex h-7 shrink-0 items-center rounded-full border border-amber-300/25 bg-amber-400/10 px-2.5 text-xs font-black text-amber-100">
-                  {unlockedCount}/{achievements.data?.length ?? 0}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => toggleCollapsed("achievements")}
-                  data-no-chrome
-                  aria-expanded={!collapsed.achievements}
-                  aria-controls="achievements-body"
-                  aria-label={
-                    collapsed.achievements ? "Expand Achievements" : "Collapse Achievements"
-                  }
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                >
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform ${collapsed.achievements ? "-rotate-90" : ""}`}
-                    aria-hidden="true"
-                  />
-                </button>
-              </div>
-              {!collapsed.achievements && (
-                <div id="achievements-body" className="space-y-6">
-                  <LevelProgressWidget xp={localPoints} milestones={widgetMilestones} />
+              <StreakBadges currentStreak={s.current_streak} longestStreak={s.longest_streak} />
 
-                  {/* Server achievements: loading → skeleton, empty → empty state, else grid */}
-                  {achievements.isLoading && !achievements.data ? (
-                    <div className="grid grid-cols-3 gap-3" aria-busy="true" aria-live="polite">
-                      {Array.from({ length: 6 }).map((_, i) => (
+              <CollapsibleWrap
+                collapsed={collapsed.quiz}
+                onToggle={() => toggleCollapsed("quiz")}
+                label="Quiz stats"
+              >
+                <QuizStatsSection />
+              </CollapsibleWrap>
+
+              <CollapsibleWrap
+                collapsed={collapsed.rankings}
+                onToggle={() => toggleCollapsed("rankings")}
+                label="Your Curiosity Rankings"
+              >
+                <MyRankingsSection />
+              </CollapsibleWrap>
+
+              {/* Category interests */}
+              {interests.data && interests.data.length > 0 && (
+                <section className="mt-6">
+                  <header className="mb-3 flex items-center justify-between">
+                    <h2 className="font-display text-lg font-black text-white">
+                      Your curiosity map
+                    </h2>
+                    <CollapseChevron
+                      collapsed={collapsed.interests}
+                      onToggle={() => toggleCollapsed("interests")}
+                      label="curiosity map"
+                    />
+                  </header>
+                  {!collapsed.interests && (
+                    <div className="flex flex-wrap gap-2">
+                      {interests.data.slice(0, 8).map((it) => (
                         <div
-                          key={i}
-                          className="h-[104px] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
-                        />
-                      ))}
-                      <span className="sr-only">Loading achievements…</span>
-                    </div>
-                  ) : (achievements.data ?? []).length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
-                      <div className="text-3xl">🏆</div>
-                      <p className="mt-2 text-sm font-black text-white">No achievements yet</p>
-                      <p className="mt-1 text-xs text-white/60">
-                        Discover facts, keep a streak going, or take a quiz to start unlocking
-                        trophies.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-3">
-                      {(achievements.data ?? []).map((a) => (
-                        <AchievementTile
-                          key={a.id}
-                          a={a}
-                          onSelect={() =>
-                            setSelectedBadge({
-                              id: `achievement:${a.id}`,
-                              label: a.name,
-                              emoji: a.emoji,
-                              unlocked: !!a.unlocked_at,
-                              description: a.description,
-                              unlockedAt: a.unlocked_at,
-                            })
-                          }
-                        />
+                          key={it.category}
+                          className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/85"
+                        >
+                          <span>{emojiFor(it.category)}</span>
+                          <span className="capitalize">{it.category}</span>
+                          <span className="text-white/50">·{it.weight}</span>
+                        </div>
                       ))}
                     </div>
                   )}
+                </section>
+              )}
+            </>
+          )}
 
-                  {/* Explorer badges: loading skeleton until localStorage read, then grid or empty state */}
-                  {!localHydrated ? (
-                    <div>
-                      <div className="mb-3 h-3 w-40 animate-pulse rounded bg-white/10" />
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy="true">
+          {/* Saved chains */}
+          {tab === "history" && (
+            <section className="mt-6">
+              <header className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
+                <div className="flex items-center gap-2">
+                  <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
+                    View all →
+                  </Link>
+                  <CollapseChevron
+                    collapsed={collapsed.chains}
+                    onToggle={() => toggleCollapsed("chains")}
+                    label="Saved chains"
+                  />
+                </div>
+              </header>
+              {!collapsed.chains &&
+                (() => {
+                  const items = chains.data?.pages.flatMap((p) => p.items) ?? [];
+                  if (items.length === 0) {
+                    return (
+                      <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+                        Save your first Why chain from the home screen.
+                      </p>
+                    );
+                  }
+                  return (
+                    <div className="space-y-2">
+                      {items.map((c) => (
+                        <Link
+                          key={c.id}
+                          to="/chain/$id"
+                          params={{ id: c.id }}
+                          className="glass flex items-center gap-3 rounded-2xl border border-white/10 px-3 py-2.5"
+                        >
+                          <Sparkles className="h-4 w-4 text-fuchsia-300" />
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate text-sm font-bold text-white">
+                              {c.title ?? "Untitled chain"}
+                            </div>
+                            <div className="text-[10px] text-white/50">{c.step_count} steps</div>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-white/40" />
+                        </Link>
+                      ))}
+                      {chains.hasNextPage && (
+                        <button
+                          type="button"
+                          onClick={() => chains.fetchNextPage()}
+                          disabled={chains.isFetchingNextPage}
+                          className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
+                        >
+                          {chains.isFetchingNextPage ? "Loading…" : "Load more chains"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
+            </section>
+          )}
+
+          {(() => {
+            const achievementsSection = (
+              <section
+                key="achievements"
+                id="achievements"
+                aria-labelledby="achievements-heading"
+                className="mt-14 scroll-mt-24 pt-8"
+              >
+                <div
+                  aria-hidden="true"
+                  className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
+                />
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 text-amber-200 shadow-[0_0_20px_-6px_rgba(251,191,36,0.6)]">
+                    <Trophy className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200/70">
+                      Section
+                    </p>
+                    <h2
+                      id="achievements-heading"
+                      className="font-display text-xl font-black leading-tight text-white"
+                    >
+                      Achievements
+                    </h2>
+                  </div>
+                  <span className="inline-flex h-7 shrink-0 items-center rounded-full border border-amber-300/25 bg-amber-400/10 px-2.5 text-xs font-black text-amber-100">
+                    {unlockedCount}/{achievements.data?.length ?? 0}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapsed("achievements")}
+                    data-no-chrome
+                    aria-expanded={!collapsed.achievements}
+                    aria-controls="achievements-body"
+                    aria-label={
+                      collapsed.achievements ? "Expand Achievements" : "Collapse Achievements"
+                    }
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                  >
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${collapsed.achievements ? "-rotate-90" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+                {!collapsed.achievements && (
+                  <div id="achievements-body" className="space-y-6">
+                    <LevelProgressWidget xp={localPoints} milestones={widgetMilestones} />
+
+                    {/* Server achievements: loading → skeleton, empty → empty state, else grid */}
+                    {achievements.isLoading && !achievements.data ? (
+                      <div className="grid grid-cols-3 gap-3" aria-busy="true" aria-live="polite">
                         {Array.from({ length: 6 }).map((_, i) => (
                           <div
                             key={i}
-                            className="h-[132px] animate-pulse rounded-3xl border border-white/10 bg-white/[0.04]"
+                            className="h-[104px] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]"
+                          />
+                        ))}
+                        <span className="sr-only">Loading achievements…</span>
+                      </div>
+                    ) : (achievements.data ?? []).length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
+                        <div className="text-3xl">🏆</div>
+                        <p className="mt-2 text-sm font-black text-white">No achievements yet</p>
+                        <p className="mt-1 text-xs text-white/60">
+                          Discover facts, keep a streak going, or take a quiz to start unlocking
+                          trophies.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-3">
+                        {(achievements.data ?? []).map((a) => (
+                          <AchievementTile
+                            key={a.id}
+                            a={a}
+                            onSelect={() =>
+                              setSelectedBadge({
+                                id: `achievement:${a.id}`,
+                                label: a.name,
+                                emoji: a.emoji,
+                                unlocked: !!a.unlocked_at,
+                                description: a.description,
+                                unlockedAt: a.unlocked_at,
+                              })
+                            }
                           />
                         ))}
                       </div>
-                    </div>
-                  ) : localBadges.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
-                      <div className="text-3xl">✨</div>
-                      <p className="mt-2 text-sm font-black text-white">
-                        Explorer badges appear here
-                      </p>
-                      <p className="mt-1 text-xs text-white/60">
-                        Explore facts on the home screen to earn your first explorer badge.
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="mb-3 text-xs text-white/60">
-                        Explorer badges · unlocked{" "}
-                        <span className="font-black text-white">{localUnlocked}</span> of{" "}
-                        {localBadges.length}
-                        <span className="ml-2 text-white/40">· tap for details</span>
-                      </p>
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                        {localBadges.map((b, i) => (
-                          <motion.button
-                            type="button"
-                            onClick={() =>
-                              setSelectedBadge({
-                                id: b.id,
-                                label: b.label,
-                                emoji: b.emoji,
-                                unlocked: b.unlocked,
-                                progress: localProgressFor(b.id),
-                              })
-                            }
-                            key={b.id}
-                            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            whileHover={{ scale: b.unlocked ? 1.05 : 1.02 }}
-                            whileTap={{ scale: 0.96 }}
-                            transition={{ delay: Math.min(i, 12) * 0.03 }}
-                            aria-label={`${b.label} — ${b.unlocked ? "unlocked" : "locked"}. View details`}
-                            className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60 ${
-                              b.unlocked ? "" : "opacity-50 grayscale hover:opacity-80"
-                            }`}
-                          >
-                            {b.unlocked && (
-                              <motion.span
-                                aria-hidden
-                                className="absolute inset-0 rounded-3xl"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: [0, 0.4, 0] }}
-                                transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.15 }}
-                                style={{ boxShadow: "0 0 30px 4px rgba(168,85,247,0.35) inset" }}
-                              />
-                            )}
+                    )}
+
+                    {/* Explorer badges: loading skeleton until localStorage read, then grid or empty state */}
+                    {!localHydrated ? (
+                      <div>
+                        <div className="mb-3 h-3 w-40 animate-pulse rounded bg-white/10" />
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy="true">
+                          {Array.from({ length: 6 }).map((_, i) => (
                             <div
-                              className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-lg"
-                              style={{
-                                background: b.unlocked
-                                  ? "var(--gradient-primary)"
-                                  : "oklch(0.25 0.02 285)",
-                              }}
-                            >
-                              {b.emoji}
-                            </div>
-                            <p className="text-sm font-black text-white">{b.label}</p>
-                            <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
-                              {b.unlocked ? "Unlocked" : "Locked"}
-                            </p>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          );
-
-          const discoveriesSection = (
-            <section
-              key="recent-discoveries"
-              id="recent-discoveries"
-              aria-labelledby="recent-discoveries-heading"
-              className="mt-14 scroll-mt-24 pt-8"
-            >
-              <div
-                aria-hidden="true"
-                className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-sky-300/40 to-transparent"
-              />
-              <div className="mb-5 flex items-center gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-sky-300/30 bg-sky-400/15 text-sky-200 shadow-[0_0_20px_-6px_rgba(56,189,248,0.55)]">
-                  <Clock className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200/70">
-                    Section
-                  </p>
-                  <h2
-                    id="recent-discoveries-heading"
-                    className="font-display text-xl font-black leading-tight text-white"
-                  >
-                    Recent discoveries
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toggleCollapsed("discoveries")}
-                  data-no-chrome
-                  aria-expanded={!collapsed.discoveries}
-                  aria-controls="recent-discoveries-body"
-                  aria-label={
-                    collapsed.discoveries
-                      ? "Expand Recent discoveries"
-                      : "Collapse Recent discoveries"
-                  }
-                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                >
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform ${collapsed.discoveries ? "-rotate-90" : ""}`}
-                    aria-hidden="true"
-                  />
-                </button>
-              </div>
-              {!collapsed.discoveries && (
-                <div id="recent-discoveries-body">
-                  {(() => {
-                    const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
-                    if (entries.length === 0) {
-                      return (
-                        <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
-                          Every fact you reveal shows up here.
-                        </p>
-                      );
-                    }
-                    return (
-                      <>
-                        <ol className="space-y-2">
-                          {entries.map((entry, i) => (
-                            <motion.li
-                              key={`${entry.fact.id}-${i}`}
-                              initial={{ opacity: 0, x: -4 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: Math.min(i, 10) * 0.02 }}
-                              className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                            >
-                              <span className="mt-0.5 text-base">
-                                {emojiFor(entry.fact.category)}
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <div className="truncate text-sm text-white/90">
-                                  {entry.fact.question}
-                                </div>
-                                <div className="text-[10px] text-white/40">
-                                  {new Date(entry.seen_at).toLocaleDateString(undefined, {
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
-                                </div>
-                              </div>
-                            </motion.li>
+                              key={i}
+                              className="h-[132px] animate-pulse rounded-3xl border border-white/10 bg-white/[0.04]"
+                            />
                           ))}
-                        </ol>
-                        {timeline.hasNextPage && (
-                          <button
-                            type="button"
-                            onClick={() => timeline.fetchNextPage()}
-                            disabled={timeline.isFetchingNextPage}
-                            className="mt-3 w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
-                          >
-                            {timeline.isFetchingNextPage ? "Loading…" : "Load more history"}
-                          </button>
-                        )}
-                      </>
-                    );
-                  })()}
+                        </div>
+                      </div>
+                    ) : localBadges.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
+                        <div className="text-3xl">✨</div>
+                        <p className="mt-2 text-sm font-black text-white">
+                          Explorer badges appear here
+                        </p>
+                        <p className="mt-1 text-xs text-white/60">
+                          Explore facts on the home screen to earn your first explorer badge.
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="mb-3 text-xs text-white/60">
+                          Explorer badges · unlocked{" "}
+                          <span className="font-black text-white">{localUnlocked}</span> of{" "}
+                          {localBadges.length}
+                          <span className="ml-2 text-white/40">· tap for details</span>
+                        </p>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                          {localBadges.map((b, i) => (
+                            <motion.button
+                              type="button"
+                              onClick={() =>
+                                setSelectedBadge({
+                                  id: b.id,
+                                  label: b.label,
+                                  emoji: b.emoji,
+                                  unlocked: b.unlocked,
+                                  progress: localProgressFor(b.id),
+                                })
+                              }
+                              key={b.id}
+                              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              whileHover={{ scale: b.unlocked ? 1.05 : 1.02 }}
+                              whileTap={{ scale: 0.96 }}
+                              transition={{ delay: Math.min(i, 12) * 0.03 }}
+                              aria-label={`${b.label} — ${b.unlocked ? "unlocked" : "locked"}. View details`}
+                              className={`glass relative flex flex-col items-center gap-2 rounded-3xl p-5 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/60 ${
+                                b.unlocked ? "" : "opacity-50 grayscale hover:opacity-80"
+                              }`}
+                            >
+                              {b.unlocked && (
+                                <motion.span
+                                  aria-hidden
+                                  className="absolute inset-0 rounded-3xl"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: [0, 0.4, 0] }}
+                                  transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.15 }}
+                                  style={{ boxShadow: "0 0 30px 4px rgba(168,85,247,0.35) inset" }}
+                                />
+                              )}
+                              <div
+                                className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl shadow-lg"
+                                style={{
+                                  background: b.unlocked
+                                    ? "var(--gradient-primary)"
+                                    : "oklch(0.25 0.02 285)",
+                                }}
+                              >
+                                {b.emoji}
+                              </div>
+                              <p className="text-sm font-black text-white">{b.label}</p>
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                                {b.unlocked ? "Unlocked" : "Locked"}
+                              </p>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            );
+
+            const discoveriesSection = (
+              <section
+                key="recent-discoveries"
+                id="recent-discoveries"
+                aria-labelledby="recent-discoveries-heading"
+                className="mt-14 scroll-mt-24 pt-8"
+              >
+                <div
+                  aria-hidden="true"
+                  className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-sky-300/40 to-transparent"
+                />
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-sky-300/30 bg-sky-400/15 text-sky-200 shadow-[0_0_20px_-6px_rgba(56,189,248,0.55)]">
+                    <Clock className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200/70">
+                      Section
+                    </p>
+                    <h2
+                      id="recent-discoveries-heading"
+                      className="font-display text-xl font-black leading-tight text-white"
+                    >
+                      Recent discoveries
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapsed("discoveries")}
+                    data-no-chrome
+                    aria-expanded={!collapsed.discoveries}
+                    aria-controls="recent-discoveries-body"
+                    aria-label={
+                      collapsed.discoveries
+                        ? "Expand Recent discoveries"
+                        : "Collapse Recent discoveries"
+                    }
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                  >
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition-transform ${collapsed.discoveries ? "-rotate-90" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
                 </div>
-              )}
-            </section>
-          );
+                {!collapsed.discoveries && (
+                  <div id="recent-discoveries-body">
+                    {(() => {
+                      const entries = timeline.data?.pages.flatMap((p) => p.items) ?? [];
+                      if (entries.length === 0) {
+                        return (
+                          <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
+                            Every fact you reveal shows up here.
+                          </p>
+                        );
+                      }
+                      return (
+                        <>
+                          <ol className="space-y-2">
+                            {entries.map((entry, i) => (
+                              <motion.li
+                                key={`${entry.fact.id}-${i}`}
+                                initial={{ opacity: 0, x: -4 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: Math.min(i, 10) * 0.02 }}
+                                className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                              >
+                                <span className="mt-0.5 text-base">
+                                  {emojiFor(entry.fact.category)}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate text-sm text-white/90">
+                                    {entry.fact.question}
+                                  </div>
+                                  <div className="text-[10px] text-white/40">
+                                    {new Date(entry.seen_at).toLocaleDateString(undefined, {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </div>
+                                </div>
+                              </motion.li>
+                            ))}
+                          </ol>
+                          {timeline.hasNextPage && (
+                            <button
+                              type="button"
+                              onClick={() => timeline.fetchNextPage()}
+                              disabled={timeline.isFetchingNextPage}
+                              className="mt-3 w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
+                            >
+                              {timeline.isFetchingNextPage ? "Loading…" : "Load more history"}
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+              </section>
+            );
 
-          void sectionOrder;
-          return tab === "trophies"
-            ? achievementsSection
-            : tab === "history"
-              ? discoveriesSection
-              : null;
-        })()}
+            void sectionOrder;
+            return tab === "trophies"
+              ? achievementsSection
+              : tab === "history"
+                ? discoveriesSection
+                : null;
+          })()}
 
-        <div className="mt-8 flex flex-wrap gap-2">
-          <Link
-            to="/settings"
-            className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-center text-sm font-bold text-white/90"
-          >
-            Settings
-          </Link>
-          <button
-            type="button"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              qc.clear();
-              navigate({ to: "/" });
-            }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-bold text-rose-200"
-          >
-            <LogOut className="h-4 w-4" /> Sign out
-          </button>
+          <div className="mt-8 flex flex-wrap gap-2">
+            <Link
+              to="/settings"
+              className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-center text-sm font-bold text-white/90"
+            >
+              Settings
+            </Link>
+            <button
+              type="button"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                qc.clear();
+                navigate({ to: "/" });
+              }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-full border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-sm font-bold text-rose-200"
+            >
+              <LogOut className="h-4 w-4" /> Sign out
+            </button>
+          </div>
         </div>
       </div>
       <ConfettiBurst trigger={confettiTrigger} />
