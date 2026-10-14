@@ -3,6 +3,15 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* Phones turned sideways: very little height, so bars and pop-ups shrink. */
+@custom-variant short (@media (orientation: landscape) and (max-height: 520px));
+/* Wide layouts: laptops, desktops, iPads in landscape, and phones turned
+   sideways. The bottom bar becomes a side rail and pages use two columns. */
+@custom-variant wide {
+  @media (min-width: 1024px), (orientation: landscape) and (max-height: 520px) {
+    @slot;
+  }
+}
 
 /*
  * WHY? — Design System
@@ -914,4 +923,58 @@ body.edit-mode-danger::before {
 .adult-button {
   background: linear-gradient(90deg, var(--adult-red), var(--adult-blue));
   color: #fff;
+}
+
+/* ── Landscape: any orientation, following the device's auto-rotate ── */
+/* Keep content clear of the notch and rounded corners when a phone is sideways. */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+/* Fixed bars span the full width, so they pad themselves. */
+.safe-x {
+  padding-left: max(0.75rem, env(safe-area-inset-left));
+  padding-right: max(0.75rem, env(safe-area-inset-right));
+}
+/* Full-screen pop-ups: on a short (sideways) screen let them scroll instead of
+   cutting off their top and bottom; they still sit in the middle when they fit. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .overlay-scroll {
+    overflow-y: auto;
+    align-items: flex-start;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .overlay-scroll > * {
+    margin-block: auto;
+  }
+}
+
+/* ── Side rail (wide layouts) ──
+   Pages that show the main navigation make room for the rail on the left. */
+:root {
+  --rail-w: 0px;
+}
+@media (min-width: 1024px), (orientation: landscape) and (max-height: 520px) {
+  body:has([data-side-rail]) {
+    --rail-w: calc(5.5rem + env(safe-area-inset-left));
+  }
+  #main:has([data-side-rail]) {
+    padding-left: var(--rail-w);
+  }
+}
+@media (min-width: 1280px) {
+  body:has([data-side-rail]) {
+    --rail-w: 15rem;
+  }
+}
+
+/* In side columns on wide screens, cards use their own heading sizes rather
+   than the global fluid h1/h2/h3 sizes (which grow with the window width). */
+@media (min-width: 1024px), (orientation: landscape) and (max-height: 520px) {
+  .own-heading-sizes :is(h1, h2, h3) {
+    font-size: revert-layer;
+    line-height: revert-layer;
+    letter-spacing: revert-layer;
+  }
 }

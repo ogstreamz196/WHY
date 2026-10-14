@@ -77,7 +77,7 @@ export function AdultModeSwitch({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/85 px-4 backdrop-blur-md"
+            className="overlay-scroll fixed inset-0 z-[90] flex items-center justify-center bg-black/85 px-4 backdrop-blur-md"
             role="dialog"
             aria-modal="true"
             aria-labelledby="adult-confirm-title"

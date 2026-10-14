@@ -137,3 +137,4 @@ To regenerate every size, run `npm run assets` in this folder. The new icon only
 - To regenerate icons and splash screens after changing anything in `assets/`, run `npm run assets`.
 - `android/app/build.gradle` reads `WHY_VERSION_CODE`, `WHY_VERSION_NAME` and the `WHY_KEYSTORE_*` variables from the environment. CI sets them.
 - Android targets API level 36 and iOS 15+. The only Android permission is internet access.
+- **Rotation:** the apps follow the phone's auto-rotate setting. Android sets no orientation lock (so rotation lock in quick settings is respected), and iOS allows portrait and both landscapes (iPad also upside-down). The website adapts sideways screens with the `short:` style in `src/styles.css`.

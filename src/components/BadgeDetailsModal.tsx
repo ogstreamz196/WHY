@@ -265,7 +265,7 @@ export function BadgeDetailsModal({ badge, onClose }: Props) {
           aria-modal="true"
           aria-labelledby="badge-details-title"
           aria-describedby="badge-details-requirement"
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 backdrop-blur-md sm:items-center"
+          className="overlay-scroll fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 backdrop-blur-md sm:items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

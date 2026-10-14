@@ -247,9 +247,9 @@ function ArenaPage() {
   const leaderScore = result?.entries?.[0]?.score ?? 0;
 
   return (
-    <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28">
+    <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28 wide:pb-8">
       <CosmicBackground />
-      <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+      <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 wide:max-w-6xl lg:px-8 2xl:max-w-7xl">
         <header className="mb-4 flex items-center gap-2">
           <Link
             to="/"
@@ -432,165 +432,172 @@ function ArenaPage() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="arena-active"
+            className="arena-active wide:grid wide:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] wide:items-start wide:gap-8"
           >
-            {/* Podium — top 3 */}
-            {result.entries.length >= 1 && (
-              <Podium
-                entries={result.entries.slice(0, 3)}
-                unit={tab === "streaks" ? "days" : "pts"}
-                meId={user?.id}
-                onOpen={(userId, rank) => setSelected({ userId, rank })}
-              />
-            )}
-            <ol className="space-y-2">
-              <AnimatePresence initial={false}>
-                {result.entries.slice(3).map((r) => {
-                  const me = r.user_id === user?.id;
-                  const pct =
-                    leaderScore > 0 ? Math.max(4, Math.min(100, (r.score / leaderScore) * 100)) : 0;
-                  const barGradient = me
-                    ? "var(--gradient-primary)"
-                    : "linear-gradient(90deg,rgba(255,255,255,0.35),rgba(255,255,255,0.1))";
-                  const totalUsers = result.total_users || result.entries.length;
-                  const topPct = Math.max(1, Math.ceil((r.rank / totalUsers) * 100));
-                  const honor = honorFor(r.rank, topPct);
-                  return (
-                    <motion.li
-                      key={r.user_id}
-                      layout
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ type: "spring", stiffness: 320, damping: 26 }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
-                        aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
-                        className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left ${INTERACTIVE_PLAYER} ${
-                          me
-                            ? "border-fuchsia-300/60 bg-fuchsia-500/15 shadow-[0_0_28px_rgba(217,70,239,0.28)] ring-2 ring-fuchsia-300/40"
-                            : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
-                        }`}
+            {/* Wide screens: the podium stays in view beside the list. */}
+            <div className="wide:sticky wide:top-4">
+              {/* Podium — top 3 */}
+              {result.entries.length >= 1 && (
+                <Podium
+                  entries={result.entries.slice(0, 3)}
+                  unit={tab === "streaks" ? "days" : "pts"}
+                  meId={user?.id}
+                  onOpen={(userId, rank) => setSelected({ userId, rank })}
+                />
+              )}
+            </div>
+            <div className="min-w-0">
+              <ol className="space-y-2">
+                <AnimatePresence initial={false}>
+                  {result.entries.slice(3).map((r) => {
+                    const me = r.user_id === user?.id;
+                    const pct =
+                      leaderScore > 0
+                        ? Math.max(4, Math.min(100, (r.score / leaderScore) * 100))
+                        : 0;
+                    const barGradient = me
+                      ? "var(--gradient-primary)"
+                      : "linear-gradient(90deg,rgba(255,255,255,0.35),rgba(255,255,255,0.1))";
+                    const totalUsers = result.total_users || result.entries.length;
+                    const topPct = Math.max(1, Math.ceil((r.rank / totalUsers) * 100));
+                    const honor = honorFor(r.rank, topPct);
+                    return (
+                      <motion.li
+                        key={r.user_id}
+                        layout
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ type: "spring", stiffness: 320, damping: 26 }}
                       >
-                        {me && (
-                          <motion.span
-                            aria-hidden
-                            className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-fuchsia-300/60"
-                            animate={{ opacity: [0.35, 0.9, 0.35] }}
-                            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                          />
-                        )}
-                        <div className="relative flex w-14 shrink-0 flex-col items-center gap-0.5">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}
-                          >
-                            {honor.label}
-                          </span>
-                          <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
-                        </div>
-                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-                          {r.avatar_id ? (
-                            <AvatarFigure
-                              avatarId={r.avatar_id}
-                              outfit={r.avatar_outfit}
-                              className="text-[1.6rem]"
-                              still={!me}
+                        <button
+                          type="button"
+                          onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
+                          aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
+                          className={`group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left ${INTERACTIVE_PLAYER} ${
+                            me
+                              ? "border-fuchsia-300/60 bg-fuchsia-500/15 shadow-[0_0_28px_rgba(217,70,239,0.28)] ring-2 ring-fuchsia-300/40"
+                              : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]"
+                          }`}
+                        >
+                          {me && (
+                            <motion.span
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-fuchsia-300/60"
+                              animate={{ opacity: [0.35, 0.9, 0.35] }}
+                              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
                             />
-                          ) : (
-                            <span className="text-sm font-black text-white/80">
-                              {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
-                            </span>
                           )}
-                        </div>
-                        <div className="relative min-w-0 flex-1">
-                          <p className="truncate text-sm font-black text-white">
+                          <div className="relative flex w-14 shrink-0 flex-col items-center gap-0.5">
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${honor.tone}`}
+                            >
+                              {honor.label}
+                            </span>
+                            <span className="text-[10px] font-black text-white/40">#{r.rank}</span>
+                          </div>
+                          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                            {r.avatar_id ? (
+                              <AvatarFigure
+                                avatarId={r.avatar_id}
+                                outfit={r.avatar_outfit}
+                                className="text-[1.6rem]"
+                                still={!me}
+                              />
+                            ) : (
+                              <span className="text-sm font-black text-white/80">
+                                {(r.display_name || r.username || "E").slice(0, 1).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="relative min-w-0 flex-1">
+                            <p className="truncate text-sm font-black text-white">
+                              {r.display_name || r.username || "Explorer"}
+                              {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
+                              {me && (
+                                <span className="ml-1 text-[10px] font-black text-fuchsia-100">
+                                  YOU
+                                </span>
+                              )}
+                            </p>
+                            <p className="truncate text-[11px] text-white/60">{honor.cheer}</p>
+                            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                                className="h-full rounded-full"
+                                style={{ background: barGradient }}
+                              />
+                            </div>
+                          </div>
+                          <div className="relative text-right">
+                            <p className="text-lg font-black text-white">
+                              {r.score.toLocaleString()}
+                            </p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
+                              {tab === "streaks" ? "days" : "pts"}
+                            </p>
+                          </div>
+                        </button>
+                      </motion.li>
+                    );
+                  })}
+                </AnimatePresence>
+              </ol>
+
+              {/* The viewer's neighbourhood when they're outside the top list */}
+              {result.nearby && result.nearby.length > 0 && (
+                <section className="mt-5" aria-label="Players around you">
+                  <p className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/50">
+                    <span className="h-px flex-1 bg-white/10" />
+                    Around you
+                    <span className="h-px flex-1 bg-white/10" />
+                  </p>
+                  <ol className="space-y-1.5">
+                    {result.nearby.map((r) => (
+                      <li key={r.user_id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
+                          aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
+                          className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left ${INTERACTIVE_PLAYER} ${
+                            r.is_me
+                              ? "border-fuchsia-300/60 bg-fuchsia-500/15 ring-2 ring-fuchsia-300/40"
+                              : "border-white/10 bg-white/[0.04]"
+                          }`}
+                        >
+                          <span className="w-12 shrink-0 text-xs font-black text-white/60">
+                            #{r.rank.toLocaleString()}
+                          </span>
+                          <AvatarFigure
+                            avatarId={r.avatar_id}
+                            outfit={r.avatar_outfit}
+                            className="text-xl"
+                            still
+                          />
+                          <span className="min-w-0 flex-1 truncate text-sm font-black text-white">
                             {r.display_name || r.username || "Explorer"}
                             {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
-                            {me && (
+                            {r.is_me && (
                               <span className="ml-1 text-[10px] font-black text-fuchsia-100">
                                 YOU
                               </span>
                             )}
-                          </p>
-                          <p className="truncate text-[11px] text-white/60">{honor.cheer}</p>
-                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${pct}%` }}
-                              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                              className="h-full rounded-full"
-                              style={{ background: barGradient }}
-                            />
-                          </div>
-                        </div>
-                        <div className="relative text-right">
-                          <p className="text-lg font-black text-white">
-                            {r.score.toLocaleString()}
-                          </p>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-white/40">
-                            {tab === "streaks" ? "days" : "pts"}
-                          </p>
-                        </div>
-                      </button>
-                    </motion.li>
-                  );
-                })}
-              </AnimatePresence>
-            </ol>
-
-            {/* The viewer's neighbourhood when they're outside the top list */}
-            {result.nearby && result.nearby.length > 0 && (
-              <section className="mt-5" aria-label="Players around you">
-                <p className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/50">
-                  <span className="h-px flex-1 bg-white/10" />
-                  Around you
-                  <span className="h-px flex-1 bg-white/10" />
-                </p>
-                <ol className="space-y-1.5">
-                  {result.nearby.map((r) => (
-                    <li key={r.user_id}>
-                      <button
-                        type="button"
-                        onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
-                        aria-label={`View ${r.display_name || r.username || "Explorer"}'s profile, rank ${r.rank}`}
-                        className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left ${INTERACTIVE_PLAYER} ${
-                          r.is_me
-                            ? "border-fuchsia-300/60 bg-fuchsia-500/15 ring-2 ring-fuchsia-300/40"
-                            : "border-white/10 bg-white/[0.04]"
-                        }`}
-                      >
-                        <span className="w-12 shrink-0 text-xs font-black text-white/60">
-                          #{r.rank.toLocaleString()}
-                        </span>
-                        <AvatarFigure
-                          avatarId={r.avatar_id}
-                          outfit={r.avatar_outfit}
-                          className="text-xl"
-                          still
-                        />
-                        <span className="min-w-0 flex-1 truncate text-sm font-black text-white">
-                          {r.display_name || r.username || "Explorer"}
-                          {r.is_vip && <VipBadge size="xs" className="ml-1.5" />}
-                          {r.is_me && (
-                            <span className="ml-1 text-[10px] font-black text-fuchsia-100">
-                              YOU
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-sm font-black text-white">
-                          {r.score.toLocaleString()}
-                          <span className="ml-1 text-[9px] uppercase tracking-widest text-white/40">
-                            {tab === "streaks" ? "days" : "pts"}
                           </span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
+                          <span className="text-sm font-black text-white">
+                            {r.score.toLocaleString()}
+                            <span className="ml-1 text-[9px] uppercase tracking-widest text-white/40">
+                              {tab === "streaks" ? "days" : "pts"}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+            </div>
           </motion.div>
         )}
       </div>
@@ -608,7 +615,7 @@ function ArenaPage() {
         {celebrate && (
           <motion.div
             key="rankup"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm"
+            className="overlay-scroll fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

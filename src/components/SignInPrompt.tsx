@@ -17,7 +17,7 @@ export function SignInPrompt({ open, onClose, title, message }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
+          className="overlay-scroll fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
           onClick={onClose}
         >
           <motion.div
