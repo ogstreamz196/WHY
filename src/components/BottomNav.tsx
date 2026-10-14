@@ -61,11 +61,11 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]"
+      className="safe-x fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="mx-auto max-w-2xl px-3 pb-3">
+      <div className="mx-auto max-w-2xl pb-3 short:pb-1.5">
         <div
-          className={`glass-strong flex items-center justify-around rounded-3xl px-2 py-2 shadow-[var(--shadow-card)] ${editMode ? "ring-2 ring-red-400/70" : ""}`}
+          className={`glass-strong flex items-center justify-around rounded-3xl px-2 py-2 shadow-[var(--shadow-card)] short:rounded-2xl short:py-1 ${editMode ? "ring-2 ring-red-400/70" : ""}`}
         >
           {ordered.map(({ to, label, icon }, idx) => {
             const Icon = ICONS[icon];
@@ -76,7 +76,7 @@ export function BottomNav() {
                   to={to === "/" ? (adultOn ? "/adult" : "/home") : to}
                   activeOptions={{ exact: to === "/" }}
                   activeProps={{ "data-active": "true" } as never}
-                  className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 text-[var(--muted-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:text-white active:scale-90 data-[active=true]:text-foreground"
+                  className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 short:flex-row short:gap-1.5 short:py-1 text-[var(--muted-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:text-white active:scale-90 data-[active=true]:text-foreground"
                 >
                   <span
                     aria-hidden

@@ -88,15 +88,20 @@ export function InstallAppBanner() {
     <div
       role="region"
       aria-label="Add the Why? shortcut"
-      className="fixed inset-x-0 z-50 px-3"
-      style={{ bottom: "calc(6rem + env(safe-area-inset-bottom))" }}
+      className="safe-x fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-50 short:bottom-[calc(3.5rem+env(safe-area-inset-bottom))]"
     >
-      <div className="glass-strong mx-auto flex max-w-2xl flex-col gap-2 rounded-3xl p-3 shadow-[var(--shadow-card)]">
+      <div className="glass-strong mx-auto flex max-w-2xl flex-col gap-2 rounded-3xl p-3 shadow-[var(--shadow-card)] short:rounded-2xl short:py-1.5">
         <div className="flex items-center gap-3">
-          <img src="/icon-192.png" alt="" className="h-11 w-11 shrink-0 rounded-2xl" />
+          <img
+            src="/icon-192.png"
+            alt=""
+            className="h-11 w-11 shrink-0 rounded-2xl short:h-8 short:w-8"
+          />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-foreground">Add the Why? shortcut</p>
-            <p className="text-xs text-muted-foreground">One tap from your home screen. Free!</p>
+            <p className="text-xs text-muted-foreground short:hidden">
+              One tap from your home screen. Free!
+            </p>
           </div>
           <button
             type="button"

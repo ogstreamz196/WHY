@@ -85,7 +85,7 @@ export function RewardReveal({ prize, title, onClose, onWear, avatar }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 px-4 backdrop-blur-md"
+          className="overlay-scroll fixed inset-0 z-[80] flex items-center justify-center bg-black/75 px-4 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-label={title}
@@ -100,7 +100,7 @@ export function RewardReveal({ prize, title, onClose, onWear, avatar }: Props) {
               {title}
             </p>
 
-            <div className="relative mt-4 flex h-64 w-64 items-center justify-center">
+            <div className="relative mt-4 flex h-64 w-64 items-center justify-center short:mt-1 short:h-44 short:w-44">
               {/* Light rays behind the prize */}
               {stage === "open" && (
                 <motion.div

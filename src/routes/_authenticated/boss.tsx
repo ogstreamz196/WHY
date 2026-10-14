@@ -582,7 +582,7 @@ function AuditDetailDrawer({ entry, onClose }: { entry: AuditRow | null; onClose
   const next = d.next;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
+      className="overlay-scroll fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"

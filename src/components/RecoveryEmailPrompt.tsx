@@ -64,7 +64,7 @@ export function RecoveryEmailPrompt() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="recovery-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+      className="overlay-scroll fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
     >
       <form
         onSubmit={save}
