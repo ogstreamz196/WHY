@@ -7,7 +7,7 @@
 The 18+ switch appears only when all of these are true:
 
 1. **Website only.** It never appears in the Android or iPhone apps. The page shows "Page not found" there, and every 18+ server function refuses requests that carry the app's `WhyNativeApp` marker. The apps need no change and no new release.
-2. **Signed in, with a saved birthday of 18 or over.** The birth month and year are saved privately when someone signs up. Accounts made before this change, or with Google or Apple, are asked once in Settings with a neutral "Your birthday" question that doesn't mention 18+. The birthday is stored in the account's `app_metadata`, which only the server can write, and it can't be changed later, so a child can't edit their age to get in.
+2. **Signed in, with a saved birthday of 18 or over.** The birth month and year are saved privately when someone signs up. Accounts made before this change, or with Google or Apple, are asked when they next open the website: a neutral "When were you born?" prompt that asks them to be accurate and doesn't mention 18+ (`src/components/BirthdayPrompt.tsx`; "Not now" waits until their next visit). They can also add it in Settings. The prompt never appears in the apps. The birthday is stored in the account's `app_metadata`, which only the server can write, and it can't be changed later, so a child can't edit their age to get in.
 3. **They turn it on.** Flipping the switch shows a content warning ("Adults only past this point"), and they must confirm they're 18 or over.
 
 Everyone else sees nothing about 18+: no switch, no link, no text. Going to `/adult` directly says "This area isn't available for your account".
