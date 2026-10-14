@@ -69,9 +69,10 @@ function PrivacyPage() {
             you own, whether bought with coins or received as free gifts.
           </p>
           <p>
-            <b>Birthday:</b> the month and year you were born, asked once when you sign up (or in
-            Settings). We use it to check you're old enough for an account and, on the website only,
-            for the adults-only section. It can't be changed afterwards.
+            <b>Birthday:</b> the month and year you were born, asked once when you sign up (or, on
+            the website, when you next visit or in Settings). We use it to check you're old enough
+            for an account and, on the website only, for the adults-only section. It can't be
+            changed afterwards.
           </p>
           <p>
             <b>Activity:</b> facts you've discovered, favourites, saved "But… Why?" chains, quiz

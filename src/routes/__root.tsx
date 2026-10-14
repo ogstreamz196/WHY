@@ -25,6 +25,7 @@ import { RecoveryEmailPrompt } from "@/components/RecoveryEmailPrompt";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { GoogleIdentitySync } from "@/components/GoogleIdentitySync";
 import { InstallAppBanner } from "@/components/InstallAppBanner";
+import { BirthdayPrompt } from "@/components/BirthdayPrompt";
 import { EditModeProvider } from "@/lib/editMode";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useEquippedTheme } from "@/lib/useEquippedTheme";
@@ -220,6 +221,7 @@ function RootComponent() {
         <TopSignInBar />
         <AdultHeaderBar />
         <RecoveryEmailPrompt />
+        <BirthdayPrompt />
         <div id="main" tabIndex={-1}>
           <Outlet />
         </div>
