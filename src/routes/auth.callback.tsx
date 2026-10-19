@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { seo } from "@/lib/site";
+import { needsNickname } from "@/lib/nickname";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => seo({ title: "Signing you in… | Why?", noindex: true }),
@@ -35,10 +36,7 @@ async function destinationFor(userId: string, email: string | null | undefined):
       .select("display_name")
       .eq("id", userId)
       .maybeSingle();
-    const name = data?.display_name?.trim() ?? "";
-    const emailPrefix = (email ?? "").split("@")[0]?.trim() ?? "";
-    const hasRealNickname = name.length > 0 && name.toLowerCase() !== emailPrefix.toLowerCase();
-    return hasRealNickname ? "/" : "/?welcome=1";
+    return needsNickname(data?.display_name, email, userId) ? "/?welcome=1" : "/";
   } catch {
     // If profile lookup fails, fall through to home — the overlay on `/` still
     // opens for missing nicknames as a safety net.

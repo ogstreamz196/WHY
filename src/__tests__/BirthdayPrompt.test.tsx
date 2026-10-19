@@ -40,6 +40,7 @@ async function settle() {
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   sessionStorage.clear();
+  localStorage.clear();
   fns.getAdultStatus.mockReset();
   fns.saveMyBirthDate.mockReset();
 });
@@ -103,6 +104,24 @@ describe("BirthdayPrompt", () => {
     await settle();
     expect(screen.queryByText("When were you born?")).toBeNull();
     expect(fns.getAdultStatus).not.toHaveBeenCalled();
+  });
+
+  it("saves the birthday picked on the sign-up page after Google/Apple, without asking", async () => {
+    localStorage.setItem(
+      "why:pending-birth",
+      JSON.stringify({ year: 1988, month: 7, at: Date.now() }),
+    );
+    fns.getAdultStatus
+      .mockResolvedValueOnce({ birthdate_known: false, available: false, mode_enabled: false })
+      .mockResolvedValue({ birthdate_known: true, available: true, mode_enabled: false });
+    fns.saveMyBirthDate.mockResolvedValue({ ok: true });
+    renderPrompt();
+    await waitFor(() =>
+      expect(fns.saveMyBirthDate).toHaveBeenCalledWith({ data: { year: 1988, month: 7 } }),
+    );
+    await settle();
+    expect(screen.queryByText("When were you born?")).toBeNull();
+    expect(localStorage.getItem("why:pending-birth")).toBeNull();
   });
 
   it("'Not now' hides it for this visit", async () => {

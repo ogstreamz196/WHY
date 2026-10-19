@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { saveMyBirthDate } from "@/lib/adult.functions";
 import { useCurrentUser } from "@/lib/auth";
+import { clearPendingBirthDate, takePendingBirthDate } from "@/lib/pendingBirthDate";
 
 const MONTHS = [
   "January",
@@ -52,6 +53,19 @@ export function BirthdayPrompt() {
       setOpen(false);
       return;
     }
+    // Just signed up with Google/Apple after picking a birthday on the
+    // sign-up page: save that instead of asking again.
+    const pending = takePendingBirthDate();
+    if (pending) {
+      clearPendingBirthDate();
+      save({ data: pending })
+        .then(async (res) => {
+          if (res.ok) await refetch();
+          else setOpen(true);
+        })
+        .catch(() => setOpen(true));
+      return;
+    }
     try {
       if (window.sessionStorage.getItem(SNOOZE_KEY) === "1") return;
     } catch {
@@ -65,6 +79,8 @@ export function BirthdayPrompt() {
       }
     }, 1500);
     return () => window.clearInterval(t);
+    // save/refetch are stable enough; re-running only when `needed` changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needed]);
 
   function notNow() {

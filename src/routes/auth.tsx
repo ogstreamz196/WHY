@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { signInWithUsername, signUpWithUsername } from "@/lib/username-auth.functions";
+import { rememberPendingBirthDate } from "@/lib/pendingBirthDate";
 import { seo } from "@/lib/site";
 
 type Mode = "signin" | "signup" | "reset";
@@ -97,6 +98,11 @@ function AuthPage() {
   async function handleOAuth(provider: "google" | "apple") {
     setLoading(true);
     setMessage(null);
+    // Google/Apple leave the site; keep the birthday picked here so it's saved
+    // to the new account when they come back (see BirthdayPrompt).
+    if (mode === "signup" && ageOk) {
+      rememberPendingBirthDate({ year: Number(birthYear), month: Number(birthMonth) });
+    }
     try {
       const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: `${window.location.origin}/auth/callback`,

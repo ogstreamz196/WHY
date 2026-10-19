@@ -14,6 +14,10 @@ type PromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
+// Set by the early script in __root.tsx, which catches the browser's one-off
+// "this site can be installed" event before React has loaded.
+type InstallWindow = Window & { __whyInstallPrompt?: PromptEvent | null };
+
 function isStandalone() {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -41,21 +45,22 @@ export function InstallAppBanner() {
     setIos(/iphone|ipad|ipod/i.test(ua) || (ua.includes("Mac") && "ontouchend" in document));
     setShow(true);
 
-    const onPrompt = (e: Event) => {
-      // Stop the browser's own mini-infobar; we keep the event so our button
-      // can trigger the real install dialog directly.
-      e.preventDefault();
-      setPrompt(e as PromptEvent);
+    // The early script keeps the event (and stops the browser's own
+    // mini-infobar) so our button can open the real install dialog.
+    const w = window as InstallWindow;
+    const takePrompt = () => {
+      if (w.__whyInstallPrompt) setPrompt(w.__whyInstallPrompt);
     };
     const onInstalled = () => {
       localStorage.setItem(INSTALLED_KEY, "1");
       setShow(false);
     };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
+    takePrompt();
+    window.addEventListener("why:installprompt", takePrompt);
+    window.addEventListener("why:appinstalled", onInstalled);
     return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("why:installprompt", takePrompt);
+      window.removeEventListener("why:appinstalled", onInstalled);
     };
   }, [native]);
 
@@ -67,7 +72,9 @@ export function InstallAppBanner() {
     if (prompt) {
       await prompt.prompt();
       const { outcome } = await prompt.userChoice;
+      // A prompt can only be used once.
       setPrompt(null);
+      (window as InstallWindow).__whyInstallPrompt = null;
       if (outcome === "accepted") {
         localStorage.setItem(INSTALLED_KEY, "1");
         setShow(false);
@@ -129,7 +136,8 @@ export function InstallAppBanner() {
               </>
             ) : (
               <>
-                Open your browser menu (⋮) and choose <b>Add to Home screen</b>.
+                Open your browser menu (⋮) and choose <b>Install app</b> or{" "}
+                <b>Add to Home screen</b>.
               </>
             )}
           </p>

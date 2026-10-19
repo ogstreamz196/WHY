@@ -190,6 +190,7 @@ import {
 
 import mascotImg from "@/assets/mascot.png";
 import { DEFAULT_TITLE, seo } from "@/lib/site";
+import { confirmNickname, needsNickname } from "@/lib/nickname";
 
 export type HomeSearch = { welcome?: true; q?: string };
 
@@ -310,8 +311,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         if (cancelled) return;
         const emailPrefix = user.email?.split("@")[0] ?? null;
         const rawName = profile?.display_name?.trim() ?? "";
-        const hasRealNickname =
-          rawName.length > 0 && rawName.toLowerCase() !== (emailPrefix ?? "").toLowerCase();
+        const hasRealNickname = !needsNickname(rawName, user.email, user.id);
         setDisplayName(rawName || emailPrefix);
         // Open the nickname overlay whenever ?welcome=1 was passed (post-OAuth)
         // OR the user genuinely has no nickname yet. Users with a real nickname
@@ -1556,12 +1556,13 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
       <WelcomeOverlay
         open={welcome}
         name={displayName}
-        needsName={!displayName || displayName === user?.email?.split("@")[0]}
+        needsName={needsNickname(displayName, user?.email, user?.id)}
         onClose={() => setWelcome(false)}
         onSubmitName={async (nickname) => {
           try {
             const updated = await updateProfile({ data: { display_name: nickname } });
             setDisplayName(updated.display_name ?? nickname);
+            if (user) confirmNickname(user.id);
           } catch (e) {
             console.warn("nickname save failed", e);
             throw e;
