@@ -21,14 +21,33 @@ import type { DailyReward } from "@/lib/avatarItems";
 import { itemById } from "@/lib/store";
 import { readingTimeMs } from "@/lib/readingTime";
 
+/** What the server says about a signed-in player's win. */
+export type DailyWin = {
+  awarded: boolean;
+  streak: number;
+  pointsDelta: number;
+  reward?: DailyReward | null;
+};
+
 type Props = {
   userId?: string | null;
-  /** Records the win and returns the mystery reward the player won, if any. */
+  /**
+   * Guests: records the win (already counted on this device) and returns the
+   * mystery reward the player won, if any.
+   */
   onCompleted?: (result: {
     streak: number;
     points: number;
     pointsDelta: number;
   }) => Promise<DailyReward | null | undefined> | void;
+  /**
+   * Signed in: whether the account already did today's challenge (null while
+   * unknown). The account decides, not this device, so another device or a
+   * guest on a shared device can't change it.
+   */
+  doneToday?: boolean | null;
+  /** Signed in: records the win on the server. Null if it couldn't be saved. */
+  recordWin?: () => Promise<DailyWin | null>;
 };
 
 /**
@@ -37,7 +56,8 @@ type Props = {
  * correct answer of the day awards +25 coins, advances the streak and opens a
  * free mystery reward. Wrong answers can be retried and there's no timer.
  */
-export function DailyChallenge({ onCompleted, userId = null }: Props) {
+export function DailyChallenge({ onCompleted, userId = null, doneToday, recordWin }: Props) {
+  const signedIn = !!userId && !!recordWin;
   const fetchMCQ = useServerFn(getDailyChallengeMCQ);
   const [mcq, setMCQ] = useState<DailyMCQ | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,9 +86,11 @@ export function DailyChallenge({ onCompleted, userId = null }: Props) {
   useEffect(() => {
     const fetchMCQ = fetchRef.current;
     let cancelled = false;
-    const alreadyDone = hasCompletedDailyChallenge();
-    setDone(alreadyDone);
-    setCollapsed(alreadyDone);
+    if (!signedIn) {
+      const alreadyDone = hasCompletedDailyChallenge();
+      setDone(alreadyDone);
+      setCollapsed(alreadyDone);
+    }
     (async () => {
       try {
         const m = await fetchMCQ();
@@ -82,7 +104,17 @@ export function DailyChallenge({ onCompleted, userId = null }: Props) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Signed in: follow the account's answer once it arrives, but never fold the
+  // card away after the player has just answered.
+  const answeredRef = useRef(false);
+  useEffect(() => {
+    if (!signedIn || doneToday == null || answeredRef.current) return;
+    setDone(doneToday);
+    setCollapsed(doneToday);
+  }, [signedIn, doneToday]);
 
   const fact = mcq?.fact ?? null;
 
@@ -113,27 +145,13 @@ export function DailyChallenge({ onCompleted, userId = null }: Props) {
       }
       feedback("correct");
       setPhase("result");
-      const result = completeDailyChallenge();
-      if (result.awarded) {
+      answeredRef.current = true;
+
+      const celebrate = (streak: number, delta: number) => {
         setDone(true);
-        setPointsAwarded(result.pointsDelta);
-        setAwardedFlash({ streak: result.streak, delta: result.pointsDelta });
-        const pending = onCompleted?.({
-          streak: result.streak,
-          points: result.points,
-          pointsDelta: result.pointsDelta,
-        });
-        Promise.resolve(pending)
-          .then((r) => {
-            if (!r) return;
-            if (r.kind === "coins") setReward({ kind: "coins", amount: r.amount });
-            else {
-              const item = itemById(r.itemId);
-              if (item) setReward({ kind: "item", item });
-            }
-          })
-          .catch((e) => console.warn("daily reward failed", e));
-        const milestone = newlyReachedMilestone(result.streak);
+        setPointsAwarded(delta);
+        setAwardedFlash({ streak, delta });
+        const milestone = newlyReachedMilestone(streak);
         if (milestone) {
           toast.success(
             `${milestone.emoji} ${milestone.label} unlocked! ${milestone.days}-day streak!`,
@@ -150,9 +168,54 @@ export function DailyChallenge({ onCompleted, userId = null }: Props) {
           }
         }
         window.setTimeout(() => setAwardedFlash(null), 3200);
+      };
+      const showReward = (r: DailyReward | null | undefined | void) => {
+        if (!r) return;
+        if (r.kind === "coins") setReward({ kind: "coins", amount: r.amount });
+        else {
+          const item = itemById(r.itemId);
+          if (item) setReward({ kind: "item", item });
+        }
+      };
+
+      if (signedIn && recordWin) {
+        // The server decides the coins, the streak and the reward.
+        recordWin()
+          .then((win) => {
+            if (!win) {
+              toast.error("Couldn't save your answer. Please try again.");
+              answeredRef.current = false;
+              setPicked(null);
+              setPhase("quiz");
+              return;
+            }
+            if (!win.awarded) {
+              setDone(true);
+              toast("You've already done today's challenge. Come back tomorrow!");
+              return;
+            }
+            celebrate(win.streak, win.pointsDelta);
+            showReward(win.reward);
+          })
+          .catch((e) => console.warn("daily challenge failed", e));
+        return;
+      }
+
+      const result = completeDailyChallenge();
+      if (result.awarded) {
+        celebrate(result.streak, result.pointsDelta);
+        Promise.resolve(
+          onCompleted?.({
+            streak: result.streak,
+            points: result.points,
+            pointsDelta: result.pointsDelta,
+          }),
+        )
+          .then(showReward)
+          .catch((e) => console.warn("daily reward failed", e));
       }
     },
-    [mcq, picked, onCompleted],
+    [mcq, picked, onCompleted, signedIn, recordWin],
   );
 
   const handleChoiceKey = useCallback(

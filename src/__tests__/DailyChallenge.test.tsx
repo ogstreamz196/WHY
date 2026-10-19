@@ -31,6 +31,34 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+function renderSignedIn(recordWin: () => Promise<unknown>, doneToday: boolean | null = false) {
+  const qc = new QueryClient();
+  const onCompleted = vi.fn();
+  render(
+    <QueryClientProvider client={qc}>
+      <DailyChallenge
+        userId="u1"
+        doneToday={doneToday}
+        onCompleted={onCompleted}
+        recordWin={recordWin as never}
+      />
+    </QueryClientProvider>,
+  );
+  return onCompleted;
+}
+
+async function answerCorrectly() {
+  await screen.findByText(/scatters off air molecules/);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(16_000);
+  });
+  fireEvent.click(screen.getByRole("button", { name: /quiz me/i }));
+  fireEvent.click(screen.getByRole("radio", { name: /Option B/ }));
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(100);
+  });
+}
+
 function renderChallenge(onCompleted = vi.fn()) {
   const qc = new QueryClient();
   render(
@@ -91,5 +119,51 @@ describe("DailyChallenge", () => {
       await vi.advanceTimersByTimeAsync(600);
     });
     expect(await screen.findByText(/\+15 bonus coins/)).toBeTruthy();
+  });
+
+  it("signed in: the server records the win, not this device", async () => {
+    const recordWin = vi.fn(async () => ({
+      awarded: true,
+      streak: 4,
+      pointsDelta: 25,
+      reward: { kind: "coins", amount: 10 },
+    }));
+    const onCompleted = renderSignedIn(recordWin);
+    await answerCorrectly();
+    expect(recordWin).toHaveBeenCalledTimes(1);
+    expect(onCompleted).not.toHaveBeenCalled();
+    expect(localStorage.getItem("why:points")).toBeNull();
+    expect((await screen.findAllByText(/4-day streak/)).length).toBeGreaterThan(0);
+  });
+
+  it("signed in: shows no coins when the account already won today", async () => {
+    const recordWin = vi.fn(async () => ({ awarded: false, streak: 4, pointsDelta: 0 }));
+    renderSignedIn(recordWin);
+    await answerCorrectly();
+    expect(recordWin).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/\+25 coins/)).toBeNull();
+  });
+
+  it("signed in: a guest's win on this device doesn't lock the account out", async () => {
+    // A sibling played as a guest on this device today.
+    const d = new Date();
+    localStorage.setItem(
+      "why:dailyDone",
+      JSON.stringify(`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`),
+    );
+    renderSignedIn(
+      vi.fn(async () => null),
+      false,
+    );
+    await screen.findByText(/scatters off air molecules/);
+    expect(screen.queryByText(/streak locked in/i)).toBeNull();
+  });
+
+  it("signed in: follows the account when today's challenge is already done", async () => {
+    renderSignedIn(
+      vi.fn(async () => null),
+      true,
+    );
+    expect(await screen.findByText(/streak locked in/i)).toBeTruthy();
   });
 });

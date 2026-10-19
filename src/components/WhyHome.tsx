@@ -234,6 +234,9 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   const [reaction, setReaction] = useState<Reaction>(null);
   const [points, setPoints] = useState(0);
   const [streak, setStreak] = useState(0);
+  // Day (UTC, as the server counts it) of the account's last Daily Challenge
+  // win; undefined until the account has loaded.
+  const [dailyDay, setDailyDay] = useState<string | null | undefined>(undefined);
   const [level, setLevel] = useState(1);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [celebrate, setCelebrate] = useState<{ points: number } | null>(null);
@@ -332,6 +335,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
 
         setPoints(stats.total_points);
         setStreak(stats.current_streak);
+        setDailyDay(stats.last_daily_challenge_day);
         setLevel(levelFor(stats.total_points).level);
         setLastChain(last);
         const todayStr = new Date().toISOString().slice(0, 10);
@@ -1509,33 +1513,49 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
 
             <DailyChallenge
               userId={user?.id ?? null}
+              doneToday={
+                user && dailyDay !== undefined
+                  ? dailyDay === new Date().toISOString().slice(0, 10)
+                  : null
+              }
               onCompleted={async (r) => {
-                if (!user) {
-                  // Guests: the mystery reward stays on this device.
-                  const reward = rollDailyReward(getInventory(), STORE_CATALOG);
-                  const total = reward.kind === "coins" ? addPoints(reward.amount) : r.points;
-                  if (reward.kind === "item") grantLocalItem(reward.itemId);
-                  setStreak(r.streak);
-                  setPoints(total);
-                  setLevel(levelFor(total).level);
-                  setCelebrate({ points: r.pointsDelta });
-                  return reward;
-                }
-                // Signed in: the server decides the streak, the coins and the reward.
-                const before = pointsRef.current;
-                try {
-                  const res = await recordDailyServer();
-                  setStreak(res.stats.current_streak);
-                  showServerBalance(res.stats.total_points);
-                  const gained = res.stats.total_points - before;
-                  if (res.awarded && gained > 0) setCelebrate({ points: gained });
-                  notifyAchievements(res?.newlyUnlocked);
-                  return res.reward ?? null;
-                } catch (e) {
-                  console.warn(e);
-                  return null;
-                }
+                // Guests: the win and the mystery reward stay on this device.
+                const reward = rollDailyReward(getInventory(), STORE_CATALOG);
+                const total = reward.kind === "coins" ? addPoints(reward.amount) : r.points;
+                if (reward.kind === "item") grantLocalItem(reward.itemId);
+                setStreak(r.streak);
+                setPoints(total);
+                setLevel(levelFor(total).level);
+                setCelebrate({ points: r.pointsDelta });
+                return reward;
               }}
+              recordWin={
+                user
+                  ? async () => {
+                      // Signed in: the server decides the streak, the coins and the reward.
+                      const before = pointsRef.current;
+                      try {
+                        const res = await recordDailyServer();
+                        setStreak(res.stats.current_streak);
+                        setDailyDay(res.stats.last_daily_challenge_day);
+                        showServerBalance(res.stats.total_points);
+                        const gained = res.stats.total_points - before;
+                        const rewardCoins = res.reward?.kind === "coins" ? res.reward.amount : 0;
+                        if (res.awarded && gained > 0) setCelebrate({ points: gained });
+                        notifyAchievements(res?.newlyUnlocked);
+                        return {
+                          awarded: res.awarded,
+                          streak: res.stats.current_streak,
+                          pointsDelta: Math.max(0, gained - rewardCoins),
+                          reward: res.reward ?? null,
+                        };
+                      } catch (e) {
+                        console.warn(e);
+                        return null;
+                      }
+                    }
+                  : undefined
+              }
             />
 
             {user && (
