@@ -23,10 +23,11 @@ const SIGN_IN_ROUTE = "/auth";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {
-      throw redirect({ to: SIGN_IN_ROUTE });
+      // Send them back here after signing in (auth.tsx only follows same-site paths).
+      throw redirect({ to: SIGN_IN_ROUTE, search: { mode: "signin", redirect: location.href } });
     }
     return { user: data.user };
   },

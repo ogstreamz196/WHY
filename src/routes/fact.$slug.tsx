@@ -163,6 +163,7 @@ function FactPageView() {
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               to="/"
+              search={{ q: fact.question }}
               className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-black text-white"
               style={{ background: "var(--gradient-primary)" }}
             >

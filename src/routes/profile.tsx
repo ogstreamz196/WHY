@@ -18,6 +18,7 @@ import {
   Crown,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getMyProfile,
@@ -106,6 +107,8 @@ function ProfilePage() {
     queryKey: ["stats"],
     queryFn: () => fetchStats(),
     enabled: !!user,
+    // Coins change all over the app; always show the latest balance here.
+    refetchOnMount: "always",
   });
   const achievements = useQuery({
     queryKey: ["achievements"],
@@ -264,12 +267,17 @@ function ProfilePage() {
       await doUpdate({
         data: {
           display_name: name.trim() || undefined,
-          bio: bio.trim() || undefined,
+          // Send "" (not undefined) so clearing the bio actually saves.
+          bio: bio.trim(),
           ...(isVip ? { status_message: status.trim() ? status.trim() : null } : {}),
         },
       });
       await qc.invalidateQueries({ queryKey: ["profile"] });
       setEditing(false);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Couldn't save your profile. Please try again.",
+      );
     } finally {
       setSaving(false);
     }

@@ -13,6 +13,7 @@ import {
   isAdultBirthDate,
   isNativeUserAgent,
   isPlausibleBirthDate,
+  isUnderAccountAge,
 } from "./adultGate";
 
 type AuthCtx = {
@@ -30,9 +31,19 @@ async function fromNativeApp(): Promise<boolean> {
   return isNativeUserAgent(getRequest()?.headers.get("user-agent"));
 }
 
+/**
+ * The account as stored by Supabase Auth. Read with the service role by id:
+ * the request's own client has no stored session, so auth.getUser() there
+ * always came back empty (birthdays looked unsaved and saving failed).
+ */
+async function accountUser(userId: string) {
+  const { data, error } = await (await admin()).auth.admin.getUserById(userId);
+  if (error) throw new Error(error.message);
+  return data.user;
+}
+
 async function savedBirthDate(ctx: AuthCtx) {
-  const { data } = await ctx.supabase.auth.getUser();
-  return birthDateFromMeta(data.user?.app_metadata);
+  return birthDateFromMeta((await accountUser(ctx.userId))?.app_metadata);
 }
 
 async function readMode(userId: string) {
@@ -68,6 +79,8 @@ export type AdultStatus = {
   available: boolean;
   /** 18+ mode switched on. */
   mode_enabled: boolean;
+  /** The saved birthday is under 13, the minimum age for an account. */
+  under_13: boolean;
 };
 
 export const getAdultStatus = createServerFn({ method: "GET" })
@@ -80,6 +93,7 @@ export const getAdultStatus = createServerFn({ method: "GET" })
       birthdate_known: !!birth,
       available,
       mode_enabled: available && mode.confirmed && mode.enabled,
+      under_13: isUnderAccountAge(birth),
     };
   });
 
@@ -91,15 +105,15 @@ export const saveMyBirthDate = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: true } | { ok: false; error: string }> => {
     if (!isPlausibleBirthDate(data)) return { ok: false, error: "Please pick a real date." };
-    const { data: u } = await context.supabase.auth.getUser();
-    if (!u.user) return { ok: false, error: "Please sign in again." };
-    if (birthDateFromMeta(u.user.app_metadata)) {
+    const user = await accountUser(context.userId).catch(() => null);
+    if (!user) return { ok: false, error: "Please sign in again." };
+    if (birthDateFromMeta(user.app_metadata)) {
       return { ok: false, error: "Your birthday is already saved." };
     }
     const { error } = await (
       await admin()
     ).auth.admin.updateUserById(context.userId, {
-      app_metadata: { ...u.user.app_metadata, birth_year: data.year, birth_month: data.month },
+      app_metadata: { ...user.app_metadata, birth_year: data.year, birth_month: data.month },
     });
     if (error) return { ok: false, error: "Couldn't save that. Please try again." };
     return { ok: true };

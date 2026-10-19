@@ -4,6 +4,8 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { seo } from "@/lib/site";
+import { needsNickname } from "@/lib/nickname";
+import { hasGuestFavorites } from "@/lib/guestImport";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => seo({ title: "Signing you in… | Why?", noindex: true }),
@@ -11,17 +13,9 @@ export const Route = createFileRoute("/auth/callback")({
 });
 
 function baseDestination(): string {
-  try {
-    const store = typeof window !== "undefined" ? window.sessionStorage : null;
-    const hasGuest =
-      !!store &&
-      ((Number(store.getItem("why:points")) || 0) > 0 ||
-        (Number(store.getItem("why:streak")) || 0) > 0 ||
-        (JSON.parse(store.getItem("why:favorites") ?? "[]") as unknown[]).length > 0);
-    if (hasGuest) return `/import-guest?redirect=${encodeURIComponent("/?welcome=1")}`;
-  } catch {
-    // ignore
-  }
+  // Guest progress lives in localStorage (src/lib/store.ts); only favourites
+  // move to the account, so only they are worth an import screen.
+  if (hasGuestFavorites()) return `/import-guest?redirect=${encodeURIComponent("/?welcome=1")}`;
   return "/";
 }
 
@@ -35,10 +29,7 @@ async function destinationFor(userId: string, email: string | null | undefined):
       .select("display_name")
       .eq("id", userId)
       .maybeSingle();
-    const name = data?.display_name?.trim() ?? "";
-    const emailPrefix = (email ?? "").split("@")[0]?.trim() ?? "";
-    const hasRealNickname = name.length > 0 && name.toLowerCase() !== emailPrefix.toLowerCase();
-    return hasRealNickname ? "/" : "/?welcome=1";
+    return needsNickname(data?.display_name, email, userId) ? "/?welcome=1" : "/";
   } catch {
     // If profile lookup fails, fall through to home — the overlay on `/` still
     // opens for missing nicknames as a safety net.

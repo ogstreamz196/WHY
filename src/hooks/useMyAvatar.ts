@@ -148,6 +148,11 @@ export function useDressUp(userId: string | null) {
     try {
       const saved = await update({ data });
       qc.setQueryData(["profile"], saved);
+      // The server may take off pieces this player can't wear (Plus items
+      // after Plus ends); keep this device in step with what was saved.
+      if (data.avatar_outfit && saved?.avatar_outfit) {
+        setEquipped({ outfit: saved.avatar_outfit });
+      }
       void qc.invalidateQueries({ queryKey: ["player-profile"] });
       void qc.invalidateQueries({ queryKey: ["leaderboard"] });
     } catch (e) {

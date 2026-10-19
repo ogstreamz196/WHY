@@ -33,6 +33,8 @@ export function Celebration({ open, points, streak, onClose }: Props) {
     <AnimatePresence>
       {open && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
           className="overlay-scroll fixed inset-0 z-50 flex items-center justify-center px-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

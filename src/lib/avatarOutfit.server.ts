@@ -48,6 +48,8 @@ export async function readOutfit(userId: string): Promise<Outfit> {
 /**
  * Save an outfit after checking the player may wear every piece: free items
  * for everyone, Plus items for Plus members, everything else must be owned.
+ * Plus items are quietly taken off for non-members (e.g. a lapsed Plus
+ * member) so they can still change the rest of their outfit.
  */
 export async function saveOutfit(
   userId: string,
@@ -55,12 +57,14 @@ export async function saveOutfit(
   isPlus: () => Promise<boolean>,
 ): Promise<Outfit> {
   const outfit = sanitizeOutfit(requested, STORE_CATALOG);
-  const ids = Object.values(outfit);
-  const items = ids.map((id) => STORE_CATALOG.find((i) => i.id === id)!);
+  const itemFor = (id: string) => STORE_CATALOG.find((i) => i.id === id)!;
 
-  if (items.some((i) => i.vipOnly) && !(await isPlus())) {
-    throw new Error("That item is for Why? Plus members.");
+  if (Object.values(outfit).some((id) => itemFor(id).vipOnly) && !(await isPlus())) {
+    for (const [slot, id] of Object.entries(outfit) as [keyof Outfit, string][]) {
+      if (itemFor(id).vipOnly) delete outfit[slot];
+    }
   }
+  const items = Object.values(outfit).map(itemFor);
   const needOwnership = items.filter((i) => !i.vipOnly && (i.cost > 0 || i.dropOnly));
   if (needOwnership.length > 0) {
     const { data, error } = await (

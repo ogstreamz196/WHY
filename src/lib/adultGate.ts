@@ -9,6 +9,8 @@
 import { NATIVE_UA_MARKER } from "./platform";
 
 export const ADULT_AGE = 18;
+/** Accounts are 13+ (see the sign-up age screen). */
+export const MIN_ACCOUNT_AGE = 13;
 
 export type BirthDate = { year: number; month: number };
 
@@ -39,6 +41,10 @@ export function birthDateFromMeta(meta: unknown): BirthDate | null {
 
 export function isAdultBirthDate(b: BirthDate | null, now: Date = new Date()): boolean {
   return !!b && ageFrom(b, now) >= ADULT_AGE;
+}
+
+export function isUnderAccountAge(b: BirthDate | null, now: Date = new Date()): boolean {
+  return !!b && ageFrom(b, now) < MIN_ACCOUNT_AGE;
 }
 
 /** True for requests from the Android/iOS apps. */

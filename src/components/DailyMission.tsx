@@ -22,8 +22,10 @@ const TASKS: { key: MissionTask; label: string; hint: string; icon: string }[] =
 
 type Props = {
   onOpenCategory: (key: string) => void;
-  onCelebrate: (points: number) => void;
-  registerMarker?: (fn: (task: MissionTask) => void) => void;
+  /** Bonus coins just won, and the account's new coin total. */
+  onCelebrate: (points: number, totalPoints?: number) => void;
+  /** The marker takes the fact's category for the "Explore a theme" task. */
+  registerMarker?: (fn: (task: MissionTask, factCategory?: string) => void) => void;
 };
 
 export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Props) {
@@ -60,8 +62,9 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
 
   useEffect(() => {
     if (!registerMarker) return;
-    registerMarker(async (task) => {
+    registerMarker(async (task, factCategory) => {
       if (!user) return;
+      if (task === "category" && (!mission || factCategory !== mission.category_key)) return;
       // Optimistic
       setMission((prev) => {
         if (!prev) return prev;
@@ -75,13 +78,15 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
         return next;
       });
       try {
-        const res = await markTask({ data: { task } });
+        const res = await markTask({
+          data: task === "category" ? { task, category_key: factCategory } : { task },
+        });
         setMission(res);
       } catch (e) {
         console.warn("mission mark failed", e);
       }
     });
-  }, [registerMarker, markTask, user]);
+  }, [registerMarker, markTask, user, mission]);
 
   if (!user || loading || !mission) return null;
 
@@ -100,7 +105,7 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
     try {
       const res = await claim();
       if (res.awarded) {
-        onCelebrate(res.points);
+        onCelebrate(res.points, res.total_points);
         setMission({ ...mission, bonus_awarded: true });
         toast.success(`+${res.points} XP mission bonus!`, {
           description: "Come back tomorrow for a new mission.",

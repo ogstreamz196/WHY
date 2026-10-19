@@ -112,7 +112,9 @@ export const markMissionTask = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => TASK_SCHEMA.parse(input))
   .handler(async ({ data, context }): Promise<DailyMissionDTO> => {
     const t = today();
-    const cat = data.category_key ?? categoryOfDay(t);
+    // The day's theme is never picked by the caller when ticking the theme task.
+    const cat =
+      data.task === "category" ? categoryOfDay(t) : (data.category_key ?? categoryOfDay(t));
 
     const { data: existing } = await context.supabase
       .from("daily_missions")
@@ -136,7 +138,10 @@ export const markMissionTask = createServerFn({ method: "POST" })
     if (data.task === "mystery") patch.mystery_done = true;
     if (data.task === "surprise") patch.surprise_done = true;
     if (data.task === "chain") patch.chain_done = true;
-    if (data.task === "category") patch.category_done = true;
+    // Only a fact from today's theme counts.
+    if (data.task === "category" && data.category_key === patch.category_key) {
+      patch.category_done = true;
+    }
 
     const { data: row, error } = await (
       await admin()

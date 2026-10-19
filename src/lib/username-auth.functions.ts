@@ -81,7 +81,7 @@ export const signUpWithUsername = createServerFn({ method: "POST" })
     if (taken) return { error: "That username is taken — try another." } as const;
 
     const email = placeholderEmail(data.username);
-    const { error } = await db.auth.admin.createUser({
+    const { data: created, error } = await db.auth.admin.createUser({
       email,
       password: data.password,
       email_confirm: true,
@@ -98,12 +98,31 @@ export const signUpWithUsername = createServerFn({ method: "POST" })
           : "Couldn't create the account. Please try again.";
       return { error: msg } as const;
     }
+    // Sign-in by username looks the name up in profiles (the account's email
+    // changes once a recovery email is added), and so does the "taken" check
+    // above, so the username must be stored there. The sign-up trigger also
+    // copies it from user_metadata; this covers databases without that update.
+    if (created.user) {
+      const { error: nameError } = await db
+        .from("profiles")
+        .upsert({ id: created.user.id, username: data.username }, { onConflict: "id" });
+      if (nameError) {
+        if (nameError.code === "23505") {
+          // Someone else grabbed this username a moment ago.
+          await db.auth.admin.deleteUser(created.user.id).catch(() => {});
+          return { error: "That username is taken — try another." } as const;
+        }
+        console.error("signUpWithUsername: couldn't save username", nameError.message);
+      }
+    }
     return signInByEmail(email, data.password);
   });
 
 export const signInWithUsername = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({ username: z.string().trim().min(1).max(40), password: z.string().min(1).max(72) }).parse(d),
+    z
+      .object({ username: z.string().trim().min(1).max(40), password: z.string().min(1).max(72) })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const db = await admin();
@@ -112,12 +131,17 @@ export const signInWithUsername = createServerFn({ method: "POST" })
       .select("id")
       .ilike("username", data.username.replace(/[\\%_]/g, "\\$&"))
       .maybeSingle();
-    let email = placeholderEmail(data.username);
+    const placeholder = placeholderEmail(data.username);
+    let email = placeholder;
     if (profile) {
       const { data: u } = await db.auth.admin.getUserById(profile.id);
       if (u.user?.email) email = u.user.email;
     }
-    return signInByEmail(email, data.password);
+    const res = await signInByEmail(email, data.password);
+    // Older accounts may not have their username in profiles yet; their
+    // placeholder address still signs them in.
+    if ("error" in res && email !== placeholder) return signInByEmail(placeholder, data.password);
+    return res;
   });
 
 export const setRecoveryEmail = createServerFn({ method: "POST" })

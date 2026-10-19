@@ -2,20 +2,13 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState } from "react";
-import {
-  Sparkles,
-  Flame,
-  Coins,
-  Heart,
-  ArrowRight,
-  Loader2,
-  ChevronDown,
-  Check,
-} from "lucide-react";
+import { Sparkles, Heart, ArrowRight, Loader2, ChevronDown, Check } from "lucide-react";
 import { z } from "zod";
 import { CosmicBackground } from "@/components/CosmicBackground";
-import { getFavorites, getPoints, getStreak } from "@/lib/store";
+import { getFavorites } from "@/lib/store";
 import { migrateGuestData } from "@/lib/account.functions";
+import { clearGuestSnapshot } from "@/lib/guestImport";
+import { safeRedirect } from "@/lib/safeRedirect";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
@@ -25,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/import-guest")({
       { title: "Bring your guest progress? — Why?" },
       {
         name: "description",
-        content: "Import your streak, Y-Coins and favourites into your new account.",
+        content: "Bring the facts you saved as a guest into your new account.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -53,23 +46,18 @@ function ImportGuestPage() {
   const navigate = useNavigate();
   const migrate = useServerFn(migrateGuestData);
 
-  const guest = useMemo(() => {
-    const favs = getFavorites();
-    return {
-      points: getPoints(),
-      streak: getStreak(),
-      favorites: favs,
-    };
-  }, []);
+  const guest = useMemo(() => ({ favorites: getFavorites() }), []);
 
-  const hasAnything = guest.points > 0 || guest.streak > 0 || guest.favorites.length > 0;
+  // Only favourites move to the account (migrateGuestData never takes coins or
+  // streaks from the device, so nobody can award themselves leaderboard points).
+  const hasAnything = guest.favorites.length > 0;
 
   const [showReview, setShowReview] = useState(false);
   const [state, setState] = useState<"idle" | "importing" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
   const [imported, setImported] = useState(0);
 
-  const goHome = () => navigate({ to: (search.redirect as "/") ?? "/" });
+  const goHome = () => navigate({ href: safeRedirect(search.redirect) });
 
   async function handleImport() {
     setState("importing");
@@ -81,14 +69,8 @@ function ImportGuestPage() {
         },
       });
       setImported(res.imported_favorites);
-      // Clear local guest snapshot so we don't re-prompt on next sign-in.
-      try {
-        sessionStorage.removeItem("why:points");
-        sessionStorage.removeItem("why:streak");
-        sessionStorage.removeItem("why:favorites");
-      } catch {
-        // ignore
-      }
+      // Clear the guest snapshot on this device so we don't ask again.
+      clearGuestSnapshot();
       setState("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Import failed");
@@ -134,8 +116,8 @@ function ImportGuestPage() {
               <Sparkles className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="font-display text-2xl font-black">Bring your progress?</h1>
-              <p className="text-sm text-white/60">We found guest activity on this device.</p>
+              <h1 className="font-display text-2xl font-black">Bring your favourites?</h1>
+              <p className="text-sm text-white/60">We found facts you saved as a guest.</p>
             </div>
           </div>
 
@@ -148,11 +130,9 @@ function ImportGuestPage() {
                 className="rounded-3xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-center"
               >
                 <Check className="mx-auto mb-2 h-8 w-8 text-emerald-300" />
-                <p className="font-bold">Progress imported</p>
+                <p className="font-bold">Favourites saved</p>
                 <p className="mt-1 text-sm text-white/70">
-                  {guest.points > 0 && <>Y-Coins merged · </>}
-                  {guest.streak > 0 && <>Streak preserved · </>}
-                  {imported} favourite{imported === 1 ? "" : "s"} added
+                  {imported} favourite{imported === 1 ? "" : "s"} added to your account
                 </p>
                 <button
                   onClick={goHome}
@@ -164,30 +144,23 @@ function ImportGuestPage() {
               </motion.div>
             ) : (
               <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <div className="grid grid-cols-3 gap-2">
-                  <SummaryTile
-                    icon={<Coins className="h-4 w-4" />}
-                    label="Y-Coins"
-                    value={guest.points}
-                  />
-                  <SummaryTile
-                    icon={<Flame className="h-4 w-4" />}
-                    label="Streak"
-                    value={`${guest.streak}d`}
-                  />
-                  <SummaryTile
-                    icon={<Heart className="h-4 w-4" />}
-                    label="Favourites"
-                    value={guest.favorites.length}
-                  />
-                </div>
+                <SummaryTile
+                  icon={<Heart className="h-4 w-4" />}
+                  label="Favourites"
+                  value={guest.favorites.length}
+                />
+
+                <p className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs leading-relaxed text-white/70">
+                  Only your favourite facts can come with you. Coins and streaks don't move over —
+                  your account starts them fresh, and you can earn them again by exploring.
+                </p>
 
                 <button
                   type="button"
                   onClick={() => setShowReview((v) => !v)}
                   className="mt-3 flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/10"
                 >
-                  <span>Review what will be brought over</span>
+                  <span>See which facts will come with you</span>
                   <ChevronDown className={`h-4 w-4 transition ${showReview ? "rotate-180" : ""}`} />
                 </button>
 
@@ -201,36 +174,23 @@ function ImportGuestPage() {
                     >
                       <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm">
                         <ReviewRow
-                          label="Y-Coin balance"
-                          detail={`${guest.points} coins merged — we keep the higher of guest or account.`}
-                        />
-                        <ReviewRow
-                          label="Streak"
-                          detail={`${guest.streak}-day streak preserved as your longest.`}
-                        />
-                        <ReviewRow
                           label="Favourite facts"
                           detail={`${guest.favorites.length} saved fact${guest.favorites.length === 1 ? "" : "s"} added to your account.`}
                         />
-                        {guest.favorites.length > 0 && (
-                          <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1 text-xs text-white/70">
-                            {guest.favorites.slice(0, 20).map((f) => (
-                              <li
-                                key={f.id}
-                                className="line-clamp-1 rounded-lg bg-white/5 px-2 py-1"
-                              >
-                                • {f.question ?? f.id}
-                              </li>
-                            ))}
-                            {guest.favorites.length > 20 && (
-                              <li className="text-white/50">
-                                …and {guest.favorites.length - 20} more
-                              </li>
-                            )}
-                          </ul>
-                        )}
+                        <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1 text-xs text-white/70">
+                          {guest.favorites.slice(0, 20).map((f) => (
+                            <li key={f.id} className="line-clamp-1 rounded-lg bg-white/5 px-2 py-1">
+                              • {f.question ?? f.id}
+                            </li>
+                          ))}
+                          {guest.favorites.length > 20 && (
+                            <li className="text-white/50">
+                              …and {guest.favorites.length - 20} more
+                            </li>
+                          )}
+                        </ul>
                         <p className="pt-2 text-[11px] text-white/50">
-                          Nothing is overwritten — points and streaks only ever move up.
+                          Nothing already on your account is changed or removed.
                         </p>
                       </div>
                     </motion.div>
@@ -256,7 +216,7 @@ function ImportGuestPage() {
                       </>
                     ) : (
                       <>
-                        Import my progress <ArrowRight className="h-4 w-4" />
+                        Bring my favourites <ArrowRight className="h-4 w-4" />
                       </>
                     )}
                   </button>

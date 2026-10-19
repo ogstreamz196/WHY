@@ -15,6 +15,8 @@ export function LevelUpCelebration({ open, level, title, onClose }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
           className="overlay-scroll fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
           onClick={onClose}
         >

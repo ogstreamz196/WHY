@@ -294,13 +294,23 @@ export const startQuiz = createServerFn({ method: "POST" })
     const length = data.length ?? LENGTH_DEFAULT;
     const difficulty = data.difficulty ?? "medium";
 
-    // Pull a random pool of facts (bigger than length so we can filter).
+    // Pull a random pool of facts (bigger than length so we can filter). A
+    // cheap head count lets us start the window at a random offset, so each
+    // quiz draws from a different slice of the library.
+    const category = data.category && data.category !== "all" ? data.category : null;
+    const poolSize = length * 6;
+    let countQuery = context.supabase.from("facts").select("id", { count: "exact", head: true });
+    if (category) countQuery = countQuery.eq("category", category);
+    const { count } = await countQuery;
+    const offset =
+      count && count > poolSize ? Math.floor(Math.random() * (count - poolSize + 1)) : 0;
     let query = context.supabase
       .from("facts")
       .select("id, question, answer, category, fun_fact")
-      .limit(length * 6);
-    if (data.category && data.category !== "all") {
-      query = query.eq("category", data.category);
+      .order("created_at", { ascending: true })
+      .range(offset, offset + poolSize - 1);
+    if (category) {
+      query = query.eq("category", category);
     }
     const { data: pool, error } = await query;
     if (error) throw new Error(error.message);

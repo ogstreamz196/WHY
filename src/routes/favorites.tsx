@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { Fact } from "@/lib/facts.functions";
 import { getFavorites, toggleFavorite } from "@/lib/store";
+import { useCurrentUser } from "@/lib/auth";
 import { emojiFor } from "@/lib/categories";
 import { seo } from "@/lib/site";
 
@@ -12,10 +13,17 @@ export const Route = createFileRoute("/favorites")({
 
 function FavoritesPage() {
   const [facts, setFacts] = useState<Fact[]>([]);
+  const { user } = useCurrentUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setFacts(getFavorites());
   }, []);
+
+  // Signed-in hearts are synced to the account and listed on /chains.
+  useEffect(() => {
+    if (user) navigate({ to: "/chains", replace: true });
+  }, [user, navigate]);
 
   const remove = (fact: Fact) => {
     toggleFavorite(fact);

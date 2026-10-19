@@ -114,7 +114,8 @@ export const getRandomFact = createServerFn({ method: "GET" })
     const supabase = getSupabase();
     // Build a set of ids to skip: caller's seen list + the current fact.
     const skip = new Set<string>(data.seenIds ?? []);
-    for (const id of await serverSeenIds(await optionalUserId().catch(() => null))) skip.add(id);
+    const uid = await optionalUserId().catch(() => null);
+    for (const id of await serverSeenIds(uid)) skip.add(id);
     if (data.excludeId) skip.add(data.excludeId);
 
     const base = () => {
@@ -128,6 +129,8 @@ export const getRandomFact = createServerFn({ method: "GET" })
       if (data.category) countQuery = countQuery.eq("category", data.category);
       const { count } = await countQuery;
       if (!count || count === 0) {
+        // Signed-in players get a freshly written fact for this category instead.
+        if (uid) return null;
         const { data: any } = await supabase.from("facts").select(FACT_COLS).limit(1);
         return (any?.[0] as Fact) ?? pickFallback(skip, data.category);
       }
@@ -152,9 +155,19 @@ export const getRandomFact = createServerFn({ method: "GET" })
         if (fresh) return fresh as Fact;
       }
 
-      // Truly exhausted — return any row so the UI doesn't stall.
-      const { data: fallback } = await base().limit(1);
-      return (fallback?.[0] as Fact) ?? pickFallback(skip, data.category);
+      // Truly exhausted. Signed-in players get a freshly written fact (null
+      // tells the client to generate one). Guests get a random old one, never
+      // the fact already on screen, so "New fact" doesn't repeat itself.
+      if (uid) return null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const offset = Math.floor(Math.random() * count);
+        const { data: rows } = await base()
+          .order("created_at", { ascending: true })
+          .range(offset, offset);
+        const row = rows?.[0] as Fact | undefined;
+        if (row && (row.id !== data.excludeId || count === 1)) return row;
+      }
+      return pickFallback(skip, data.category);
     } catch (err) {
       console.warn("getRandomFact failed, serving fallback", err);
       return pickFallback(skip, data.category);

@@ -25,7 +25,7 @@ import { RecoveryEmailPrompt } from "@/components/RecoveryEmailPrompt";
 import { ThemeDebugger } from "@/components/ThemeDebugger";
 import { GoogleIdentitySync } from "@/components/GoogleIdentitySync";
 import { InstallAppBanner } from "@/components/InstallAppBanner";
-import { BirthdayPrompt } from "@/components/BirthdayPrompt";
+import { UnderAgeNotice } from "@/components/UnderAgeNotice";
 import { EditModeProvider } from "@/lib/editMode";
 import { useBossTheme } from "@/lib/useBossTheme";
 import { useEquippedTheme } from "@/lib/useEquippedTheme";
@@ -105,6 +105,28 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
   );
 }
 
+const INSTALL_BOOTSTRAP = `(function () {
+  try {
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault();
+      window.__whyInstallPrompt = e;
+      window.dispatchEvent(new Event("why:installprompt"));
+    });
+    window.addEventListener("appinstalled", function () {
+      window.__whyInstallPrompt = null;
+      try { localStorage.setItem("why:app_installed", "1"); } catch (_) {}
+      window.dispatchEvent(new Event("why:appinstalled"));
+    });
+    var inApp = navigator.userAgent.indexOf("WhyNativeApp") !== -1 ||
+      !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    if ("serviceWorker" in navigator && !inApp && window.top === window.self) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      });
+    }
+  } catch (_) {}
+})();`;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => {
     // Defaults for every page; each route sets its own title, description and
@@ -133,6 +155,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       ],
       scripts: [
+        // Runs before the app loads: the browser's "can install" event fires
+        // early and only once, so catch it here for the install banner, and
+        // register the service worker (website only, never in the apps or
+        // the editor preview).
+        { children: INSTALL_BOOTSTRAP },
         {
           type: "application/ld+json",
           children: JSON.stringify([
@@ -221,7 +248,7 @@ function RootComponent() {
         <TopSignInBar />
         <AdultHeaderBar />
         <RecoveryEmailPrompt />
-        <BirthdayPrompt />
+        <UnderAgeNotice />
         <div id="main" tabIndex={-1}>
           <Outlet />
         </div>
