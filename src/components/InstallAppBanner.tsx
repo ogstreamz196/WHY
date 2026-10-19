@@ -1,6 +1,7 @@
-// Floating "install the app" banner for the website only. It shows on every
-// visit until we detect the app is installed (opened from the home screen,
-// or the browser reports a finished install). Closing it only hides it for
+// Slim "add to home screen" bar for the website only. It waits until someone
+// has used the site for a bit (sooner on a return visit), never shows while a
+// pop-up is open, and stops once the app is installed (opened from the home
+// screen, or the browser reports a finished install). Closing it hides it for
 // the current visit. Never shown inside the Android/iOS apps.
 import { useEffect, useState } from "react";
 import { Download, Share, X } from "lucide-react";
@@ -8,6 +9,22 @@ import { useIsNativeApp } from "@/lib/platform";
 
 const INSTALLED_KEY = "why:app_installed";
 const HIDDEN_KEY = "why:install_banner_hidden";
+const VISITS_KEY = "why:visits";
+// First visit: let them explore before suggesting anything. Return visits: sooner.
+const FIRST_VISIT_DELAY = 60_000;
+const RETURN_VISIT_DELAY = 8_000;
+
+function countVisit(): number {
+  try {
+    if (sessionStorage.getItem(VISITS_KEY)) return Number(localStorage.getItem(VISITS_KEY)) || 1;
+    sessionStorage.setItem(VISITS_KEY, "1");
+    const n = (Number(localStorage.getItem(VISITS_KEY)) || 0) + 1;
+    localStorage.setItem(VISITS_KEY, String(n));
+    return n;
+  } catch {
+    return 1;
+  }
+}
 
 type PromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -31,6 +48,7 @@ export function InstallAppBanner() {
   const [prompt, setPrompt] = useState<PromptEvent | null>(null);
   const [ios, setIos] = useState(false);
   const [iosHelp, setIosHelp] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (native !== false) return;
@@ -43,7 +61,8 @@ export function InstallAppBanner() {
     if (window.top !== window.self) return; // editor preview frame
     const ua = navigator.userAgent;
     setIos(/iphone|ipad|ipod/i.test(ua) || (ua.includes("Mac") && "ontouchend" in document));
-    setShow(true);
+    const delay = countVisit() > 1 ? RETURN_VISIT_DELAY : FIRST_VISIT_DELAY;
+    const timer = window.setTimeout(() => setShow(true), delay);
 
     // The early script keeps the event (and stops the browser's own
     // mini-infobar) so our button can open the real install dialog.
@@ -59,12 +78,22 @@ export function InstallAppBanner() {
     window.addEventListener("why:installprompt", takePrompt);
     window.addEventListener("why:appinstalled", onInstalled);
     return () => {
+      window.clearTimeout(timer);
       window.removeEventListener("why:installprompt", takePrompt);
       window.removeEventListener("why:appinstalled", onInstalled);
     };
   }, [native]);
 
-  if (!show) return null;
+  // Step aside while any pop-up is open.
+  useEffect(() => {
+    if (!show) return;
+    const check = () => setModalOpen(!!document.querySelector('[aria-modal="true"]'));
+    check();
+    const t = window.setInterval(check, 1000);
+    return () => window.clearInterval(t);
+  }, [show]);
+
+  if (!show || modalOpen) return null;
 
   const install = async () => {
     // Direct install: browsers that support beforeinstallprompt (Android,
@@ -94,41 +123,34 @@ export function InstallAppBanner() {
   return (
     <div
       role="region"
-      aria-label="Add the Why? shortcut"
-      className="safe-x fixed inset-x-0 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-50 wide:bottom-[calc(1rem+env(safe-area-inset-bottom))] wide:left-[var(--rail-w)]"
+      aria-label="Add Why? to your home screen"
+      className="safe-x fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 wide:bottom-[calc(1rem+env(safe-area-inset-bottom))] wide:left-[var(--rail-w)]"
     >
-      <div className="glass-strong mx-auto flex max-w-2xl flex-col gap-2 rounded-3xl p-3 shadow-[var(--shadow-card)] short:rounded-2xl short:py-1.5">
-        <div className="flex items-center gap-3">
-          <img
-            src="/icon-192.png"
-            alt=""
-            className="h-11 w-11 shrink-0 rounded-2xl short:h-8 short:w-8"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-foreground">Add the Why? shortcut</p>
-            <p className="text-xs text-muted-foreground short:hidden">
-              One tap from your home screen. Free!
-            </p>
-          </div>
+      <div className="glass-strong mx-auto flex max-w-md flex-col gap-1.5 rounded-2xl px-2.5 py-1.5 shadow-[var(--shadow-card)]">
+        <div className="flex items-center gap-2">
+          <img src="/icon-192.png" alt="" className="h-7 w-7 shrink-0 rounded-lg" />
+          <p className="min-w-0 flex-1 truncate text-xs font-bold text-foreground">
+            Add Why? to your home screen
+          </p>
           <button
             type="button"
             onClick={install}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-primary-foreground shadow-[var(--shadow-glow)]"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold text-primary-foreground"
             style={{ background: "var(--gradient-primary)" }}
           >
-            <Download className="h-4 w-4" /> Add shortcut
+            <Download className="h-3.5 w-3.5" /> Add
           </button>
           <button
             type="button"
             onClick={close}
             aria-label="Close for now"
-            className="shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground"
+            className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:text-foreground"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         {iosHelp && (
-          <p className="rounded-2xl bg-muted/40 px-3 py-2 text-xs text-foreground">
+          <p className="rounded-xl bg-muted/40 px-3 py-2 text-xs text-foreground">
             {ios ? (
               <>
                 Tap <Share className="mx-0.5 inline h-3.5 w-3.5" /> <b>Share</b> at the bottom of

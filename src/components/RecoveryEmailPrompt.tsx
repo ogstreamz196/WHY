@@ -5,9 +5,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { PLACEHOLDER_DOMAIN, setRecoveryEmail } from "@/lib/username-auth.functions";
 
 const KEY = "why:last_recovery_prompt";
+const DAY = 24 * 60 * 60 * 1000;
 const today = () => new Date().toISOString().slice(0, 10);
 
-/** Once a day, gently asks username-only accounts for a password-recovery email. */
+/** True when the prompt was last shown under a week ago. */
+function askedRecently(): boolean {
+  try {
+    const last = window.localStorage.getItem(KEY);
+    if (!last) return false;
+    const at = Date.parse(last);
+    return Number.isFinite(at) && Date.now() - at < 7 * DAY;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Gently asks username-only accounts for a password-recovery email. Never on
+ * a brand-new account (it waits a day so the first visit isn't a pile of
+ * pop-ups), at most once a week, and never on top of another pop-up.
+ */
 export function RecoveryEmailPrompt() {
   const { user } = useCurrentUser();
   const [open, setOpen] = useState(false);
@@ -15,19 +32,27 @@ export function RecoveryEmailPrompt() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const createdAt = user?.created_at ? Date.parse(user.created_at) : NaN;
   useEffect(() => {
     if (!user?.email?.endsWith(`@${PLACEHOLDER_DOMAIN}`)) {
       setOpen(false);
       return;
     }
-    try {
-      if (window.localStorage.getItem(KEY) === today()) return;
-    } catch {
-      /* ignore */
-    }
-    const t = window.setTimeout(() => setOpen(true), 1500);
-    return () => window.clearTimeout(t);
-  }, [user?.email]);
+    if (!Number.isFinite(createdAt) || Date.now() - createdAt < DAY) return;
+    if (askedRecently()) return;
+    // Let the page settle first, and wait for any other pop-up to close.
+    const t = window.setInterval(() => {
+      if (document.querySelector('[aria-modal="true"]')) return;
+      window.clearInterval(t);
+      try {
+        window.localStorage.setItem(KEY, today());
+      } catch {
+        /* ignore */
+      }
+      setOpen(true);
+    }, 4000);
+    return () => window.clearInterval(t);
+  }, [user?.email, createdAt]);
 
   function later() {
     try {

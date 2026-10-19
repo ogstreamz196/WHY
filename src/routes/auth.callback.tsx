@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { seo } from "@/lib/site";
 import { needsNickname } from "@/lib/nickname";
+import { hasGuestFavorites } from "@/lib/guestImport";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => seo({ title: "Signing you in… | Why?", noindex: true }),
@@ -12,17 +13,9 @@ export const Route = createFileRoute("/auth/callback")({
 });
 
 function baseDestination(): string {
-  try {
-    const store = typeof window !== "undefined" ? window.sessionStorage : null;
-    const hasGuest =
-      !!store &&
-      ((Number(store.getItem("why:points")) || 0) > 0 ||
-        (Number(store.getItem("why:streak")) || 0) > 0 ||
-        (JSON.parse(store.getItem("why:favorites") ?? "[]") as unknown[]).length > 0);
-    if (hasGuest) return `/import-guest?redirect=${encodeURIComponent("/?welcome=1")}`;
-  } catch {
-    // ignore
-  }
+  // Guest progress lives in localStorage (src/lib/store.ts); only favourites
+  // move to the account, so only they are worth an import screen.
+  if (hasGuestFavorites()) return `/import-guest?redirect=${encodeURIComponent("/?welcome=1")}`;
   return "/";
 }
 

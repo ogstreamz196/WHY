@@ -13,6 +13,7 @@ import {
   isAdultBirthDate,
   isNativeUserAgent,
   isPlausibleBirthDate,
+  isUnderAccountAge,
 } from "./adultGate";
 
 type AuthCtx = {
@@ -78,6 +79,8 @@ export type AdultStatus = {
   available: boolean;
   /** 18+ mode switched on. */
   mode_enabled: boolean;
+  /** The saved birthday is under 13, the minimum age for an account. */
+  under_13: boolean;
 };
 
 export const getAdultStatus = createServerFn({ method: "GET" })
@@ -90,6 +93,7 @@ export const getAdultStatus = createServerFn({ method: "GET" })
       birthdate_known: !!birth,
       available,
       mode_enabled: available && mode.confirmed && mode.enabled,
+      under_13: isUnderAccountAge(birth),
     };
   });
 

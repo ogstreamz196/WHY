@@ -8,6 +8,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { useCurrentUser } from "@/lib/auth";
 import { seo } from "@/lib/site";
+import { PLACEHOLDER_DOMAIN } from "@/lib/username-auth.functions";
 
 // Public page so it can be given to Google Play / the App Store as the
 // "delete your account" link. Works on the web and inside the apps.
@@ -39,6 +40,19 @@ function DeleteAccountPage() {
       await supabase.auth.signOut().catch(() => {});
       try {
         window.sessionStorage.clear();
+      } catch {
+        /* ignore */
+      }
+      // Also forget everything this app kept on the device (guest progress,
+      // cached favourites, settings) — all of it lives under "why:" keys.
+      try {
+        const ls = window.localStorage;
+        const keys: string[] = [];
+        for (let i = 0; i < ls.length; i++) {
+          const k = ls.key(i);
+          if (k && k.startsWith("why:")) keys.push(k);
+        }
+        for (const k of keys) ls.removeItem(k);
       } catch {
         /* ignore */
       }
@@ -90,7 +104,7 @@ function DeleteAccountPage() {
         ) : (
           <form onSubmit={handleDelete} className="mt-6 space-y-3">
             <p className="text-xs text-white/60">
-              Signed in as <span className="font-bold text-white/85">{user.email}</span>
+              Signed in as <span className="font-bold text-white/85">{accountLabel(user)}</span>
             </p>
             <label className="block">
               <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-white/50">
@@ -130,4 +144,14 @@ function DeleteAccountPage() {
       </div>
     </main>
   );
+}
+
+/** Username for username accounts (never their hidden placeholder address), else the email. */
+function accountLabel(user: { email?: string | null; user_metadata?: Record<string, unknown> }) {
+  const username = user.user_metadata?.username;
+  if (typeof username === "string" && username) return username;
+  const email = user.email ?? "";
+  if (email.endsWith(`@${PLACEHOLDER_DOMAIN}`))
+    return email.slice(0, -PLACEHOLDER_DOMAIN.length - 1);
+  return email;
 }

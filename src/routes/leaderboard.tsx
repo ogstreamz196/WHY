@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Crown, Flame, Rocket, Sparkles, Star, Sun, Trophy, Users } from "lucide-react";
@@ -10,6 +11,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { CATEGORIES, emojiFor } from "@/lib/categories";
 import type { LeaderboardKind, LeaderboardResult } from "@/lib/leaderboard.functions";
 import { getLeaderboardPublic } from "@/lib/leaderboard-public.functions";
+import { getMyProfile } from "@/lib/account.functions";
 import { AvatarFigure } from "@/components/AvatarFigure";
 import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
@@ -61,8 +63,9 @@ const AGES: Array<{ key: string; label: string }> = [
   { key: "adult", label: "Adult" },
 ];
 
-function defaultFilterFor(tab: TabKey): string | null {
-  if (tab === "age") return "adult";
+// Age board: start on the player's own band, or 10–12 when we don't know it.
+function defaultFilterFor(tab: TabKey, ageBand?: string | null): string | null {
+  if (tab === "age") return AGES.some((a) => a.key === ageBand) ? ageBand! : "10_12";
   if (tab === "category") return CATEGORIES.find((c) => c.key !== "all")?.key ?? "animals";
   return null;
 }
@@ -99,6 +102,12 @@ const INTERACTIVE_PLAYER =
 function ArenaPage() {
   const { user } = useCurrentUser();
   const fetchBoard = useServerFn(getLeaderboardPublic);
+  const fetchProfile = useServerFn(getMyProfile);
+  const profile = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => fetchProfile(),
+    enabled: !!user,
+  });
   const [tab, setTab] = useState<TabKey>("alltime");
   const [filter, setFilter] = useState<string | null>(null);
   const [result, setResult] = useState<LeaderboardResult | null>(null);
@@ -112,7 +121,7 @@ function ArenaPage() {
   // wrong filter (a category board with no category listed players twice).
   const selectTab = (next: TabKey) => {
     setTab(next);
-    setFilter(defaultFilterFor(next));
+    setFilter(defaultFilterFor(next, profile.data?.age_band));
   };
 
   const [celebrate, setCelebrate] = useState<{

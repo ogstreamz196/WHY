@@ -10,6 +10,8 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { signInWithUsername, signUpWithUsername } from "@/lib/username-auth.functions";
 import { rememberPendingBirthDate } from "@/lib/pendingBirthDate";
 import { seo } from "@/lib/site";
+import { safeRedirect } from "@/lib/safeRedirect";
+import { hasGuestFavorites } from "@/lib/guestImport";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -57,12 +59,14 @@ function AuthPage() {
   const signupBlocked = mode === "signup" && !ageOk;
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
+  // Never trust ?redirect= as-is: only same-site paths (see safeRedirect).
+  const redirectTo = safeRedirect(search.redirect);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: search.redirect ?? "/" });
+      if (data.session) navigate({ href: redirectTo });
     });
-  }, [navigate, search.redirect]);
+  }, [navigate, redirectTo]);
 
   const heading =
     mode === "signup"
@@ -78,28 +82,19 @@ function AuthPage() {
         : "Only works if you added a recovery email to your account.";
 
   function nextDestination(): string {
-    try {
-      const store = typeof window !== "undefined" ? window.sessionStorage : null;
-      const hasGuest =
-        !!store &&
-        ((Number(store.getItem("why:points")) || 0) > 0 ||
-          (Number(store.getItem("why:streak")) || 0) > 0 ||
-          (JSON.parse(store.getItem("why:favorites") ?? "[]") as unknown[]).length > 0);
-      if (hasGuest) {
-        const redirect = search.redirect ?? "/";
-        return `/import-guest?redirect=${encodeURIComponent(redirect)}`;
-      }
-    } catch {
-      // ignore
+    // Guest progress lives in localStorage (src/lib/store.ts). Only favourites
+    // move to the account, so only they are worth an import screen.
+    if (hasGuestFavorites()) {
+      return `/import-guest?redirect=${encodeURIComponent(redirectTo)}`;
     }
-    return search.redirect ?? "/";
+    return redirectTo;
   }
 
   async function handleOAuth(provider: "google" | "apple") {
     setLoading(true);
     setMessage(null);
     // Google/Apple leave the site; keep the birthday picked here so it's saved
-    // to the new account when they come back (see BirthdayPrompt).
+    // to the new account when they come back (see BirthdayCard).
     if (mode === "signup" && ageOk) {
       rememberPendingBirthDate({ year: Number(birthYear), month: Number(birthMonth) });
     }

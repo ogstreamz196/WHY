@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { useCurrentUser } from "@/lib/auth";
@@ -50,7 +51,12 @@ function ChainDetailPage() {
 
   const share = useMutation({
     mutationFn: (is_public: boolean) => doShare({ data: { id, is_public } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["chain", id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chain", id] });
+      // The list page shows the shared state too.
+      qc.invalidateQueries({ queryKey: ["chains"] });
+    },
+    onError: () => toast.error("Couldn't change sharing. Please try again."),
   });
 
   const regen = useMutation({
@@ -58,7 +64,9 @@ function ChainDetailPage() {
     onSuccess: () => {
       setCopied(false);
       qc.invalidateQueries({ queryKey: ["chain", id] });
+      qc.invalidateQueries({ queryKey: ["chains"] });
     },
+    onError: () => toast.error("Couldn't make a new link. Please try again."),
   });
 
   if (loading || chain.isLoading) {

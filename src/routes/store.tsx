@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Crown, Gift, Lock, Sparkles } from "lucide-react";
+import { Check, Crown, Gift, Loader2, Lock, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast as sonner } from "sonner";
 import { CoinIcon } from "@/components/CoinIcon";
@@ -73,11 +73,14 @@ function StorePage() {
   useEffect(() => setNativePlus(isNativePurchasesAvailable()), []);
   const plusAvailable = isNative === false || (isNative === true && nativePlus);
   const visibleTabs = TABS.filter((t) => t.id !== "vip" || plusAvailable);
-  const [coins, setCoins] = useState(0);
+  // null until we know whose balance to show: the device one for guests, the
+  // server one for signed-in users (never the guest number for them).
+  const [coins, setCoins] = useState<number | null>(null);
   const [inventory, setInventory] = useState<string[]>([]);
   const [theme, setTheme] = useState<string | undefined>(undefined);
   const [toast, setToast] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [confetti, setConfetti] = useState(0);
   const [tryOn, setTryOn] = useState<StoreItem | null>(null);
@@ -97,10 +100,11 @@ function StorePage() {
     queryKey: ["stats"],
     queryFn: () => fetchStats(),
     enabled: !!userId,
+    // Coins change elsewhere in the app; always show the latest balance here.
+    refetchOnMount: "always",
   });
 
   const refresh = () => {
-    setCoins(getPoints());
     setInventory(getInventory());
     setTheme(getEquipped().theme);
   };
@@ -143,9 +147,14 @@ function StorePage() {
   }, [userId, serverStats.data]);
 
   useEffect(() => {
+    if (authChecked && !userId) setCoins(getPoints());
+  }, [authChecked, userId]);
+
+  useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null);
       setUserEmail(data.user?.email ?? undefined);
+      setAuthChecked(true);
     });
   }, []);
 
@@ -205,6 +214,7 @@ function StorePage() {
   }
 
   async function buy(item: StoreItem) {
+    if (coins === null) return;
     if (coins < item.cost) {
       flash(`Need ${item.cost - coins} more coins`);
       return;
@@ -235,6 +245,7 @@ function StorePage() {
           return;
         }
         refresh();
+        setCoins(getPoints());
       }
     } catch (e) {
       console.error(e);
@@ -293,14 +304,20 @@ function StorePage() {
           <h1 className="font-display text-xl font-black tracking-tight text-white">Store</h1>
           <div className="glass inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5">
             <CoinIcon size={18} />
-            <motion.span
-              key={coins}
-              initial={{ scale: 1.3 }}
-              animate={{ scale: 1 }}
-              className="text-sm font-black text-white"
-            >
-              {coins}
-            </motion.span>
+            {coins === null && serverStats.isError ? (
+              <span className="text-sm font-black text-white/60">–</span>
+            ) : coins === null ? (
+              <Loader2 className="h-4 w-4 animate-spin text-white/70" aria-label="Loading coins" />
+            ) : (
+              <motion.span
+                key={coins}
+                initial={{ scale: 1.3 }}
+                animate={{ scale: 1 }}
+                className="text-sm font-black text-white"
+              >
+                {coins}
+              </motion.span>
+            )}
           </div>
         </header>
 
@@ -665,7 +682,7 @@ function ItemAction({
   item: StoreItem;
   owned: boolean;
   worn: boolean;
-  coins: number;
+  coins: number | null;
   busy: boolean;
   plusAvailable: boolean;
   onBuy: (i: StoreItem) => void;
@@ -715,7 +732,7 @@ function ItemAction({
       </span>
     );
   }
-  const canAfford = coins >= item.cost;
+  const canAfford = coins !== null && coins >= item.cost;
   return (
     <button
       type="button"

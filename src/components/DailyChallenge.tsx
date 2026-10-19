@@ -141,6 +141,13 @@ export function DailyChallenge({ onCompleted, userId = null }: Props) {
           );
           analytics.streakMilestoneUnlocked(milestone.days, milestone.label, "daily_challenge");
           setMilestoneBurst(milestone);
+          // Tell the global watcher this one is already celebrated, so it
+          // doesn't show the same milestone a second time.
+          try {
+            sessionStorage.setItem("why:seenStreakMilestone", String(milestone.days));
+          } catch {
+            /* ignore */
+          }
         }
         window.setTimeout(() => setAwardedFlash(null), 3200);
       }

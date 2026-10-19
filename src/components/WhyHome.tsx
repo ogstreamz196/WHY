@@ -136,6 +136,7 @@ import {
   STORE_CATALOG,
 } from "@/lib/store";
 import { rollDailyReward } from "@/lib/avatarItems";
+import { BirthdayCard } from "@/components/BirthdayCard";
 import { HomePlayerCard } from "@/components/HomePlayerCard";
 import { AvatarFigure } from "@/components/AvatarFigure";
 import { useMyAvatar } from "@/hooks/useMyAvatar";
@@ -245,16 +246,21 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   const [levelUp, setLevelUp] = useState<null | { level: number; title: string }>(null);
   const guestFactCount = useRef(0);
 
-  const missionMarkerRef = useRef<null | ((t: MissionTask) => void)>(null);
+  const missionMarkerRef = useRef<null | ((t: MissionTask, factCategory?: string) => void)>(null);
   const markMissionServer = useServerFn(markMissionTask);
   const markMission = useCallback(
-    (t: MissionTask) => {
-      if (missionMarkerRef.current) missionMarkerRef.current(t);
-      else if (user) markMissionServer({ data: { task: t } }).catch(() => {});
+    (t: MissionTask, factCategory?: string) => {
+      if (missionMarkerRef.current) missionMarkerRef.current(t, factCategory);
+      else if (user) {
+        markMissionServer({
+          data: t === "category" ? { task: t, category_key: factCategory } : { task: t },
+        }).catch(() => {});
+      }
     },
     [markMissionServer, user],
   );
 
+  const pickedNext = useRef(false);
   const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
   const tapCount = useRef<number>(0);
   const lastMilestone = useRef<number>(0);
@@ -280,7 +286,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   useEffect(() => {
     const p = getPoints();
     setPoints(p);
-    setLevel(Math.max(1, Math.floor(p / 100) + 1));
+    setLevel(levelFor(p).level);
     setStreak(getStreak());
   }, []);
 
@@ -319,10 +325,14 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         if (routeSearch.welcome || !hasRealNickname) {
           setWelcome(true);
         }
+        // Drop ?welcome=1 so a reload doesn't bring the pop-up back.
+        if (routeSearch.welcome) {
+          void navigate({ to: "/", search: {}, replace: true });
+        }
 
         setPoints(stats.total_points);
         setStreak(stats.current_streak);
-        setLevel(Math.max(1, Math.floor(stats.total_points / 100) + 1));
+        setLevel(levelFor(stats.total_points).level);
         setLastChain(last);
         const todayStr = new Date().toISOString().slice(0, 10);
         setBonusAvailable(stats.last_login_bonus_day !== todayStr);
@@ -333,7 +343,10 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     return () => {
       cancelled = true;
     };
-  }, [user, migrateGuest, fetchProfile, fetchStats, fetchLastChain]);
+    // Keyed on the account id: the user object is replaced on every token
+    // refresh, which would otherwise reload everything and reopen the welcome.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, migrateGuest, fetchProfile, fetchStats, fetchLastChain]);
 
   // Shared display update: level-up and every-50 milestone celebrations.
   const pointsRef = useRef(0);
@@ -387,7 +400,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
       if (res.claimed) {
         setPoints(res.stats.total_points);
         setStreak(res.stats.current_streak);
-        setLevel(Math.max(1, Math.floor(res.stats.total_points / 100) + 1));
+        setLevel(levelFor(res.stats.total_points).level);
         setCelebrate({ points: res.awarded_points });
       }
       setBonusAvailable(false);
@@ -407,8 +420,12 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     if (f) cacheFact(f);
   }, []);
 
+  // Only the newest request may show its fact, so a slow answer never
+  // replaces a newer one (for example after a quick category tap).
+  const loadSeq = useRef(0);
   const loadNext = useCallback(
     async (currentId?: string, opts?: { forceGenerate?: boolean }) => {
+      const seq = ++loadSeq.current;
       setLoading(true);
       setError(null);
       try {
@@ -440,6 +457,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
           const cached = getCachedRandomFact(currentId);
           if (cached) next = cached;
         }
+        if (seq !== loadSeq.current) return;
         showFact(next);
         if (next?.id) markSeen(next.id);
         bumpSeen();
@@ -447,13 +465,14 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         // below) so users can't farm by mashing "But… Why?".
       } catch (err) {
         console.error(err);
+        if (seq !== loadSeq.current) return;
         const cached = getCachedRandomFact(currentId);
         if (cached) {
           showFact(cached);
           setError("You're offline — showing a cached fact.");
         } else setError("Couldn't load a fact. Try again.");
       } finally {
-        setLoading(false);
+        if (seq === loadSeq.current) setLoading(false);
       }
     },
     [category, generateNew, getRandom, showFact],
@@ -522,9 +541,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     return () => window.clearTimeout(t);
   }, [chain.length, chain, fact?.id, user, grantPoints, claimChainReward, showServerBalance]);
 
-  useEffect(() => {
-    void loadNext();
-  }, []);
+  // Runs on mount too, so this is also the first fact load.
   useEffect(() => {
     void loadNext(fact?.id);
     if (user && category !== "all") {
@@ -547,8 +564,9 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
       setRevealing(false);
       // Coins deferred to the 3s dwell timer so users must actually read the answer.
       markMission("mystery");
-      markMission("surprise");
-      if (category !== "all" && fact?.category) markMission("category");
+      // "One surprise fact" means a fact they asked for with Next.
+      if (pickedNext.current) markMission("surprise");
+      if (fact?.category) markMission("category", fact.category);
     }, 480);
   };
 
@@ -730,7 +748,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     }
   };
 
-  const levelXP = points % 100;
+  const levelInfo = levelFor(points);
   const catGradient = gradientFor(fact?.category);
 
   return (
@@ -822,11 +840,15 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
               <motion.div
                 className="absolute inset-y-0 left-0 rounded-full"
                 style={{ background: "var(--gradient-primary)" }}
-                animate={{ width: `${levelXP}%` }}
+                animate={{ width: `${levelInfo.progressPct}%` }}
                 transition={{ type: "spring", stiffness: 120, damping: 20 }}
               />
             </div>
-            <span className="text-[10px] font-bold text-white/50">{levelXP}/100</span>
+            <span className="text-[10px] font-bold text-white/50">
+              {levelInfo.xpToNext === null
+                ? "Max"
+                : `${levelInfo.xpIntoLevel}/${levelInfo.xpIntoLevel + levelInfo.xpToNext}`}
+            </span>
           </div>
 
           {/* Search sheet */}
@@ -908,6 +930,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
               </motion.form>
             )}
           </AnimatePresence>
+          {isNative === false && <BirthdayCard userId={user?.id ?? null} />}
         </header>
 
         <div className="order-2 flex flex-1 flex-col wide:col-start-1 wide:row-start-3">
@@ -1367,7 +1390,10 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
             <motion.button
               type="button"
               disabled={loading}
-              onClick={() => loadNext(fact?.id)}
+              onClick={() => {
+                pickedNext.current = true;
+                void loadNext(fact?.id);
+              }}
               whileTap={{ scale: 0.97 }}
               className="animate-pulse-glow relative w-full overflow-hidden rounded-full px-6 py-5 text-xl font-black uppercase tracking-wide text-white disabled:opacity-70"
               style={{ background: "var(--gradient-primary)" }}
@@ -1472,7 +1498,10 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
 
             <DailyMission
               onOpenCategory={(k) => setCategory(k as CategoryKey)}
-              onCelebrate={(pts) => setCelebrate({ points: pts })}
+              onCelebrate={(pts, total) => {
+                if (typeof total === "number" && total > 0) showServerBalance(total);
+                setCelebrate({ points: pts });
+              }}
               registerMarker={(fn) => {
                 missionMarkerRef.current = fn;
               }}
@@ -1488,7 +1517,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                   if (reward.kind === "item") grantLocalItem(reward.itemId);
                   setStreak(r.streak);
                   setPoints(total);
-                  setLevel(Math.max(1, Math.floor(total / 100) + 1));
+                  setLevel(levelFor(total).level);
                   setCelebrate({ points: r.pointsDelta });
                   return reward;
                 }
@@ -1545,7 +1574,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         </aside>
       </div>
 
-      {showSkeleton && !fact ? <BottomNavSkeleton /> : <BottomNav />}
+      <BottomNav />
       <ConfettiBurst trigger={chainConfetti} />
       <Celebration
         open={!!celebrate}
@@ -1772,35 +1801,6 @@ function FactSkeleton() {
   );
 }
 
-function BottomNavSkeleton() {
-  return (
-    <>
-      {/* Holds the side rail's space on wide screens so nothing jumps when it loads. */}
-      <div
-        data-side-rail
-        aria-hidden
-        className="fixed inset-y-0 left-0 z-40 hidden w-[var(--rail-w)] border-r border-white/10 bg-black/35 wide:block"
-      />
-      <nav
-        aria-label="Loading navigation"
-        aria-busy="true"
-        className="fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] wide:hidden"
-      >
-        <div className="mx-auto max-w-2xl px-3 pb-3">
-          <div className="glass-strong flex items-center justify-around rounded-3xl px-2 py-2 shadow-[var(--shadow-card)]">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex flex-1 flex-col items-center gap-1 px-2 py-1.5">
-                <ShimmerBar className="h-5 w-5 rounded-md" />
-                <ShimmerBar className="h-2 w-8" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </nav>
-    </>
-  );
-}
-
 function capitalize(s: string) {
   if (!s) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -1964,6 +1964,8 @@ export function WelcomeOverlay({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
           className="overlay-scroll fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
           onClick={onClose}
         >

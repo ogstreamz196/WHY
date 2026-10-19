@@ -1,10 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
-  FolderPlus,
+  Heart,
   Loader2,
   Pin,
   PinOff,
@@ -13,7 +13,8 @@ import {
   Link as LinkIcon,
   Sparkles,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { useCurrentUser } from "@/lib/auth";
@@ -22,11 +23,15 @@ import {
   deleteChain,
   setChainShared,
   togglePinChain,
-  listCollections,
-  createCollection,
   type ChainSummary,
-  type CollectionSummary,
 } from "@/lib/chains.functions";
+import {
+  listFavorites,
+  toggleFavorite as toggleFavoriteServer,
+  type FavoriteFact,
+} from "@/lib/account.functions";
+import { isFavorite, toggleFavorite } from "@/lib/store";
+import { emojiFor } from "@/lib/categories";
 import { seo } from "@/lib/site";
 
 export const Route = createFileRoute("/chains")({
@@ -40,11 +45,11 @@ function ChainsPage() {
   const qc = useQueryClient();
 
   const fetchChains = useServerFn(listMyChains);
-  const fetchCollections = useServerFn(listCollections);
+  const fetchFavorites = useServerFn(listFavorites);
   const doDelete = useServerFn(deleteChain);
   const doShare = useServerFn(setChainShared);
   const doPin = useServerFn(togglePinChain);
-  const doCreate = useServerFn(createCollection);
+  const doToggleFav = useServerFn(toggleFavoriteServer);
 
   useEffect(() => {
     if (!loading && !user)
@@ -56,34 +61,38 @@ function ChainsPage() {
     queryFn: () => fetchChains(),
     enabled: !!user,
   });
-  const collections = useQuery({
-    queryKey: ["collections"],
-    queryFn: () => fetchCollections(),
+  const favorites = useQuery({
+    queryKey: ["favorites", user?.id],
+    queryFn: () => fetchFavorites(),
     enabled: !!user,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["chains"] });
-  const invalidateCollections = () => qc.invalidateQueries({ queryKey: ["collections"] });
 
   const del = useMutation({
     mutationFn: (id: string) => doDelete({ data: { id } }),
     onSuccess: invalidate,
+    onError: () => toast.error("Couldn't delete that. Please try again."),
   });
   const pin = useMutation({
     mutationFn: (v: { id: string; pinned: boolean }) => doPin({ data: v }),
     onSuccess: invalidate,
+    onError: () => toast.error("Couldn't pin that. Please try again."),
   });
   const share = useMutation({
     mutationFn: (v: { id: string; is_public: boolean }) => doShare({ data: v }),
     onSuccess: invalidate,
+    onError: () => toast.error("Couldn't change sharing. Please try again."),
   });
-  const createCol = useMutation({
-    mutationFn: (name: string) => doCreate({ data: { name } }),
-    onSuccess: invalidateCollections,
+  const unheart = useMutation({
+    mutationFn: (fact: FavoriteFact) => doToggleFav({ data: { fact_id: fact.id } }),
+    onSuccess: (_res, fact) => {
+      // Home keeps a device copy of hearts too; drop it so the heart there matches.
+      if (isFavorite(fact.id)) toggleFavorite({ ...fact, code: "" });
+      qc.invalidateQueries({ queryKey: ["favorites"] });
+    },
+    onError: () => toast.error("Couldn't remove that heart. Please try again."),
   });
-
-  const [newCol, setNewCol] = useState("");
-  const [showNewCol, setShowNewCol] = useState(false);
 
   if (loading || !user) {
     return (
@@ -98,71 +107,43 @@ function ChainsPage() {
       <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <h1 className="font-display text-3xl font-black text-white">Your Favourites</h1>
-        <p className="mt-1 text-sm text-white/60">The curiosity trails you've saved.</p>
+        <p className="mt-1 text-sm text-white/60">
+          The facts you've hearted and trails you've saved.
+        </p>
 
-        {/* Collections */}
+        {/* Hearted facts */}
         <section className="mt-6">
-          <header className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-lg font-black text-white">Collections</h2>
-            <button
-              type="button"
-              onClick={() => setShowNewCol((v) => !v)}
-              className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white/80"
-            >
-              <FolderPlus className="h-4 w-4" /> New
-            </button>
-          </header>
-          <AnimatePresence>
-            {showNewCol && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="mb-3 flex gap-2">
-                  <input
-                    autoFocus
-                    value={newCol}
-                    onChange={(e) => setNewCol(e.target.value)}
-                    placeholder="e.g. Space mysteries"
-                    maxLength={80}
-                    className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder:text-white/40"
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const name = newCol.trim();
-                      if (!name) return;
-                      await createCol.mutateAsync(name);
-                      setNewCol("");
-                      setShowNewCol(false);
-                    }}
-                    className="rounded-full px-4 py-2 text-sm font-bold text-white"
-                    style={{ background: "var(--gradient-primary)" }}
-                  >
-                    Add
-                  </button>
-                </div>
-              </motion.div>
+          <h2 className="font-display text-lg font-black text-white">Hearted facts</h2>
+          <div className="mt-3 space-y-3">
+            {favorites.isLoading && (
+              <div className="flex justify-center py-6">
+                <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+              </div>
             )}
-          </AnimatePresence>
-          {collections.data && collections.data.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {collections.data.map((c) => (
-                <CollectionCard key={c.id} c={c} />
-              ))}
-            </div>
-          ) : (
-            <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
-              No collections yet — group related favourites into a theme.
-            </p>
-          )}
+            {favorites.isError && (
+              <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
+                Couldn't load your hearted facts. Please try again in a moment.
+              </p>
+            )}
+            {favorites.data && favorites.data.length === 0 && (
+              <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
+                No hearted facts yet. Tap the heart on any fact to keep it here.
+              </p>
+            )}
+            {(favorites.data ?? []).map((f) => (
+              <FavoriteRow
+                key={f.id}
+                fact={f}
+                removing={unheart.isPending && unheart.variables?.id === f.id}
+                onRemove={() => unheart.mutate(f)}
+              />
+            ))}
+          </div>
         </section>
 
         {/* Chains */}
         <section className="mt-8">
-          <h2 className="font-display text-lg font-black text-white">Saved Favourites</h2>
+          <h2 className="font-display text-lg font-black text-white">Saved trails</h2>
           <div className="mt-3 space-y-3">
             {chains.isLoading && (
               <div className="flex justify-center py-6">
@@ -196,16 +177,46 @@ function ChainsPage() {
   );
 }
 
-function CollectionCard({ c }: { c: CollectionSummary }) {
+function FavoriteRow({
+  fact,
+  removing,
+  onRemove,
+}: {
+  fact: FavoriteFact;
+  removing: boolean;
+  onRemove: () => void;
+}) {
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+      layout
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
       className="glass rounded-3xl border border-white/10 p-4"
     >
-      <div className="text-2xl">📚</div>
-      <div className="mt-1 font-black text-white">{c.name}</div>
-      <div className="text-[11px] text-white/50">
-        {c.chain_count} item{c.chain_count === 1 ? "" : "s"}
+      <div className="flex items-start gap-3">
+        <div className="flex-1">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-amber-200/80">
+            {emojiFor(fact.category)} Do you know why…
+          </div>
+          <div className="mt-1 font-display font-black leading-tight text-white">
+            {fact.question}
+          </div>
+          <p className="mt-1.5 text-sm leading-relaxed text-white/70">{fact.answer}</p>
+          {fact.fun_fact && <p className="mt-1.5 text-xs text-amber-200/80">⭐ {fact.fun_fact}</p>}
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={removing}
+          className="shrink-0 rounded-full bg-rose-500/15 p-2 text-rose-200 disabled:opacity-50"
+          aria-label="Remove heart"
+        >
+          {removing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Heart className="h-4 w-4 fill-current" />
+          )}
+        </button>
       </div>
     </motion.div>
   );

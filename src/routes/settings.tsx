@@ -21,6 +21,7 @@ import { AdultModeSwitch } from "@/components/AdultModeSwitch";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { saveMyBirthDate } from "@/lib/adult.functions";
 import { seo } from "@/lib/site";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
   head: () => seo({ title: "Settings | Why?", noindex: true, themeColor: "#7c3aed" }),
@@ -265,6 +266,8 @@ function ArenaPreferences() {
       await doUpdate({ data: patch });
       await qc.invalidateQueries({ queryKey: ["profile"] });
       await qc.invalidateQueries({ queryKey: ["my-rankings"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't save that. Please try again.");
     } finally {
       setSaving(false);
     }
