@@ -34,7 +34,7 @@ const NAV_ORDER_KEY = "nav.bottom.order";
 
 export function BottomNav() {
   const isBoss = useBossTheme();
-  const { user } = useCurrentUser();
+  const { user, loading } = useCurrentUser();
   const { isPlus: isVip } = usePlus(user?.id);
   const { editMode, overrides, saveOverride } = useEditMode();
   const adult = useAdultStatus(user?.id);
@@ -76,6 +76,10 @@ export function BottomNav() {
     if (to === "/chains" && !user) return "/favorites";
     return to;
   };
+  // Phone bar: guests have no profile, so "You" opens Settings (sign up,
+  // sound, privacy policy). The wide side rail has its own Settings link.
+  const phoneTo = (to: string) =>
+    to === "/profile" && !loading && !user ? "/settings" : homeTo(to);
 
   return (
     <>
@@ -155,7 +159,7 @@ export function BottomNav() {
               return (
                 <div key={to} className="flex flex-1 flex-col items-center">
                   <Link
-                    to={homeTo(to)}
+                    to={phoneTo(to)}
                     activeOptions={{ exact: to === "/" }}
                     activeProps={{ "data-active": "true" } as never}
                     className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 text-[var(--muted-foreground)] transition-all duration-200 hover:-translate-y-0.5 hover:text-white active:scale-90 data-[active=true]:text-foreground"

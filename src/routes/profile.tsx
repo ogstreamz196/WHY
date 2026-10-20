@@ -47,6 +47,7 @@ import { VipBadge } from "@/components/VipBadge";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { usePlus } from "@/hooks/usePlus";
 import { seo } from "@/lib/site";
+import { PLACEHOLDER_DOMAIN } from "@/lib/username-auth.functions";
 
 const MILESTONES = [
   { key: "seen", label: "Facts discovered", steps: [10, 50, 100, 250, 500, 1000] },
@@ -83,8 +84,16 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
+type ProfileTab = "overview" | "trophies" | "history";
+
+// Links like /profile#achievements (old /badges page) open the matching tab.
+const TAB_FOR_HASH: Record<string, ProfileTab> = {
+  achievements: "trophies",
+  "recent-discoveries": "history",
+};
+
 function ProfilePage() {
-  const [tab, setTab] = useState<"overview" | "trophies" | "history">("overview");
+  const [tab, setTab] = useState<ProfileTab>("overview");
   const { user, loading } = useCurrentUser();
   const { isPlus: isVip } = usePlus(user?.id);
   const navigate = useNavigate();
@@ -159,11 +168,33 @@ function ProfilePage() {
     setLocalHydrated(true);
   }, []);
   const { confettiTrigger, levelUp, dismissLevelUp } = useUnlockWatcher(localBadges);
+
+  // Signed in: trophies follow the account's saved progress, not this
+  // device's guest numbers. Guests keep the numbers saved on this device.
+  const serverStats = user ? stats.data : undefined;
+  const trophyPoints = serverStats ? serverStats.total_points : localPoints;
+  const trophyStreak = serverStats ? serverStats.current_streak : localStreak;
+  const trophySeen = serverStats ? serverStats.facts_seen : localSeen;
+  const trophyReady = user ? !!stats.data : localHydrated;
+  const trophyBadges = useMemo(() => {
+    if (!serverStats) return localBadges;
+    const values = {
+      seen: serverStats.facts_seen,
+      streak: serverStats.current_streak,
+      points: serverStats.total_points,
+    };
+    // Same badges and thresholds as getBadges(), worked out from the account's numbers.
+    return localBadges.map((b) => {
+      const t = LOCAL_BADGE_TARGETS[b.id];
+      return t ? { ...b, unlocked: values[t.stat] >= t.target } : b;
+    });
+  }, [serverStats, localBadges]);
+
   const widgetMilestones = useMemo(() => {
     const stats: Record<string, number> = {
-      seen: localSeen,
-      streak: localStreak,
-      points: localPoints,
+      seen: trophySeen,
+      streak: trophyStreak,
+      points: trophyPoints,
     };
     return MILESTONES.map((m) => {
       const current = stats[m.key] ?? 0;
@@ -171,15 +202,36 @@ function ProfilePage() {
       const next = nextIdx === -1 ? m.steps[m.steps.length - 1] : m.steps[nextIdx];
       return { label: m.label, value: current, next };
     });
-  }, [localSeen, localStreak, localPoints]);
-  const localUnlocked = localBadges.filter((b) => b.unlocked).length;
+  }, [trophySeen, trophyStreak, trophyPoints]);
+  const localUnlocked = trophyBadges.filter((b) => b.unlocked).length;
 
   const localProgressFor = (id: string): { current: number; target: number } | null => {
     const t = LOCAL_BADGE_TARGETS[id];
     if (!t) return null;
-    const current = t.stat === "seen" ? localSeen : t.stat === "streak" ? localStreak : localPoints;
+    const current =
+      t.stat === "seen" ? trophySeen : t.stat === "streak" ? trophyStreak : trophyPoints;
     return { current, target: t.target };
   };
+
+  // Open the tab a #hash link points at, then scroll to that section.
+  const [hashTarget, setHashTarget] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const id = window.location.hash.replace(/^#/, "");
+    const next = TAB_FOR_HASH[id];
+    if (next) {
+      setTab(next);
+      setHashTarget(id);
+    }
+  }, []);
+  useEffect(() => {
+    if (!hashTarget || !user) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(hashTarget)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setHashTarget(null);
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [hashTarget, user]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -220,7 +272,9 @@ function ProfilePage() {
           ...Object.fromEntries(Object.keys(prev).map((k) => [k, !!parsed[k]])),
         }));
       }
-    } catch {}
+    } catch {
+      /* ignore bad saved state */
+    }
   }, []);
 
   const toggleCollapsed = (key: CollapseKey) => {
@@ -333,7 +387,7 @@ function ProfilePage() {
                   {isVip && <VipBadge size="md" />}
                 </h1>
               )}
-              <p className="mt-0.5 text-xs text-white/50 truncate">{user.email}</p>
+              <p className="mt-0.5 text-xs text-white/50 truncate">{accountLabel(user)}</p>
               {!editing && isVip && profile.data?.status_message && (
                 <p className="mt-1 text-xs font-black uppercase tracking-wider text-amber-200/90">
                   💬 {profile.data.status_message}
@@ -639,7 +693,7 @@ function ProfilePage() {
                 </div>
                 {!collapsed.achievements && (
                   <div id="achievements-body" className="space-y-6">
-                    <LevelProgressWidget xp={localPoints} milestones={widgetMilestones} />
+                    <LevelProgressWidget xp={trophyPoints} milestones={widgetMilestones} />
 
                     {/* Server achievements: loading → skeleton, empty → empty state, else grid */}
                     {achievements.isLoading && !achievements.data ? (
@@ -683,7 +737,7 @@ function ProfilePage() {
                     )}
 
                     {/* Explorer badges: loading skeleton until localStorage read, then grid or empty state */}
-                    {!localHydrated ? (
+                    {!trophyReady ? (
                       <div>
                         <div className="mb-3 h-3 w-40 animate-pulse rounded bg-white/10" />
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3" aria-busy="true">
@@ -695,7 +749,7 @@ function ProfilePage() {
                           ))}
                         </div>
                       </div>
-                    ) : localBadges.length === 0 ? (
+                    ) : trophyBadges.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5 text-center">
                         <div className="text-3xl">✨</div>
                         <p className="mt-2 text-sm font-black text-white">
@@ -710,11 +764,11 @@ function ProfilePage() {
                         <p className="mb-3 text-xs text-white/60">
                           Explorer badges · unlocked{" "}
                           <span className="font-black text-white">{localUnlocked}</span> of{" "}
-                          {localBadges.length}
+                          {trophyBadges.length}
                           <span className="ml-2 text-white/40">· tap for details</span>
                         </p>
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                          {localBadges.map((b, i) => (
+                          {trophyBadges.map((b, i) => (
                             <motion.button
                               type="button"
                               onClick={() =>
@@ -913,6 +967,16 @@ function ProfilePage() {
       <BottomNav />
     </main>
   );
+}
+
+/** Username for username accounts (never their hidden placeholder address), else the email. */
+function accountLabel(user: { email?: string | null; user_metadata?: Record<string, unknown> }) {
+  const username = user.user_metadata?.username;
+  if (typeof username === "string" && username) return username;
+  const email = user.email ?? "";
+  if (email.endsWith(`@${PLACEHOLDER_DOMAIN}`))
+    return email.slice(0, -PLACEHOLDER_DOMAIN.length - 1);
+  return email;
 }
 
 function CollapseChevron({

@@ -65,7 +65,7 @@ const AGES: Array<{ key: string; label: string }> = [
 
 // Age board: start on the player's own band, or 10–12 when we don't know it.
 function defaultFilterFor(tab: TabKey, ageBand?: string | null): string | null {
-  if (tab === "age") return AGES.some((a) => a.key === ageBand) ? ageBand! : "10_12";
+  if (tab === "age") return AGES.some((a) => a.key === ageBand) ? ageBand! : "teen";
   if (tab === "category") return CATEGORIES.find((c) => c.key !== "all")?.key ?? "animals";
   return null;
 }

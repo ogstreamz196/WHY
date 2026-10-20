@@ -20,6 +20,7 @@ import { isSoundEnabled, setSoundEnabled } from "@/lib/feedback";
 import { AdultModeSwitch } from "@/components/AdultModeSwitch";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { saveMyBirthDate } from "@/lib/adult.functions";
+import { PLACEHOLDER_DOMAIN } from "@/lib/username-auth.functions";
 import { seo } from "@/lib/site";
 import { toast } from "sonner";
 
@@ -80,7 +81,7 @@ function SettingsPage() {
           {user ? (
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-slate-900">{user.email}</p>
+                <p className="text-sm font-bold text-slate-900">{accountLabel(user)}</p>
                 <Link
                   to="/profile"
                   className="text-xs font-semibold text-violet-700 underline-offset-2 hover:underline"
@@ -148,25 +149,6 @@ function SettingsPage() {
               setSoundEnabled(v);
             }}
           />
-          <div className="pt-2">
-            <p className="text-sm font-semibold text-slate-800">Reading level</p>
-            <div className="mt-2 flex gap-2">
-              {(["easy", "standard"] as const).map((lvl) => (
-                <button
-                  key={lvl}
-                  type="button"
-                  onClick={() => update({ readingLevel: lvl })}
-                  className={`flex-1 rounded-2xl px-3 py-2 text-sm font-bold ${
-                    settings.readingLevel === lvl
-                      ? "bg-violet-600 text-white"
-                      : "bg-white text-slate-700 ring-1 ring-slate-200"
-                  }`}
-                >
-                  {lvl === "easy" ? "Easy (6–9)" : "Standard (8–12)"}
-                </button>
-              ))}
-            </div>
-          </div>
         </section>
 
         {user && <ArenaPreferences />}
@@ -241,9 +223,19 @@ function Toggle({
   );
 }
 
-const AGE_OPTIONS: Array<{ key: "under_10" | "10_12" | "teen" | "adult"; label: string }> = [
-  { key: "under_10", label: "Under 10" },
-  { key: "10_12", label: "10–12" },
+/** Username for username accounts (never their hidden placeholder address), else the email. */
+function accountLabel(user: { email?: string | null; user_metadata?: Record<string, unknown> }) {
+  const username = user.user_metadata?.username;
+  if (typeof username === "string" && username) return username;
+  const email = user.email ?? "";
+  if (email.endsWith(`@${PLACEHOLDER_DOMAIN}`))
+    return email.slice(0, -PLACEHOLDER_DOMAIN.length - 1);
+  return email;
+}
+
+// Accounts are 13+, so only the teen and adult groups are offered. Older
+// saved groups ("under_10", "10_12") show as Teen.
+const AGE_OPTIONS: Array<{ key: "teen" | "adult"; label: string }> = [
   { key: "teen", label: "Teen" },
   { key: "adult", label: "Adult" },
 ];
@@ -256,7 +248,7 @@ function ArenaPreferences() {
   const [saving, setSaving] = useState(false);
 
   const save = async (patch: {
-    age_band?: "under_10" | "10_12" | "teen" | "adult";
+    age_band?: "teen" | "adult";
     favorite_category?: string;
     leaderboard_opt_out?: boolean;
     hide_from_public?: boolean;
@@ -274,6 +266,8 @@ function ArenaPreferences() {
   };
 
   const profile = p.data;
+  const ageBand =
+    profile?.age_band === "under_10" || profile?.age_band === "10_12" ? "teen" : profile?.age_band;
 
   return (
     <section className="mb-6 space-y-4 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
@@ -284,7 +278,7 @@ function ArenaPreferences() {
         <p className="text-xs text-slate-500">Ranks you against explorers your age.</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {AGE_OPTIONS.map((a) => {
-            const active = profile?.age_band === a.key;
+            const active = ageBand === a.key;
             return (
               <button
                 key={a.key}

@@ -74,13 +74,11 @@ export type Settings = {
   childMode: boolean;
   darkMode: boolean;
   sound: boolean;
-  readingLevel: "easy" | "standard";
 };
 export const defaultSettings: Settings = {
   childMode: true,
   darkMode: false,
   sound: true,
-  readingLevel: "standard",
 };
 export const getSettings = (): Settings => ({ ...defaultSettings, ...read(KEY_SETTINGS, {}) });
 export const setSettings = (s: Settings) => write(KEY_SETTINGS, s);

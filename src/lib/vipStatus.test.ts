@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { awardAmountForUser } from "./vipStatus";
-import { decidePlus, entitlementFromRevenueCat, NO_PLUS } from "./plus.server";
+import { decidePlus, entitlementFromRevenueCat, NO_PLUS, paddleEnv } from "./plus.server";
 
 const ctx = { supabase: {} as never, userId: "user-1" };
 const day = 86400_000;
@@ -129,5 +129,13 @@ describe("entitlementFromRevenueCat", () => {
     });
     expect(row?.expires_at).toBe(grace);
     expect(row?.billing_issue).toBe(true);
+  });
+});
+
+describe("paddleEnv", () => {
+  it("uses sandbox for a test client token and live otherwise", () => {
+    expect(paddleEnv("test_abc")).toBe("sandbox");
+    expect(paddleEnv("live_abc")).toBe("live");
+    expect(paddleEnv(undefined)).toBe("live");
   });
 });

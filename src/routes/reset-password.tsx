@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CosmicBackground } from "@/components/CosmicBackground";
@@ -16,6 +16,28 @@ function ResetPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // "checking" until we know the link worked; "expired" for old or used links.
+  const [linkState, setLinkState] = useState<"checking" | "ok" | "expired">("checking");
+
+  useEffect(() => {
+    let mounted = true;
+    // Supabase puts error=…/error_code=… in the link when it has expired or was used.
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const query = new URLSearchParams(window.location.search);
+    if (params.get("error") || params.get("error_code") || query.get("error")) {
+      setLinkState("expired");
+      return;
+    }
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (mounted) setLinkState(data.session ? "ok" : "expired");
+      })
+      .catch(() => mounted && setLinkState("expired"));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,10 +50,45 @@ function ResetPage() {
       if (error) throw error;
       navigate({ to: "/" });
     } catch (err) {
+      if (err instanceof Error && /session missing/i.test(err.message)) {
+        setLinkState("expired");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Failed to update password");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (linkState !== "ok") {
+    return (
+      <main className="relative flex min-h-[100dvh] items-center justify-center px-4">
+        <CosmicBackground />
+        <div className="glass-strong w-full max-w-md rounded-4xl border border-white/10 p-6">
+          {linkState === "checking" ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+            </div>
+          ) : (
+            <>
+              <h1 className="font-display text-2xl font-black text-white">This link has expired</h1>
+              <p className="mt-1 text-sm text-white/60">
+                This link has expired or was already used. Ask for a new one and we'll email it to
+                you.
+              </p>
+              <Link
+                to="/auth"
+                search={{ mode: "reset" }}
+                className="mt-5 flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-black text-white shadow-[var(--shadow-glow)]"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                Send me a new link
+              </Link>
+            </>
+          )}
+        </div>
+      </main>
+    );
   }
 
   return (

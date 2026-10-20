@@ -15,12 +15,12 @@ Guests can use it without an account.
 
 ## What Why? Plus adds
 
-| | Free | Why? Plus |
-|---|---|---|
-| "But… Why?" deep dives and search | 30 an hour | 100 an hour |
-| Plus-only animated avatars and themes | — | ✓ |
-| Plus badge and status bubble on your profile | — | ✓ |
-| Coins earned per activity | same | same |
+|                                              | Free       | Why? Plus   |
+| -------------------------------------------- | ---------- | ----------- |
+| "But… Why?" deep dives and search            | 30 an hour | 100 an hour |
+| Plus-only animated avatars and themes        | —          | ✓           |
+| Plus badge and status bubble on your profile | —          | ✓           |
+| Coins earned per activity                    | same       | same        |
 
 Coins and leaderboard scores are the same for everyone, so the boards stay fair.
 
@@ -36,10 +36,10 @@ These are planned so Plus keeps getting more valuable to parents. They aren't bu
 
 ## Prices
 
-| Plan | Price | Trial |
-|---|---|---|
-| Monthly | $3.99 | 7 days free |
-| Yearly | $29.99 (about 37% off monthly) | 7 days free |
+| Plan    | Price                          | Trial       |
+| ------- | ------------------------------ | ----------- |
+| Monthly | $3.99                          | 7 days free |
+| Yearly  | $29.99 (about 37% off monthly) | 7 days free |
 
 Prices are set in each store (Google Play, App Store) and in Paddle for the website. The app shows the store's own localised price, so you can change prices without a code change. Apple and Google take 15% under their small-business programmes (30% above $1M a year). Paddle takes about 5% + 50¢.
 
@@ -66,7 +66,10 @@ Prices are set in each store (Google Play, App Store) and in Paddle for the webs
 - **Managing:** Plus members who subscribed in an app get **Manage subscription**, which opens the **RevenueCat Customer Center**, also behind the grown-up check. There is also a **Restore purchases** button.
 - **Server sync:**
   - `/api/public/revenuecat/webhook` re-reads the subscriber from RevenueCat's API on every event, so late or repeated events don't matter.
-  - The app also asks the server to re-sync straight after a purchase, a restore, a Customer Center visit, or a change pushed by the store.
+  - `/api/public/payments/webhook` (Paddle) does the same: on `subscription.created`, `updated`, `canceled` and `transaction.payment_failed` it re-reads the subscription from Paddle and stores its current status. `past_due` is stored as `canceled` (Plus ends at once when a payment fails); a failed payment that leaves the subscription active changes nothing.
+  - The app also asks the server to re-sync straight after a purchase, a restore, a Customer Center visit, or a change pushed by the store (one listener for the whole app; website Plus is never re-synced from the store).
+- **Which Paddle environment counts:** `VITE_PAYMENTS_CLIENT_TOKEN` starting with `test_` means sandbox (preview), anything else live, on the website and the server alike.
+- **Plus only shows where it can be bought:** in the apps, the Plus tab and buttons appear only when the RevenueCat plugins are present and RevenueCat is configured (natively on Android, or with `VITE_REVENUECAT_IOS_KEY` on iOS). Nothing about Plus shows until that's known.
 - **Test Store purchases never grant Plus on the server** unless `REVENUECAT_ALLOW_TEST_STORE=true` is set. Only set it while testing.
 
 ## What you need to set up
@@ -102,11 +105,11 @@ The Test Store key (`test_…`) is already in the Android debug build.
 
 In Lovable (Cloud → Secrets):
 
-| Name | Value |
-|---|---|
-| `REVENUECAT_SECRET_API_KEY` | the `sk_` key |
-| `REVENUECAT_WEBHOOK_AUTH` | the webhook password from step 2.7 |
-| `VITE_REVENUECAT_IOS_KEY` | the `appl_` key |
+| Name                          | Value                                                     |
+| ----------------------------- | --------------------------------------------------------- |
+| `REVENUECAT_SECRET_API_KEY`   | the `sk_` key                                             |
+| `REVENUECAT_WEBHOOK_AUTH`     | the webhook password from step 2.7                        |
+| `VITE_REVENUECAT_IOS_KEY`     | the `appl_` key                                           |
 | `REVENUECAT_ALLOW_TEST_STORE` | `true` while you test with the Test Store, then delete it |
 
 For Android release builds, give the build your `goog_` key:
@@ -130,4 +133,4 @@ Existing `vip_monthly` subscribers keep Plus.
 3. Test real billing with Google Play licence testers or Apple sandbox accounts.
 4. Ship **release** builds that include the `goog_` key, and the iOS build with `VITE_REVENUECAT_IOS_KEY` set.
 
-The RevenueCat plugins are native code, so the apps need a new store release before they can sell Plus. Until then, the Plus tab stays hidden in the apps.
+The RevenueCat plugins are native code, so the apps need a new store release before they can sell Plus. Until then, and in any build without a RevenueCat key, the Plus tab stays hidden in the apps.

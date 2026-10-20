@@ -15,7 +15,6 @@ import {
   grantLocalItem,
   itemById,
   setEquipped,
-  setOwnedItems,
   wearItem,
   type Equipped,
   type StoreItem,
@@ -35,7 +34,9 @@ function useLocalEquipped(): Equipped {
 
 /**
  * The player's avatar and outfit. Signed-in players use their profile on the
- * server (shared with the Ranks page); guests use this device.
+ * server (shared with the Ranks page); guests use this device. The account's
+ * outfit is never written into the guest copy, so on a shared device signing
+ * in or out doesn't change what the guest is wearing.
  */
 export function useMyAvatar(userId: string | null): {
   avatarId: string;
@@ -49,21 +50,10 @@ export function useMyAvatar(userId: string | null): {
     enabled: !!userId,
   });
 
-  // Keep this device's copy in step with the server so the store preview
-  // starts from what the player is really wearing.
   const server = userId ? profile.data : null;
-  useEffect(() => {
-    if (!server) return;
-    const cur = getEquipped();
-    if (
-      cur.avatar !== server.avatar_id ||
-      JSON.stringify(cur.outfit ?? {}) !== JSON.stringify(server.avatar_outfit ?? {})
-    ) {
-      setEquipped({ avatar: server.avatar_id, outfit: server.avatar_outfit ?? {} });
-    }
-  }, [server]);
-
   if (server) return { avatarId: server.avatar_id, outfit: server.avatar_outfit ?? {} };
+  // Signed in but no profile (yet): the default look, never the guest's.
+  if (userId) return { avatarId: "avatar-sprout", outfit: {} };
   return { avatarId: local.avatar ?? "avatar-sprout", outfit: local.outfit ?? {} };
 }
 
@@ -102,11 +92,10 @@ export function useWeeklyDrop(userId: string | null): WeeklyDrop | null {
         return true;
       }
       const res = await doClaim();
-      const next = await qc.fetchQuery({
+      await qc.fetchQuery({
         queryKey: ["inventory"],
         queryFn: () => fetchInventory(),
       });
-      setOwnedItems(next);
       return res.ok;
     },
   };
@@ -115,29 +104,37 @@ export function useWeeklyDrop(userId: string | null): WeeklyDrop | null {
 const isSlot = (c: string): c is OutfitSlot => (OUTFIT_SLOTS as readonly string[]).includes(c);
 
 /**
- * Put on (or take off) a character or wearable. Changes this device straight
- * away and, for signed-in players, saves it to their profile so it shows on
- * the Ranks page. Throws (after undoing the change) if the server says no.
+ * Put on (or take off) a character or wearable. Guests change this device;
+ * signed-in players change their profile (shown on the Ranks page) and never
+ * the guest copy. Throws (after undoing the change) if the server says no.
  */
 export function useDressUp(userId: string | null) {
   const qc = useQueryClient();
   const update = useServerFn(updateMyProfile);
+  const fetchProfile = useServerFn(getMyProfile);
 
   return async (item: StoreItem, on = true): Promise<void> => {
-    const before = getEquipped();
-    let data: { avatar_id?: string; avatar_outfit?: Outfit };
-    if (item.category === "avatar") {
-      setEquipped({ avatar: item.id });
-      data = { avatar_id: item.id };
-    } else if (isSlot(item.category)) {
-      const next = wearItem(item.category, on ? item.id : null);
-      data = { avatar_outfit: next.outfit ?? {} };
-    } else {
+    if (item.category !== "avatar" && !isSlot(item.category)) return;
+    if (!userId) {
+      if (item.category === "avatar") setEquipped({ avatar: item.id });
+      else if (isSlot(item.category)) wearItem(item.category, on ? item.id : null);
       return;
     }
-    if (!userId) return;
 
-    const prev = qc.getQueryData<ProfileDTO | null>(["profile"]);
+    const prev = await qc.ensureQueryData<ProfileDTO | null>({
+      queryKey: ["profile"],
+      queryFn: () => fetchProfile(),
+    });
+    let data: { avatar_id?: string; avatar_outfit?: Outfit };
+    if (item.category === "avatar") {
+      data = { avatar_id: item.id };
+    } else {
+      const outfit: Outfit = { ...(prev?.avatar_outfit ?? {}) };
+      if (on) outfit[item.category as OutfitSlot] = item.id;
+      else delete outfit[item.category as OutfitSlot];
+      data = { avatar_outfit: outfit };
+    }
+
     if (prev) {
       qc.setQueryData<ProfileDTO>(["profile"], {
         ...prev,
@@ -146,17 +143,13 @@ export function useDressUp(userId: string | null) {
       });
     }
     try {
+      // The server may take off pieces this player can't wear (Plus items
+      // after Plus ends); what it saved is what we show.
       const saved = await update({ data });
       qc.setQueryData(["profile"], saved);
-      // The server may take off pieces this player can't wear (Plus items
-      // after Plus ends); keep this device in step with what was saved.
-      if (data.avatar_outfit && saved?.avatar_outfit) {
-        setEquipped({ outfit: saved.avatar_outfit });
-      }
       void qc.invalidateQueries({ queryKey: ["player-profile"] });
       void qc.invalidateQueries({ queryKey: ["leaderboard"] });
     } catch (e) {
-      setEquipped({ avatar: before.avatar, outfit: before.outfit });
       qc.setQueryData(["profile"], prev);
       throw e;
     }

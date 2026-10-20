@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
-import { verifyWebhook, EventName, type PaddleEnv } from "@/lib/paddle.server";
+import { verifyWebhook, getPaddleClient, EventName, type PaddleEnv } from "@/lib/paddle.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _supabase: any = null;
@@ -17,113 +17,79 @@ function check<T extends { error: { message: string } | null }>(res: T, what: st
   return res;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
-  const { id, customerId, items, status, currentBillingPeriod, customData } = data;
-  const userId = customData?.userId;
-  if (!userId) {
-    console.error("No userId in customData");
-    return;
-  }
-  const item = items[0];
-  const priceId = item.price.importMeta?.externalId;
-  const productId = item.product.importMeta?.externalId;
-  if (!priceId || !productId) {
-    console.warn("Skipping subscription: missing importMeta.externalId", {
-      rawPriceId: item.price.id,
-      rawProductId: item.product.id,
-    });
-    return;
-  }
-
+/**
+ * Re-read a subscription from Paddle and store its current state. Webhooks can
+ * repeat or arrive out of order (a late "updated" retry after "canceled", or
+ * "updated" before "created"), so we never trust the event's own snapshot.
+ */
+async function syncSubscription(subscriptionId: string, env: PaddleEnv) {
+  const sub = await getPaddleClient(env).subscriptions.get(subscriptionId);
+  // Business rule: revoke Plus immediately on past_due (failed payment), no grace period.
+  const status = sub.status === "past_due" ? "canceled" : sub.status;
+  const state = {
+    status,
+    current_period_start: sub.currentBillingPeriod?.startsAt ?? null,
+    current_period_end: sub.currentBillingPeriod?.endsAt ?? null,
+    cancel_at_period_end: sub.scheduledChange?.action === "cancel",
+    updated_at: new Date().toISOString(),
+  };
   const supabase = getSupabase();
 
-  check(
-    await supabase.from("subscriptions").upsert(
-      {
-        user_id: userId,
-        paddle_subscription_id: id,
-        paddle_customer_id: customerId,
-        product_id: productId,
-        price_id: priceId,
-        status,
-        current_period_start: currentBillingPeriod?.startsAt,
-        current_period_end: currentBillingPeriod?.endsAt,
-        environment: env,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "paddle_subscription_id" },
-    ),
-    "upsert subscription",
-  );
-}
+  const userId = typeof sub.customData?.userId === "string" ? sub.customData.userId : null;
+  const item = sub.items[0];
+  const priceId = item?.price.importMeta?.externalId;
+  const productId = item?.product.importMeta?.externalId;
+  if (userId && priceId && productId) {
+    check(
+      await supabase.from("subscriptions").upsert(
+        {
+          user_id: userId,
+          paddle_subscription_id: sub.id,
+          paddle_customer_id: sub.customerId,
+          product_id: productId,
+          price_id: priceId,
+          environment: env,
+          ...state,
+        },
+        { onConflict: "paddle_subscription_id" },
+      ),
+      "upsert subscription",
+    );
+    return;
+  }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
-  const { id, status, currentBillingPeriod, scheduledChange } = data;
-  // Business rule: revoke VIP immediately on past_due (failed payment)
-  const effectiveStatus = status === "past_due" ? "canceled" : status;
-  check(
-    await getSupabase()
+  // Not enough to create a row: keep the existing row's owner and update its state.
+  const res = check(
+    await supabase
       .from("subscriptions")
-      .update({
-        status: effectiveStatus,
-        current_period_start: currentBillingPeriod?.startsAt,
-        current_period_end: currentBillingPeriod?.endsAt,
-        cancel_at_period_end: scheduledChange?.action === "cancel",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("paddle_subscription_id", id)
-      .eq("environment", env),
+      .update(state)
+      .eq("paddle_subscription_id", sub.id)
+      .eq("environment", env)
+      .select("id"),
     "update subscription",
   );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
-  // Business rule: revoke VIP immediately (no grace period)
-  check(
-    await getSupabase()
-      .from("subscriptions")
-      .update({ status: "canceled", updated_at: new Date().toISOString() })
-      .eq("paddle_subscription_id", data.id)
-      .eq("environment", env),
-    "cancel subscription",
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleTransactionPaymentFailed(data: any, env: PaddleEnv) {
-  const subscriptionId = data.subscriptionId;
-  if (!subscriptionId) return;
-  check(
-    await getSupabase()
-      .from("subscriptions")
-      .update({ status: "canceled", updated_at: new Date().toISOString() })
-      .eq("paddle_subscription_id", subscriptionId)
-      .eq("environment", env),
-    "cancel after failed payment",
-  );
+  if (!res.data?.length) {
+    console.warn("Skipping subscription: no stored row and no userId/importMeta.externalId", {
+      subscriptionId: sub.id,
+      hasUserId: !!userId,
+      rawPriceId: item?.price.id,
+      rawProductId: item?.product.id,
+    });
+  }
 }
 
 async function handleWebhook(req: Request, env: PaddleEnv) {
   const event = await verifyWebhook(req, env);
   switch (event.eventType) {
     case EventName.SubscriptionCreated:
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await handleSubscriptionCreated(event.data as any, env);
-      break;
     case EventName.SubscriptionUpdated:
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await handleSubscriptionUpdated(event.data as any, env);
-      break;
     case EventName.SubscriptionCanceled:
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await handleSubscriptionCanceled(event.data as any, env);
+      await syncSubscription(event.data.id, env);
       break;
     case EventName.TransactionPaymentFailed:
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await handleTransactionPaymentFailed(event.data as any, env);
+      // A failed payment doesn't always end the subscription (e.g. a failed
+      // card update); store whatever Paddle now says it is.
+      if (event.data.subscriptionId) await syncSubscription(event.data.subscriptionId, env);
       break;
     default:
       console.log("Unhandled event:", event.eventType);

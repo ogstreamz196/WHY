@@ -2,7 +2,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { applyPoints, runAchievementCheckForUser, awardXp } from "./account.functions";
+import {
+  applyPoints,
+  runAchievementCheckForUser,
+  awardXp,
+  CHAIN_MISSION_LAYERS,
+} from "./account.functions";
 import { awardAmountForUser } from "./vipStatus";
 
 let _admin: Awaited<ReturnType<typeof loadAdmin>> | null = null;
@@ -86,15 +91,16 @@ function toDTO(
   };
 }
 
+const MISSION_COLS =
+  "mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded";
+
 export const getTodayMission = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<DailyMissionDTO> => {
     const t = today();
     const { data, error } = await context.supabase
       .from("daily_missions")
-      .select(
-        "mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded",
-      )
+      .select(MISSION_COLS)
       .eq("user_id", context.userId)
       .eq("mission_date", t)
       .maybeSingle();
@@ -102,56 +108,138 @@ export const getTodayMission = createServerFn({ method: "GET" })
     return toDTO(data, t);
   });
 
+/**
+ * Which of today's tasks the server's own records prove:
+ * - mystery: read at least one fact today
+ * - surprise: read at least two different facts today (the second came from Next)
+ * - category: read a fact from today's theme
+ * - chain: read enough "But… Why?" layers today
+ */
+export function verifiedMissionTasks(input: {
+  discoveries: { fact_id: string; category: string | null }[];
+  chainClaims: number;
+  theme: string;
+}): Record<MissionTask, boolean> {
+  const distinct = new Set(input.discoveries.map((d) => d.fact_id)).size;
+  return {
+    mystery: distinct >= 1,
+    surprise: distinct >= 2,
+    category: input.discoveries.some((d) => d.category === input.theme),
+    chain: input.chainClaims >= CHAIN_MISSION_LAYERS,
+  };
+}
+
+/**
+ * Tick today's mission tasks from server events (recordDiscovery, chain
+ * claims). Only ever sets tasks to done, so parallel marks can't undo each
+ * other. A fact ticks the theme task only when it is from today's theme.
+ */
+export async function markMissionFromServer(
+  userId: string,
+  marks: { mystery?: boolean; surprise?: boolean; chain?: boolean; factCategory?: string | null },
+): Promise<void> {
+  const db = await admin();
+  const t = today();
+  const { error: rowErr } = await db
+    .from("daily_missions")
+    .upsert(
+      { user_id: userId, mission_date: t, category_key: categoryOfDay(t) },
+      { onConflict: "user_id,mission_date", ignoreDuplicates: true },
+    );
+  if (rowErr) throw new Error(rowErr.message);
+
+  const patch: { mystery_done?: true; surprise_done?: true; chain_done?: true } = {};
+  if (marks.mystery) patch.mystery_done = true;
+  if (marks.surprise) patch.surprise_done = true;
+  if (marks.chain) patch.chain_done = true;
+  if (Object.keys(patch).length > 0) {
+    const { error } = await db
+      .from("daily_missions")
+      .update(patch)
+      .eq("user_id", userId)
+      .eq("mission_date", t);
+    if (error) throw new Error(error.message);
+  }
+  if (marks.factCategory) {
+    const { error } = await db
+      .from("daily_missions")
+      .update({ category_done: true })
+      .eq("user_id", userId)
+      .eq("mission_date", t)
+      .eq("category_key", marks.factCategory);
+    if (error) throw new Error(error.message);
+  }
+}
+
 const TASK_SCHEMA = z.object({
   task: z.enum(["mystery", "surprise", "chain", "category"]),
+  // Still accepted from older clients, but the server checks the fact itself.
   category_key: z.string().max(40).optional(),
 });
 
+/**
+ * The client asks to tick a task; it is only ticked when the server's own
+ * records (today's discoveries and chain claims) show it was done.
+ */
 export const markMissionTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => TASK_SCHEMA.parse(input))
   .handler(async ({ data, context }): Promise<DailyMissionDTO> => {
     const t = today();
-    // The day's theme is never picked by the caller when ticking the theme task.
-    const cat =
-      data.task === "category" ? categoryOfDay(t) : (data.category_key ?? categoryOfDay(t));
+    const db = await admin();
+    const dayStart = `${t}T00:00:00Z`;
 
-    const { data: existing } = await context.supabase
+    const { data: existing } = await db
       .from("daily_missions")
-      .select(
-        "mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded",
-      )
+      .select("category_key")
       .eq("user_id", context.userId)
       .eq("mission_date", t)
       .maybeSingle();
+    const theme = existing?.category_key ?? categoryOfDay(t);
 
-    const patch = {
-      user_id: context.userId,
-      mission_date: t,
-      mystery_done: existing?.mystery_done ?? false,
-      surprise_done: existing?.surprise_done ?? false,
-      chain_done: existing?.chain_done ?? false,
-      category_done: existing?.category_done ?? false,
-      category_key: existing?.category_key ?? cat,
-      bonus_awarded: existing?.bonus_awarded ?? false,
+    const [discRes, chainRes] = await Promise.all([
+      db
+        .from("discoveries")
+        .select("fact_id, facts:fact_id (category)")
+        .eq("user_id", context.userId)
+        .gte("seen_at", dayStart)
+        .limit(500),
+      db
+        .from("chain_layer_rewards")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", context.userId)
+        .gte("claimed_at", dayStart),
+    ]);
+    if (discRes.error) throw new Error(discRes.error.message);
+    type Row = {
+      fact_id: string;
+      facts: { category: string | null } | { category: string | null }[] | null;
     };
-    if (data.task === "mystery") patch.mystery_done = true;
-    if (data.task === "surprise") patch.surprise_done = true;
-    if (data.task === "chain") patch.chain_done = true;
-    // Only a fact from today's theme counts.
-    if (data.task === "category" && data.category_key === patch.category_key) {
-      patch.category_done = true;
+    const discoveries = ((discRes.data ?? []) as unknown as Row[]).map((r) => {
+      const f = Array.isArray(r.facts) ? r.facts[0] : r.facts;
+      return { fact_id: r.fact_id, category: f?.category ?? null };
+    });
+    const proven = verifiedMissionTasks({
+      discoveries,
+      chainClaims: chainRes.count ?? 0,
+      theme,
+    });
+
+    if (proven[data.task]) {
+      await markMissionFromServer(context.userId, {
+        mystery: data.task === "mystery",
+        surprise: data.task === "surprise",
+        chain: data.task === "chain",
+        factCategory: data.task === "category" ? theme : null,
+      });
     }
 
-    const { data: row, error } = await (
-      await admin()
-    )
+    const { data: row, error } = await db
       .from("daily_missions")
-      .upsert(patch, { onConflict: "user_id,mission_date" })
-      .select(
-        "mission_date, mystery_done, surprise_done, chain_done, category_done, category_key, bonus_awarded",
-      )
-      .single();
+      .select(MISSION_COLS)
+      .eq("user_id", context.userId)
+      .eq("mission_date", t)
+      .maybeSingle();
     if (error) throw new Error(error.message);
     return toDTO(row, t);
   });

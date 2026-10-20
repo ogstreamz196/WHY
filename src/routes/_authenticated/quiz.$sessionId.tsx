@@ -12,6 +12,7 @@ import { SkeletonBlock } from "@/components/FunStates";
 import { feedback } from "@/lib/feedback";
 import {
   finishQuiz,
+  revealQuizQuestion,
   submitAnswer,
   type AnswerResult,
   type FinishResult,
@@ -35,6 +36,9 @@ function QuizPlayPage() {
   const { sessionId } = Route.useParams();
   const navigate = useNavigate();
   const submit = useServerFn(submitAnswer);
+  const markRevealed = useServerFn(revealQuizQuestion);
+  // The server times each answer from the reveal; wait for that to land first.
+  const revealRef = useRef<Promise<unknown> | null>(null);
   const finish = useServerFn(finishQuiz);
 
   const [quiz, setQuiz] = useState<QuizStartResult | null>(null);
@@ -127,6 +131,7 @@ function QuizPlayPage() {
     setScoreBefore(totalPoints);
     try {
       const msTaken = Date.now() - startedAtRef.current;
+      await revealRef.current;
       const res = await submit({
         data: {
           session_id: sessionId,
@@ -297,6 +302,9 @@ function QuizPlayPage() {
                   onClick={() => {
                     feedback("reveal");
                     setRevealed(true);
+                    revealRef.current = markRevealed({
+                      data: { session_id: sessionId, fact_id: current.fact_id },
+                    }).catch(() => null);
                   }}
                   aria-describedby={`reveal-hint-${idx}`}
                   aria-label={`Reveal answers for question ${idx + 1} and start the timer`}

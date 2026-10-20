@@ -34,6 +34,28 @@ export function isNativePurchasesAvailable(): boolean {
   return !!cap?.isPluginAvailable?.("Purchases") && !!cap?.isPluginAvailable?.("RevenueCatUI");
 }
 
+let usable: Promise<boolean> | null = null;
+
+/**
+ * True when this app build can really sell Plus: the plugins are there AND
+ * RevenueCat is configured natively (Android) or a key is set for the web
+ * side to configure it (iOS). Builds without a key hide Plus. Cached.
+ */
+export function canUseNativePurchases(): Promise<boolean> {
+  if (!isNativePurchasesAvailable()) return Promise.resolve(false);
+  usable ??= (async () => {
+    if (webSideKey()) return true;
+    try {
+      const { Purchases } = await import("@revenuecat/purchases-capacitor");
+      return (await Purchases.isConfigured()).isConfigured;
+    } catch (e) {
+      console.warn("[plus] couldn't check the store setup", e);
+      return false;
+    }
+  })();
+  return usable;
+}
+
 let loggedInAs: string | null = null;
 
 /**
