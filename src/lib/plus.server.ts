@@ -68,8 +68,16 @@ export function decidePlus(paddle: PaddleRow, store: StoreRow, now = Date.now())
   return NO_PLUS;
 }
 
-function paddleEnv(): "sandbox" | "live" {
-  return (process.env.VITE_PAYMENTS_CLIENT_TOKEN ?? "").startsWith("test_") ? "sandbox" : "live";
+/**
+ * Which Paddle environment the website checks out in. Same source as
+ * src/lib/paddle.ts: VITE_ variables are build-time values (import.meta.env),
+ * not in process.env on the server.
+ */
+export function paddleEnv(
+  token = (import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined) ??
+    process.env.VITE_PAYMENTS_CLIENT_TOKEN,
+): "sandbox" | "live" {
+  return (token ?? "").startsWith("test_") ? "sandbox" : "live";
 }
 
 async function admin() {

@@ -92,6 +92,45 @@ const DIFF_MULTIPLIER: Record<Difficulty, number> = {
 
 // ---------------- Helpers ----------------
 
+/** For tables newer than the generated Supabase types. */
+function untyped(client: unknown): import("@supabase/supabase-js").SupabaseClient {
+  return client as import("@supabase/supabase-js").SupabaseClient;
+}
+
+/**
+ * Points for one answer. `difficulty` is the question's own stored
+ * difficulty and `msTaken` is measured on the server.
+ */
+export function scoreAnswer(correct: boolean, msTaken: number, difficulty: Difficulty): number {
+  if (!correct) return 0;
+  let points = 10;
+  if (clampMs(msTaken) < SPEED_BONUS_MS) points += 5;
+  return Math.round(points * (DIFF_MULTIPLIER[difficulty] ?? 1));
+}
+
+export function clampMs(ms: number): number {
+  return Math.max(500, Math.min(ms, 60_000));
+}
+
+/**
+ * How long a question took, timed by the server: from when its answers were
+ * revealed or, when no reveal was recorded, from the previous answer (or the
+ * quiz start), which is never shorter than the real time.
+ */
+export function serverMsTaken(
+  nowMs: number,
+  servedAt: string | null,
+  lastAnswerAt: string | null,
+  startedAt: string,
+): number {
+  const from = Date.parse(servedAt ?? lastAnswerAt ?? startedAt);
+  return Number.isFinite(from) ? Math.max(0, nowMs - from) : 60_000;
+}
+
+function isDifficulty(v: unknown): v is Difficulty {
+  return v === "easy" || v === "medium" || v === "hard" || v === "expert";
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -427,6 +466,42 @@ export const startQuiz = createServerFn({ method: "POST" })
     };
   });
 
+// ---------------- revealQuizQuestion ----------------
+
+/**
+ * Called when the player reveals a question's answers (the timer starts).
+ * Records the time once, so the speed bonus is timed by the server.
+ */
+export const revealQuizQuestion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ session_id: z.string().uuid(), fact_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean }> => {
+    const db = await admin();
+    const { data: session, error } = await db
+      .from("quiz_sessions")
+      .select("id, user_id, fact_ids, finished_at")
+      .eq("id", data.session_id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!session || session.user_id !== context.userId) throw new Error("Session not found.");
+    if (session.finished_at || !(session.fact_ids ?? []).includes(data.fact_id)) {
+      return { ok: false };
+    }
+    // First reveal wins: revealing again can't restart the clock.
+    const { error: serveErr } = await untyped(db)
+      .from("quiz_question_serves")
+      .upsert(
+        { session_id: session.id, fact_id: data.fact_id, served_at: new Date().toISOString() },
+        { onConflict: "session_id,fact_id", ignoreDuplicates: true },
+      );
+    // Before the migration adds the table, timing falls back to the previous
+    // answer or the quiz start (see submitAnswer).
+    if (serveErr) console.warn("quiz reveal not recorded", serveErr.message);
+    return { ok: true };
+  });
+
 // ---------------- submitAnswer ----------------
 
 export const submitAnswer = createServerFn({ method: "POST" })
@@ -438,7 +513,8 @@ export const submitAnswer = createServerFn({ method: "POST" })
         fact_id: z.string().uuid(),
         // -1 = ran out of time (always wrong).
         picked_index: z.number().int().min(-1).max(3),
-        ms_taken: z.number().int().min(0).max(600_000),
+        // Ignored: time is measured on the server. Accepted for older clients.
+        ms_taken: z.number().int().min(0).max(600_000).optional(),
       })
       .parse(input),
   )
@@ -446,7 +522,9 @@ export const submitAnswer = createServerFn({ method: "POST" })
     const db = await admin();
     const { data: session, error: sErr } = await db
       .from("quiz_sessions")
-      .select("id, user_id, difficulty, fact_ids, answer_order, correct_count, score, finished_at")
+      .select(
+        "id, user_id, difficulty, fact_ids, answer_order, correct_count, score, started_at, finished_at",
+      )
       .eq("id", data.session_id)
       .maybeSingle();
     if (sErr) throw new Error(sErr.message);
@@ -494,22 +572,41 @@ export const submitAnswer = createServerFn({ method: "POST" })
     if (session.finished_at) return previousResult();
 
     const correct = data.picked_index >= 0 && data.picked_index === correctIdx;
-    const difficulty = (session.difficulty as Difficulty) ?? "medium";
+    const nowMs = Date.now();
 
-    // Compute points server-side
-    const clampedMs = Math.max(500, Math.min(data.ms_taken, 60_000));
-    let points = 0;
-    if (correct) {
-      points = 10;
-      if (clampedMs < SPEED_BONUS_MS) points += 5;
-      points = Math.round(points * DIFF_MULTIPLIER[difficulty]);
-    }
+    const [{ data: qrow }, { data: serve }, { data: lastAnswer }] = await Promise.all([
+      db
+        .from("quiz_questions")
+        .select("correct_answer, explanation, difficulty")
+        .eq("fact_id", data.fact_id)
+        .maybeSingle(),
+      untyped(db)
+        .from("quiz_question_serves")
+        .select("served_at")
+        .eq("session_id", session.id)
+        .eq("fact_id", data.fact_id)
+        .maybeSingle(),
+      db
+        .from("quiz_answers")
+        .select("created_at")
+        .eq("session_id", session.id)
+        .order("created_at", { ascending: false })
+        .limit(1),
+    ]);
 
-    const { data: qrow } = await db
-      .from("quiz_questions")
-      .select("correct_answer, explanation")
-      .eq("fact_id", data.fact_id)
-      .maybeSingle();
+    // Compute points server-side: the question's own difficulty (the quiz's
+    // chosen difficulty doesn't filter which facts are asked) and the time
+    // measured here, never the browser's.
+    const difficulty: Difficulty = isDifficulty(qrow?.difficulty) ? qrow.difficulty : "easy";
+    const clampedMs = clampMs(
+      serverMsTaken(
+        nowMs,
+        (serve as { served_at?: string } | null)?.served_at ?? null,
+        lastAnswer?.[0]?.created_at ?? null,
+        session.started_at,
+      ),
+    );
+    const points = scoreAnswer(correct, clampedMs, difficulty);
 
     // Insert answer (unique on session+fact). A duplicate means this fact was
     // already answered — replay that result instead of scoring it again.

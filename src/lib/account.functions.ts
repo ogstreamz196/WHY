@@ -18,6 +18,24 @@ async function admin() {
   return _admin;
 }
 
+/** For tables and functions newer than the generated Supabase types. */
+function untyped(client: unknown): import("@supabase/supabase-js").SupabaseClient {
+  return client as import("@supabase/supabase-js").SupabaseClient;
+}
+
+/**
+ * True when a table or database function from the fair-play migration isn't
+ * there yet (code deployed before the migration ran). Callers then fall back
+ * to the older, slightly less strict path instead of failing.
+ */
+function missingDbObject(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return (
+    ["42P01", "42883", "PGRST202", "PGRST205"].includes(error.code ?? "") ||
+    /does not exist|could not find/i.test(error.message ?? "")
+  );
+}
+
 const DAILY_POINTS = 25;
 const LOGIN_BONUS_BASE = 10;
 const LOGIN_BONUS_STREAK_STEP = 2;
@@ -83,7 +101,8 @@ export const updateMyProfile = createServerFn({ method: "POST" })
           .optional(),
         avatar_id: z.string().max(60).optional(),
         bio: z.string().max(280).optional(),
-        age_band: z.enum(["under_10", "10_12", "teen", "adult"]).optional(),
+        // Accounts are 13+; older rows may still hold "under_10" / "10_12".
+        age_band: z.enum(["teen", "adult"]).optional(),
         favorite_category: z.string().max(40).optional(),
         leaderboard_opt_out: z.boolean().optional(),
         hide_from_public: z.boolean().optional(),
@@ -120,9 +139,25 @@ export const updateMyProfile = createServerFn({ method: "POST" })
         if (!owned) throw new Error("You don't own that avatar yet.");
       }
     }
+    // Players can't write avatar_id / status_message directly (a database
+    // trigger keeps the old values), so save them with the service role now
+    // that they've been checked.
+    const { avatar_id, status_message, ...ownPatch } = patch;
+    const checked: { avatar_id?: string; status_message?: string | null } = {};
+    if (avatar_id !== undefined) checked.avatar_id = avatar_id as string;
+    if (status_message !== undefined) checked.status_message = status_message as string | null;
+    if (Object.keys(checked).length > 0) {
+      const { error: checkedErr } = await (
+        await admin()
+      )
+        .from("profiles")
+        .update(checked)
+        .eq("id", context.userId);
+      if (checkedErr) throw new Error(checkedErr.message);
+    }
     const { data: row, error } = await context.supabase
       .from("profiles")
-      .update({ ...patch, updated_at: new Date().toISOString() })
+      .update({ ...ownPatch, updated_at: new Date().toISOString() })
       .eq("id", context.userId)
       .select(PROFILE_COLS)
       .single();
@@ -477,44 +512,63 @@ export const recordDiscovery = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ fact_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<{ stats: StatsDTO; newlyUnlocked: string[] }> => {
     const db = await admin();
-    // Only the first time a user sees a fact earns a point and counts toward facts_seen;
-    // repeat views are still logged for the timeline.
-    const { data: seenBefore } = await db
-      .from("discoveries")
-      .select("fact_id")
-      .eq("user_id", context.userId)
-      .eq("fact_id", data.fact_id)
-      .limit(1);
-    const firstTime = (seenBefore?.length ?? 0) === 0;
-
-    await context.supabase
-      .from("discoveries")
-      .insert({ user_id: context.userId, fact_id: data.fact_id });
-
+    // Only real, kids' facts count (18+ content never lives in `facts` for
+    // the feed, and made-up ids must not earn anything).
+    const { data: fact, error: factErr } = await db
+      .from("facts")
+      .select("id, category, is_adult")
+      .eq("id", data.fact_id)
+      .maybeSingle();
+    if (factErr) throw new Error(factErr.message);
     await ensureStatsRow(context.userId);
+    if (!fact || fact.is_adult) {
+      return { stats: await readStats(context.userId), newlyUnlocked: [] };
+    }
+
+    // Fallback for before the first_discoveries table exists.
+    const { count: seenBefore } = await db
+      .from("discoveries")
+      .select("fact_id", { count: "exact", head: true })
+      .eq("user_id", context.userId)
+      .eq("fact_id", fact.id);
+
+    // Every view is logged for the timeline.
+    const { error: logErr } = await db
+      .from("discoveries")
+      .insert({ user_id: context.userId, fact_id: fact.id });
+    if (logErr) throw new Error(logErr.message);
     await db.from("user_stats").update({ last_active_day: today() }).eq("user_id", context.userId);
+
+    // Only the first time a user sees a fact earns a point and counts toward
+    // facts_seen. The insert wins for exactly one request per (user, fact).
+    const { data: firstRows, error: firstErr } = await untyped(db)
+      .from("first_discoveries")
+      .upsert(
+        { user_id: context.userId, fact_id: fact.id },
+        { onConflict: "user_id,fact_id", ignoreDuplicates: true },
+      )
+      .select("fact_id");
+    if (firstErr && !missingDbObject(firstErr)) throw new Error(firstErr.message);
+    const firstTime = firstErr ? (seenBefore ?? 0) === 0 : (firstRows?.length ?? 0) > 0;
+
+    // Today's mission: reading a fact is the mystery; a fact from the day's
+    // theme ticks the theme task.
+    const { markMissionFromServer } = await import("./missions.functions");
+    await markMissionFromServer(context.userId, {
+      mystery: true,
+      factCategory: fact.category,
+    }).catch((e) => console.warn("mission mark failed", e));
 
     if (!firstTime) {
       return { stats: await readStats(context.userId), newlyUnlocked: [] };
     }
-
-    const { data: fact } = await context.supabase
-      .from("facts")
-      .select("category")
-      .eq("id", data.fact_id)
-      .maybeSingle();
 
     const DISCOVERY_POINTS_BASE = 1;
     const awardedPoints = await awardAmountForUser(context, DISCOVERY_POINTS_BASE);
     await applyPoints(context.userId, awardedPoints, 1);
     const row = await readStats(context.userId);
 
-    await awardXp(
-      context,
-      "discovery",
-      awardedPoints,
-      (fact as { category: string | null } | null)?.category ?? null,
-    );
+    await awardXp(context, "discovery", awardedPoints, fact.category ?? null);
     const newlyUnlocked = await checkAchievements(context, row);
     return { stats: row, newlyUnlocked };
   });
@@ -526,6 +580,8 @@ const CHAIN_REWARDS_PER_DAY = 30;
 // The client waits 3s before claiming; allow a little clock slack.
 const CHAIN_MIN_READ_MS = 2500;
 const CHAIN_REWARD_TTL_MS = 60 * 60 * 1000;
+// Layers read today that complete the daily mission's chain task.
+export const CHAIN_MISSION_LAYERS = 3;
 
 export type ChainRewardResult =
   | { awarded: true; points: number; total_points: number }
@@ -536,35 +592,36 @@ export const claimChainLayerReward = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ reward_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<ChainRewardResult> => {
-    const db = await admin();
-    const now = Date.now();
-
-    const { count } = await db
-      .from("chain_layer_rewards")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", context.userId)
-      .gte("claimed_at", `${today()}T00:00:00Z`);
-    if ((count ?? 0) >= CHAIN_REWARDS_PER_DAY) {
+    // Count today's claims and claim this ticket under one per-player lock,
+    // so parallel claims can't slip past the daily cap.
+    const { data: rows, error } = await untyped(await admin()).rpc("claim_chain_layer_reward", {
+      _user: context.userId,
+      _reward: data.reward_id,
+      _daily_cap: CHAIN_REWARDS_PER_DAY,
+      _min_read_ms: CHAIN_MIN_READ_MS,
+      _ttl_ms: CHAIN_REWARD_TTL_MS,
+    });
+    if (error && !missingDbObject(error)) throw new Error(error.message);
+    const result = error
+      ? await claimChainLayerLegacy(context.userId, data.reward_id)
+      : (rows as Array<{ out_status: string; out_claimed_today: number }> | null)?.[0];
+    if (result?.out_status !== "ok") {
       await ensureStatsRow(context.userId);
       const stats = await readStats(context.userId);
-      return { awarded: false, reason: "daily_cap", points: 0, total_points: stats.total_points };
+      return {
+        awarded: false,
+        reason: result?.out_status === "daily_cap" ? "daily_cap" : "invalid",
+        points: 0,
+        total_points: stats.total_points,
+      };
     }
 
-    // Compare-and-set: unclaimed, owned by the caller, old enough to have been read.
-    const { data: claimed, error } = await db
-      .from("chain_layer_rewards")
-      .update({ claimed_at: new Date(now).toISOString() })
-      .eq("id", data.reward_id)
-      .eq("user_id", context.userId)
-      .is("claimed_at", null)
-      .lte("issued_at", new Date(now - CHAIN_MIN_READ_MS).toISOString())
-      .gte("issued_at", new Date(now - CHAIN_REWARD_TTL_MS).toISOString())
-      .select("id");
-    if (error) throw new Error(error.message);
-    if (!claimed || claimed.length === 0) {
-      await ensureStatsRow(context.userId);
-      const stats = await readStats(context.userId);
-      return { awarded: false, reason: "invalid", points: 0, total_points: stats.total_points };
+    // Three chain layers read today completes the mission's "Follow a chain".
+    if (result.out_claimed_today >= CHAIN_MISSION_LAYERS) {
+      const { markMissionFromServer } = await import("./missions.functions");
+      await markMissionFromServer(context.userId, { chain: true }).catch((e) =>
+        console.warn("mission mark failed", e),
+      );
     }
 
     const points = await awardAmountForUser(context, CHAIN_LAYER_POINTS_BASE);
@@ -572,6 +629,36 @@ export const claimChainLayerReward = createServerFn({ method: "POST" })
     await awardXp(context, "chain", points);
     return { awarded: true, points, total_points: total };
   });
+
+/** Pre-migration claim: count then compare-and-set (not race-proof on the cap). */
+async function claimChainLayerLegacy(
+  userId: string,
+  rewardId: string,
+): Promise<{ out_status: string; out_claimed_today: number }> {
+  const db = await admin();
+  const now = Date.now();
+  const { count } = await db
+    .from("chain_layer_rewards")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("claimed_at", `${today()}T00:00:00Z`);
+  if ((count ?? 0) >= CHAIN_REWARDS_PER_DAY) {
+    return { out_status: "daily_cap", out_claimed_today: count ?? 0 };
+  }
+  const { data: claimed, error } = await db
+    .from("chain_layer_rewards")
+    .update({ claimed_at: new Date(now).toISOString() })
+    .eq("id", rewardId)
+    .eq("user_id", userId)
+    .is("claimed_at", null)
+    .lte("issued_at", new Date(now - CHAIN_MIN_READ_MS).toISOString())
+    .gte("issued_at", new Date(now - CHAIN_REWARD_TTL_MS).toISOString())
+    .select("id");
+  if (error) throw new Error(error.message);
+  return claimed && claimed.length > 0
+    ? { out_status: "ok", out_claimed_today: (count ?? 0) + 1 }
+    : { out_status: "invalid", out_claimed_today: count ?? 0 };
+}
 
 // -------------------- Account deletion --------------------
 
@@ -609,6 +696,9 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
 
     const { error } = await db.auth.admin.deleteUser(context.userId);
     if (error) throw new Error(error.message);
+    // Drop the deleted player from the Google Sheets backup straight away.
+    const { syncPeopleSoon } = await import("@/lib/backup.server");
+    await syncPeopleSoon({ force: true });
     return { ok: true };
   });
 
@@ -732,7 +822,10 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
       .from("favorites")
       .select("id", { count: "exact", head: true })
       .eq("user_id", context.userId),
-    context.supabase.from("why_chains").select("id, step_count").eq("user_id", context.userId),
+    context.supabase
+      .from("why_chains")
+      .select("id, why_chain_steps(count)")
+      .eq("user_id", context.userId),
     context.supabase
       .from("discoveries")
       .select("facts:fact_id (category)")
@@ -745,9 +838,11 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
   ]);
 
   const favCount = favRes.count ?? 0;
-  const chains = (chainsRes.data ?? []) as Array<{ step_count: number | null }>;
+  const chains = (chainsRes.data ?? []) as unknown as Array<{
+    why_chain_steps: Array<{ count: number }> | null;
+  }>;
   const chainCount = chains.length;
-  const maxChain = chains.reduce((m, c) => Math.max(m, c.step_count ?? 0), 0);
+  const maxChain = chains.reduce((m, c) => Math.max(m, c.why_chain_steps?.[0]?.count ?? 0), 0);
   const missionsCompleted = missionsRes.count ?? 0;
 
   const catCounts = new Map<string, number>();

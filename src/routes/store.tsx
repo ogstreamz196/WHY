@@ -12,10 +12,9 @@ import { AvatarFigure } from "@/components/AvatarFigure";
 import { AnimatedAvatar } from "@/components/AnimatedAvatar";
 import { RewardReveal, type RevealPrize } from "@/components/RewardReveal";
 import { useIsNativeApp } from "@/lib/platform";
-import { usePlus } from "@/hooks/usePlus";
+import { usePlus, usePlusForSale } from "@/hooks/usePlus";
 import { useDressUp, useMyAvatar, useWeeklyDrop } from "@/hooks/useMyAvatar";
 import { PlusPanel } from "@/components/PlusPanel";
-import { isNativePurchasesAvailable } from "@/lib/nativePurchases";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,7 +26,6 @@ import {
   getPoints,
   purchaseItem,
   setEquipped,
-  setOwnedItems,
   type StoreCategory,
   type StoreItem,
 } from "@/lib/store";
@@ -61,21 +59,27 @@ const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: "vip", label: "Why? Plus", emoji: "👑" },
 ];
 
+// Items everyone owns (same rule as getInventory in src/lib/store.ts).
+const FREE_ITEM_IDS = STORE_CATALOG.filter((i) => i.cost === 0 && !i.vipOnly && !i.dropOnly).map(
+  (i) => i.id,
+);
+
 const isWearable = (i: StoreItem): i is StoreItem & { category: OutfitSlot } =>
   i.category !== "avatar" && i.category !== "theme" && i.category !== "boost";
 
 function StorePage() {
   const [tab, setTab] = useState<Tab>("avatar");
   // Why? Plus is sold with Paddle on the website and with Google Play / App
-  // Store billing in the apps; app builds without the RevenueCat plugin hide it.
+  // Store billing in the apps; app builds that can't use store billing (no
+  // RevenueCat plugin or key) hide it, and nothing shows until we know.
   const isNative = useIsNativeApp();
-  const [nativePlus, setNativePlus] = useState(false);
-  useEffect(() => setNativePlus(isNativePurchasesAvailable()), []);
-  const plusAvailable = isNative === false || (isNative === true && nativePlus);
+  const plusAvailable = usePlusForSale() === true;
   const visibleTabs = TABS.filter((t) => t.id !== "vip" || plusAvailable);
   // null until we know whose balance to show: the device one for guests, the
   // server one for signed-in users (never the guest number for them).
   const [coins, setCoins] = useState<number | null>(null);
+  // This device's (guest) inventory. Signed-in players' items come from the
+  // server only and never touch the guest copy (shared devices).
   const [inventory, setInventory] = useState<string[]>([]);
   const [theme, setTheme] = useState<string | undefined>(undefined);
   const [toast, setToast] = useState<string | null>(null);
@@ -129,18 +133,12 @@ function StorePage() {
     };
   }, [tab]);
 
-  // Signed-in users' purchases live on the server; mirror them into the local cache.
+  // Signed-in users' purchases live on the server.
   const serverInventory = useQuery({
     queryKey: ["inventory"],
     queryFn: () => fetchInventory(),
     enabled: !!userId,
   });
-  useEffect(() => {
-    if (userId && serverInventory.data) {
-      setOwnedItems(serverInventory.data);
-      setInventory(getInventory());
-    }
-  }, [userId, serverInventory.data]);
 
   useEffect(() => {
     if (userId && serverStats.data) setCoins(serverStats.data.total_points);
@@ -186,7 +184,12 @@ function StorePage() {
     );
   };
 
-  const isOwned = (item: StoreItem) => inventory.includes(item.id) || (isVip && !!item.vipOnly);
+  const ownedIds = !authChecked
+    ? FREE_ITEM_IDS
+    : userId
+      ? [...FREE_ITEM_IDS, ...(serverInventory.data ?? [])]
+      : inventory;
+  const isOwned = (item: StoreItem) => ownedIds.includes(item.id) || (isVip && !!item.vipOnly);
   const isWorn = (item: StoreItem) =>
     item.category === "avatar"
       ? avatar.avatarId === item.id
@@ -234,8 +237,9 @@ function StorePage() {
           );
           return;
         }
-        setOwnedItems(Array.from(new Set([...getInventory(), item.id])));
-        setInventory(getInventory());
+        qc.setQueryData<string[]>(["inventory"], (prev) =>
+          Array.from(new Set([...(prev ?? []), item.id])),
+        );
         void qc.invalidateQueries({ queryKey: ["stats"] });
         void qc.invalidateQueries({ queryKey: ["inventory"] });
       } else {
@@ -264,7 +268,7 @@ function StorePage() {
     if (!drop) return;
     try {
       const ok = await drop.claim();
-      setInventory(getInventory());
+      if (!userId) setInventory(getInventory());
       if (ok) setPrize({ kind: "item", item: drop.item });
       else flash("You already have this week's drop!");
     } catch (e) {

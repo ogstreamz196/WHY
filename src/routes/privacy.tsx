@@ -47,10 +47,11 @@ function PrivacyPage() {
 
         <Section title="If you use Why? as a guest">
           <p>
-            Your coins, streak and favourites are kept only in this browser or app session and
-            disappear when you close it. We don't ask for your name or email. If you type a question
-            into search or tap "But… Why?", the text of that question is sent to our AI provider to
-            write an answer (see "Who we share data with").
+            Your coins, streak and favourites are saved only on this device, in this browser or app.
+            They stay there until you clear the browser's or app's data (or uninstall the app), and
+            we can't see them. We don't ask for your name or email. If you type a question into
+            search or tap "But… Why?", the text of that question is sent to our AI provider to write
+            an answer (see "Who we share data with").
           </p>
         </Section>
 
@@ -123,6 +124,15 @@ function PrivacyPage() {
               apps. RevenueCat receives your account ID (not your name or email) to link a purchase
               to your account.
             </li>
+            <li>
+              Google (Google Sheets and Google Drive) — a backup copy of account details is kept in
+              a private spreadsheet in the app owner's Google Drive, so accounts can be restored if
+              something goes wrong. For each account it holds your account ID, nickname, username,
+              coins, streaks, how many facts you've discovered, the day you were last active and the
+              day you joined, plus the store items you own and your Why? Plus details (plan, store,
+              status and end date). It never holds passwords, emails, birthdays or card details.
+              Guest progress is never backed up.
+            </li>
             <li>Google and Apple — only if you choose to sign in with them on the website.</li>
           </ul>
           <p>We don't sell or rent personal data to anyone.</p>
@@ -141,7 +151,8 @@ function PrivacyPage() {
         <Section title="How long we keep it">
           <p>
             We keep your account data until you delete your account. Deleting it removes your
-            profile and activity straight away. Paddle keeps payment records as the law requires.
+            profile and activity straight away, and your row in the Google Drive backup is removed
+            shortly after. Paddle keeps payment records as the law requires.
           </p>
         </Section>
 

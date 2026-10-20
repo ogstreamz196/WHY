@@ -49,7 +49,9 @@ function HistoryPage() {
       <div className="mx-auto max-w-2xl px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-4 flex items-center gap-2">
           <Link
-            to="/badges"
+            to="/profile"
+            hash="recent-discoveries"
+            aria-label="Back to your history"
             className="glass flex h-11 w-11 items-center justify-center rounded-2xl text-white/90"
           >
             <ArrowLeft className="h-5 w-5" />

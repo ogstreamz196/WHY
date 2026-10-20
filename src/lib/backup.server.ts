@@ -66,12 +66,20 @@ async function db() {
 }
 
 async function getConfig(key: string): Promise<any> {
-  const { data } = await (await db()).from("app_config").select("value").eq("key", key).maybeSingle();
+  const { data } = await (
+    await db()
+  )
+    .from("app_config")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
   return data?.value ?? null;
 }
 
 async function setConfig(key: string, value: unknown) {
-  await (await db())
+  await (
+    await db()
+  )
     .from("app_config")
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
 }
@@ -109,7 +117,11 @@ export function factRow(f: any): Cell[] {
 
 async function buildRows() {
   const [facts, profiles, stats, inventory, subs] = await Promise.all([
-    fetchAll("facts", "id, code, category, question, answer, fun_fact, source, created_at, is_adult", "created_at"),
+    fetchAll(
+      "facts",
+      "id, code, category, question, answer, fun_fact, source, created_at, is_adult",
+      "created_at",
+    ),
     fetchAll("profiles", "id, display_name, username, created_at", "created_at"),
     fetchAll(
       "user_stats",
@@ -117,9 +129,11 @@ async function buildRows() {
       "user_id",
     ),
     fetchAll("user_inventory", "user_id, item_id, cost, acquired_at", "acquired_at"),
-    fetchAll("subscriptions", "user_id, product_id, status, current_period_end, created_at", "created_at").catch(
-      () => [],
-    ),
+    fetchAll(
+      "subscriptions",
+      "user_id, product_id, status, current_period_end, created_at",
+      "created_at",
+    ).catch(() => []),
   ]);
   // App-store Plus (table may not exist yet).
   const store = await fetchAll(
@@ -145,7 +159,15 @@ async function buildRows() {
     ];
   });
   const purchases: Cell[][] = [
-    ...inventory.map((i) => [i.user_id, "store_item", i.item_id, "coins", "owned", i.cost ?? 0, i.acquired_at ?? ""]),
+    ...inventory.map((i) => [
+      i.user_id,
+      "store_item",
+      i.item_id,
+      "coins",
+      "owned",
+      i.cost ?? 0,
+      i.acquired_at ?? "",
+    ]),
     ...subs.map((s: any) => [
       s.user_id,
       "plus",
@@ -179,7 +201,10 @@ async function writeTabs(id: string, which: Partial<Record<keyof typeof TABS, Ce
     method: "POST",
     body: JSON.stringify({
       valueInputOption: "RAW",
-      data: keys.map((k) => ({ range: `${q(TABS[k])}!A1`, values: [HEADERS[k], ...(which[k] ?? [])] })),
+      data: keys.map((k) => ({
+        range: `${q(TABS[k])}!A1`,
+        values: [HEADERS[k], ...(which[k] ?? [])],
+      })),
     }),
   });
 }
@@ -252,12 +277,13 @@ export async function fullBackup() {
 /**
  * Called after coins or purchases change. Refreshes the people tabs at most
  * once a minute (keeps well inside Google's quota); never throws.
+ * `force` skips the once-a-minute limit (e.g. right after an account is deleted).
  */
-export async function syncPeopleSoon(): Promise<void> {
+export async function syncPeopleSoon(opts: { force?: boolean } = {}): Promise<void> {
   try {
     if (!env()) return;
     const last = (await getConfig(LAST_SYNC_KEY)) as { at?: number } | null;
-    if (last?.at && Date.now() - last.at < PEOPLE_SYNC_MIN_MS) return;
+    if (!opts.force && last?.at && Date.now() - last.at < PEOPLE_SYNC_MIN_MS) return;
     await setConfig(LAST_SYNC_KEY, { at: Date.now() }); // claim the slot first
     const id = await ensureBackupSheet();
     if (!id) return;
@@ -293,13 +319,15 @@ export async function restoreFromBackup(sheetIdOverride?: string) {
   const params = new URLSearchParams();
   for (const t of Object.values(TABS)) params.append("ranges", q(t));
   const res = await sheets(`/spreadsheets/${id}/values:batchGet?${params.toString()}`);
-  const [factVals, userVals, purchaseVals] = (res.valueRanges ?? []).map(
-    (r: any) => ((r.values ?? []) as string[][]).slice(1),
+  const [factVals, userVals, purchaseVals] = (res.valueRanges ?? []).map((r: any) =>
+    ((r.values ?? []) as string[][]).slice(1),
   );
   const client = await db();
 
   // Facts
-  const existing = new Set((await fetchAll("facts", "question", "question")).map((f) => f.question));
+  const existing = new Set(
+    (await fetchAll("facts", "question", "question")).map((f) => f.question),
+  );
   const newFacts = (factVals ?? [])
     .filter((r: string[]) => r[2] && r[3] && !existing.has(r[2]))
     .map((r: string[]) => ({

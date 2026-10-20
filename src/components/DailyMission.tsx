@@ -20,6 +20,16 @@ const TASKS: { key: MissionTask; label: string; hint: string; icon: string }[] =
   { key: "category", label: "Explore a theme", hint: "Discover in today's category", icon: "🎯" },
 ];
 
+// A little longer than the 3-second read that records a discovery / chain claim.
+const RECHECK_MS = 4500;
+
+function isTaskDone(m: DailyMissionDTO, task: MissionTask): boolean {
+  if (task === "mystery") return m.mystery_done;
+  if (task === "surprise") return m.surprise_done;
+  if (task === "chain") return m.chain_done;
+  return m.category_done;
+}
+
 type Props = {
   onOpenCategory: (key: string) => void;
   /** Bonus coins just won, and the account's new coin total. */
@@ -77,11 +87,20 @@ export function DailyMission({ onOpenCategory, onCelebrate, registerMarker }: Pr
           next.mystery_done && next.surprise_done && next.chain_done && next.category_done;
         return next;
       });
+      const input = task === "category" ? { task, category_key: factCategory } : { task };
       try {
-        const res = await markTask({
-          data: task === "category" ? { task, category_key: factCategory } : { task },
-        });
-        setMission(res);
+        const res = await markTask({ data: input });
+        if (isTaskDone(res, task)) {
+          setMission(res);
+          return;
+        }
+        // The server only ticks a task once it has seen it happen (the 3-second
+        // read, the chain-layer claim). Ask again after that and show its answer.
+        window.setTimeout(() => {
+          markTask({ data: input })
+            .then((again) => setMission(again))
+            .catch((e) => console.warn("mission mark failed", e));
+        }, RECHECK_MS);
       } catch (e) {
         console.warn("mission mark failed", e);
       }

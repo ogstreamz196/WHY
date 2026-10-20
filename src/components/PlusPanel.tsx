@@ -5,14 +5,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ParentGate } from "@/components/ParentGate";
 import { usePaddleCheckout } from "@/hooks/usePaddleCheckout";
-import { usePlus } from "@/hooks/usePlus";
+import { usePlus, usePlusForSale } from "@/hooks/usePlus";
 import { refreshMyPlus } from "@/lib/plus.functions";
-import {
-  isNativePurchasesAvailable,
-  presentPlusCustomerCenter,
-  presentPlusPaywall,
-  restorePlus,
-} from "@/lib/nativePurchases";
+import { presentPlusCustomerCenter, presentPlusPaywall, restorePlus } from "@/lib/nativePurchases";
 import { useIsNativeApp } from "@/lib/platform";
 import { PLUS_PERKS, PLUS_TRIAL_LABEL, WEB_PLUS_PLANS } from "@/lib/plusPlans";
 
@@ -37,7 +32,9 @@ export function PlusPanel({
   onActivated?: () => void;
 }) {
   const isNative = useIsNativeApp();
-  const nativeStore = isNative === true && isNativePurchasesAvailable();
+  const forSale = usePlusForSale();
+  // Store billing works in this app build (plugins and a RevenueCat key).
+  const nativeStore = isNative === true && forSale === true;
   const { plus, isPlus, refetch } = usePlus(userId);
   const refresh = useServerFn(refreshMyPlus);
   const { openCheckout } = usePaddleCheckout();
@@ -181,7 +178,7 @@ export function PlusPanel({
         >
           Sign in to get Why? Plus
         </Link>
-      ) : isNative === null ? (
+      ) : isNative === null || forSale === null ? (
         <div className="mt-4 flex justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-white/60" />
         </div>

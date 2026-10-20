@@ -24,16 +24,29 @@ function RecapPage() {
   const fetchRecap = useServerFn(getWeeklyRecap);
   const [recap, setRecap] = useState<WeeklyRecap | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+    setLoading(true);
+    setFailed(false);
     fetchRecap()
       .then((r) => {
+        if (cancelled) return;
         setRecap(r);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, [user, fetchRecap]);
+      .catch(() => {
+        if (cancelled) return;
+        setFailed(true);
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, fetchRecap, attempt]);
 
   const share = async () => {
     if (!recap) return;
@@ -71,7 +84,21 @@ function RecapPage() {
           </button>
         </div>
 
-        {loading || !recap ? (
+        {failed && !recap ? (
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-center">
+            <div className="text-3xl">😕</div>
+            <p className="mt-2 text-sm font-black text-white">We couldn't load your week</p>
+            <p className="mt-1 text-xs text-white/60">Check your internet and try again.</p>
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="mt-4 rounded-2xl px-5 py-2.5 text-sm font-black text-white shadow-[var(--shadow-glow)]"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              Try again
+            </button>
+          </div>
+        ) : loading || !recap ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-24 animate-pulse rounded-3xl bg-white/5" />

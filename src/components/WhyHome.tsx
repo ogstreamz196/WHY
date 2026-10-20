@@ -704,6 +704,8 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
       return;
     }
     let cancelled = false;
+    // Clear the last query's matches so they don't stay listed while this one loads.
+    setResults(null);
     setLookingUp(true);
     const t = window.setTimeout(() => {
       findFacts({ data: { query: q } })
