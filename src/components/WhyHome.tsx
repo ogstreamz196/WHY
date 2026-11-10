@@ -409,6 +409,43 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     }
   }, [category, generateNew, getChoices, showFact]);
 
+  /** "Next fact": open another random question's answer straight away. */
+  const [nextLoading, setNextLoading] = useState(false);
+  const cardRef = useRef<HTMLElement | null>(null);
+  const nextFact = async () => {
+    if (nextLoading) return;
+    setNextLoading(true);
+    try {
+      const cat = category === "all" ? undefined : category;
+      const seen = getSeenIds();
+      const exclude = [...recentChoiceIds.current, ...(fact ? [fact.id] : [])].slice(-30);
+      let next: Fact | null =
+        (
+          await getChoices({
+            data: { category: cat, seenIds: seen, excludeIds: exclude, count: 1 },
+          })
+        )[0] ?? null;
+      if (!next) {
+        // Seen everything: signed-in players get a freshly written fact.
+        next = await generateNew({ data: { category: cat, seenIds: [...seen, ...exclude] } }).catch(
+          () => null,
+        );
+      }
+      if (!next || next.id === fact?.id) {
+        toast("🔎 No new facts right now. Try another topic!");
+        return;
+      }
+      recentChoiceIds.current = [...recentChoiceIds.current, next.id].slice(-12);
+      openFact(next, { surprise: true });
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      console.warn(e);
+      toast.error("📡 Couldn't load the next fact. Try again.");
+    } finally {
+      setNextLoading(false);
+    }
+  };
+
   /** Back to the three questions the player was choosing from. */
   const backToChoices = () => {
     showFact(null);
@@ -702,7 +739,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28 wide:pb-6">
       <CosmicBackground />
 
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:max-w-3xl wide:grid wide:max-w-6xl wide:grid-cols-[minmax(0,1fr)_330px] wide:items-start wide:gap-x-6 lg:px-8 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-x-10 2xl:grid-cols-[minmax(0,1fr)_440px] 2xl:max-w-7xl short:min-h-0">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 md:max-w-3xl wide:grid wide:max-w-6xl wide:grid-cols-[minmax(0,1fr)_330px] wide:items-start wide:gap-x-6 lg:px-8 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-x-10 2xl:grid-cols-[minmax(0,1fr)_440px] 2xl:max-w-7xl short:min-h-0">
         {isNative === false && (
           <div className="order-0 wide:col-span-2 wide:row-start-1">
             <LinkGoogleBanner />
@@ -882,7 +919,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
 
         <div className="order-2 flex flex-1 flex-col wide:col-start-1 wide:row-start-3">
           {/* ── FACT CARD ───────────────────────────────────── */}
-          <section className="flex flex-1 flex-col">
+          <section ref={cardRef} className="flex flex-1 scroll-mt-3 flex-col">
             <AnimatePresence mode="wait">
               <motion.div
                 key={fact?.id ?? "choices"}
@@ -899,7 +936,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                   style={{ background: catGradient }}
                 />
                 <div className="candy-rainbow-border">
-                  <article className="glass-strong relative overflow-hidden p-5 shadow-[var(--shadow-card)] sm:p-6 md:p-8 lg:p-10">
+                  <article className="glass-strong relative overflow-hidden p-4 shadow-[var(--shadow-card)] sm:p-6 md:p-8 lg:p-10">
                     {/* Candy sprinkles falling behind content */}
                     <div
                       aria-hidden
@@ -993,7 +1030,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                               <ChevronLeft className="h-4 w-4" /> Pick another question
                             </button>
                           )}
-                          <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(2rem,7vw,4rem)] [text-wrap:balance] break-words hyphens-auto">
+                          <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(1.6rem,6vw,3rem)] [text-wrap:balance] break-words hyphens-auto">
                             {asWhyQuestion(fact.question)}
                           </h1>
 
@@ -1004,16 +1041,90 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                 initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4 }}
-                                className="mt-5 space-y-4"
+                                className="mt-4 space-y-3 sm:space-y-4"
                               >
-                                <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                                <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
                                   <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
                                     ✨ Answer
                                   </p>
-                                  <p className="mt-2 font-fun font-medium leading-snug text-white text-[clamp(1.35rem,3.6vw,1.9rem)]">
+                                  <p className="mt-2 font-fun font-medium leading-snug text-white text-[clamp(1.1rem,3.2vw,1.5rem)]">
                                     <TalkingWords text={fact.answer} />
                                   </p>
                                 </div>
+
+                                {/* ── ENDLESS "BUT… WHY?" CHAIN ── */}
+                                {(chain.length > 0 || chainLoading) && (
+                                  <div>
+                                    <DepthMeter depth={chain.length} />
+                                    <ol className="relative space-y-3 pl-9">
+                                      <span
+                                        aria-hidden
+                                        className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
+                                      />
+                                      <ChainStep
+                                        index={0}
+                                        question={asWhyQuestion(fact.question)}
+                                        solved
+                                      />
+                                      {chain.map((layer, i) => {
+                                        const isLast = i === chain.length - 1;
+                                        const key = `${fact?.id ?? "x"}::${i + 1}`;
+                                        const earned = chainEarned[key];
+                                        const counting = isLast && chainDwellKey === key;
+                                        return (
+                                          <ChainStep
+                                            key={i}
+                                            index={i + 1}
+                                            question={layer.question}
+                                            answer={layer.answer}
+                                            counting={counting}
+                                            earned={earned}
+                                          />
+                                        );
+                                      })}
+
+                                      {chainLoading && <ThinkingStep />}
+                                    </ol>
+                                  </div>
+                                )}
+
+                                <motion.button
+                                  type="button"
+                                  onClick={() => askWhy()}
+                                  disabled={
+                                    chainLoading ||
+                                    chain.length >= MAX_CHAIN_DEPTH ||
+                                    chain[chain.length - 1]?.terminal
+                                  }
+                                  whileHover={{ scale: 1.03 }}
+                                  whileTap={{ scale: 0.94, rotate: -1 }}
+                                  className="candy-btn font-fun relative flex min-h-14 w-full items-center justify-center gap-3 overflow-hidden rounded-full px-6 py-3 text-[clamp(1.05rem,2.8vw,1.35rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
+                                >
+                                  {!chainLoading && chain.length < MAX_CHAIN_DEPTH && (
+                                    <motion.span
+                                      aria-hidden
+                                      className="pointer-events-none absolute inset-y-0 left-0 w-1/4 -skew-x-12 bg-white/30 blur-md motion-reduce:hidden"
+                                      initial={{ x: "-150%" }}
+                                      animate={{ x: "450%" }}
+                                      transition={{
+                                        duration: 1.4,
+                                        repeat: Infinity,
+                                        repeatDelay: 2.8,
+                                        ease: "easeInOut",
+                                      }}
+                                    />
+                                  )}
+                                  {chain.length >= MAX_CHAIN_DEPTH ? (
+                                    "🌌 You've reached the bottom of the rabbit hole"
+                                  ) : chainLoading ? (
+                                    "Diving deeper…"
+                                  ) : (
+                                    <>
+                                      <WigglingThinker />{" "}
+                                      {chain.length === 0 ? "But… Why?" : "But… Why? Deeper!"}
+                                    </>
+                                  )}
+                                </motion.button>
 
                                 {fact.fun_fact && (
                                   <motion.div
@@ -1030,11 +1141,24 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                     <p className="text-[10px] font-black uppercase tracking-widest text-yellow-300">
                                       ⭐ Fun fact
                                     </p>
-                                    <p className="mt-1.5 font-fun font-medium leading-snug text-white/95 text-[clamp(1.1rem,2.8vw,1.4rem)]">
+                                    <p className="mt-1.5 font-fun font-medium leading-snug text-white/95 text-[clamp(1rem,2.6vw,1.25rem)]">
                                       {fact.fun_fact}
                                     </p>
                                   </motion.div>
                                 )}
+
+                                {/* Next fact: straight to another random question's answer */}
+                                <motion.button
+                                  type="button"
+                                  onClick={() => void nextFact()}
+                                  disabled={nextLoading}
+                                  whileTap={{ scale: 0.97 }}
+                                  className="flex min-h-14 w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-[clamp(1rem,2.6vw,1.2rem)] font-black uppercase tracking-wide text-white disabled:opacity-60"
+                                  style={{ background: "var(--gradient-primary)" }}
+                                >
+                                  {nextLoading ? "Finding one…" : "Next fact"}
+                                  <ArrowRight className="h-5 w-5" />
+                                </motion.button>
 
                                 {/* Discovery signals */}
                                 <div className="grid grid-cols-4 gap-2">
@@ -1088,152 +1212,78 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                   />
                                 </div>
 
-                                {/* ── ENDLESS "BUT… WHY?" CHAIN ── */}
-                                {
-                                  <div className="pt-2">
-                                    <DepthMeter depth={chain.length} />
-                                    <ol className="relative space-y-3 pl-9">
-                                      <span
-                                        aria-hidden
-                                        className="absolute left-3.5 top-3 bottom-3 w-0.5 rounded-full bg-gradient-to-b from-fuchsia-500/60 via-violet-500/40 to-transparent"
-                                      />
-                                      <ChainStep
-                                        index={0}
-                                        question={asWhyQuestion(fact.question)}
-                                        solved
-                                      />
-                                      {chain.map((layer, i) => {
-                                        const isLast = i === chain.length - 1;
-                                        const key = `${fact?.id ?? "x"}::${i + 1}`;
-                                        const earned = chainEarned[key];
-                                        const counting = isLast && chainDwellKey === key;
-                                        return (
-                                          <ChainStep
-                                            key={i}
-                                            index={i + 1}
-                                            question={layer.question}
-                                            answer={layer.answer}
-                                            counting={counting}
-                                            earned={earned}
-                                          />
-                                        );
-                                      })}
-
-                                      {chainLoading && <ThinkingStep />}
-                                    </ol>
-
-                                    <motion.button
-                                      type="button"
-                                      onClick={() => askWhy()}
-                                      disabled={
-                                        chainLoading ||
-                                        chain.length >= MAX_CHAIN_DEPTH ||
-                                        chain[chain.length - 1]?.terminal
-                                      }
-                                      whileHover={{ scale: 1.03 }}
-                                      whileTap={{ scale: 0.94, rotate: -1 }}
-                                      className="candy-btn font-fun relative mt-4 flex min-h-16 w-full items-center justify-center gap-3 overflow-hidden rounded-full px-6 py-3 text-[clamp(1.15rem,3vw,1.5rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
-                                    >
-                                      {!chainLoading && chain.length < MAX_CHAIN_DEPTH && (
-                                        <motion.span
-                                          aria-hidden
-                                          className="pointer-events-none absolute inset-y-0 left-0 w-1/4 -skew-x-12 bg-white/30 blur-md motion-reduce:hidden"
-                                          initial={{ x: "-150%" }}
-                                          animate={{ x: "450%" }}
-                                          transition={{
-                                            duration: 1.4,
-                                            repeat: Infinity,
-                                            repeatDelay: 2.8,
-                                            ease: "easeInOut",
-                                          }}
-                                        />
-                                      )}
-                                      {chain.length >= MAX_CHAIN_DEPTH ? (
-                                        "🌌 You've reached the bottom of the rabbit hole"
-                                      ) : chainLoading ? (
-                                        "Diving deeper…"
-                                      ) : (
-                                        <>
-                                          <WigglingThinker />{" "}
-                                          {chain.length === 0 ? "But… Why?" : "But… Why? Deeper!"}
-                                        </>
-                                      )}
-                                    </motion.button>
-
-                                    {chain.length < MAX_CHAIN_DEPTH &&
-                                      !chain[chain.length - 1]?.terminal && (
-                                        <div className="mt-3 space-y-2">
-                                          <p className="text-center text-[10px] font-black uppercase tracking-widest text-white/50">
-                                            Or pick a question
-                                          </p>
-                                          <div className="flex flex-wrap justify-center gap-2">
-                                            {[
-                                              "But why does that happen?",
-                                              "How does it work?",
-                                              "When did it start?",
-                                              "Where does it come from?",
-                                              "What if it didn't exist?",
-                                              "Who discovered it?",
-                                            ].map((q) => (
-                                              <button
-                                                key={q}
-                                                type="button"
-                                                disabled={chainLoading}
-                                                onClick={() => askWhy(q)}
-                                                className="rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold text-white/85 transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
-                                              >
-                                                {q}
-                                              </button>
-                                            ))}
-                                          </div>
-                                          <form
-                                            className="glass flex items-center gap-2 rounded-2xl p-1.5"
-                                            onSubmit={(e) => {
-                                              e.preventDefault();
-                                              const q = customWhy.trim();
-                                              if (q.length < 3 || chainLoading) return;
-                                              setCustomWhy("");
-                                              askWhy(q);
-                                            }}
+                                {chain.length < MAX_CHAIN_DEPTH &&
+                                  !chain[chain.length - 1]?.terminal && (
+                                    <div className="space-y-2">
+                                      <p className="text-center text-[10px] font-black uppercase tracking-widest text-white/50">
+                                        Or pick a question
+                                      </p>
+                                      <div className="flex flex-wrap justify-center gap-2">
+                                        {[
+                                          "But why does that happen?",
+                                          "How does it work?",
+                                          "When did it start?",
+                                          "Where does it come from?",
+                                          "What if it didn't exist?",
+                                          "Who discovered it?",
+                                        ].map((q) => (
+                                          <button
+                                            key={q}
+                                            type="button"
+                                            disabled={chainLoading}
+                                            onClick={() => askWhy(q)}
+                                            className="rounded-full border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold text-white/85 transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
                                           >
-                                            <input
-                                              type="text"
-                                              enterKeyHint="send"
-                                              aria-label="Type your own why question"
-                                              value={customWhy}
-                                              onChange={(e) => setCustomWhy(e.target.value)}
-                                              placeholder="Or type your own why…"
-                                              maxLength={200}
-                                              className="flex-1 bg-transparent px-2 py-2 text-sm text-white placeholder-white/40 outline-none"
-                                            />
-                                            <button
-                                              type="submit"
-                                              disabled={chainLoading || customWhy.trim().length < 3}
-                                              className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-                                              style={{ background: "var(--gradient-primary)" }}
-                                            >
-                                              Ask
-                                            </button>
-                                          </form>
-                                        </div>
-                                      )}
-
-                                    {chain.length > 0 && (
-                                      <button
-                                        type="button"
-                                        onClick={handleSaveChain}
-                                        disabled={savingChain || !!savedChainId}
-                                        className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-3 text-xs font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-60"
+                                            {q}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <form
+                                        className="glass flex items-center gap-2 rounded-2xl p-1.5"
+                                        onSubmit={(e) => {
+                                          e.preventDefault();
+                                          const q = customWhy.trim();
+                                          if (q.length < 3 || chainLoading) return;
+                                          setCustomWhy("");
+                                          askWhy(q);
+                                        }}
                                       >
-                                        {savedChainId
-                                          ? "✓ Saved to Favourites"
-                                          : savingChain
-                                            ? "Saving…"
-                                            : "💖 Save to Favourites"}
-                                      </button>
-                                    )}
-                                  </div>
-                                }
+                                        <input
+                                          type="text"
+                                          enterKeyHint="send"
+                                          aria-label="Type your own why question"
+                                          value={customWhy}
+                                          onChange={(e) => setCustomWhy(e.target.value)}
+                                          placeholder="Or type your own why…"
+                                          maxLength={200}
+                                          className="flex-1 bg-transparent px-2 py-2 text-sm text-white placeholder-white/40 outline-none"
+                                        />
+                                        <button
+                                          type="submit"
+                                          disabled={chainLoading || customWhy.trim().length < 3}
+                                          className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                                          style={{ background: "var(--gradient-primary)" }}
+                                        >
+                                          Ask
+                                        </button>
+                                      </form>
+                                    </div>
+                                  )}
+
+                                {chain.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={handleSaveChain}
+                                    disabled={savingChain || !!savedChainId}
+                                    className="flex w-full items-center justify-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 px-5 py-3 text-xs font-black text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-60"
+                                  >
+                                    {savedChainId
+                                      ? "✓ Saved to Favourites"
+                                      : savingChain
+                                        ? "Saving…"
+                                        : "💖 Save to Favourites"}
+                                  </button>
+                                )}
                               </motion.div>
                             )}
                           </AnimatePresence>
