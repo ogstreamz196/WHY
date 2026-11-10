@@ -174,6 +174,72 @@ export const getRandomFact = createServerFn({ method: "GET" })
     }
   });
 
+// -------------------- Three questions to pick from --------------------
+
+function sample<T>(arr: T[], n: number): T[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, n);
+}
+
+/**
+ * Up to `count` different questions for the home page to choose from, unseen
+ * ones first. Signed-in players may get fewer than `count` when they've seen
+ * everything (the client then writes fresh ones with generateAndStoreFact).
+ * Guests are topped up with older facts so they always get a full set.
+ */
+export const getFactChoices = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        category: z.string().max(40).optional(),
+        seenIds: z.array(z.string().uuid()).max(5000).optional(),
+        excludeIds: z.array(z.string().uuid()).max(30).optional(),
+        count: z.number().int().min(1).max(5).default(3),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data }): Promise<Fact[]> => {
+    const supabase = getSupabase();
+    const uid = await optionalUserId().catch(() => null);
+    const skip = new Set<string>(data.seenIds ?? []);
+    for (const id of await serverSeenIds(uid)) skip.add(id);
+    const exclude = new Set<string>(data.excludeIds ?? []);
+
+    try {
+      let q = supabase.from("facts").select("id");
+      if (data.category) q = q.eq("category", data.category);
+      const { data: idRows } = await q.order("created_at", { ascending: false }).limit(3000);
+      const ids = (idRows ?? []).map((r) => r.id as string);
+      if (ids.length === 0) {
+        return uid ? [] : sample(FALLBACK_FACTS, data.count);
+      }
+
+      const unseen = ids.filter((id) => !skip.has(id) && !exclude.has(id));
+      let picked = sample(unseen, data.count);
+      if (picked.length < data.count && !uid) {
+        // Guests: fill up with facts they've seen, but not the set just shown.
+        const rest = ids.filter((id) => !picked.includes(id));
+        const notJustShown = rest.filter((id) => !exclude.has(id));
+        picked = [
+          ...picked,
+          ...sample(notJustShown.length ? notJustShown : rest, data.count - picked.length),
+        ];
+      }
+      if (picked.length === 0) return [];
+
+      const { data: rows } = await supabase.from("facts").select(FACT_COLS).in("id", picked);
+      const byId = new Map(((rows ?? []) as Fact[]).map((r) => [r.id, r]));
+      return picked.map((id) => byId.get(id)).filter((f): f is Fact => !!f);
+    } catch (err) {
+      console.warn("getFactChoices failed, serving fallback", err);
+      return sample(FALLBACK_FACTS, data.count);
+    }
+  });
+
 // -------------------- AI helpers --------------------
 
 const SAFETY_PROMPT = `You are writing content for the WHY? app used by kids, families, adults, and classrooms.
