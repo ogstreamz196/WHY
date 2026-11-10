@@ -15,6 +15,7 @@ import {
   BookmarkPlus,
   BookmarkCheck,
   ChevronLeft,
+  Shuffle,
   ChevronRight,
   Flame,
   Heart,
@@ -924,24 +925,26 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                         />
                       ))}
                     </div>
-                    {/* Speech-bubble tag */}
-                    <div className="relative mb-4 flex flex-wrap items-center gap-3 sm:mb-5">
-                      <div className="candy-chip animate-fade-up inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-2.5">
-                        <span aria-hidden className="shrink-0 text-lg">
-                          🍭
-                        </span>
-                        <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
-                          Curious?
+                    {/* Speech-bubble tag (answer view only: the picker has its own heading) */}
+                    {fact && (
+                      <div className="relative mb-4 flex flex-wrap items-center gap-3 sm:mb-5">
+                        <div className="candy-chip animate-fade-up inline-flex min-w-0 max-w-full items-center gap-2 rounded-full px-3 py-2 sm:px-4 sm:py-2.5">
+                          <span aria-hidden className="shrink-0 text-lg">
+                            🍭
+                          </span>
+                          <span className="truncate text-sm font-black uppercase tracking-widest sm:text-base md:text-lg">
+                            Curious?
+                          </span>
+                        </div>
+                        <span
+                          className="animate-bounce-in ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11 md:h-12 md:w-12 md:text-2xl"
+                          style={{ background: catGradient }}
+                          aria-label={fact?.category ?? "category"}
+                        >
+                          {emojiFor(fact?.category)}
                         </span>
                       </div>
-                      <span
-                        className="animate-bounce-in ml-auto inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xl shadow-lg sm:h-11 sm:w-11 md:h-12 md:w-12 md:text-2xl"
-                        style={{ background: catGradient }}
-                        aria-label={fact?.category ?? "category"}
-                      >
-                        {emojiFor(fact?.category)}
-                      </span>
-                    </div>
+                    )}
 
                     <AnimatePresence mode="wait" initial={false}>
                       {showSkeleton ? (
@@ -1272,8 +1275,8 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
               style={{ background: "var(--gradient-primary)" }}
             >
               <span className="relative z-10 inline-flex items-center justify-center gap-3">
-                {loading ? "Loading…" : "3 NEW QUESTIONS"}
-                <ArrowRight className="h-6 w-6" />
+                {loading ? "Loading…" : fact ? "New questions" : "Show me new questions"}
+                <Shuffle className="h-6 w-6" />
               </span>
               <span
                 aria-hidden
@@ -1286,8 +1289,8 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
 
         {/* Wide screens: a sticky side column. Phones: these flow around the fact. */}
         <aside className="own-heading-sizes contents wide:sticky wide:top-4 wide:col-start-2 wide:row-start-3 wide:flex wide:max-h-[calc(100dvh-2rem)] wide:flex-col wide:overflow-y-auto wide:pb-4 wide:[scrollbar-width:none]">
-          <div className="order-1">
-            {/* Your explorer: dressed-up avatar, quick stats and the weekly drop */}
+          <div className="order-3">
+            {/* Your explorer (below the questions on phones, so they come first): dressed-up avatar, quick stats and the weekly drop */}
             <HomePlayerCard
               userId={user?.id ?? null}
               name={user ? (displayName ?? "Explorer") : "Guest explorer"}
@@ -1659,7 +1662,7 @@ function ChainStep({
   );
 }
 
-const ASK_IDEAS = ["Why do cats purr?", "Why is the ocean salty?", "Why do we have belly buttons?"];
+const ASK_IDEAS = ["Why is the ocean salty?", "Why do we hiccup?", "Why do we have belly buttons?"];
 
 /**
  * The home page's starting point: three random questions to choose from,
@@ -1688,10 +1691,10 @@ function QuestionPicker({
   return (
     <div className="relative">
       <h1 className="animate-fade-up font-fun font-bold leading-[1.1] tracking-tight text-white text-[clamp(1.7rem,5.5vw,2.8rem)] [text-wrap:balance]">
-        Which why do you want to know?
+        What do you want to find out?
       </h1>
-      <p className="mt-1 text-sm font-semibold text-white/70">
-        Pick a question to see the answer, then keep asking “But… Why?”
+      <p className="mt-1.5 text-sm font-semibold text-white/75 sm:text-base">
+        Tap a question to see the answer. Still curious? Keep asking why!
       </p>
 
       {choices.length > 0 ? (
@@ -1717,7 +1720,7 @@ function QuestionPicker({
                 >
                   {emojiFor(f.category)}
                 </span>
-                <h2 className="min-w-0 flex-1 font-fun font-semibold leading-snug text-white text-[clamp(1.1rem,3.4vw,1.45rem)] break-words">
+                <h2 className="min-w-0 flex-1 font-fun font-semibold leading-snug text-white text-[clamp(1.05rem,3vw,1.3rem)] [text-wrap:balance] break-words">
                   {asWhyQuestion(f.question)}
                 </h2>
                 <ChevronRight
@@ -1756,9 +1759,9 @@ function QuestionPicker({
           />
           <div className="min-w-0">
             <h2 id="ask-own-why" className="font-fun text-xl font-bold text-white">
-              Ask your own why
+              Ask your own question
             </h2>
-            <p className="text-xs text-white/70">Type any question you're curious about.</p>
+            <p className="text-xs text-white/70">Wondering about something? Type it here.</p>
           </div>
         </div>
         <form onSubmit={onAsk} className="glass mt-3 flex items-center gap-2 rounded-2xl p-1.5">
@@ -1768,7 +1771,7 @@ function QuestionPicker({
             aria-label="Type your own why question"
             value={askDraft}
             onChange={(e) => onAskDraft(e.target.value)}
-            placeholder="Why do…"
+            placeholder="Why do cats purr?"
             maxLength={200}
             className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-white placeholder-white/40 outline-none"
           />
@@ -1801,7 +1804,7 @@ function QuestionPicker({
           </p>
         )}
         <p className="mt-2 text-[10px] text-white/50">
-          Your question goes to our AI helper to write a kid-friendly answer.
+          An AI helper writes a kid-friendly answer to your question.
         </p>
       </section>
     </div>

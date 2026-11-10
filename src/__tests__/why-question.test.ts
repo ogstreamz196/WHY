@@ -3,15 +3,28 @@ import { asWhyQuestion } from "@/lib/whyQuestion";
 
 const variants = [
   ["do we have different blood types?", "Why do we have different blood types?"],
-  ["Do you know why the sky is blue?", "Why the sky is blue?"],
-  ["Do you know why Do you know why the hagfish erupts slime that can choke a shark?", "Why the hagfish erupts slime that can choke a shark?"],
+  ["Do you know why the sky is blue?", "Why is the sky blue?"],
+  [
+    "Do you know why Do you know why the hagfish erupts slime that can choke a shark?",
+    "Why does the hagfish erupt slime that can choke a shark?",
+  ],
   ["DO YOU KNOW WHY do you know why why do cats purr??", "Why do cats purr?"],
   ["Why is the sky blue?", "Why is the sky blue?"],
   ["why why do cats purr", "Why do cats purr?"],
   ["WHY WHY WHY do we yawn?", "Why do we yawn?"],
   ["How come leaves change color", "How come leaves change color?"],
   ["What causes rainbows.", "What causes rainbows?"],
-  ["the ocean is salty", "Why the ocean is salty?"],
+  ["the ocean is salty", "Why is the ocean salty?"],
+  ["we have leap years", "Why do we have leap years?"],
+  ["some rocks are shiny", "Why are some rocks shiny?"],
+  ["the Moon has phases", "Why does the Moon have phases?"],
+  ["bees like flowers", "Why do bees like flowers?"],
+  ["it gets colder at night", "Why does it get colder at night?"],
+  ["some birds like parrots can talk", "Why can some birds like parrots talk?"],
+  ["there are so many stars", "Why are there so many stars?"],
+  ["thunder rumbles and booms", "Why does thunder rumble and boom?"],
+  ["people used to wear wigs", "Why did people use to wear wigs?"],
+  ["mars is red", "Why is Mars red?"],
   ["", ""],
 ];
 
@@ -86,7 +99,7 @@ describe("asWhyQuestion", () => {
 
   it("mid-sentence 'why' is preserved (not falsely flagged as duplicate)", () => {
     const out = asWhyQuestion("we ask why things happen");
-    expect(out).toBe("Why we ask why things happen?");
+    expect(out).toBe("Why do we ask why things happen?");
     expect(/\bwhy\s+why\b/i.test(out)).toBe(false);
   });
 

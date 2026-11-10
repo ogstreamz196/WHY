@@ -4,16 +4,16 @@ import { normalizeStoredQuestion } from "@/lib/normalizeQuestion";
 
 describe("asWhyQuestion — past tense handling", () => {
   const cases: Array<[string, string]> = [
-    ["some dinosaurs had feathers", "Why some dinosaurs had feathers?"],
-    ["romans built roads", "Why romans built roads?"],
-    ["the pyramids were built by hand", "Why the pyramids were built by hand?"],
-    ["mammoths went extinct", "Why mammoths went extinct?"],
-    ["edison invented the bulb", "Why edison invented the bulb?"],
-    ["humans evolved from apes", "Why humans evolved from apes?"],
-    ["the dodo was flightless", "Why the dodo was flightless?"],
-    ["ancient people used fire", "Why ancient people used fire?"],
+    ["some dinosaurs had feathers", "Why did some dinosaurs have feathers?"],
+    ["romans built roads", "Why did romans build roads?"],
+    ["the pyramids were built by hand", "Why were the pyramids built by hand?"],
+    ["mammoths went extinct", "Why did mammoths go extinct?"],
+    ["edison invented the bulb", "Why did edison invent the bulb?"],
+    ["humans evolved from apes", "Why did humans evolve from apes?"],
+    ["the dodo was flightless", "Why was the dodo flightless?"],
+    ["ancient people used fire", "Why did ancient people use fire?"],
   ];
-  it.each(cases)("keeps past tense intact for %j", (input, expected) => {
+  it.each(cases)("asks past-tense facts with did/was/were: %j", (input, expected) => {
     expect(asWhyQuestion(input)).toBe(expected);
   });
 
@@ -56,7 +56,7 @@ describe("normalizeStoredQuestion", () => {
   it("accepts a past-tense phrase and renders it grammatically", () => {
     const r = normalizeStoredQuestion("some dinosaurs had feathers");
     expect(r.ok).toBe(true);
-    expect(r.rendered).toBe("Why some dinosaurs had feathers?");
+    expect(r.rendered).toBe("Why did some dinosaurs have feathers?");
   });
 
   it("rejects too-short questions", () => {

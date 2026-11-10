@@ -12,12 +12,6 @@ test.describe("Home question choices & Curious? pill", () => {
     for (let i = 0; i < 8; i++) {
       await page.goto("/", { waitUntil: "networkidle" });
 
-      const pill = page.getByText("Curious?", { exact: true });
-      await expect(pill).toBeVisible();
-      const pillText = (await pill.innerText()).toLowerCase();
-      // Pill must never contain the word "why" at all.
-      expect(pillText).not.toMatch(/\bwhy\b/i);
-
       // Home offers three questions to choose from; check each one.
       const choices = page.getByRole("list", { name: "Questions to choose from" }).locator("h2");
       await expect(choices.first()).toBeVisible();
@@ -35,6 +29,17 @@ test.describe("Home question choices & Curious? pill", () => {
         const whyCount = firstTwo.filter((t) => t.replace(/[^a-z]/g, "") === "why").length;
         expect(whyCount).toBeLessThanOrEqual(1);
       }
+
+      // Open the first question: the answer view shows the "Curious?" pill.
+      await page
+        .getByRole("list", { name: "Questions to choose from" })
+        .locator("button")
+        .first()
+        .click();
+      const pill = page.getByText("Curious?", { exact: true });
+      await expect(pill).toBeVisible();
+      // Pill must never contain the word "why" at all.
+      expect((await pill.innerText()).toLowerCase()).not.toMatch(/\bwhy\b/i);
     }
 
     // Sanity: we actually rendered content.
