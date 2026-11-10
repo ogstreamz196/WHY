@@ -9,90 +9,6 @@ function notifyAchievements(ids?: string[]) {
   }
 }
 
-const REVEAL_KEYWORDS: Array<{ match: RegExp; label: string; emoji: string }> = [
-  { match: /\b(thorn|spike|cactus|rose|prickl)/i, label: "Reveal the Spiky Secret", emoji: "🌵" },
-  {
-    match: /\b(plant|flower|tree|leaf|forest|garden|seed)/i,
-    label: "Grow the Answer",
-    emoji: "🌱",
-  },
-  {
-    match: /\b(build|construct|bridge|tower|architect|crane|cement|brick)/i,
-    label: "Build Me a Fact",
-    emoji: "🏗️",
-  },
-  {
-    match: /\b(space|planet|star|galaxy|moon|rocket|astronaut|orbit)/i,
-    label: "Launch the Answer",
-    emoji: "🚀",
-  },
-  {
-    match: /\b(ocean|sea|fish|shark|whale|water|river|wave|underwater)/i,
-    label: "Dive Into the Answer",
-    emoji: "🌊",
-  },
-  { match: /\b(fire|volcano|lava|flame|burn)/i, label: "Ignite the Answer", emoji: "🔥" },
-  { match: /\b(ice|snow|cold|frozen|glacier|arctic)/i, label: "Chill Out the Answer", emoji: "❄️" },
-  {
-    match: /\b(dog|cat|animal|bird|lion|tiger|elephant|monkey|pet)/i,
-    label: "Unleash the Answer",
-    emoji: "🐾",
-  },
-  { match: /\b(dinosaur|fossil|prehistoric|jurassic)/i, label: "Dig Up the Answer", emoji: "🦖" },
-  {
-    match: /\b(food|eat|cook|recipe|pizza|bread|fruit|vegetable)/i,
-    label: "Taste the Answer",
-    emoji: "🍽️",
-  },
-  {
-    match: /\b(candy|sweet|sugar|chocolate|cake|dessert)/i,
-    label: "Reveal the Sweet Answer",
-    emoji: "🍬",
-  },
-  { match: /\b(music|song|sound|instrument|guitar|piano)/i, label: "Play the Answer", emoji: "🎵" },
-  { match: /\b(sport|game|play|ball|team|race)/i, label: "Score the Answer", emoji: "⚽" },
-  { match: /\b(car|train|plane|vehicle|engine|road)/i, label: "Drive to the Answer", emoji: "🚗" },
-  { match: /\b(money|coin|dollar|economy|bank)/i, label: "Cash In the Answer", emoji: "💰" },
-  { match: /\b(brain|mind|think|memory|dream|sleep)/i, label: "Unlock the Answer", emoji: "🧠" },
-  { match: /\b(body|heart|blood|bone|muscle|health)/i, label: "Reveal the Heartbeat", emoji: "❤️" },
-  { match: /\b(book|read|story|word|language|write)/i, label: "Turn the Page", emoji: "📖" },
-  {
-    match: /\b(computer|robot|tech|code|internet|phone|app)/i,
-    label: "Boot Up the Answer",
-    emoji: "🤖",
-  },
-  { match: /\b(history|ancient|king|queen|war|empire)/i, label: "Unearth the Answer", emoji: "🏛️" },
-  { match: /\b(magic|wizard|dragon|myth|legend)/i, label: "Cast the Answer", emoji: "✨" },
-  { match: /\b(weather|rain|storm|cloud|wind|sun)/i, label: "Clear the Skies", emoji: "🌤️" },
-];
-
-const CATEGORY_REVEAL: Record<string, { label: string; emoji: string }> = {
-  science: { label: "Run the Experiment", emoji: "🧪" },
-  nature: { label: "Grow the Answer", emoji: "🌿" },
-  space: { label: "Launch the Answer", emoji: "🚀" },
-  history: { label: "Unearth the Answer", emoji: "🏛️" },
-  tech: { label: "Boot Up the Answer", emoji: "🤖" },
-  animals: { label: "Unleash the Answer", emoji: "🐾" },
-  food: { label: "Taste the Answer", emoji: "🍽️" },
-  sports: { label: "Score the Answer", emoji: "⚽" },
-  music: { label: "Play the Answer", emoji: "🎵" },
-  art: { label: "Paint the Answer", emoji: "🎨" },
-  geography: { label: "Chart the Answer", emoji: "🗺️" },
-  psychology: { label: "Read My Mind", emoji: "🧠" },
-};
-
-function getRevealLabel(
-  question?: string,
-  category?: string | null,
-): { label: string; emoji: string } {
-  if (question) {
-    for (const k of REVEAL_KEYWORDS)
-      if (k.match.test(question)) return { label: k.label, emoji: k.emoji };
-  }
-  if (category && CATEGORY_REVEAL[category]) return CATEGORY_REVEAL[category];
-  return { label: "Reveal the Answer", emoji: "✨" };
-}
-
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -104,7 +20,6 @@ import {
   Heart,
   Search as SearchIcon,
   Share2,
-  Sparkles,
   Star,
   User as UserIcon,
   X,
@@ -114,7 +29,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   generateAndStoreFact,
   generateWhyLayer,
-  getRandomFact,
+  getFactChoices,
   searchOrGenerateFact,
   type Fact,
 } from "@/lib/facts.functions";
@@ -198,7 +113,7 @@ export type HomeSearch = { welcome?: true; q?: string };
 type Reaction = "like" | "love" | null;
 
 export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
-  const getRandom = useServerFn(getRandomFact);
+  const getChoices = useServerFn(getFactChoices);
   const generateNew = useServerFn(generateAndStoreFact);
   const generateLayer = useServerFn(generateWhyLayer);
   const searchOrGen = useServerFn(searchOrGenerateFact);
@@ -227,7 +142,11 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   const [loading, setLoading] = useState(true);
   const showSkeleton = useThrottledFlag(loading, 180);
   const [revealed, setRevealed] = useState(false);
-  const [revealing, setRevealing] = useState(false);
+  // The three questions to choose from (shown while no fact is open).
+  const [choices, setChoices] = useState<Fact[]>([]);
+  // Typed "Ask your own why" question on the picker.
+  const [askDraft, setAskDraft] = useState("");
+  const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<CategoryKey>("all");
   const [fav, setFav] = useState(false);
@@ -263,9 +182,8 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     [markMissionServer, user],
   );
 
-  const pickedNext = useRef(false);
-  const nextGenAt = useRef<number>(4 + Math.floor(Math.random() * 7));
-  const tapCount = useRef<number>(0);
+  // Questions offered in the last few sets, so "New questions" shows new ones.
+  const recentChoiceIds = useRef<string[]>([]);
   const lastMilestone = useRef<number>(0);
 
   const [chain, setChain] = useState<
@@ -417,70 +335,107 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
 
   const showFact = useCallback((f: Fact | null) => {
     setFact(f);
-    setRevealed(false);
+    // Picking or asking a question shows its answer straight away.
+    setRevealed(!!f);
     setChain([]);
     setReaction(null);
     setFav(f ? isFavorite(f.id) : false);
     if (f) cacheFact(f);
   }, []);
 
-  // Only the newest request may show its fact, so a slow answer never
+  /** Open a fact's answer: from the three choices, search, or a typed question. */
+  const openFact = useCallback(
+    (f: Fact, opts?: { surprise?: boolean }) => {
+      showFact(f);
+      markSeen(f.id);
+      bumpSeen();
+      markMission("mystery");
+      // "One surprise fact" means one picked from the random questions.
+      if (opts?.surprise) markMission("surprise");
+      if (f.category) markMission("category", f.category);
+      // Coins are deferred to the 3s dwell timer (see effect below).
+    },
+    [showFact, markMission],
+  );
+
+  // Only the newest request may show its questions, so a slow answer never
   // replaces a newer one (for example after a quick category tap).
   const loadSeq = useRef(0);
-  const loadNext = useCallback(
-    async (currentId?: string, opts?: { forceGenerate?: boolean }) => {
-      const seq = ++loadSeq.current;
-      setLoading(true);
-      setError(null);
-      try {
-        tapCount.current += 1;
-        const cat = category === "all" ? undefined : category;
-        const seen = getSeenIds();
-
-        let next: Fact | null = null;
-
-        // Always prefer an unseen fact from the DB. Only when the pool is
-        // exhausted (or the user explicitly asked) do we generate a new one.
-        if (!opts?.forceGenerate) {
-          next = await getRandom({ data: { excludeId: currentId, category: cat, seenIds: seen } });
-        }
-        if (!next || opts?.forceGenerate) {
+  const loadChoices = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    setLoading(true);
+    setError(null);
+    showFact(null);
+    try {
+      const cat = category === "all" ? undefined : category;
+      const seen = getSeenIds();
+      let list = await getChoices({
+        data: { category: cat, seenIds: seen, excludeIds: recentChoiceIds.current, count: 3 },
+      });
+      // Signed-in players who've seen everything get freshly written questions
+      // (generateNew needs an account, so for guests this just stops).
+      if (list.length < 3) {
+        for (let i = list.length; i < 3; i++) {
           try {
-            next = await generateNew({
-              data: { category: cat, seenIds: seen, force: opts?.forceGenerate },
+            const extra = await generateNew({
+              data: { category: cat, seenIds: [...seen, ...list.map((f) => f.id)] },
             });
+            if (extra && !list.some((f) => f.id === extra.id)) list = [...list, extra];
           } catch (e) {
             console.warn(e);
-          }
-          if (next) {
-            tapCount.current = 0;
-            nextGenAt.current = 4 + Math.floor(Math.random() * 7);
+            break;
           }
         }
-        if (!next) {
-          const cached = getCachedRandomFact(currentId);
-          if (cached) next = cached;
-        }
-        if (seq !== loadSeq.current) return;
-        showFact(next);
-        if (next?.id) markSeen(next.id);
-        bumpSeen();
-        // Coin + discovery credit is deferred to a 4s dwell timer (see effect
-        // below) so users can't farm by mashing "But… Why?".
-      } catch (err) {
-        console.error(err);
-        if (seq !== loadSeq.current) return;
-        const cached = getCachedRandomFact(currentId);
-        if (cached) {
-          showFact(cached);
-          setError("You're offline — showing a cached fact.");
-        } else setError("Couldn't load a fact. Try again.");
-      } finally {
-        if (seq === loadSeq.current) setLoading(false);
       }
-    },
-    [category, generateNew, getRandom, showFact],
-  );
+      if (list.length === 0) {
+        const cached = getCachedRandomFact();
+        if (cached) list = [cached];
+      }
+      if (seq !== loadSeq.current) return;
+      setChoices(list);
+      recentChoiceIds.current = [...recentChoiceIds.current, ...list.map((f) => f.id)].slice(-12);
+      if (list.length === 0) setError("Couldn't load any questions. Try again.");
+    } catch (err) {
+      console.error(err);
+      if (seq !== loadSeq.current) return;
+      const cached = getCachedRandomFact();
+      if (cached) {
+        setChoices([cached]);
+        setError("You're offline — showing a saved question.");
+      } else setError("Couldn't load any questions. Try again.");
+    } finally {
+      if (seq === loadSeq.current) setLoading(false);
+    }
+  }, [category, generateNew, getChoices, showFact]);
+
+  /** Back to the three questions the player was choosing from. */
+  const backToChoices = () => {
+    showFact(null);
+    setError(null);
+  };
+
+  /** "Ask your own why": find or write a kid-safe answer to a typed question. */
+  const askOwnQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = askDraft.trim();
+    if (q.length < 3 || asking) return;
+    setAsking(true);
+    setError(null);
+    try {
+      const f = await searchOrGen({ data: { query: q } });
+      if (f) {
+        setAskDraft("");
+        openFact(f);
+      } else {
+        setError("🤔 Hmm, I can't answer that one. Try asking a different why!");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("📡 Couldn't reach the answer machine. Try again in a moment.");
+    } finally {
+      setAsking(false);
+    }
+  };
 
   // Dwell reward: only award coins (and record the discovery server-side)
   // after the user reveals the answer AND stays on it for ≥3 seconds.
@@ -545,9 +500,9 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     return () => window.clearTimeout(t);
   }, [chain.length, chain, fact?.id, user, grantPoints, claimChainReward, showServerBalance]);
 
-  // Runs on mount too, so this is also the first fact load.
+  // Runs on mount too, so this is also the first load of questions.
   useEffect(() => {
-    void loadNext(fact?.id);
+    void loadChoices();
     if (user && category !== "all") {
       bumpInterest({ data: { category, delta: 1 } }).catch(() => {});
     }
@@ -558,21 +513,6 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     if (!user || !fact?.category) return;
     bumpInterest({ data: { category: fact.category, delta: 1 } }).catch(() => {});
   }, [fact?.id, fact?.category, user, bumpInterest]);
-
-  const reveal = () => {
-    if (revealed || revealing) return;
-    setRevealing(true);
-    // Short morph/pulse before showing the answer
-    window.setTimeout(() => {
-      setRevealed(true);
-      setRevealing(false);
-      // Coins deferred to the 3s dwell timer so users must actually read the answer.
-      markMission("mystery");
-      // "One surprise fact" means a fact they asked for with Next.
-      if (pickedNext.current) markMission("surprise");
-      if (fact?.category) markMission("category", fact.category);
-    }, 480);
-  };
 
   const askWhy = async (customQuestion?: string) => {
     if (!fact || chainLoading) return;
@@ -727,7 +667,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   }, [routeSearch.q]);
 
   const pickResult = (f: PublicFact) => {
-    showFact(f);
+    openFact(f);
     setSearch("");
     setResults(null);
     setSearchOpen(false);
@@ -742,7 +682,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     try {
       const f = await searchOrGen({ data: { query: q } });
       if (f) {
-        showFact(f);
+        openFact(f);
         setSearch("");
         setSearchOpen(false);
       } else setError("Couldn't find or make a fact for that. Try another question!");
@@ -944,7 +884,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
           <section className="flex flex-1 flex-col">
             <AnimatePresence mode="wait">
               <motion.div
-                key={fact?.id ?? "loading"}
+                key={fact?.id ?? "choices"}
                 initial={{ opacity: 0, y: 20, x: 16, scale: 0.97 }}
                 animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -14, x: -16, scale: 0.97 }}
@@ -1016,23 +956,22 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                         </motion.div>
                       ) : !fact ? (
                         <motion.div
-                          key="empty"
+                          key="choices"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="text-center space-y-4"
                         >
-                          <p className="text-lg text-white/80">
-                            {error ?? "No fact yet — let's find one for you."}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => void loadNext(undefined, { forceGenerate: false })}
-                            className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-white hover:bg-white/20 transition"
-                          >
-                            Try again
-                          </button>
+                          <QuestionPicker
+                            choices={choices}
+                            error={error}
+                            onPick={(f) => openFact(f, { surprise: true })}
+                            onRetry={() => void loadChoices()}
+                            askDraft={askDraft}
+                            onAskDraft={setAskDraft}
+                            asking={asking}
+                            onAsk={askOwnQuestion}
+                          />
                         </motion.div>
                       ) : fact ? (
                         <motion.div
@@ -1042,90 +981,21 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.25 }}
                         >
+                          {choices.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={backToChoices}
+                              className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85 transition hover:bg-white/20 active:scale-95"
+                            >
+                              <ChevronLeft className="h-4 w-4" /> Pick another question
+                            </button>
+                          )}
                           <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(2rem,7vw,4rem)] [text-wrap:balance] break-words hyphens-auto">
                             {asWhyQuestion(fact.question)}
                           </h1>
 
                           <AnimatePresence initial={false} mode="wait">
-                            {!revealed ? (
-                              <motion.div
-                                key="cta"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="mt-6 flex flex-col items-center"
-                              >
-                                <motion.div
-                                  initial={{ scale: 0.4, rotate: -20, opacity: 0 }}
-                                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                                  transition={{ type: "spring", stiffness: 200, damping: 12 }}
-                                  whileHover={{ scale: 1.08, rotate: 6 }}
-                                  whileTap={{ scale: 0.92, rotate: -6 }}
-                                  className="candy-emoji-orb mb-4 flex h-32 w-32 items-center justify-center rounded-full text-6xl cursor-grab active:cursor-grabbing"
-                                  aria-label={fact.category ?? "question icon"}
-                                >
-                                  <span>{emojiFor(fact.category)}</span>
-                                </motion.div>
-                                <motion.button
-                                  type="button"
-                                  onClick={reveal}
-                                  disabled={revealing}
-                                  layout
-                                  whileHover={{ scale: 1.03, rotate: -1 }}
-                                  whileTap={{ scale: 0.94 }}
-                                  animate={
-                                    revealing
-                                      ? { scale: [1, 1.06, 0.88, 1.02], rotate: [0, -2, 2, 0] }
-                                      : { scale: 1 }
-                                  }
-                                  transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-                                  className="candy-btn group relative w-full overflow-hidden rounded-full px-5 py-4 text-lg font-black uppercase tracking-wide text-white"
-                                >
-                                  <span aria-hidden className="shine-sweep" />
-                                  {revealing && (
-                                    <motion.span
-                                      aria-hidden
-                                      initial={{ x: "-100%" }}
-                                      animate={{ x: "0%" }}
-                                      transition={{ duration: 0.46, ease: "easeOut" }}
-                                      className="absolute inset-0 bg-white/30"
-                                    />
-                                  )}
-                                  <span className="relative z-10 inline-flex items-center gap-2">
-                                    <motion.span
-                                      animate={
-                                        revealing
-                                          ? { rotate: 720, scale: 1.5 }
-                                          : { rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] }
-                                      }
-                                      transition={
-                                        revealing
-                                          ? { duration: 0.5, ease: "easeOut" }
-                                          : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
-                                      }
-                                      className="inline-flex"
-                                    >
-                                      <Sparkles className="h-5 w-5" />
-                                    </motion.span>
-                                    {(() => {
-                                      const rv = getRevealLabel(fact.question, fact.category);
-                                      return (
-                                        <>
-                                          {revealing ? "Unwrapping…" : rv.label}
-                                          <span aria-hidden className="text-xl">
-                                            {rv.emoji}
-                                          </span>
-                                        </>
-                                      );
-                                    })()}
-                                  </span>
-                                </motion.button>
-                                <p className="mt-3 text-xs font-bold text-white/70">
-                                  <span aria-hidden>🎉</span> Tap the candy button — go on!{" "}
-                                  <span aria-hidden>🎉</span>
-                                </p>
-                              </motion.div>
-                            ) : (
+                            {revealed && (
                               <motion.div
                                 key="answer"
                                 initial={{ opacity: 0, y: 12 }}
@@ -1391,21 +1261,18 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
             <CategoryScroller categories={CATEGORIES} activeKey={category} onSelect={setCategory} />
           </section>
 
-          {/* Giant Next button (sticky above bottom nav) */}
+          {/* Giant button: three fresh questions to choose from */}
           <div className="mt-6 mb-4">
             <motion.button
               type="button"
               disabled={loading}
-              onClick={() => {
-                pickedNext.current = true;
-                void loadNext(fact?.id);
-              }}
+              onClick={() => void loadChoices()}
               whileTap={{ scale: 0.97 }}
               className="animate-pulse-glow relative w-full overflow-hidden rounded-full px-6 py-5 text-xl font-black uppercase tracking-wide text-white disabled:opacity-70"
               style={{ background: "var(--gradient-primary)" }}
             >
               <span className="relative z-10 inline-flex items-center justify-center gap-3">
-                {loading ? "Loading…" : "NEW FACT"}
+                {loading ? "Loading…" : "3 NEW QUESTIONS"}
                 <ArrowRight className="h-6 w-6" />
               </span>
               <span
@@ -1789,6 +1656,155 @@ function ChainStep({
         )}
       </div>
     </motion.li>
+  );
+}
+
+const ASK_IDEAS = ["Why do cats purr?", "Why is the ocean salty?", "Why do we have belly buttons?"];
+
+/**
+ * The home page's starting point: three random questions to choose from,
+ * plus a box to type your own why. Picking one opens its answer, and then
+ * "But… Why?" keeps digging deeper.
+ */
+function QuestionPicker({
+  choices,
+  error,
+  onPick,
+  onRetry,
+  askDraft,
+  onAskDraft,
+  asking,
+  onAsk,
+}: {
+  choices: Fact[];
+  error: string | null;
+  onPick: (f: Fact) => void;
+  onRetry: () => void;
+  askDraft: string;
+  onAskDraft: (v: string) => void;
+  asking: boolean;
+  onAsk: (e: React.FormEvent) => void;
+}) {
+  return (
+    <div className="relative">
+      <h1 className="animate-fade-up font-fun font-bold leading-[1.1] tracking-tight text-white text-[clamp(1.7rem,5.5vw,2.8rem)] [text-wrap:balance]">
+        Which why do you want to know?
+      </h1>
+      <p className="mt-1 text-sm font-semibold text-white/70">
+        Pick a question to see the answer, then keep asking “But… Why?”
+      </p>
+
+      {choices.length > 0 ? (
+        <ul className="mt-5 space-y-3" aria-label="Questions to choose from">
+          {choices.map((f, i) => (
+            <motion.li
+              key={f.id}
+              initial={{ opacity: 0, y: 12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: i * 0.08, type: "spring", stiffness: 320, damping: 24 }}
+            >
+              <motion.button
+                type="button"
+                onClick={() => onPick(f)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                className="group flex w-full items-center gap-3 rounded-3xl border border-white/15 bg-white/[0.07] p-3.5 text-left transition hover:bg-white/[0.12] sm:p-4"
+              >
+                <span
+                  aria-hidden
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg sm:h-14 sm:w-14 sm:text-3xl"
+                  style={{ background: gradientFor(f.category) }}
+                >
+                  {emojiFor(f.category)}
+                </span>
+                <h2 className="min-w-0 flex-1 font-fun font-semibold leading-snug text-white text-[clamp(1.1rem,3.4vw,1.45rem)] break-words">
+                  {asWhyQuestion(f.question)}
+                </h2>
+                <ChevronRight
+                  aria-hidden
+                  className="h-6 w-6 shrink-0 text-white/50 transition group-hover:translate-x-0.5 group-hover:text-white"
+                />
+              </motion.button>
+            </motion.li>
+          ))}
+        </ul>
+      ) : (
+        <div className="mt-5 space-y-3 text-center">
+          <p className="text-white/80">{error ?? "No questions yet — let's find some."}</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mx-auto inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-white transition hover:bg-white/20"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* ── ASK YOUR OWN WHY ── */}
+      <section
+        aria-labelledby="ask-own-why"
+        className="mt-6 rounded-3xl border border-fuchsia-300/25 bg-gradient-to-br from-fuchsia-500/15 via-violet-500/10 to-sky-500/15 p-4"
+      >
+        <div className="flex items-center gap-3">
+          <img
+            src={mascotImg}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-11 w-11 shrink-0 object-contain animate-float-slow"
+          />
+          <div className="min-w-0">
+            <h2 id="ask-own-why" className="font-fun text-xl font-bold text-white">
+              Ask your own why
+            </h2>
+            <p className="text-xs text-white/70">Type any question you're curious about.</p>
+          </div>
+        </div>
+        <form onSubmit={onAsk} className="glass mt-3 flex items-center gap-2 rounded-2xl p-1.5">
+          <input
+            type="text"
+            enterKeyHint="send"
+            aria-label="Type your own why question"
+            value={askDraft}
+            onChange={(e) => onAskDraft(e.target.value)}
+            placeholder="Why do…"
+            maxLength={200}
+            className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-white placeholder-white/40 outline-none"
+          />
+          <button
+            type="submit"
+            disabled={asking || askDraft.trim().length < 3}
+            className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            {asking ? "Thinking…" : "Ask"}
+          </button>
+        </form>
+        {askDraft.trim().length === 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {ASK_IDEAS.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => onAskDraft(q)}
+                className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85 transition hover:bg-white/20 active:scale-95"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
+        {error && choices.length > 0 && (
+          <p className="mt-2 text-sm font-semibold text-amber-200" role="status">
+            {error}
+          </p>
+        )}
+        <p className="mt-2 text-[10px] text-white/50">
+          Your question goes to our AI helper to write a kid-friendly answer.
+        </p>
+      </section>
+    </div>
   );
 }
 
