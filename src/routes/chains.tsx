@@ -33,6 +33,7 @@ import {
 import { isFavorite, toggleFavorite } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
 import { seo } from "@/lib/site";
+import { chainTitle } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/chains")({
   head: () => seo({ title: "Your “But why?” chains | Why?", noindex: true }),
@@ -57,7 +58,7 @@ function ChainsPage() {
   }, [user, loading, navigate]);
 
   const chains = useQuery({
-    queryKey: ["chains"],
+    queryKey: ["chains", user?.id],
     queryFn: () => fetchChains(),
     enabled: !!user,
   });
@@ -252,7 +253,7 @@ function ChainRow({
           <Sparkles className="mt-1 h-4 w-4 text-fuchsia-300" />
           <div className="flex-1">
             <div className="font-display font-black leading-tight text-white">
-              {chain.title ?? "Untitled favourite"}
+              {chainTitle(chain.title, "Untitled favourite")}
             </div>
             {chain.last_question && (
               <div className="mt-0.5 line-clamp-2 text-xs text-white/60">
@@ -289,7 +290,10 @@ function ChainRow({
             onClick={async () => {
               try {
                 if (navigator.share)
-                  await navigator.share({ url: shareUrl, title: chain.title ?? "Why chain" });
+                  await navigator.share({
+                    url: shareUrl,
+                    title: chainTitle(chain.title, "Why chain"),
+                  });
                 else {
                   await navigator.clipboard.writeText(shareUrl);
                   alert("Link copied!");

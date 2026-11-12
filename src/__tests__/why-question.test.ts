@@ -124,3 +124,15 @@ describe("asWhyQuestion", () => {
     }
   });
 });
+
+describe("chainTitle / chainStepQuestion", () => {
+  it("shows stored trail titles as questions, and keeps already-good ones", async () => {
+    const { chainTitle, chainStepQuestion } = await import("@/lib/whyQuestion");
+    expect(chainTitle("we have leap years", "x")).toBe("Why do we have leap years?");
+    expect(chainTitle("Why do we have leap years?", "x")).toBe("Why do we have leap years?");
+    expect(chainTitle(null, "Untitled")).toBe("Untitled");
+    expect(chainStepQuestion("the sky is blue", 0)).toBe("Why is the sky blue?");
+    // Later steps are the AI's own questions: leave them alone.
+    expect(chainStepQuestion("But why does light scatter?", 1)).toBe("But why does light scatter?");
+  });
+});

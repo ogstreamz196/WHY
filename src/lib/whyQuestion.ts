@@ -308,3 +308,16 @@ function fixNames(q: string) {
     .replace(/\bt[-. ]+rex\b/gi, "T. rex")
     .replace(/\bi\b/g, "I");
 }
+
+/**
+ * Title of a saved "But… why?" trail. Trails are titled with their first fact's
+ * stored phrase ("we have leap years"), so show it as a question.
+ */
+export function chainTitle(title: string | null | undefined, fallback: string) {
+  return title?.trim() ? asWhyQuestion(title) : fallback;
+}
+
+/** Step questions of a trail: the first is the stored fact phrase, the rest are AI questions. */
+export function chainStepQuestion(question: string, index: number) {
+  return index === 0 ? asWhyQuestion(question) : question;
+}

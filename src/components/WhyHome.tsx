@@ -83,7 +83,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { useThrottledFlag } from "@/lib/useThrottledFlag";
 import { levelFor } from "@/lib/levels";
 import { DailyMission } from "@/components/DailyMission";
-import { asWhyQuestion } from "@/lib/whyQuestion";
+import { asWhyQuestion, chainTitle } from "@/lib/whyQuestion";
 import { TalkingWords } from "@/components/TalkingWords";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import { markMissionTask, type MissionTask } from "@/lib/missions.functions";
@@ -605,12 +605,12 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     setSavingChain(true);
     try {
       const steps = [
-        { question: fact.question, answer: fact.answer },
+        { question: asWhyQuestion(fact.question), answer: fact.answer },
         ...chain.map((c) => ({ question: c.question, answer: c.answer ?? null })),
       ];
       const res = await saveChainServer({
         data: {
-          title: fact.question.slice(0, 100),
+          title: asWhyQuestion(fact.question).slice(0, 100),
           root_fact_id: fact.id,
           steps,
         },
@@ -1412,9 +1412,10 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                     Continue your favourite
                   </div>
                   <div className="truncate text-sm font-bold text-white">
-                    {lastChain.title ??
-                      lastChain.last_question ??
-                      "Pick up your favourite where you left off"}
+                    {chainTitle(
+                      lastChain.title,
+                      lastChain.last_question ?? "Pick up your favourite where you left off",
+                    )}
                   </div>
                   <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
                 </div>

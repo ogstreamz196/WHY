@@ -12,6 +12,7 @@ import { listMyDiscoveries } from "@/lib/account.functions";
 import { emojiFor, gradientFor } from "@/lib/categories";
 import { SkeletonBlock, EmptyState } from "@/components/FunStates";
 import { seo } from "@/lib/site";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/_authenticated/history")({
   head: () => seo({ title: "Discovery history | Why?", noindex: true }),
@@ -113,7 +114,7 @@ function HistoryPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 text-sm font-black text-white">
-                        {f?.question ?? "(fact removed)"}
+                        {f?.question ? asWhyQuestion(f.question) : "(fact removed)"}
                       </p>
                       {f?.answer && (
                         <p className="mt-0.5 line-clamp-2 text-xs text-white/60">{f.answer}</p>

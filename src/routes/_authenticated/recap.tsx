@@ -231,5 +231,6 @@ function Card({
 
 function formatDate(iso: string) {
   const d = new Date(iso + "T00:00:00Z");
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  // The date is a UTC day: format it in UTC, or it shows a day early west of London.
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
 }

@@ -31,7 +31,7 @@ function FavoritesPage() {
   };
 
   return (
-    <main className="relative min-h-[100dvh] w-full">
+    <main className="relative isolate min-h-[100dvh] w-full">
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         style={{

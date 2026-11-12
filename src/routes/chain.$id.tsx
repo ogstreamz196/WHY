@@ -20,6 +20,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { useCurrentUser } from "@/lib/auth";
 import { getChain, regenerateChainSlug, setChainShared } from "@/lib/chains.functions";
 import { seo } from "@/lib/site";
+import { chainStepQuestion, chainTitle } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/chain/$id")({
   head: () => seo({ title: "“But why?” chain | Why?", noindex: true }),
@@ -113,7 +114,7 @@ function ChainDetailPage() {
     if (!shareUrl) return;
     if (navigator.share) {
       try {
-        await navigator.share({ title: c.title ?? "A Why chain", url: shareUrl });
+        await navigator.share({ title: chainTitle(c.title, "A Why chain"), url: shareUrl });
       } catch {
         /* user cancelled */
       }
@@ -139,7 +140,7 @@ function ChainDetailPage() {
           className="glass-strong mt-4 overflow-hidden rounded-4xl p-6"
         >
           <h1 className="font-display text-2xl font-black leading-tight text-white sm:text-3xl">
-            {c.title ?? "Untitled chain"}
+            {chainTitle(c.title, "Untitled chain")}
           </h1>
           <p className="mt-1 text-xs text-white/50">
             {c.steps.length} step{c.steps.length === 1 ? "" : "s"}
@@ -263,7 +264,9 @@ function ChainDetailPage() {
                   {i + 1}
                 </span>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                  <p className="text-sm font-bold leading-snug text-white">{s.question}</p>
+                  <p className="text-sm font-bold leading-snug text-white">
+                    {chainStepQuestion(s.question, i)}
+                  </p>
                   {s.answer && (
                     <p className="mt-1.5 text-xs leading-relaxed text-white/70">{s.answer}</p>
                   )}
