@@ -9,6 +9,7 @@ import { getFavorites } from "@/lib/store";
 import { migrateGuestData } from "@/lib/account.functions";
 import { clearGuestSnapshot } from "@/lib/guestImport";
 import { safeRedirect } from "@/lib/safeRedirect";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 
 const searchSchema = z.object({ redirect: z.string().optional() });
 
@@ -180,7 +181,7 @@ function ImportGuestPage() {
                         <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto pr-1 text-xs text-white/70">
                           {guest.favorites.slice(0, 20).map((f) => (
                             <li key={f.id} className="line-clamp-1 rounded-lg bg-white/5 px-2 py-1">
-                              • {f.question ?? f.id}
+                              • {f.question ? asWhyQuestion(f.question) : f.id}
                             </li>
                           ))}
                           {guest.favorites.length > 20 && (

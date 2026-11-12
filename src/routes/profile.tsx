@@ -46,6 +46,7 @@ import { emojiFor } from "@/lib/categories";
 import { VipBadge } from "@/components/VipBadge";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { usePlus } from "@/hooks/usePlus";
+import { chainTitle } from "@/lib/whyQuestion";
 import { seo } from "@/lib/site";
 import { PLACEHOLDER_DOMAIN } from "@/lib/username-auth.functions";
 
@@ -621,7 +622,7 @@ function ProfilePage() {
                           <Sparkles className="h-4 w-4 text-fuchsia-300" />
                           <div className="flex-1 min-w-0">
                             <div className="truncate text-sm font-bold text-white">
-                              {c.title ?? "Untitled chain"}
+                              {chainTitle(c.title, "Untitled chain")}
                             </div>
                             <div className="text-[10px] text-white/50">{c.step_count} steps</div>
                           </div>

@@ -5,6 +5,7 @@ import { CosmicBackground } from "@/components/CosmicBackground";
 import { getPublicChain, type PublicChain } from "@/lib/chains.functions";
 import { STORE_CATALOG } from "@/lib/store";
 import { seo } from "@/lib/site";
+import { chainStepQuestion, chainTitle } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/c/$slug")({
   loader: async ({ params }): Promise<PublicChain> => {
@@ -13,8 +14,9 @@ export const Route = createFileRoute("/c/$slug")({
     return chain;
   },
   head: ({ loaderData, params }) => {
-    const title = loaderData?.title ?? "A “But why?” chain";
-    const first = loaderData?.steps?.[0]?.question ?? "Follow the curiosity trail";
+    const title = chainTitle(loaderData?.title, "A “But why?” chain");
+    const firstQ = loaderData?.steps?.[0]?.question;
+    const first = firstQ ? chainStepQuestion(firstQ, 0) : "Follow the curiosity trail";
     const base = seo({
       title: `${title} | Why?`,
       description: first,
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/c/$slug")({
             "@type": "FAQPage",
             mainEntity: steps.map((s) => ({
               "@type": "Question",
-              name: s.question,
+              name: chainStepQuestion(s.question, loaderData?.steps?.indexOf(s) ?? 1),
               acceptedAnswer: { "@type": "Answer", text: s.answer },
             })),
           }),
@@ -100,7 +102,7 @@ function PublicChainPage() {
           className="glass-strong overflow-hidden rounded-4xl p-6"
         >
           <h1 className="font-display text-2xl font-black leading-tight text-white sm:text-3xl">
-            {chain.title ?? "A curiosity trail"}
+            {chainTitle(chain.title, "A curiosity trail")}
           </h1>
           <div className="mt-3 flex items-center gap-2 text-xs text-white/60">
             <span
@@ -137,7 +139,9 @@ function PublicChainPage() {
                   {i + 1}
                 </span>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                  <p className="text-sm font-bold leading-snug text-white">{s.question}</p>
+                  <p className="text-sm font-bold leading-snug text-white">
+                    {chainStepQuestion(s.question, i)}
+                  </p>
                   {s.answer && (
                     <p className="mt-1.5 text-xs leading-relaxed text-white/70">{s.answer}</p>
                   )}

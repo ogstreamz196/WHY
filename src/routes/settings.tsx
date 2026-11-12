@@ -30,6 +30,7 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
+  const qc = useQueryClient();
   const [settings, setLocal] = useState<Settings>(defaultSettings);
   const { user } = useCurrentUser();
   const isNative = useIsNativeApp();
@@ -53,7 +54,7 @@ function SettingsPage() {
   };
 
   return (
-    <main className="relative min-h-[100dvh] w-full">
+    <main className="relative isolate min-h-[100dvh] w-full">
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         style={{
@@ -93,6 +94,8 @@ function SettingsPage() {
                 type="button"
                 onClick={async () => {
                   await supabase.auth.signOut();
+                  // Drop the signed-out account's cached profile, stats and boards.
+                  qc.clear();
                   navigate({ to: "/" });
                 }}
                 className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1.5 text-xs font-bold text-rose-700"
@@ -142,7 +145,7 @@ function SettingsPage() {
           <h2 className="text-lg font-extrabold text-slate-900">🎛️ Preferences</h2>
           <Toggle
             label="Sound effects"
-            hint="Little chimes on Next & reveal"
+            hint="Little chimes as you explore"
             checked={settings.sound}
             onChange={(v) => {
               update({ sound: v });

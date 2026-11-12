@@ -182,7 +182,10 @@ function FactPageView() {
         {related.length > 0 && (
           <section className="mt-8" aria-labelledby="more-facts">
             <h2 id="more-facts" className="mb-3 font-display text-xl font-black text-white">
-              More {categoryLabel(fact.category).toLowerCase()} facts
+              {/* Unknown categories fall back to "Fun facts": don't say "fun facts facts". */}
+              {CATEGORIES.some((c) => c.key === fact.category)
+                ? `More ${categoryLabel(fact.category).toLowerCase()} facts`
+                : "More fun facts"}
             </h2>
             <ul className="grid gap-2 sm:grid-cols-2">
               {related.map((r) => (
