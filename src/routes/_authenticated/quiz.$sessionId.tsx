@@ -20,6 +20,7 @@ import {
 } from "@/lib/quiz.functions";
 import { emojiFor } from "@/lib/categories";
 import { asWhyQuestion } from "@/lib/whyQuestion";
+import { MissedFacts, type MissedFact } from "@/components/MissedFacts";
 
 export const Route = createFileRoute("/_authenticated/quiz/$sessionId")({
   component: QuizPlayPage,
@@ -45,6 +46,8 @@ function QuizPlayPage() {
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
+  // Questions answered wrong (or timed out), for "Read the facts you missed".
+  const [missed, setMissed] = useState<MissedFact[]>([]);
   const [answering, setAnswering] = useState(false);
   const [finalResult, setFinalResult] = useState<FinishResult | null>(null);
   const [celebrate, setCelebrate] = useState(false);
@@ -143,6 +146,13 @@ function QuizPlayPage() {
       const timedOut = pickIndex < 0;
       const effective = timedOut ? { ...res, correct: false, points_awarded: 0 } : res;
       setResult(effective);
+      if (!effective.correct && current) {
+        setMissed((m) =>
+          m.some((x) => x.question === current.question)
+            ? m
+            : [...m, { question: current.question, code: current.code ?? null }],
+        );
+      }
       if (!timedOut) setTotalPoints((p) => p + res.points_awarded);
       feedback(effective.correct ? "correct" : "wrong");
     } catch (e) {
@@ -207,7 +217,7 @@ function QuizPlayPage() {
           streak={0}
           onClose={() => setCelebrate(false)}
         />
-        <QuizFinal result={finalResult} />
+        <QuizFinal result={finalResult} missed={missed} />
       </>
     );
   }
@@ -401,7 +411,7 @@ function QuizPlayPage() {
   );
 }
 
-function QuizFinal({ result }: { result: FinishResult }) {
+function QuizFinal({ result, missed }: { result: FinishResult; missed: MissedFact[] }) {
   const streak = result.perfect
     ? "🌟 PERFECT"
     : `${result.correct_count}/${result.question_count} correct`;
@@ -435,6 +445,8 @@ function QuizFinal({ result }: { result: FinishResult }) {
               🎖️ Unlocked: {result.unlocked_achievements.join(", ")}
             </p>
           )}
+
+          <MissedFacts missed={missed} />
 
           <div className="mt-5 flex gap-2">
             <Link
