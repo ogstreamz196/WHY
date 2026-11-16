@@ -17,14 +17,34 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
 });
 
+function sectionId(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-6">
+    <section className="mt-6 scroll-mt-6" id={sectionId(title)}>
       <h2 className="font-display text-lg font-black text-white">{title}</h2>
       <div className="mt-2 space-y-2 text-sm leading-relaxed text-white/80">{children}</div>
     </section>
   );
 }
+
+const SECTIONS = [
+  "If you use Why? as a guest",
+  "What we collect when you have an account",
+  "How we use it",
+  "What other people can see",
+  "Who we share data with",
+  "Children",
+  "How long we keep it",
+  "Your choices and rights",
+  "Data on your device",
+  "Contact",
+];
 
 function PrivacyPage() {
   return (
@@ -44,6 +64,43 @@ function PrivacyPage() {
             don't show ads, we don't use tracking or advertising tools, and we never sell your data.
           </p>
         </Section>
+
+        {/* Plain words for younger readers. */}
+        <aside
+          aria-label="For kids"
+          className="mt-5 rounded-2xl border border-emerald-300/30 bg-emerald-400/10 p-4 text-sm text-emerald-50"
+        >
+          <p className="font-display text-base font-black text-white">For kids 👋</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5">
+            <li>
+              If you make an account, we keep your username and progress so you don&apos;t lose
+              them.
+            </li>
+            <li>We never show ads, sell your data, or let other players message you.</li>
+            <li>
+              To delete everything, go to Settings and tap Delete my account, or ask a grown-up to
+              help.
+            </li>
+          </ul>
+        </aside>
+
+        <nav aria-label="On this page" className="mt-5 rounded-2xl bg-white/5 p-4">
+          <p className="text-[11px] font-black uppercase tracking-widest text-white/55">
+            On this page
+          </p>
+          <ul className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
+            {SECTIONS.map((t) => (
+              <li key={t}>
+                <a
+                  href={`#${sectionId(t)}`}
+                  className="font-semibold text-white/85 underline-offset-2 hover:underline"
+                >
+                  {t}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         <Section title="If you use Why? as a guest">
           <p>
@@ -192,6 +249,10 @@ function PrivacyPage() {
           </p>
           <p>If this policy changes, we'll update the date at the top.</p>
         </Section>
+
+        <Link to="/" className="mt-8 inline-block text-xs font-bold text-white/60 underline">
+          ← Back to Why?
+        </Link>
       </article>
     </main>
   );
