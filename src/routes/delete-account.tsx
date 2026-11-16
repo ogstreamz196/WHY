@@ -68,13 +68,29 @@ function DeleteAccountPage() {
     <main className="relative flex min-h-[100dvh] items-center justify-center px-4 py-10">
       <CosmicBackground />
       <div className="glass-strong w-full max-w-md rounded-4xl border border-white/10 p-6 text-white">
-        <h1 className="font-display text-2xl font-black">Delete your account</h1>
+        <Link
+          to="/settings"
+          className="text-xs font-bold text-white/60 underline-offset-2 hover:text-white hover:underline"
+        >
+          ← Back to Settings
+        </Link>
+        <h1 className="mt-3 font-display text-2xl font-black">Delete your account</h1>
         <p className="mt-2 text-sm leading-relaxed text-white/75">
-          Deleting your account is permanent. We remove your profile, coins, streaks, favourites,
-          saved trails, quiz history, achievements and store items straight away, and you'll be
-          signed out. A Why? Plus subscription bought on the website is cancelled at the same time.
-          If you subscribed through the App Store or Google Play, cancel it there first; we can't
-          cancel store subscriptions for you.
+          Deleting your account is permanent. Straight away we remove your:
+        </p>
+        <ul className="mt-2 grid list-disc grid-cols-2 gap-x-4 gap-y-0.5 pl-5 text-sm text-white/75">
+          <li>profile</li>
+          <li>coins and streaks</li>
+          <li>favourites</li>
+          <li>saved trails</li>
+          <li>quiz history</li>
+          <li>achievements</li>
+          <li>store items</li>
+        </ul>
+        <p className="mt-2 text-sm leading-relaxed text-white/75">
+          You'll be signed out. A Why? Plus subscription bought on the website is cancelled at the
+          same time. If you subscribed through the App Store or Google Play, cancel it there first;
+          we can't cancel store subscriptions for you.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-white/75">
           Payment records kept by our payment provider (Paddle) for tax and legal reasons are not

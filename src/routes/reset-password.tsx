@@ -84,6 +84,13 @@ function ResetPage() {
               >
                 Send me a new link
               </Link>
+              <Link
+                to="/auth"
+                search={{ mode: "signin" }}
+                className="mt-3 block text-center text-xs font-semibold text-white/60 hover:text-white"
+              >
+                ← Back to sign in
+              </Link>
             </>
           )}
         </div>
