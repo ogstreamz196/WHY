@@ -13,7 +13,7 @@ import {
   Link as LinkIcon,
   Sparkles,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
 import { CosmicBackground } from "@/components/CosmicBackground";
@@ -33,7 +33,7 @@ import {
 import { isFavorite, toggleFavorite } from "@/lib/store";
 import { emojiFor } from "@/lib/categories";
 import { seo } from "@/lib/site";
-import { chainTitle } from "@/lib/whyQuestion";
+import { asWhyQuestion, chainTitle } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/chains")({
   head: () => seo({ title: "Favourites | Why?", noindex: true }),
@@ -69,6 +69,7 @@ function ChainsPage() {
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["chains"] });
+  const [view, setView] = useState<"facts" | "trails">("facts");
 
   const del = useMutation({
     mutationFn: (id: string) => doDelete({ data: { id } }),
@@ -112,66 +113,98 @@ function ChainsPage() {
           The facts you've hearted and trails you've saved.
         </p>
 
-        {/* Hearted facts */}
-        <section className="mt-6">
-          <h2 className="font-display text-lg font-black text-white">Hearted facts</h2>
-          <div className="mt-3 space-y-3">
-            {favorites.isLoading && (
-              <div className="flex justify-center py-6">
-                <Loader2 className="h-6 w-6 animate-spin text-white/60" />
-              </div>
-            )}
-            {favorites.isError && (
-              <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
-                Couldn't load your hearted facts. Please try again in a moment.
-              </p>
-            )}
-            {favorites.data && favorites.data.length === 0 && (
-              <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
-                No hearted facts yet. Tap the heart on any fact to keep it here.
-              </p>
-            )}
-            {(favorites.data ?? []).map((f) => (
-              <FavoriteRow
-                key={f.id}
-                fact={f}
-                removing={unheart.isPending && unheart.variables?.id === f.id}
-                onRemove={() => unheart.mutate(f)}
-              />
-            ))}
-          </div>
-        </section>
+        {/* Two lists, one at a time, so trails don't get buried under facts. */}
+        <div
+          role="tablist"
+          aria-label="Favourites"
+          className="glass mt-5 flex gap-1 rounded-2xl p-1"
+        >
+          {(
+            [
+              ["facts", "Facts", favorites.data?.length],
+              ["trails", "Trails", chains.data?.items.length],
+            ] as const
+          ).map(([key, label, count]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={view === key}
+              onClick={() => setView(key)}
+              className={`flex-1 rounded-xl px-3 py-2 text-sm font-black transition ${
+                view === key ? "text-white" : "text-white/60"
+              }`}
+              style={view === key ? { background: "var(--gradient-primary)" } : undefined}
+            >
+              {label}
+              {count !== undefined ? ` (${count})` : ""}
+            </button>
+          ))}
+        </div>
 
-        {/* Chains */}
-        <section className="mt-8">
-          <h2 className="font-display text-lg font-black text-white">Saved trails</h2>
-          <div className="mt-3 space-y-3">
-            {chains.isLoading && (
-              <div className="flex justify-center py-6">
-                <Loader2 className="h-6 w-6 animate-spin text-white/60" />
-              </div>
-            )}
-            {chains.data && chains.data.items.length === 0 && (
-              <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
-                Nothing saved yet. Tap <span className="font-bold text-white">But… Why?</span> on a
-                fact, then <span className="font-bold text-white">Save to favourites</span> to keep
-                the trail.
-              </p>
-            )}
-            {(chains.data?.items ?? []).map((chain) => (
-              <ChainRow
-                key={chain.id}
-                chain={chain}
-                onOpen={() => navigate({ to: "/chain/$id", params: { id: chain.id } })}
-                onDelete={() => {
-                  if (confirm("Delete this from favourites?")) del.mutate(chain.id);
-                }}
-                onPin={() => pin.mutate({ id: chain.id, pinned: !chain.pinned })}
-                onShare={() => share.mutate({ id: chain.id, is_public: !chain.is_public })}
-              />
-            ))}
-          </div>
-        </section>
+        {/* Hearted facts */}
+        {view === "facts" && (
+          <section className="mt-4">
+            <h2 className="sr-only">Hearted facts</h2>
+            <div className="mt-3 space-y-3">
+              {favorites.isLoading && (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+                </div>
+              )}
+              {favorites.isError && (
+                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
+                  Couldn't load your hearted facts. Please try again in a moment.
+                </p>
+              )}
+              {favorites.data && favorites.data.length === 0 && (
+                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
+                  No hearted facts yet. Tap the heart on any fact to keep it here.
+                </p>
+              )}
+              {(favorites.data ?? []).map((f) => (
+                <FavoriteRow
+                  key={f.id}
+                  fact={f}
+                  removing={unheart.isPending && unheart.variables?.id === f.id}
+                  onRemove={() => unheart.mutate(f)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Trails */}
+        {view === "trails" && (
+          <section className="mt-4">
+            <h2 className="sr-only">Saved trails</h2>
+            <div className="mt-3 space-y-3">
+              {chains.isLoading && (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-white/60" />
+                </div>
+              )}
+              {chains.data && chains.data.items.length === 0 && (
+                <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/60">
+                  Nothing saved yet. Tap <span className="font-bold text-white">But… Why?</span> on
+                  a fact, then <span className="font-bold text-white">Save to favourites</span> to
+                  keep the trail.
+                </p>
+              )}
+              {(chains.data?.items ?? []).map((chain) => (
+                <ChainRow
+                  key={chain.id}
+                  chain={chain}
+                  onOpen={() => navigate({ to: "/chain/$id", params: { id: chain.id } })}
+                  onDelete={() => del.mutate(chain.id)}
+                  deleting={del.isPending && del.variables === chain.id}
+                  onPin={() => pin.mutate({ id: chain.id, pinned: !chain.pinned })}
+                  onShare={() => share.mutate({ id: chain.id, is_public: !chain.is_public })}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
       <BottomNav />
     </main>
@@ -196,11 +229,11 @@ function FavoriteRow({
     >
       <div className="flex items-start gap-3">
         <div className="flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-amber-200/80">
-            {emojiFor(fact.category)} Do you know why…
-          </div>
-          <div className="mt-1 font-display font-black leading-tight text-white">
-            {fact.question}
+          <div className="font-display font-black leading-tight text-white">
+            <span aria-hidden className="mr-1.5">
+              {emojiFor(fact.category)}
+            </span>
+            {asWhyQuestion(fact.question)}
           </div>
           <p className="mt-1.5 text-sm leading-relaxed text-white/70">{fact.answer}</p>
           {fact.fun_fact && <p className="mt-1.5 text-xs text-amber-200/80">⭐ {fact.fun_fact}</p>}
@@ -229,13 +262,17 @@ function ChainRow({
   onDelete,
   onPin,
   onShare,
+  deleting,
 }: {
   chain: ChainSummary;
   onOpen: () => void;
   onDelete: () => void;
   onPin: () => void;
   onShare: () => void;
+  deleting: boolean;
 }) {
+  // In-page "are you sure?" (the browser's own box looks out of place in the apps).
+  const [confirming, setConfirming] = useState(false);
   const shareUrl =
     chain.share_slug && typeof window !== "undefined"
       ? `${window.location.origin}/c/${chain.share_slug}`
@@ -278,11 +315,13 @@ function ChainRow({
         </button>
         <button
           type="button"
+          role="switch"
+          aria-checked={chain.is_public}
           onClick={onShare}
-          className={`rounded-full p-2 ${chain.is_public ? "bg-cyan-400/20 text-cyan-200" : "bg-white/5 text-white/60"}`}
-          aria-label={chain.is_public ? "Make private" : "Share publicly"}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold ${chain.is_public ? "bg-cyan-400/20 text-cyan-100" : "bg-white/5 text-white/70"}`}
         >
-          <Share2 className="h-4 w-4" />
+          <Share2 aria-hidden className="h-3.5 w-3.5" />
+          Public link: {chain.is_public ? "on" : "off"}
         </button>
         {shareUrl && chain.is_public && (
           <button
@@ -308,14 +347,35 @@ function ChainRow({
           </button>
         )}
         <div className="flex-1" />
-        <button
-          type="button"
-          onClick={onDelete}
-          className="rounded-full bg-rose-500/10 p-2 text-rose-200"
-          aria-label="Delete"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {confirming ? (
+          <span className="flex items-center gap-1">
+            <span className="text-[11px] font-bold text-white/70">Delete?</span>
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={deleting}
+              className="rounded-full bg-rose-500 px-3 py-1.5 text-[11px] font-black text-white disabled:opacity-60"
+            >
+              {deleting ? "Deleting…" : "Yes"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-black text-white/80"
+            >
+              Cancel
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="rounded-full bg-rose-500/10 p-2 text-rose-200"
+            aria-label="Delete trail"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </motion.div>
   );

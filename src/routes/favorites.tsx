@@ -5,6 +5,7 @@ import { getFavorites, toggleFavorite } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth";
 import { emojiFor } from "@/lib/categories";
 import { seo } from "@/lib/site";
+import { asWhyQuestion } from "@/lib/whyQuestion";
 import { BottomNav } from "@/components/BottomNav";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { WhyLogo } from "@/components/WhyLogo";
@@ -66,10 +67,12 @@ function FavoritesPage() {
               <li key={f.id} className="glass rounded-2xl border border-white/10 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-                      {emojiFor(f.category)} Do you know why…
+                    <p className="text-base font-extrabold text-white">
+                      <span aria-hidden className="mr-1.5">
+                        {emojiFor(f.category)}
+                      </span>
+                      {asWhyQuestion(f.question)}
                     </p>
-                    <p className="mt-1 text-base font-extrabold text-white">{f.question}</p>
                     <p className="mt-2 text-sm leading-relaxed text-white/80">{f.answer}</p>
                     {f.fun_fact && (
                       <p className="mt-2 text-xs text-amber-200/90">⭐ {f.fun_fact}</p>
