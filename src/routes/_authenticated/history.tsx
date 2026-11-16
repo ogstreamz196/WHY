@@ -103,9 +103,15 @@ function HistoryPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i * 0.02, 0.4) }}
-                  className="glass overflow-hidden rounded-2xl border border-white/10 p-3"
+                  className="glass overflow-hidden rounded-2xl border border-white/10"
                 >
-                  <div className="flex items-start gap-3">
+                  {/* Tap to read it again on Home (and keep asking But… Why?). */}
+                  <Link
+                    to="/"
+                    search={f?.code ? { fact: f.code } : {}}
+                    disabled={!f?.code}
+                    className="flex items-start gap-3 p-3 transition hover:bg-white/5"
+                  >
                     <span
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg shadow"
                       style={{ background: gradient }}
@@ -125,7 +131,7 @@ function HistoryPage() {
                         <span>{timeAgo(entry.seen_at)}</span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </motion.li>
               );
             })}

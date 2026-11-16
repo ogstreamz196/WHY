@@ -128,9 +128,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
       if (item?.vipOnly) {
         if (!(await isVipUser(context))) throw new Error("That avatar is for VIP members.");
       } else if (item && item.cost > 0) {
-        const { data: owned } = await (
-          await admin()
-        )
+        const { data: owned } = await (await admin())
           .from("user_inventory")
           .select("item_id")
           .eq("user_id", context.userId)
@@ -147,9 +145,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
     if (avatar_id !== undefined) checked.avatar_id = avatar_id as string;
     if (status_message !== undefined) checked.status_message = status_message as string | null;
     if (Object.keys(checked).length > 0) {
-      const { error: checkedErr } = await (
-        await admin()
-      )
+      const { error: checkedErr } = await (await admin())
         .from("profiles")
         .update(checked)
         .eq("id", context.userId);
@@ -242,7 +238,14 @@ type AuthCtx = {
 };
 
 export type XpSource =
-  "quiz" | "discovery" | "daily" | "streak" | "achievement" | "login" | "mission" | "chain";
+  | "quiz"
+  | "discovery"
+  | "daily"
+  | "streak"
+  | "achievement"
+  | "login"
+  | "mission"
+  | "chain";
 
 /** Record an XP award in the append-only ledger. Safe to call after `total_points` is bumped. */
 export async function awardXp(
@@ -286,17 +289,13 @@ const STATS_COLS =
   "total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day";
 
 async function ensureStatsRow(userId: string): Promise<void> {
-  await (
-    await admin()
-  )
+  await (await admin())
     .from("user_stats")
     .upsert({ user_id: userId }, { onConflict: "user_id", ignoreDuplicates: true });
 }
 
 async function readStats(userId: string): Promise<StatsDTO> {
-  const { data, error } = await (
-    await admin()
-  )
+  const { data, error } = await (await admin())
     .from("user_stats")
     .select(STATS_COLS)
     .eq("user_id", userId)
@@ -337,9 +336,7 @@ export type StatsDTO = {
 export const getMyStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StatsDTO> => {
-    const { data, error } = await (
-      await admin()
-    )
+    const { data, error } = await (await admin())
       .from("user_stats")
       .select(
         "total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day",
@@ -364,9 +361,7 @@ export const getMyStats = createServerFn({ method: "GET" })
 export const getMyInventory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<string[]> => {
-    const { data, error } = await (
-      await admin()
-    )
+    const { data, error } = await (await admin())
       .from("user_inventory")
       .select("item_id")
       .eq("user_id", context.userId);
@@ -415,7 +410,8 @@ export const purchaseStoreItem = createServerFn({ method: "POST" })
   });
 
 export type DropClaimResult =
-  { ok: true; item_id: string } | { ok: false; reason: "already_owned" };
+  | { ok: true; item_id: string }
+  | { ok: false; reason: "already_owned" };
 
 /** Claim this week's free special drop. Each drop can be claimed once. */
 export const claimWeeklyDrop = createServerFn({ method: "POST" })
@@ -437,9 +433,7 @@ async function grantItem(userId: string, itemId: string): Promise<"ok" | "alread
 
 /** Roll and hand out the Daily Challenge mystery reward. */
 async function giveDailyReward(userId: string): Promise<DailyReward> {
-  const { data } = await (
-    await admin()
-  )
+  const { data } = await (await admin())
     .from("user_inventory")
     .select("item_id")
     .eq("user_id", userId);
@@ -730,7 +724,8 @@ export const listFavorites = createServerFn({ method: "GET" })
 export type DiscoveryEntry = {
   id: string;
   seen_at: string;
-  fact: FavoriteFact | null;
+  /** `code` lets History reopen the fact on Home. */
+  fact: (FavoriteFact & { code?: string | null }) | null;
 };
 
 export const listMyDiscoveries = createServerFn({ method: "GET" })
@@ -741,7 +736,7 @@ export const listMyDiscoveries = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<DiscoveryEntry[]> => {
     const { data: rows, error } = await context.supabase
       .from("discoveries")
-      .select("id, seen_at, facts:fact_id (id, question, answer, category, fun_fact)")
+      .select("id, seen_at, facts:fact_id (id, question, answer, category, fun_fact, code)")
       .eq("user_id", context.userId)
       .order("seen_at", { ascending: false })
       .limit(data.limit);
@@ -911,9 +906,7 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
     .map(([id]) => id);
   if (candidates.length === 0) return [];
 
-  const { data: already } = await (
-    await admin()
-  )
+  const { data: already } = await (await admin())
     .from("user_achievements")
     .select("achievement_id")
     .eq("user_id", context.userId)
@@ -921,18 +914,14 @@ async function checkAchievements(context: AuthContext, stats: StatsDTO): Promise
   const have = new Set((already ?? []).map((r) => r.achievement_id));
   const toInsert = candidates.filter((id) => !have.has(id));
   if (toInsert.length === 0) return [];
-  await (
-    await admin()
-  )
+  await (await admin())
     .from("user_achievements")
     .insert(toInsert.map((id) => ({ user_id: context.userId, achievement_id: id })));
   return toInsert;
 }
 
 export async function runAchievementCheckForUser(context: AuthContext): Promise<string[]> {
-  const { data: row } = await (
-    await admin()
-  )
+  const { data: row } = await (await admin())
     .from("user_stats")
     .select(
       "total_points, current_streak, longest_streak, facts_seen, last_active_day, last_daily_challenge_day, last_login_bonus_day",
@@ -960,9 +949,7 @@ export const migrateGuestData = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<{ ok: true; imported_favorites: number }> => {
     // Ensure a user_stats row exists but never bump points/streak from guest input.
-    const { data: existing } = await (
-      await admin()
-    )
+    const { data: existing } = await (await admin())
       .from("user_stats")
       .select("*")
       .eq("user_id", context.userId)
@@ -1023,9 +1010,7 @@ export const claimDailyLoginBonus = createServerFn({ method: "POST" })
     const nextAvailable = tomorrow.toISOString();
 
     await ensureStatsRow(context.userId);
-    const { data: existing, error: readErr } = await (
-      await admin()
-    )
+    const { data: existing, error: readErr } = await (await admin())
       .from("user_stats")
       .select(`${STATS_COLS}, login_streak`)
       .eq("user_id", context.userId)
