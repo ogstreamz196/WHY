@@ -8,6 +8,7 @@ import { useCurrentUser } from "@/lib/auth";
 import { getWeeklyRecap, type WeeklyRecap } from "@/lib/missions.functions";
 import { emojiFor } from "@/lib/categories";
 import { toast } from "sonner";
+import { drawRecapCard } from "@/lib/recapCard";
 
 export const Route = createFileRoute("/_authenticated/recap")({
   head: () => ({
@@ -52,6 +53,13 @@ function RecapPage() {
     if (!recap) return;
     const text = `📚 My curiosity week:\n\n✨ ${recap.discoveries} discoveries\n🔥 ${recap.current_streak}-day streak\n🏅 ${recap.new_achievements.length} new badges\n\n${recap.insight}`;
     try {
+      // A picture is nicer to send to family; fall back to text where files can't be shared.
+      const blob = await drawRecapCard(recap).catch(() => null);
+      const file = blob ? new File([blob], "my-curiosity-week.png", { type: "image/png" }) : null;
+      if (file && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title: "My curiosity week", text, files: [file] });
+        return;
+      }
       if (navigator.share) await navigator.share({ title: "My curiosity week", text });
       else {
         await navigator.clipboard.writeText(text);
