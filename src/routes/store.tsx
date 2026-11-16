@@ -69,6 +69,8 @@ const isWearable = (i: StoreItem): i is StoreItem & { category: OutfitSlot } =>
 
 function StorePage() {
   const [tab, setTab] = useState<Tab>("avatar");
+  // "What I can get": only items you could buy right now.
+  const [affordOnly, setAffordOnly] = useState(false);
   // Why? Plus is sold with Paddle on the website and with Google Play / App
   // Store billing in the apps; app builds that can't use store billing (no
   // RevenueCat plugin or key) hide it, and nothing shows until we know.
@@ -295,13 +297,34 @@ function StorePage() {
             a.cost - b.cost,
         );
 
+  // "What I can get": not owned, for sale, and within your coins.
+  const shown = affordOnly
+    ? items.filter(
+        (i) => !isOwned(i) && !i.vipOnly && !i.dropOnly && coins !== null && coins >= i.cost,
+      )
+    : items;
+  // Sections by rarity, so the long lists are easy to scan.
+  const GROUPS = [
+    { key: "common", label: "Common", tone: "text-white/70" },
+    { key: "rare", label: "Rare", tone: "text-sky-200" },
+    { key: "epic", label: "Epic", tone: "text-fuchsia-200" },
+    { key: "legendary", label: "Legendary", tone: "text-amber-200" },
+    { key: "plus", label: "Why? Plus", tone: "text-amber-200" },
+    { key: "drop", label: "Special drops", tone: "text-fuchsia-200" },
+  ] as const;
+  const groupOf = (i: StoreItem) => (i.dropOnly ? "drop" : i.vipOnly ? "plus" : rarityOf(i));
+  const groups = GROUPS.map((g) => ({
+    ...g,
+    items: shown.filter((i) => groupOf(i) === g.key),
+  })).filter((g) => g.items.length > 0);
+
   return (
-    <main className="relative min-h-[100dvh] w-full overflow-x-hidden pb-28 wide:pb-8">
+    <main className="relative min-h-[100dvh] w-full overflow-x-clip pb-28 wide:pb-8">
       <CosmicBackground />
       {isNative === false && <PaymentTestModeBanner />}
 
       <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 wide:grid wide:max-w-6xl wide:grid-cols-[300px_minmax(0,1fr)] wide:content-start wide:items-start wide:gap-x-8 lg:px-8 xl:grid-cols-[360px_minmax(0,1fr)] 2xl:max-w-7xl short:min-h-0">
-        <header className="mb-3 flex items-center justify-between gap-3 wide:col-span-2 wide:row-start-1 wide:mb-5">
+        <header className="sticky top-0 z-20 -mx-4 mb-3 flex items-center justify-between gap-3 bg-black/45 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-xl sm:-mx-6 sm:px-6 wide:static wide:col-span-2 wide:row-start-1 wide:mx-0 wide:mb-5 wide:bg-transparent wide:p-0 wide:backdrop-blur-none">
           <Link to="/" className="glass rounded-2xl px-3 py-1.5 text-sm font-bold text-white/90">
             ← Back
           </Link>
@@ -324,6 +347,11 @@ function StorePage() {
             )}
           </div>
         </header>
+        {!userId && (
+          <p className="-mt-1 mb-3 text-center text-xs font-semibold text-white/65 wide:col-span-2">
+            🪙 Earn coins by reading facts, asking “But… Why?” and the Daily Challenge.
+          </p>
+        )}
 
         {/* Wide screens: the studio, Plus and the weekly drop stay in view on the left. */}
         <div className="own-heading-sizes contents wide:sticky wide:top-4 wide:col-start-1 wide:row-start-2 wide:block wide:max-h-[calc(100dvh-2rem)] wide:overflow-y-auto wide:[scrollbar-width:none]">
@@ -351,7 +379,7 @@ function StorePage() {
                   Why? Plus
                 </span>
                 <span className="block text-xs text-white/85">
-                  100 deep dives an hour, Plus-only avatars and auras.
+                  Plus-only avatars and auras, and more “But… Why?” answers every hour.
                   {isNative === false ? ` ${PLUS_TRIAL_LABEL}.` : ""}
                 </span>
               </span>
@@ -488,7 +516,7 @@ function StorePage() {
         <div className="contents wide:col-start-2 wide:row-start-2 wide:block">
           {/* Tabs */}
           <nav
-            className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 wide:sticky wide:top-0 wide:z-10 wide:-mx-2 wide:rounded-2xl wide:bg-black/40 wide:p-2 wide:backdrop-blur-xl"
+            className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,black_82%,transparent)] sm:mx-0 sm:flex-wrap sm:px-0 sm:[mask-image:none] wide:sticky wide:top-0 wide:z-10 wide:-mx-2 wide:rounded-2xl wide:bg-black/40 wide:p-2 wide:backdrop-blur-xl"
             aria-label="Store sections"
           >
             {visibleTabs.map((t) => {
@@ -546,92 +574,127 @@ function StorePage() {
             </section>
           ) : (
             <section
-              className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 wide:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+              className="space-y-4"
               onPointerLeave={tab === "theme" ? () => previewTheme(null) : undefined}
             >
-              {items.map((item, idx) => {
-                const owned = isOwned(item);
-                const worn = isWorn(item);
-                const rarity = rarityOf(item);
-                const trying = tryOn?.id === item.id;
-                const isTheme = item.category === "theme";
-                return (
-                  <motion.article
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ delay: Math.min(idx * 0.02, 0.3) }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`glass-strong relative flex flex-col overflow-hidden rounded-2xl p-2 ring-1 ${RARITY_STYLE[rarity].ring} ${
-                      worn ? "ring-2 ring-emerald-400/80" : ""
-                    } ${trying ? "ring-2 ring-white/80" : ""}`}
-                    onMouseEnter={isTheme ? () => previewTheme(item.id) : undefined}
-                    onMouseLeave={isTheme ? () => previewTheme(null) : undefined}
+              {tab !== "theme" && (
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-white/60">
+                    {shown.length} {shown.length === 1 ? "item" : "items"}
+                  </p>
+                  <button
+                    type="button"
+                    aria-pressed={affordOnly}
+                    onClick={() => setAffordOnly((v) => !v)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-black transition ${
+                      affordOnly
+                        ? "border-emerald-300/60 bg-emerald-500/20 text-emerald-100"
+                        : "border-white/15 bg-white/5 text-white/75"
+                    }`}
                   >
-                    {worn && (
-                      <span className="absolute right-1.5 top-1.5 z-10 rounded-full bg-emerald-400/90 p-0.5 text-emerald-950">
-                        <Check className="h-2.5 w-2.5" aria-label="Wearing" />
-                      </span>
-                    )}
-                    {item.vipOnly && (
-                      <span className="absolute left-1.5 top-1.5 z-10 flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-950">
-                        <Crown className="h-2 w-2" aria-hidden /> Plus
-                      </span>
-                    )}
-                    {item.dropOnly && (
-                      <span className="absolute left-1.5 top-1.5 z-10 rounded-full bg-fuchsia-400 px-1.5 py-0.5 text-[8px] font-black uppercase text-fuchsia-950">
-                        Drop
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isTheme) previewTheme(item.id);
-                        else setTryOn(trying ? null : item);
-                      }}
-                      onFocus={isTheme ? () => previewTheme(item.id) : undefined}
-                      onBlur={isTheme ? () => previewTheme(null) : undefined}
-                      aria-label={isTheme ? `Preview ${item.name} theme` : `Try on ${item.name}`}
-                      className="relative flex h-16 items-center justify-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-                      style={{
-                        background:
-                          item.gradient ??
-                          "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.12), transparent 70%)",
-                      }}
-                    >
-                      {item.category === "avatar" ? (
-                        <AnimatedAvatar avatarId={item.id} className="text-4xl" />
-                      ) : (
-                        <span className="text-4xl leading-none" aria-hidden>
-                          {item.emoji}
-                        </span>
-                      )}
-                    </button>
-                    <p className="mt-1 truncate text-center text-[11px] font-black text-white">
-                      {item.name}
-                    </p>
-                    <p
-                      className={`text-center text-[8px] font-black uppercase tracking-widest ${RARITY_STYLE[rarity].text}`}
-                    >
-                      {item.dropOnly ? "Special drop" : RARITY_STYLE[rarity].label}
-                    </p>
-                    <div className="mt-1.5">
-                      <ItemAction
-                        item={item}
-                        owned={owned}
-                        worn={worn}
-                        coins={coins}
-                        busy={busyId === item.id}
-                        plusAvailable={plusAvailable}
-                        onBuy={buy}
-                        onWear={wear}
-                        onPlus={goToPlus}
-                        compact
-                      />
-                    </div>
-                  </motion.article>
-                );
-              })}
+                    {affordOnly ? "✓ What I can get" : "What I can get"}
+                  </button>
+                </div>
+              )}
+              {affordOnly && shown.length === 0 && (
+                <p className="glass rounded-2xl p-4 text-center text-sm text-white/70">
+                  Nothing you can buy yet. Read a few facts to earn coins!
+                </p>
+              )}
+              {groups.map((g) => (
+                <div key={g.key}>
+                  <h2 className={`mb-2 !text-xs font-black uppercase tracking-widest ${g.tone}`}>
+                    {g.label} <span className="text-white/40">· {g.items.length}</span>
+                  </h2>
+                  <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 wide:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                    {g.items.map((item, idx) => {
+                      const owned = isOwned(item);
+                      const worn = isWorn(item);
+                      const rarity = rarityOf(item);
+                      const trying = tryOn?.id === item.id;
+                      const isTheme = item.category === "theme";
+                      return (
+                        <motion.article
+                          key={item.id}
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{ delay: Math.min(idx * 0.02, 0.3) }}
+                          whileTap={{ scale: 0.95 }}
+                          className={`glass-strong relative flex flex-col overflow-hidden rounded-2xl p-2 ring-1 ${RARITY_STYLE[rarity].ring} ${
+                            worn ? "ring-2 ring-emerald-400/80" : ""
+                          } ${trying ? "ring-2 ring-white/80" : ""}`}
+                          onMouseEnter={isTheme ? () => previewTheme(item.id) : undefined}
+                          onMouseLeave={isTheme ? () => previewTheme(null) : undefined}
+                        >
+                          {worn && (
+                            <span className="absolute right-1.5 top-1.5 z-10 rounded-full bg-emerald-400/90 p-0.5 text-emerald-950">
+                              <Check className="h-2.5 w-2.5" aria-label="Wearing" />
+                            </span>
+                          )}
+                          {item.vipOnly && (
+                            <span className="absolute left-1.5 top-1.5 z-10 flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 px-1.5 py-0.5 text-[8px] font-black uppercase text-amber-950">
+                              <Crown className="h-2 w-2" aria-hidden /> Plus
+                            </span>
+                          )}
+                          {item.dropOnly && (
+                            <span className="absolute left-1.5 top-1.5 z-10 rounded-full bg-fuchsia-400 px-1.5 py-0.5 text-[8px] font-black uppercase text-fuchsia-950">
+                              Drop
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isTheme) previewTheme(item.id);
+                              else setTryOn(trying ? null : item);
+                            }}
+                            onFocus={isTheme ? () => previewTheme(item.id) : undefined}
+                            onBlur={isTheme ? () => previewTheme(null) : undefined}
+                            aria-label={
+                              isTheme ? `Preview ${item.name} theme` : `Try on ${item.name}`
+                            }
+                            className="relative flex h-16 items-center justify-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                            style={{
+                              background:
+                                item.gradient ??
+                                "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.12), transparent 70%)",
+                            }}
+                          >
+                            {item.category === "avatar" ? (
+                              <AnimatedAvatar avatarId={item.id} className="text-4xl" />
+                            ) : (
+                              <span className="text-4xl leading-none" aria-hidden>
+                                {item.emoji}
+                              </span>
+                            )}
+                          </button>
+                          <p className="mt-1 truncate text-center text-[11px] font-black text-white">
+                            {item.name}
+                          </p>
+                          <p
+                            className={`text-center text-[8px] font-black uppercase tracking-widest ${RARITY_STYLE[rarity].text}`}
+                          >
+                            {item.dropOnly ? "Special drop" : RARITY_STYLE[rarity].label}
+                          </p>
+                          <div className="mt-1.5">
+                            <ItemAction
+                              item={item}
+                              owned={owned}
+                              worn={worn}
+                              coins={coins}
+                              busy={busyId === item.id}
+                              plusAvailable={plusAvailable}
+                              onBuy={buy}
+                              onWear={wear}
+                              onPlus={goToPlus}
+                              compact
+                            />
+                          </div>
+                        </motion.article>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </section>
           )}
         </div>
@@ -737,6 +800,9 @@ function ItemAction({
     );
   }
   const canAfford = coins !== null && coins >= item.cost;
+  // Nearly there: say how many more coins, so the next goal is clear.
+  const short = coins !== null && !canAfford ? item.cost - coins : null;
+  const nearly = short !== null && short <= 30;
   return (
     <button
       type="button"
@@ -747,7 +813,7 @@ function ItemAction({
     >
       {canAfford ? <Sparkles className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
       <CoinIcon size={11} />
-      {item.cost}
+      {nearly ? `${short} more` : item.cost}
     </button>
   );
 }
