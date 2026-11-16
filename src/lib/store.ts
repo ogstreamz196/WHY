@@ -163,6 +163,8 @@ export function completeDailyChallenge(): {
 export const bumpSeen = () => {
   const n = read<number>(KEY_SEEN, 0) + 1;
   write(KEY_SEEN, n);
+  // Lets the guest sign-in strip appear once a few facts have been read.
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("why:seen"));
   return n;
 };
 export const getSeen = () => read<number>(KEY_SEEN, 0);
@@ -234,7 +236,15 @@ const KEY_INVENTORY = "why:inventory"; // array of owned item ids
 const KEY_EQUIPPED = "why:equipped"; // { avatar?: id, theme?: id }
 
 export type StoreCategory =
-  "avatar" | "theme" | "boost" | "hat" | "face" | "hand" | "neck" | "pet" | "aura";
+  | "avatar"
+  | "theme"
+  | "boost"
+  | "hat"
+  | "face"
+  | "hand"
+  | "neck"
+  | "pet"
+  | "aura";
 export type AnimatedAvatarKind =
   | "orbit-stars"
   | "flame-swirl"

@@ -14,10 +14,20 @@ import { useCurrentUser } from "@/lib/auth";
 import { emojiFor } from "@/lib/categories";
 
 const TASKS: { key: MissionTask; label: string; hint: string; icon: string }[] = [
-  { key: "mystery", label: "Today's mystery", hint: "Reveal today's featured why", icon: "🔮" },
-  { key: "surprise", label: "One surprise fact", hint: "Tap Next for a fresh why", icon: "✨" },
-  { key: "chain", label: "Follow a chain", hint: "Ask “But why?” 3 times", icon: "🔗" },
-  { key: "category", label: "Explore a theme", hint: "Discover in today's category", icon: "🎯" },
+  { key: "mystery", label: "Find an answer", hint: "Read the answer to any question", icon: "🔮" },
+  {
+    key: "surprise",
+    label: "One surprise fact",
+    hint: "Pick a random question or tap Next fact",
+    icon: "✨",
+  },
+  { key: "chain", label: "Follow a trail", hint: "Ask “But… Why?” 3 times", icon: "🧭" },
+  {
+    key: "category",
+    label: "Explore today's topic",
+    hint: "Read a fact from today's topic",
+    icon: "🎯",
+  },
 ];
 
 // A little longer than the 3-second read that records a discovery / chain claim.

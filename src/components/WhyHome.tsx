@@ -21,7 +21,6 @@ import {
   Heart,
   Search as SearchIcon,
   Share2,
-  Star,
   User as UserIcon,
   X,
 } from "lucide-react";
@@ -59,7 +58,7 @@ import { useMyAvatar } from "@/hooks/useMyAvatar";
 import { AdultModeSwitch } from "@/components/AdultModeSwitch";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { WhyLogo } from "@/components/WhyLogo";
-import { searchFacts, type PublicFact } from "@/lib/factPages.functions";
+import { getFactPage, searchFacts, type PublicFact } from "@/lib/factPages.functions";
 import { SITE_URL, factPath } from "@/lib/site";
 import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
 import { CosmicBackground } from "@/components/CosmicBackground";
@@ -109,7 +108,7 @@ import mascotImg from "@/assets/mascot.png";
 import { DEFAULT_TITLE, seo } from "@/lib/site";
 import { confirmNickname, needsNickname } from "@/lib/nickname";
 
-export type HomeSearch = { welcome?: true; q?: string };
+export type HomeSearch = { welcome?: true; q?: string; fact?: string };
 
 type Reaction = "like" | "love" | null;
 
@@ -148,6 +147,8 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   // Typed "Ask your own why" question on the picker.
   const [askDraft, setAskDraft] = useState("");
   const [asking, setAsking] = useState(false);
+  // Closest library facts when a typed question couldn't be answered.
+  const [askSuggestions, setAskSuggestions] = useState<PublicFact[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<CategoryKey>("all");
   const [fav, setFav] = useState(false);
@@ -188,7 +189,13 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
   const lastMilestone = useRef<number>(0);
 
   const [chain, setChain] = useState<
-    { question: string; answer: string; terminal?: boolean; reward_id?: string | null }[]
+    {
+      question: string;
+      answer: string;
+      terminal?: boolean;
+      reward_id?: string | null;
+      follow_ups?: string[];
+    }[]
   >([]);
   const [chainLoading, setChainLoading] = useState(false);
   const [chainConfetti, setChainConfetti] = useState(0);
@@ -459,13 +466,21 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
     if (q.length < 3 || asking) return;
     setAsking(true);
     setError(null);
+    setAskSuggestions([]);
     try {
       const f = await searchOrGen({ data: { query: q } });
       if (f) {
         setAskDraft("");
         openFact(f);
       } else {
-        setError("🤔 Hmm, I can't answer that one. Try asking a different why!");
+        // Offer the closest facts we do have instead of a dead end.
+        const near = await findFacts({ data: { query: q } }).catch(() => [] as PublicFact[]);
+        setAskSuggestions(near.slice(0, 3));
+        setError(
+          near.length
+            ? "🤔 I couldn't answer that one. Maybe one of these?"
+            : "🤔 I couldn't answer that one. Try asking it a different way!",
+        );
       }
     } catch (err) {
       console.error(err);
@@ -531,7 +546,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
           showServerBalance(r.total_points);
           if (r.awarded) setChainEarned((m) => ({ ...m, [key]: r.points }));
           else if (r.reason === "daily_cap")
-            toast("🪙 You've earned all your chain coins for today — keep digging for fun!");
+            toast("🪙 You've earned all your trail coins for today — keep digging for fun!");
         })
         .catch((e) => console.warn(e));
     }, 3000);
@@ -572,7 +587,12 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         );
         return;
       }
-      const layer = { question: res.question, answer: res.answer, reward_id: res.reward_id };
+      const layer = {
+        question: res.question,
+        answer: res.answer,
+        reward_id: res.reward_id,
+        follow_ups: res.follow_ups,
+      };
       const depth = chain.length + 1;
       setChain((c) => [...c, layer]);
       if (depth >= 3) markMission("chain");
@@ -581,7 +601,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         toast.success("🧠 Deep thinker! You're 3 whys deep.");
       } else if (depth === MAX_CHAIN_DEPTH) {
         setChainConfetti((n) => n + 1);
-        toast.success("🌌 Rabbit hole master! You reached the very bottom.");
+        toast.success("🌌 Trail master! You reached the very end.");
       }
       setSavedChainId(null); // dirty
       // Coins deferred to the 3s dwell timer (see effect above) so users
@@ -621,8 +641,8 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         const prev = res.champion.previous_holder_name;
         toast.success(
           prev
-            ? `👑 You stole the Longest Chain crown from ${prev}! ${res.champion.value} whys.`
-            : `👑 You claimed the Longest Chain crown with ${res.champion.value} whys!`,
+            ? `👑 You stole the Longest Trail crown from ${prev}! ${res.champion.value} whys.`
+            : `👑 You claimed the Longest Trail crown with ${res.champion.value} whys!`,
           { duration: 6000 },
         );
       }
@@ -696,6 +716,25 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
       window.clearTimeout(t);
     };
   }, [search, searchOpen, findFacts]);
+
+  // Arriving with ?fact=CODE (from a fact or trail page): open that answer.
+  const getFact = useServerFn(getFactPage);
+  useEffect(() => {
+    const code = routeSearch.fact;
+    if (!code) return;
+    let cancelled = false;
+    getFact({ data: { code } })
+      .then((page) => {
+        if (cancelled || !page) return;
+        openFact(page.fact);
+        void navigate({ to: "/", search: {}, replace: true });
+      })
+      .catch((e) => console.warn(e));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeSearch.fact]);
 
   // Arriving with ?q= (e.g. from Google): open search with that question.
   useEffect(() => {
@@ -773,10 +812,16 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
               )}
               <div className="glass flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-1.5">
                 <Flame className="h-4 w-4 text-orange-400" />
-                <span className="text-sm font-black text-white">{streak}</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
-                  day
-                </span>
+                {streak > 0 ? (
+                  <>
+                    <span className="text-sm font-black text-white">{streak}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
+                      {streak === 1 ? "day" : "days"}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11px] font-bold text-white/75">Start a streak</span>
+                )}
               </div>
               <Link
                 to={user ? "/profile" : "/auth"}
@@ -828,10 +873,10 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                 transition={{ type: "spring", stiffness: 120, damping: 20 }}
               />
             </div>
-            <span className="text-[10px] font-bold text-white/50">
+            <span className="text-[10px] font-bold text-white/60">
               {levelInfo.xpToNext === null
-                ? "Max"
-                : `${levelInfo.xpIntoLevel}/${levelInfo.xpIntoLevel + levelInfo.xpToNext}`}
+                ? "Max level"
+                : `${levelInfo.xpToNext} ${levelInfo.xpToNext === 1 ? "coin" : "coins"} to Lvl ${level + 1}`}
             </span>
           </div>
 
@@ -920,6 +965,14 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         <div className="order-2 flex flex-1 flex-col wide:col-start-1 wide:row-start-3">
           {/* ── FACT CARD ───────────────────────────────────── */}
           <section ref={cardRef} className="flex flex-1 scroll-mt-3 flex-col">
+            {/* Topics first: they decide which questions you get. */}
+            <div className="mb-3">
+              <CategoryScroller
+                categories={CATEGORIES}
+                activeKey={category}
+                onSelect={setCategory}
+              />
+            </div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={fact?.id ?? "choices"}
@@ -1011,6 +1064,9 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                             onAskDraft={setAskDraft}
                             asking={asking}
                             onAsk={askOwnQuestion}
+                            suggestions={askSuggestions}
+                            onShuffle={() => void loadChoices()}
+                            seenIds={getSeenIds()}
                           />
                         </motion.div>
                       ) : fact ? (
@@ -1027,7 +1083,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                               onClick={backToChoices}
                               className="mb-3 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85 transition hover:bg-white/20 active:scale-95"
                             >
-                              <ChevronLeft className="h-4 w-4" /> Pick another question
+                              <ChevronLeft className="h-4 w-4" /> Back to the questions
                             </button>
                           )}
                           <h1 className="animate-fade-up stagger-1 font-fun font-bold leading-[1.05] tracking-tight text-white text-[clamp(1.6rem,6vw,3rem)] [text-wrap:balance] break-words hyphens-auto">
@@ -1088,43 +1144,85 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                   </div>
                                 )}
 
-                                <motion.button
-                                  type="button"
-                                  onClick={() => askWhy()}
-                                  disabled={
-                                    chainLoading ||
-                                    chain.length >= MAX_CHAIN_DEPTH ||
-                                    chain[chain.length - 1]?.terminal
-                                  }
-                                  whileHover={{ scale: 1.03 }}
-                                  whileTap={{ scale: 0.94, rotate: -1 }}
-                                  className="candy-btn font-fun relative flex min-h-14 w-full items-center justify-center gap-3 overflow-hidden rounded-full px-6 py-3 text-[clamp(1.05rem,2.8vw,1.35rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
-                                >
-                                  {!chainLoading && chain.length < MAX_CHAIN_DEPTH && (
-                                    <motion.span
-                                      aria-hidden
-                                      className="pointer-events-none absolute inset-y-0 left-0 w-1/4 -skew-x-12 bg-white/30 blur-md motion-reduce:hidden"
-                                      initial={{ x: "-150%" }}
-                                      animate={{ x: "450%" }}
-                                      transition={{
-                                        duration: 1.4,
-                                        repeat: Infinity,
-                                        repeatDelay: 2.8,
-                                        ease: "easeInOut",
-                                      }}
-                                    />
-                                  )}
-                                  {chain.length >= MAX_CHAIN_DEPTH ? (
-                                    "🌌 You've reached the bottom of the rabbit hole"
-                                  ) : chainLoading ? (
-                                    "Diving deeper…"
-                                  ) : (
-                                    <>
-                                      <WigglingThinker />{" "}
-                                      {chain.length === 0 ? "But… Why?" : "But… Why? Deeper!"}
-                                    </>
-                                  )}
-                                </motion.button>
+                                {chain.length >= MAX_CHAIN_DEPTH ? (
+                                  /* End of the trail: a small win, then the next step. */
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="rounded-3xl border border-amber-300/30 bg-gradient-to-br from-amber-500/20 via-fuchsia-500/15 to-violet-500/20 p-4 text-center"
+                                  >
+                                    <p className="text-3xl" aria-hidden>
+                                      🌌
+                                    </p>
+                                    <p className="mt-1 font-fun text-xl font-bold text-white">
+                                      You went {MAX_CHAIN_DEPTH} whys deep!
+                                    </p>
+                                    <p className="mt-0.5 text-sm text-white/75">
+                                      That's the end of this trail. Save it to read again later.
+                                    </p>
+                                    <div className="mt-3 grid grid-cols-2 gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={handleSaveChain}
+                                        disabled={savingChain || !!savedChainId}
+                                        className="rounded-full bg-white px-4 py-2.5 text-sm font-black text-violet-700 disabled:opacity-70"
+                                      >
+                                        {savedChainId
+                                          ? "✓ Saved"
+                                          : savingChain
+                                            ? "Saving…"
+                                            : "💖 Save trail"}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => void nextFact()}
+                                        disabled={nextLoading}
+                                        className="rounded-full px-4 py-2.5 text-sm font-black text-white disabled:opacity-60"
+                                        style={{ background: "var(--gradient-primary)" }}
+                                      >
+                                        Next fact →
+                                      </button>
+                                    </div>
+                                  </motion.div>
+                                ) : (
+                                  <motion.button
+                                    type="button"
+                                    onClick={() => askWhy()}
+                                    disabled={
+                                      chainLoading ||
+                                      chain.length >= MAX_CHAIN_DEPTH ||
+                                      chain[chain.length - 1]?.terminal
+                                    }
+                                    whileHover={{ scale: 1.03 }}
+                                    whileTap={{ scale: 0.94, rotate: -1 }}
+                                    className="candy-btn font-fun relative flex min-h-14 w-full items-center justify-center gap-3 overflow-hidden rounded-full px-6 py-3 text-[clamp(1.05rem,2.8vw,1.35rem)] font-bold uppercase tracking-wide text-white disabled:opacity-50"
+                                  >
+                                    {!chainLoading && chain.length < MAX_CHAIN_DEPTH && (
+                                      <motion.span
+                                        aria-hidden
+                                        className="pointer-events-none absolute inset-y-0 left-0 w-1/4 -skew-x-12 bg-white/30 blur-md motion-reduce:hidden"
+                                        initial={{ x: "-150%" }}
+                                        animate={{ x: "450%" }}
+                                        transition={{
+                                          duration: 1.4,
+                                          repeat: Infinity,
+                                          repeatDelay: 2.8,
+                                          ease: "easeInOut",
+                                        }}
+                                      />
+                                    )}
+                                    {chain.length >= MAX_CHAIN_DEPTH ? (
+                                      "🌌 You've reached the end of this trail"
+                                    ) : chainLoading ? (
+                                      "Diving deeper…"
+                                    ) : (
+                                      <>
+                                        <WigglingThinker />{" "}
+                                        {chain.length === 0 ? "But… Why?" : "But… Why? Deeper!"}
+                                      </>
+                                    )}
+                                  </motion.button>
+                                )}
 
                                 {fact.fun_fact && (
                                   <motion.div
@@ -1161,7 +1259,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                 </motion.button>
 
                                 {/* Discovery signals */}
-                                <div className="grid grid-cols-4 gap-2">
+                                <div className="grid grid-cols-3 gap-2">
                                   <SignalBtn
                                     active={reaction === "love"}
                                     onClick={() => {
@@ -1174,21 +1272,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                         className={`h-5 w-5 ${reaction === "love" ? "fill-current" : ""}`}
                                       />
                                     }
-                                    label="Love"
-                                  />
-                                  <SignalBtn
-                                    active={reaction === "like"}
-                                    onClick={() => {
-                                      setReaction("like");
-                                      if (reaction !== "like") grantPoints(1);
-                                    }}
-                                    tone="amber"
-                                    icon={
-                                      <Star
-                                        className={`h-5 w-5 ${reaction === "like" ? "fill-current" : ""}`}
-                                      />
-                                    }
-                                    label="Rate"
+                                    label={reaction === "love" ? "Loved" : "Love it"}
                                   />
                                   <SignalBtn
                                     active={false}
@@ -1219,14 +1303,10 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                         Or pick a question
                                       </p>
                                       <div className="flex flex-wrap justify-center gap-2">
-                                        {[
-                                          "But why does that happen?",
-                                          "How does it work?",
-                                          "When did it start?",
-                                          "Where does it come from?",
-                                          "What if it didn't exist?",
-                                          "Who discovered it?",
-                                        ].map((q) => (
+                                        {(chain[chain.length - 1]?.follow_ups?.length
+                                          ? chain[chain.length - 1].follow_ups!
+                                          : followUpsFor(fact.category)
+                                        ).map((q) => (
                                           <button
                                             key={q}
                                             type="button"
@@ -1270,7 +1350,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                     </div>
                                   )}
 
-                                {chain.length > 0 && (
+                                {chain.length > 0 && chain.length < MAX_CHAIN_DEPTH && (
                                   <button
                                     type="button"
                                     onClick={handleSaveChain}
@@ -1281,7 +1361,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                       ? "✓ Saved to Favourites"
                                       : savingChain
                                         ? "Saving…"
-                                        : "💖 Save to Favourites"}
+                                        : "💖 Save this trail"}
                                   </button>
                                 )}
                               </motion.div>
@@ -1309,57 +1389,13 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                 </div>
               </motion.div>
             </AnimatePresence>
-
-            {/* Category bubbles */}
-            <CategoryScroller categories={CATEGORIES} activeKey={category} onSelect={setCategory} />
           </section>
-
-          {/* Giant button: three fresh questions to choose from */}
-          <div className="mt-6 mb-4">
-            <motion.button
-              type="button"
-              disabled={loading}
-              onClick={() => void loadChoices()}
-              whileTap={{ scale: 0.97 }}
-              className="animate-pulse-glow relative w-full overflow-hidden rounded-full px-6 py-5 text-xl font-black uppercase tracking-wide text-white disabled:opacity-70"
-              style={{ background: "var(--gradient-primary)" }}
-            >
-              <span className="relative z-10 inline-flex items-center justify-center gap-3">
-                {loading ? "Loading…" : fact ? "New questions" : "Show me new questions"}
-                <Shuffle className="h-6 w-6" />
-              </span>
-              <span
-                aria-hidden
-                className="absolute inset-y-0 -left-1/3 w-1/3 skew-x-12 bg-white/20"
-                style={{ animation: "shimmer 2.4s ease-in-out infinite" }}
-              />
-            </motion.button>
-          </div>
         </div>
 
         {/* Wide screens: a sticky side column. Phones: these flow around the fact. */}
         <aside className="own-heading-sizes contents wide:sticky wide:top-4 wide:col-start-2 wide:row-start-3 wide:flex wide:max-h-[calc(100dvh-2rem)] wide:flex-col wide:overflow-y-auto wide:pb-4 wide:[scrollbar-width:none]">
-          <div className="order-3">
-            {/* Your explorer (below the questions on phones, so they come first): dressed-up avatar, quick stats and the weekly drop */}
-            <HomePlayerCard
-              userId={user?.id ?? null}
-              name={user ? (displayName ?? "Explorer") : "Guest explorer"}
-              level={level}
-              streak={streak}
-              points={points}
-            />
-          </div>
+          {/* Phones: the daily challenge comes straight after the questions. */}
           <div className="order-3 flex flex-col">
-            {/* Daily activities sit below the fact so it shows first */}
-            {user ? null : (
-              <GuestProgressCard
-                discoveries={getSeen()}
-                streak={streak}
-                points={points}
-                onSignUp={() => navigate({ to: "/auth", search: { mode: "signup" } })}
-              />
-            )}
-
             {/* Daily login bonus */}
             {user && bonusAvailable && (
               <motion.button
@@ -1393,46 +1429,6 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                 </span>
               </motion.button>
             )}
-
-            {/* Continue last favourite */}
-            {user && lastChain && lastChain.step_count > 1 && (
-              <Link
-                to="/chain/$id"
-                params={{ id: lastChain.id }}
-                className="mb-3 flex items-center gap-3 rounded-2xl border border-fuchsia-400/25 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 px-4 py-3"
-              >
-                <span
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg"
-                  style={{ background: "var(--gradient-primary)" }}
-                >
-                  🧵
-                </span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">
-                    Continue your favourite
-                  </div>
-                  <div className="truncate text-sm font-bold text-white">
-                    {chainTitle(
-                      lastChain.title,
-                      lastChain.last_question ?? "Pick up your favourite where you left off",
-                    )}
-                  </div>
-                  <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-white/60" />
-              </Link>
-            )}
-
-            <DailyMission
-              onOpenCategory={(k) => setCategory(k as CategoryKey)}
-              onCelebrate={(pts, total) => {
-                if (typeof total === "number" && total > 0) showServerBalance(total);
-                setCelebrate({ points: pts });
-              }}
-              registerMarker={(fn) => {
-                missionMarkerRef.current = fn;
-              }}
-            />
 
             <DailyChallenge
               userId={user?.id ?? null}
@@ -1479,6 +1475,65 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                     }
                   : undefined
               }
+            />
+          </div>
+          <div className="order-4">
+            {/* Your explorer: dressed-up avatar, quick stats and the weekly drop */}
+            <HomePlayerCard
+              userId={user?.id ?? null}
+              name={user ? (displayName ?? "Explorer") : "Guest explorer"}
+              level={level}
+              streak={streak}
+              points={points}
+            />
+          </div>
+          <div className="order-5 flex flex-col">
+            {/* Daily activities sit below the fact so it shows first */}
+            {user ? null : (
+              <GuestProgressCard
+                discoveries={getSeen()}
+                onSignUp={() => navigate({ to: "/auth", search: { mode: "signup" } })}
+              />
+            )}
+
+            {/* Continue last favourite */}
+            {user && lastChain && lastChain.step_count > 1 && (
+              <Link
+                to="/chain/$id"
+                params={{ id: lastChain.id }}
+                className="mb-3 flex items-center gap-3 rounded-2xl border border-fuchsia-400/25 bg-gradient-to-r from-fuchsia-500/15 to-violet-500/15 px-4 py-3"
+              >
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg"
+                  style={{ background: "var(--gradient-primary)" }}
+                >
+                  🧵
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-fuchsia-200/80">
+                    Continue your favourite
+                  </div>
+                  <div className="truncate text-sm font-bold text-white">
+                    {chainTitle(
+                      lastChain.title,
+                      lastChain.last_question ?? "Pick up your favourite where you left off",
+                    )}
+                  </div>
+                  <div className="text-[10px] text-white/50">{lastChain.step_count} steps deep</div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-white/60" />
+              </Link>
+            )}
+
+            <DailyMission
+              onOpenCategory={(k) => setCategory(k as CategoryKey)}
+              onCelebrate={(pts, total) => {
+                if (typeof total === "number" && total > 0) showServerBalance(total);
+                setCelebrate({ points: pts });
+              }}
+              registerMarker={(fn) => {
+                missionMarkerRef.current = fn;
+              }}
             />
 
             {user && (
@@ -1713,6 +1768,37 @@ function ChainStep({
   );
 }
 
+/** Follow-up ideas that suit the topic, until the AI suggests ones for this answer. */
+const TOPIC_FOLLOW_UPS: Record<string, string[]> = {
+  animals: [
+    "How do they do that?",
+    "Do other animals do this too?",
+    "What would happen without it?",
+  ],
+  space: ["How far away is it?", "How do scientists know?", "Could people go there?"],
+  earth: ["What causes it?", "Does it happen everywhere?", "Has it always been like this?"],
+  nature: ["How does it grow?", "Does it happen everywhere?", "What would happen without it?"],
+  weather: ["What causes it?", "Does it happen everywhere?", "Can we predict it?"],
+  ocean: ["How deep does it go?", "Do sea animals notice it?", "Does it happen in lakes too?"],
+  body: ["How does my body do that?", "Do animals have it too?", "What if it stopped working?"],
+  food: ["How is it made?", "Why does it taste like that?", "Is it good for me?"],
+  history: ["Who started it?", "What was it like before?", "Do we still do it today?"],
+  technology: [
+    "How does it work inside?",
+    "Who invented it?",
+    "What will it be like in the future?",
+  ],
+  dinosaurs: ["How do scientists know?", "Are there animals like it today?", "What did it eat?"],
+};
+const DEFAULT_FOLLOW_UPS = [
+  "How does it work?",
+  "How do scientists know?",
+  "What if it didn't happen?",
+];
+function followUpsFor(category: string | null | undefined): string[] {
+  return (category && TOPIC_FOLLOW_UPS[category]) || DEFAULT_FOLLOW_UPS;
+}
+
 const ASK_IDEAS = ["Why is the ocean salty?", "Why do we hiccup?", "Why do we have belly buttons?"];
 
 /**
@@ -1729,6 +1815,9 @@ function QuestionPicker({
   onAskDraft,
   asking,
   onAsk,
+  suggestions,
+  onShuffle,
+  seenIds,
 }: {
   choices: Fact[];
   error: string | null;
@@ -1738,7 +1827,11 @@ function QuestionPicker({
   onAskDraft: (v: string) => void;
   asking: boolean;
   onAsk: (e: React.FormEvent) => void;
+  suggestions: PublicFact[];
+  onShuffle: () => void;
+  seenIds: string[];
 }) {
+  const seen = new Set(seenIds);
   return (
     <div className="relative">
       <h1 className="animate-fade-up font-fun font-bold leading-[1.1] tracking-tight text-white text-[clamp(1.7rem,5.5vw,2.8rem)] [text-wrap:balance]">
@@ -1749,39 +1842,64 @@ function QuestionPicker({
       </p>
 
       {choices.length > 0 ? (
-        <ul className="mt-5 space-y-3" aria-label="Questions to choose from">
-          {choices.map((f, i) => (
-            <motion.li
-              key={f.id}
-              initial={{ opacity: 0, y: 12, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: i * 0.08, type: "spring", stiffness: 320, damping: 24 }}
-            >
-              <motion.button
-                type="button"
-                onClick={() => onPick(f)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="group flex w-full items-center gap-3 rounded-3xl border border-white/15 bg-white/[0.07] p-3.5 text-left transition hover:bg-white/[0.12] sm:p-4"
-              >
-                <span
-                  aria-hidden
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg sm:h-14 sm:w-14 sm:text-3xl"
-                  style={{ background: gradientFor(f.category) }}
+        <>
+          <ul className="mt-5 space-y-3" aria-label="Questions to choose from">
+            {choices.map((f, i) => {
+              const read = seen.has(f.id);
+              const topic = CATEGORIES.find((c) => c.key === f.category)?.label;
+              return (
+                <motion.li
+                  key={f.id}
+                  initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: i * 0.08, type: "spring", stiffness: 320, damping: 24 }}
                 >
-                  {emojiFor(f.category)}
-                </span>
-                <h2 className="min-w-0 flex-1 font-fun font-semibold leading-snug text-white text-[clamp(1.05rem,3vw,1.3rem)] [text-wrap:balance] break-words">
-                  {asWhyQuestion(f.question)}
-                </h2>
-                <ChevronRight
-                  aria-hidden
-                  className="h-6 w-6 shrink-0 text-white/50 transition group-hover:translate-x-0.5 group-hover:text-white"
-                />
-              </motion.button>
-            </motion.li>
-          ))}
-        </ul>
+                  <motion.button
+                    type="button"
+                    onClick={() => onPick(f)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="group flex w-full items-center gap-3 rounded-3xl border border-white/15 bg-white/[0.07] p-3.5 text-left transition hover:bg-white/[0.12] sm:p-4"
+                  >
+                    <span
+                      aria-hidden
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl shadow-lg sm:h-14 sm:w-14 sm:text-3xl"
+                      style={{ background: gradientFor(f.category) }}
+                    >
+                      {emojiFor(f.category)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <h2 className="font-fun font-semibold leading-snug text-white text-[clamp(1.05rem,3vw,1.3rem)] [text-wrap:balance] break-words">
+                        {asWhyQuestion(f.question)}
+                      </h2>
+                      <span className="mt-0.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-white/50">
+                        {topic && <span>{topic}</span>}
+                        {read && (
+                          <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 normal-case tracking-normal text-emerald-200">
+                            ✓ Read
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                    <ChevronRight
+                      aria-hidden
+                      className="h-6 w-6 shrink-0 text-white/50 transition group-hover:translate-x-0.5 group-hover:text-white"
+                    />
+                  </motion.button>
+                </motion.li>
+              );
+            })}
+          </ul>
+          <div className="mt-3 flex justify-center">
+            <button
+              type="button"
+              onClick={onShuffle}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20 active:scale-95"
+            >
+              <Shuffle aria-hidden className="h-4 w-4" /> Shuffle for 3 new questions
+            </button>
+          </div>
+        </>
       ) : (
         <div className="mt-5 space-y-3 text-center">
           <p className="text-white/80">{error ?? "No questions yet — let's find some."}</p>
@@ -1801,12 +1919,14 @@ function QuestionPicker({
         className="mt-6 rounded-3xl border border-fuchsia-300/25 bg-gradient-to-br from-fuchsia-500/15 via-violet-500/10 to-sky-500/15 p-4"
       >
         <div className="flex items-center gap-3">
-          <img
+          <motion.img
             src={mascotImg}
             alt=""
             loading="lazy"
             decoding="async"
-            className="h-11 w-11 shrink-0 object-contain animate-float-slow"
+            animate={asking ? { y: [0, -6, 0], rotate: [0, -6, 6, 0] } : { y: 0, rotate: 0 }}
+            transition={asking ? { duration: 0.9, repeat: Infinity } : { duration: 0.2 }}
+            className="h-11 w-11 shrink-0 object-contain"
           />
           <div className="min-w-0">
             <h2 id="ask-own-why" className="font-fun text-xl font-bold text-white">
@@ -1824,6 +1944,7 @@ function QuestionPicker({
             onChange={(e) => onAskDraft(e.target.value)}
             placeholder="Why do cats purr?"
             maxLength={200}
+            disabled={asking}
             className="min-w-0 flex-1 bg-transparent px-2 py-2 text-base text-white placeholder-white/40 outline-none"
           />
           <button
@@ -1835,7 +1956,12 @@ function QuestionPicker({
             {asking ? "Thinking…" : "Ask"}
           </button>
         </form>
-        {askDraft.trim().length === 0 && (
+        {asking && (
+          <p className="mt-2 text-sm font-semibold text-white/80" role="status">
+            Looking for an answer…
+          </p>
+        )}
+        {!asking && askDraft.trim().length === 0 && suggestions.length === 0 && (
           <div className="mt-2 flex flex-wrap gap-2">
             {ASK_IDEAS.map((q) => (
               <button
@@ -1849,10 +1975,27 @@ function QuestionPicker({
             ))}
           </div>
         )}
-        {error && choices.length > 0 && (
+        {!asking && error && choices.length > 0 && (
           <p className="mt-2 text-sm font-semibold text-amber-200" role="status">
             {error}
           </p>
+        )}
+        {!asking && suggestions.length > 0 && (
+          <ul className="mt-2 space-y-1.5" aria-label="Facts close to your question">
+            {suggestions.map((f) => (
+              <li key={f.id}>
+                <button
+                  type="button"
+                  onClick={() => onPick(f)}
+                  className="flex w-full items-center gap-2 rounded-2xl bg-white/10 px-3 py-2 text-left text-sm font-bold text-white transition hover:bg-white/20"
+                >
+                  <span aria-hidden>{emojiFor(f.category)}</span>
+                  <span className="min-w-0 flex-1">{asWhyQuestion(f.question)}</span>
+                  <ChevronRight aria-hidden className="h-4 w-4 text-white/50" />
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
         <p className="mt-2 text-[10px] text-white/50">
           An AI helper writes a kid-friendly answer to your question.
@@ -1904,102 +2047,34 @@ export { asWhyQuestion } from "@/lib/whyQuestion";
 
 function GuestProgressCard({
   discoveries,
-  streak,
-  points,
   onSignUp,
 }: {
   discoveries: number;
-  streak: number;
-  points: number;
   onSignUp: () => void;
 }) {
-  const nextMilestone = discoveries < 10 ? 10 : discoveries < 25 ? 25 : discoveries < 50 ? 50 : 100;
-  const pct = Math.min(100, Math.round((discoveries / nextMilestone) * 100));
-  const rewards = [
-    { icon: "🔥", label: "Daily streak", locked: streak < 2 },
-    { icon: "🎁", label: "Login bonus", locked: true },
-    { icon: "⭐", label: "Achievements", locked: true },
-    { icon: "☁️", label: "Cloud sync", locked: true },
-  ];
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-3 overflow-hidden rounded-3xl border border-violet-400/20 bg-gradient-to-br from-violet-500/15 via-fuchsia-500/10 to-indigo-500/15 p-4 shadow-[0_0_28px_rgba(139,92,246,0.15)]"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🧭</span>
-            <h3 className="font-display text-sm font-black uppercase tracking-wider text-white">
-              Guest explorer
-            </h3>
-          </div>
-          <p className="mt-1 text-xs text-white/60">
-            You've discovered <span className="font-black text-white">{discoveries}</span>{" "}
-            {discoveries === 1 ? "fact" : "facts"} —{" "}
-            {nextMilestone - discoveries > 0
-              ? `${nextMilestone - discoveries} more to your next milestone.`
-              : "milestone unlocked!"}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onSignUp}
-          className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-widest text-violet-700 shadow-md transition hover:scale-105"
-        >
-          Unlock
-        </button>
-      </div>
-
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="h-full rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-300"
-        />
-      </div>
-
-      <div className="mt-3 grid grid-cols-4 gap-1.5">
-        {rewards.map((r) => (
-          <button
-            key={r.label}
-            type="button"
-            onClick={onSignUp}
-            className={`group flex flex-col items-center gap-1 rounded-2xl border p-2 text-center transition ${
-              r.locked
-                ? "border-white/5 bg-white/[0.03] hover:border-violet-400/30 hover:bg-white/[0.06]"
-                : "border-emerald-400/30 bg-emerald-500/10"
-            }`}
-          >
-            <span className={`text-lg ${r.locked ? "opacity-60 group-hover:opacity-100" : ""}`}>
-              {r.locked ? "🔒" : r.icon}
-            </span>
-            <span className="text-[9px] font-bold uppercase tracking-wide text-white/60">
-              {r.label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {(streak > 0 || points > 0) && (
-        <div className="mt-3 flex items-center gap-2 text-[11px] text-white/60">
-          <span>Local progress:</span>
-          {streak > 0 && (
-            <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-orange-200">
-              🔥 {streak}d
-            </span>
-          )}
-          {points > 0 && (
-            <span className="rounded-full bg-white/10 px-2 py-0.5 font-black text-amber-200">
-              ✨ {points} XP
-            </span>
-          )}
-          <span className="ml-auto text-white/40">saved on this device</span>
-        </div>
-      )}
-    </motion.div>
+    <div className="mb-3 flex items-center gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/10 px-4 py-3">
+      <span aria-hidden className="text-xl">
+        🧭
+      </span>
+      <p className="min-w-0 flex-1 text-xs text-white/75">
+        {discoveries > 0 ? (
+          <>
+            You've read <span className="font-black text-white">{discoveries}</span>{" "}
+            {discoveries === 1 ? "fact" : "facts"}. Sign up to keep your streak, coins and badges.
+          </>
+        ) : (
+          "Sign up to keep your streak, coins and badges on every device."
+        )}
+      </p>
+      <button
+        type="button"
+        onClick={onSignUp}
+        className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-black text-violet-700 shadow-md transition active:scale-95"
+      >
+        Sign up
+      </button>
+    </div>
   );
 }
 
@@ -2107,7 +2182,7 @@ export function WelcomeOverlay({
             <p className="relative mt-2 text-sm text-white/70">
               {needsName
                 ? "What should we call you on your Curiosity Passport?"
-                : "Your Curiosity Passport is ready. Every fact you discover, every chain you follow — it all belongs to you now."}
+                : "Your Curiosity Passport is ready. Every fact you discover, every trail you follow — it all belongs to you now."}
             </p>
 
             {needsName && (
@@ -2208,7 +2283,7 @@ function CategoryScroller({
   };
 
   return (
-    <div className="relative mt-5">
+    <div className="relative">
       <div
         ref={scrollerRef}
         className="-mx-4 overflow-x-auto scroll-smooth px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

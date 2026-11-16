@@ -39,6 +39,7 @@ const ROTATION = [
   "food",
   "technology",
   "dinosaurs",
+  "nature",
 ] as const;
 
 function categoryOfDay(dateStr: string): string {
@@ -269,9 +270,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
         existing.chain_done &&
         existing.category_done;
       if (!complete || existing.bonus_awarded) {
-        const { data: s } = await (
-          await admin()
-        )
+        const { data: s } = await (await admin())
           .from("user_stats")
           .select("total_points")
           .eq("user_id", context.userId)
@@ -279,9 +278,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
         return { awarded: false, points: 0, total_points: s?.total_points ?? 0, newlyUnlocked: [] };
       }
       // Only the request that flips bonus_awarded false → true gets paid.
-      const { data: claimed, error: claimErr } = await (
-        await admin()
-      )
+      const { data: claimed, error: claimErr } = await (await admin())
         .from("daily_missions")
         .update({ bonus_awarded: true, completed_at: new Date().toISOString() })
         .eq("user_id", context.userId)
@@ -290,9 +287,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
         .select("user_id");
       if (claimErr) throw new Error(claimErr.message);
       if (!claimed || claimed.length === 0) {
-        const { data: s } = await (
-          await admin()
-        )
+        const { data: s } = await (await admin())
           .from("user_stats")
           .select("total_points")
           .eq("user_id", context.userId)
@@ -302,9 +297,7 @@ export const claimMissionBonus = createServerFn({ method: "POST" })
 
       const awardedPoints = await awardAmountForUser(context, BONUS_POINTS_BASE);
       const next = (await applyPoints(context.userId, awardedPoints)) ?? 0;
-      await (
-        await admin()
-      )
+      await (await admin())
         .from("user_stats")
         .update({ last_active_day: t })
         .eq("user_id", context.userId);

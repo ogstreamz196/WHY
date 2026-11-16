@@ -9,6 +9,8 @@ export function parseHomeSearch(s: Record<string, unknown>): HomeSearch {
   return {
     ...(s.welcome === "1" || s.welcome === 1 || s.welcome === true ? { welcome: true } : {}),
     ...(typeof s.q === "string" && s.q.trim() ? { q: s.q.trim().slice(0, 200) } : {}),
+    // ?fact=WHY-1A2B3C opens that fact's answer (links from fact and trail pages).
+    ...(typeof s.fact === "string" && /^WHY-[0-9A-F]{6}$/.test(s.fact) ? { fact: s.fact } : {}),
   };
 }
 

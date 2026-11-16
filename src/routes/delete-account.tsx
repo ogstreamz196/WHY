@@ -71,7 +71,7 @@ function DeleteAccountPage() {
         <h1 className="font-display text-2xl font-black">Delete your account</h1>
         <p className="mt-2 text-sm leading-relaxed text-white/75">
           Deleting your account is permanent. We remove your profile, coins, streaks, favourites,
-          saved chains, quiz history, achievements and store items straight away, and you'll be
+          saved trails, quiz history, achievements and store items straight away, and you'll be
           signed out. A Why? Plus subscription bought on the website is cancelled at the same time.
           If you subscribed through the App Store or Google Play, cancel it there first; we can't
           cancel store subscriptions for you.

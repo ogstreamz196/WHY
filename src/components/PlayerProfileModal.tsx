@@ -268,7 +268,7 @@ export function PlayerProfileModal({ userId, rank, totalUsers, boardLabel, isMe,
                     {data.favorite_category && (
                       <Row
                         icon={<Award className="h-3.5 w-3.5" />}
-                        label="Favorite category"
+                        label="Favourite topic"
                         value={
                           <>
                             <span className="mr-1">{emojiFor(data.favorite_category)}</span>

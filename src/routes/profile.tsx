@@ -584,11 +584,11 @@ function ProfilePage() {
             </>
           )}
 
-          {/* Saved chains */}
+          {/* Saved trails */}
           {tab === "history" && (
             <section className="mt-6">
               <header className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="font-display text-lg font-black text-white">Saved chains</h2>
+                <h2 className="font-display text-lg font-black text-white">Saved trails</h2>
                 <div className="flex items-center gap-2">
                   <Link to="/chains" className="text-xs font-bold text-fuchsia-200">
                     View all →
@@ -596,7 +596,7 @@ function ProfilePage() {
                   <CollapseChevron
                     collapsed={collapsed.chains}
                     onToggle={() => toggleCollapsed("chains")}
-                    label="Saved chains"
+                    label="Saved trails"
                   />
                 </div>
               </header>
@@ -606,7 +606,7 @@ function ProfilePage() {
                   if (items.length === 0) {
                     return (
                       <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs text-white/60">
-                        Save your first Why chain from the home screen.
+                        Save your first trail from the home screen.
                       </p>
                     );
                   }
@@ -636,7 +636,7 @@ function ProfilePage() {
                           disabled={chains.isFetchingNextPage}
                           className="w-full rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/80"
                         >
-                          {chains.isFetchingNextPage ? "Loading…" : "Load more chains"}
+                          {chains.isFetchingNextPage ? "Loading…" : "Load more trails"}
                         </button>
                       )}
                     </div>

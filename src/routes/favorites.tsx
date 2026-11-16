@@ -5,6 +5,9 @@ import { getFavorites, toggleFavorite } from "@/lib/store";
 import { useCurrentUser } from "@/lib/auth";
 import { emojiFor } from "@/lib/categories";
 import { seo } from "@/lib/site";
+import { BottomNav } from "@/components/BottomNav";
+import { CosmicBackground } from "@/components/CosmicBackground";
+import { WhyLogo } from "@/components/WhyLogo";
 
 export const Route = createFileRoute("/favorites")({
   head: () => seo({ title: "Favourites | Why?", noindex: true, themeColor: "#7c3aed" }),
@@ -31,33 +34,24 @@ function FavoritesPage() {
   };
 
   return (
-    <main className="relative isolate min-h-[100dvh] w-full">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background: "linear-gradient(180deg, #fef3c7 0%, #ede9fe 100%)",
-        }}
-      />
+    <main className="relative min-h-[100dvh] w-full pb-28 wide:pb-8">
+      <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pb-8 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-6 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-black tracking-tight">
-            <span className="text-violet-700">Why</span>
-            <span className="text-amber-500">?</span>
+          <Link to="/" aria-label="Why? home">
+            <WhyLogo size={40} />
           </Link>
-          <Link
-            to="/"
-            className="rounded-full bg-white/80 px-3 py-1 text-sm font-semibold text-slate-700 shadow-sm"
-          >
+          <Link to="/" className="glass rounded-full px-3 py-1 text-sm font-semibold text-white/85">
             ← Back
           </Link>
         </header>
-        <h1 className="mb-4 text-2xl font-extrabold text-slate-900">❤️ Your Favorites</h1>
+        <h1 className="mb-4 text-2xl font-black font-display text-white">❤️ Your Favourites</h1>
 
         {facts.length === 0 ? (
-          <div className="rounded-3xl bg-white/85 p-8 text-center shadow-xl ring-1 ring-black/5 backdrop-blur">
+          <div className="glass rounded-3xl border border-white/10 p-8 text-center">
             <p className="text-4xl">🤍</p>
-            <p className="mt-3 text-slate-700">
-              No favorites yet. Tap the heart on any fact to save it here!
+            <p className="mt-3 text-white/80">
+              No favourites yet. Tap the heart on any fact to save it here!
             </p>
             <Link
               to="/"
@@ -69,24 +63,23 @@ function FavoritesPage() {
         ) : (
           <ul className="space-y-3">
             {facts.map((f) => (
-              <li
-                key={f.id}
-                className="rounded-2xl bg-white/90 p-4 shadow-md ring-1 ring-black/5 backdrop-blur"
-              >
+              <li key={f.id} className="glass rounded-2xl border border-white/10 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <p className="text-xs font-bold uppercase tracking-widest text-amber-600">
+                    <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
                       {emojiFor(f.category)} Do you know why…
                     </p>
-                    <p className="mt-1 text-base font-extrabold text-slate-900">{f.question}</p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-700">{f.answer}</p>
-                    {f.fun_fact && <p className="mt-2 text-xs text-amber-700">⭐ {f.fun_fact}</p>}
+                    <p className="mt-1 text-base font-extrabold text-white">{f.question}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-white/80">{f.answer}</p>
+                    {f.fun_fact && (
+                      <p className="mt-2 text-xs text-amber-200/90">⭐ {f.fun_fact}</p>
+                    )}
                   </div>
                   <button
                     type="button"
                     onClick={() => remove(f)}
-                    aria-label="Remove favorite"
-                    className="shrink-0 rounded-full bg-rose-100 px-3 py-1 text-sm text-rose-700"
+                    aria-label="Remove favourite"
+                    className="shrink-0 rounded-full bg-rose-500/15 px-3 py-1 text-sm text-rose-200"
                   >
                     ✕
                   </button>
@@ -96,6 +89,7 @@ function FavoritesPage() {
           </ul>
         )}
       </div>
+      <BottomNav />
     </main>
   );
 }

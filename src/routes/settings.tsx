@@ -23,6 +23,9 @@ import { saveMyBirthDate } from "@/lib/adult.functions";
 import { PLACEHOLDER_DOMAIN } from "@/lib/username-auth.functions";
 import { seo } from "@/lib/site";
 import { toast } from "sonner";
+import { BottomNav } from "@/components/BottomNav";
+import { CosmicBackground } from "@/components/CosmicBackground";
+import { WhyLogo } from "@/components/WhyLogo";
 
 export const Route = createFileRoute("/settings")({
   head: () => seo({ title: "Settings | Why?", noindex: true, themeColor: "#7c3aed" }),
@@ -54,38 +57,29 @@ function SettingsPage() {
   };
 
   return (
-    <main className="relative isolate min-h-[100dvh] w-full">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background: "linear-gradient(180deg, #fef3c7 0%, #ede9fe 100%)",
-        }}
-      />
+    <main className="relative min-h-[100dvh] w-full pb-28 wide:pb-8">
+      <CosmicBackground />
       <div className="mx-auto max-w-2xl px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <header className="mb-6 flex items-center justify-between">
-          <Link to="/" className="text-2xl font-black tracking-tight">
-            <span className="text-violet-700">Why</span>
-            <span className="text-amber-500">?</span>
+          <Link to="/" aria-label="Why? home">
+            <WhyLogo size={40} />
           </Link>
-          <Link
-            to="/"
-            className="rounded-full bg-white/80 px-3 py-1 text-sm font-semibold text-slate-700 shadow-sm"
-          >
+          <Link to="/" className="glass rounded-full px-3 py-1 text-sm font-semibold text-white/85">
             ← Back
           </Link>
         </header>
 
-        <h1 className="mb-4 text-2xl font-extrabold text-slate-900">⚙️ Settings</h1>
+        <h1 className="mb-4 text-2xl font-black font-display text-white">⚙️ Settings</h1>
 
-        <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-          <h2 className="mb-3 text-lg font-extrabold text-slate-900">👤 Account</h2>
+        <section className="mb-6 glass rounded-3xl border border-white/10 p-5">
+          <h2 className="mb-3 text-lg font-extrabold text-white">👤 Account</h2>
           {user ? (
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-slate-900">{accountLabel(user)}</p>
+                <p className="text-sm font-bold text-white">{accountLabel(user)}</p>
                 <Link
                   to="/profile"
-                  className="text-xs font-semibold text-violet-700 underline-offset-2 hover:underline"
+                  className="text-xs font-semibold text-violet-300 underline-offset-2 hover:underline"
                 >
                   View profile
                 </Link>
@@ -98,7 +92,7 @@ function SettingsPage() {
                   qc.clear();
                   navigate({ to: "/" });
                 }}
-                className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1.5 text-xs font-bold text-rose-700"
+                className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-3 py-1.5 text-xs font-bold text-rose-200"
               >
                 <LogOut className="h-3.5 w-3.5" /> Sign out
               </button>
@@ -106,8 +100,8 @@ function SettingsPage() {
           ) : (
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-slate-900">Guest explorer</p>
-                <p className="text-xs text-slate-600">
+                <p className="text-sm font-bold text-white">Guest explorer</p>
+                <p className="text-xs text-white/65">
                   Create a free account to keep your streak & favourites across devices.
                 </p>
               </div>
@@ -127,9 +121,9 @@ function SettingsPage() {
         {/* Linking Google is web-only (Google blocks its sign-in inside apps). */}
         {user && isNative === false && <LinkedAccounts />}
         {user && (
-          <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-            <h2 className="text-lg font-extrabold text-slate-900">Delete account</h2>
-            <p className="mt-1 text-sm text-slate-600">
+          <section className="mb-6 glass rounded-3xl border border-white/10 p-5">
+            <h2 className="text-lg font-extrabold text-white">Delete account</h2>
+            <p className="mt-1 text-sm text-white/65">
               Permanently remove your account and everything saved with it.
             </p>
             <Link
@@ -141,8 +135,8 @@ function SettingsPage() {
           </section>
         )}
 
-        <section className="mb-6 space-y-2 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-          <h2 className="text-lg font-extrabold text-slate-900">🎛️ Preferences</h2>
+        <section className="mb-6 space-y-2 glass rounded-3xl border border-white/10 p-5">
+          <h2 className="text-lg font-extrabold text-white">🎛️ Preferences</h2>
           <Toggle
             label="Sound effects"
             hint="Little chimes as you explore"
@@ -157,9 +151,9 @@ function SettingsPage() {
         {user && <ArenaPreferences />}
 
         {isBoss && (
-          <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-            <h2 className="text-lg font-extrabold text-slate-900">👑 Boss tools</h2>
-            <p className="mt-1 text-xs text-slate-600">
+          <section className="mb-6 glass rounded-3xl border border-white/10 p-5">
+            <h2 className="text-lg font-extrabold text-white">👑 Boss tools</h2>
+            <p className="mt-1 text-xs text-white/65">
               Google Drive backup, restores and every dev control live in the Boss Dashboard.
             </p>
             <Link
@@ -171,8 +165,8 @@ function SettingsPage() {
           </section>
         )}
 
-        <section className="rounded-3xl bg-white/90 p-5 text-sm leading-relaxed text-slate-700 shadow-md ring-1 ring-black/5">
-          <h2 className="text-lg font-extrabold text-slate-900">🔒 Privacy</h2>
+        <section className="glass rounded-3xl border border-white/10 p-5 text-sm leading-relaxed text-white/80">
+          <h2 className="text-lg font-extrabold text-white">🔒 Privacy</h2>
           <p className="mt-2">
             Guests don't share any personal information — their progress is saved on this device
             only. With an account, your profile and progress sync so you can pick up anywhere. No
@@ -180,12 +174,13 @@ function SettingsPage() {
             checks.
           </p>
           <p className="mt-2">
-            <Link to="/privacy" className="font-bold text-violet-700 underline">
+            <Link to="/privacy" className="font-bold text-violet-300 underline">
               Read the privacy policy
             </Link>
           </p>
         </section>
       </div>
+      <BottomNav />
     </main>
   );
 }
@@ -204,8 +199,8 @@ function Toggle({
   return (
     <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl px-2 py-2">
       <span>
-        <span className="block text-sm font-semibold text-slate-800">{label}</span>
-        {hint && <span className="block text-xs text-slate-500">{hint}</span>}
+        <span className="block text-sm font-semibold text-white/90">{label}</span>
+        {hint && <span className="block text-xs text-white/55">{hint}</span>}
       </span>
       <button
         type="button"
@@ -213,7 +208,7 @@ function Toggle({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative h-7 w-12 rounded-full transition ${
-          checked ? "bg-violet-600" : "bg-slate-300"
+          checked ? "bg-violet-500" : "bg-white/20"
         }`}
       >
         <span
@@ -273,12 +268,12 @@ function ArenaPreferences() {
     profile?.age_band === "under_10" || profile?.age_band === "10_12" ? "teen" : profile?.age_band;
 
   return (
-    <section className="mb-6 space-y-4 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-      <h2 className="text-lg font-extrabold text-slate-900">🏆 Curiosity Arena</h2>
+    <section className="mb-6 space-y-4 glass rounded-3xl border border-white/10 p-5">
+      <h2 className="text-lg font-extrabold text-white">🏆 Curiosity Arena</h2>
 
       <div>
-        <p className="text-sm font-semibold text-slate-800">Age group</p>
-        <p className="text-xs text-slate-500">Ranks you against explorers your age.</p>
+        <p className="text-sm font-semibold text-white/90">Age group</p>
+        <p className="text-xs text-white/55">Ranks you against explorers your age.</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {AGE_OPTIONS.map((a) => {
             const active = ageBand === a.key;
@@ -291,7 +286,7 @@ function ArenaPreferences() {
                 className={`rounded-full px-3 py-1.5 text-xs font-bold ${
                   active
                     ? "bg-violet-600 text-white"
-                    : "bg-white text-slate-700 ring-1 ring-slate-200"
+                    : "bg-white/10 text-white/85 ring-1 ring-white/15"
                 }`}
               >
                 {a.label}
@@ -302,8 +297,8 @@ function ArenaPreferences() {
       </div>
 
       <div>
-        <p className="text-sm font-semibold text-slate-800">Favourite topic</p>
-        <p className="text-xs text-slate-500">Shows on your profile and category board.</p>
+        <p className="text-sm font-semibold text-white/90">Favourite topic</p>
+        <p className="text-xs text-white/55">Shows on your profile and category board.</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {CATEGORIES.filter((c) => c.key !== "all").map((c) => {
             const active = profile?.favorite_category === c.key;
@@ -316,7 +311,7 @@ function ArenaPreferences() {
                 className={`rounded-full px-3 py-1.5 text-xs font-bold ${
                   active
                     ? "bg-violet-600 text-white"
-                    : "bg-white text-slate-700 ring-1 ring-slate-200"
+                    : "bg-white/10 text-white/85 ring-1 ring-white/15"
                 }`}
               >
                 {c.emoji} {c.label}
@@ -326,7 +321,7 @@ function ArenaPreferences() {
         </div>
       </div>
 
-      <div className="border-t border-slate-200 pt-3">
+      <div className="border-t border-white/10 pt-3">
         <Toggle
           label="Hide me from public leaderboards"
           hint="You still see your own rank, but others won't."
@@ -378,9 +373,9 @@ function BirthdayAndAdultSections({ userId }: { userId: string }) {
   return (
     <>
       {!status.birthdate_known && (
-        <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-          <h2 className="text-lg font-extrabold text-slate-900">🎂 Your birthday</h2>
-          <p className="mt-1 text-sm text-slate-600">
+        <section className="mb-6 glass rounded-3xl border border-white/10 p-5">
+          <h2 className="text-lg font-extrabold text-white">🎂 Your birthday</h2>
+          <p className="mt-1 text-sm text-white/65">
             We ask once so Why? fits your age. It can't be changed later.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
@@ -388,7 +383,7 @@ function BirthdayAndAdultSections({ userId }: { userId: string }) {
               aria-label="Birth month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              className="rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white [color-scheme:dark]"
             >
               <option value="">Month</option>
               {BIRTH_MONTHS.map((m, i) => (
@@ -401,7 +396,7 @@ function BirthdayAndAdultSections({ userId }: { userId: string }) {
               aria-label="Birth year"
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+              className="rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-sm text-white [color-scheme:dark]"
             >
               <option value="">Year</option>
               {Array.from({ length: 100 }, (_, i) => String(thisYear - i)).map((y) => (
@@ -431,12 +426,12 @@ function BirthdayAndAdultSections({ userId }: { userId: string }) {
           >
             {saving ? "Saving…" : "Save"}
           </button>
-          {message && <p className="mt-2 text-sm text-rose-600">{message}</p>}
+          {message && <p className="mt-2 text-sm text-rose-300">{message}</p>}
         </section>
       )}
 
       {show && (
-        <section className="mb-6 rounded-3xl bg-slate-950 p-5 text-white shadow-md ring-1 ring-red-500/40">
+        <section className="mb-6 rounded-3xl bg-black/60 p-5 text-white ring-1 ring-red-500/40">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-extrabold">🔞 Adults only</h2>

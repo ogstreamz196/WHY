@@ -53,6 +53,8 @@ export type PublicChain = {
   updated_at: string;
   steps: ChainStep[];
   owner: { display_name: string | null; avatar_id: string | null } | null;
+  /** Code of the fact the trail started from, so viewers can start their own. */
+  root_fact_code: string | null;
 };
 
 // ---------- Save / list / get / delete ----------
@@ -362,12 +364,12 @@ export const getPublicChain = createServerFn({ method: "GET" })
     );
     const { data: chain } = await sb
       .from("why_chains")
-      .select("id, user_id, title, share_slug, updated_at, is_public")
+      .select("id, user_id, title, share_slug, updated_at, is_public, root_fact_id")
       .eq("share_slug", data.slug)
       .eq("is_public", true)
       .maybeSingle();
     if (!chain) return null;
-    const [{ data: steps }, { data: owner }] = await Promise.all([
+    const [{ data: steps }, { data: owner }, { data: rootFact }] = await Promise.all([
       sb
         .from("why_chain_steps")
         .select("id, position, question, answer")
@@ -378,6 +380,9 @@ export const getPublicChain = createServerFn({ method: "GET" })
         .select("display_name, avatar_id")
         .eq("id", chain.user_id)
         .maybeSingle(),
+      chain.root_fact_id
+        ? sb.from("facts").select("code").eq("id", chain.root_fact_id).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
     return {
       id: chain.id,
@@ -386,6 +391,7 @@ export const getPublicChain = createServerFn({ method: "GET" })
       updated_at: chain.updated_at,
       steps: (steps ?? []) as ChainStep[],
       owner: owner ?? null,
+      root_fact_code: (rootFact as { code: string | null } | null)?.code ?? null,
     };
   });
 

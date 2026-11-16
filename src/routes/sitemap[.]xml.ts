@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CATEGORIES } from "@/lib/categories";
 import { SITE_URL, factPath } from "@/lib/site";
 
 // sitemap.xml, built from the fact library so every fact page can be found.
@@ -52,11 +53,15 @@ async function buildSitemap(): Promise<string> {
     (p) =>
       `<url><loc>${SITE_URL}${p.path}</loc><changefreq>${p.changefreq}</changefreq><priority>${p.priority}</priority></url>`,
   );
+  const topics = CATEGORIES.filter((c) => c.key !== "all").map(
+    (c) =>
+      `<url><loc>${SITE_URL}/topic/${c.key}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>`,
+  );
   const facts = await factEntries().catch((e) => {
     console.warn("[sitemap] facts unavailable", e);
     return [] as string[];
   });
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...pages, ...facts].join("\n")}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...pages, ...topics, ...facts].join("\n")}\n</urlset>\n`;
 }
 
 export const Route = createFileRoute("/sitemap.xml")({

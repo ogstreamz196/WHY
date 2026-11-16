@@ -10,7 +10,8 @@ export type CategoryKey =
   | "history"
   | "technology"
   | "ocean"
-  | "dinosaurs";
+  | "dinosaurs"
+  | "nature";
 
 export type Category = {
   key: CategoryKey;
@@ -105,6 +106,13 @@ export const CATEGORIES: Category[] = [
     label: "Dinos",
     emoji: "🦖",
     gradient: "linear-gradient(135deg, oklch(0.68 0.18 145), oklch(0.72 0.20 100))",
+    glow: "var(--leaf)",
+  },
+  {
+    key: "nature",
+    label: "Nature",
+    emoji: "🌿",
+    gradient: "linear-gradient(135deg, oklch(0.70 0.17 135), oklch(0.74 0.15 165))",
     glow: "var(--leaf)",
   },
 ];
