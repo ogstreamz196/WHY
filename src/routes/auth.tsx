@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useIsNativeApp } from "@/lib/platform";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight, Mail, Lock, Loader2, User } from "lucide-react";
+import { ArrowRight, Check, Eye, EyeOff, Mail, Lock, Loader2, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,8 @@ import { lovable } from "@/integrations/lovable";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { signInWithUsername, signUpWithUsername } from "@/lib/username-auth.functions";
 import { rememberPendingBirthDate } from "@/lib/pendingBirthDate";
-import { seo } from "@/lib/site";
+import { SITE_TAGLINE, seo } from "@/lib/site";
+import { WhyLogo } from "@/components/WhyLogo";
 import { safeRedirect } from "@/lib/safeRedirect";
 import { hasGuestFavorites } from "@/lib/guestImport";
 
@@ -56,6 +57,11 @@ function AuthPage() {
     setMessage(null);
     setModeRaw(next);
   }
+  // Follow ?mode= when a link changes it while this page is open.
+  useEffect(() => {
+    if (search.mode) setMode(search.mode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.mode]);
   const signupBlocked = mode === "signup" && !ageOk;
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
@@ -126,7 +132,7 @@ function AuthPage() {
           return;
         }
         const u = username.trim();
-        if (!/^[A-Za-z0-9_.-]{3,20}$/.test(u)) {
+        if (!USERNAME_RE.test(u)) {
           throw new Error("Username: 3–20 letters, numbers, dots, dashes or underscores.");
         }
         if (password.length < 8) throw new Error("Password needs at least 8 characters.");
@@ -175,28 +181,45 @@ function AuthPage() {
     <main className="relative flex min-h-[100dvh] w-full items-center justify-center px-4 py-10">
       <CosmicBackground />
       <div className="mx-auto w-full max-w-md">
-        <div className="mb-6 text-center">
-          <motion.div
-            initial={{ scale: 0.5, rotate: -20, opacity: 0 }}
-            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 14 }}
-            className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-3xl text-4xl shadow-[var(--shadow-glow)]"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <Sparkles className="h-9 w-9 text-white" />
-          </motion.div>
-          <h1 className="font-display text-3xl font-black text-white">
-            <span className="text-gradient">Why?</span>
-          </h1>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-white/50">
-            a pocket-sized universe
-          </p>
+        <div className="mb-6 flex flex-col items-center text-center">
+          <Link to="/" aria-label="Why? home">
+            <WhyLogo size={64} withWordmark />
+          </Link>
+          <p className="mt-2 text-xs font-semibold text-white/55">{SITE_TAGLINE}</p>
         </div>
 
         <motion.div
           layout
           className="glass-strong rounded-4xl border border-white/10 p-6 shadow-[var(--shadow-card)]"
         >
+          {mode !== "reset" && (
+            <div
+              role="tablist"
+              aria-label="Sign up or sign in"
+              className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-white/[0.06] p-1"
+            >
+              {(
+                [
+                  ["signup", "Sign up"],
+                  ["signin", "Sign in"],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === key}
+                  onClick={() => mode !== key && setMode(key)}
+                  className={`rounded-xl px-3 py-2 text-sm font-black transition ${
+                    mode === key ? "text-white shadow" : "text-white/60 hover:text-white"
+                  }`}
+                  style={mode === key ? { background: "var(--gradient-primary)" } : undefined}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <AnimatePresence mode="wait">
             <motion.div
               key={mode}
@@ -283,6 +306,11 @@ function AuthPage() {
                     placeholder="CuriousExplorer"
                     icon={<User className="h-4 w-4 text-white/40" />}
                     autoComplete="username"
+                    hint={
+                      <Rule ok={USERNAME_RE.test(username.trim())}>
+                        3–20 letters, numbers, dots, dashes or underscores
+                      </Rule>
+                    }
                   />
                 ) : (
                   <Field
@@ -297,6 +325,7 @@ function AuthPage() {
                 )}
                 {mode !== "reset" && (
                   <Field
+                    key={`password-${mode}`}
                     label="Password"
                     type="password"
                     value={password}
@@ -304,6 +333,11 @@ function AuthPage() {
                     placeholder="••••••••"
                     icon={<Lock className="h-4 w-4 text-white/40" />}
                     autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    hint={
+                      mode === "signup" ? (
+                        <Rule ok={password.length >= 8}>At least 8 characters</Rule>
+                      ) : undefined
+                    }
                   />
                 )}
 
@@ -348,20 +382,12 @@ function AuthPage() {
           )}
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-            {mode !== "signin" && (
+            {mode === "reset" && (
               <button
                 className="font-semibold text-white/70 hover:text-white"
                 onClick={() => setMode("signin")}
               >
-                Have an account? Sign in
-              </button>
-            )}
-            {mode !== "signup" && (
-              <button
-                className="font-semibold text-white/70 hover:text-white"
-                onClick={() => setMode("signup")}
-              >
-                New here? Create account
+                ← Back to sign in
               </button>
             )}
             {mode === "signin" && (
@@ -390,6 +416,7 @@ function Field({
   placeholder,
   icon,
   autoComplete,
+  hint,
 }: {
   label: string;
   value: string;
@@ -398,7 +425,11 @@ function Field({
   placeholder?: string;
   icon?: React.ReactNode;
   autoComplete?: string;
+  /** Shown under the field, e.g. the rules it must meet. */
+  hint?: React.ReactNode;
 }) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
   return (
     <label className="block">
       <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-white/50">
@@ -407,15 +438,41 @@ function Field({
       <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 focus-within:border-violet-400/50">
         {icon}
         <input
-          type={type}
+          type={isPassword && show ? "text" : type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
           className="w-full bg-transparent text-sm text-white placeholder-white/30 outline-none"
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            aria-label={show ? "Hide password" : "Show password"}
+            className="shrink-0 rounded-lg p-1 text-white/55 hover:text-white"
+          >
+            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
       </div>
+      {hint && <span className="mt-1 block">{hint}</span>}
     </label>
+  );
+}
+
+const USERNAME_RE = /^[A-Za-z0-9_.-]{3,20}$/;
+
+/** One rule under a field, ticked once it's met. */
+function Rule({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-semibold ${ok ? "text-emerald-300" : "text-white/50"}`}
+    >
+      {ok ? <Check aria-hidden className="h-3 w-3" /> : <span aria-hidden>•</span>}
+      {children}
+      <span className="sr-only">{ok ? " (done)" : ""}</span>
+    </span>
   );
 }
 
@@ -488,6 +545,7 @@ function BirthDateQuestion({
       <legend className="px-1 text-[10px] font-black uppercase tracking-widest text-white/50">
         When were you born?
       </legend>
+      <p className="mb-2 px-1 text-xs text-white/55">We ask everyone this.</p>
       <div className="grid grid-cols-2 gap-2">
         <select
           aria-label="Birth month"
