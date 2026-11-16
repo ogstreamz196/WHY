@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { LogOut, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,6 +34,8 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const qc = useQueryClient();
+  const router = useRouter();
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   const [settings, setLocal] = useState<Settings>(defaultSettings);
   const { user } = useCurrentUser();
   const isNative = useIsNativeApp();
@@ -64,9 +66,16 @@ function SettingsPage() {
           <Link to="/" aria-label="Why? home">
             <WhyLogo size={40} />
           </Link>
-          <Link to="/" className="glass rounded-full px-3 py-1 text-sm font-semibold text-white/85">
+          {/* Back to wherever you came from (Profile, Store…), else Home. */}
+          <button
+            type="button"
+            onClick={() =>
+              router.history.canGoBack() ? router.history.back() : navigate({ to: "/" })
+            }
+            className="glass rounded-full px-3 py-1 text-sm font-semibold text-white/85"
+          >
             ← Back
-          </Link>
+          </button>
         </header>
 
         <h1 className="mb-4 text-2xl font-black font-display text-white">⚙️ Settings</h1>
@@ -84,18 +93,42 @@ function SettingsPage() {
                   View profile
                 </Link>
               </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  // Drop the signed-out account's cached profile, stats and boards.
-                  qc.clear();
-                  navigate({ to: "/" });
-                }}
-                className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-3 py-1.5 text-xs font-bold text-rose-200"
-              >
-                <LogOut className="h-3.5 w-3.5" /> Sign out
-              </button>
+              {confirmSignOut ? (
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <p className="text-xs font-bold text-white/80">
+                    Sign out of {accountLabel(user)}?
+                  </p>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        // Drop the signed-out account's cached profile, stats and boards.
+                        qc.clear();
+                        navigate({ to: "/" });
+                      }}
+                      className="rounded-full bg-rose-500 px-3 py-1.5 text-xs font-black text-white"
+                    >
+                      Sign out
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmSignOut(false)}
+                      className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-black text-white/85"
+                    >
+                      Stay
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmSignOut(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-3 py-1.5 text-xs font-bold text-rose-200"
+                >
+                  <LogOut className="h-3.5 w-3.5" /> Sign out
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
@@ -146,6 +179,45 @@ function SettingsPage() {
               setSoundEnabled(v);
             }}
           />
+          <Toggle
+            label="Reduce motion"
+            hint="Stops bouncing, wiggling and sliding"
+            checked={settings.reduceMotion}
+            onChange={(v) => update({ reduceMotion: v })}
+          />
+          <div className="rounded-2xl px-2 py-2">
+            <p className="text-sm font-semibold text-white/90" id="text-size-label">
+              Text size
+            </p>
+            <div
+              role="radiogroup"
+              aria-labelledby="text-size-label"
+              className="mt-2 grid grid-cols-3 gap-1.5"
+            >
+              {(
+                [
+                  ["normal", "Normal", "text-sm"],
+                  ["large", "Large", "text-base"],
+                  ["larger", "Larger", "text-lg"],
+                ] as const
+              ).map(([key, label, size]) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={settings.textSize === key}
+                  onClick={() => update({ textSize: key })}
+                  className={`rounded-xl px-2 py-2 font-bold ${size} ${
+                    settings.textSize === key
+                      ? "bg-violet-500 text-white"
+                      : "bg-white/10 text-white/80"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </section>
 
         {user && <ArenaPreferences />}
