@@ -6,6 +6,7 @@ import { getPublicChain, type PublicChain } from "@/lib/chains.functions";
 import { STORE_CATALOG } from "@/lib/store";
 import { seo } from "@/lib/site";
 import { chainStepQuestion, chainTitle } from "@/lib/whyQuestion";
+import { NotFoundCard } from "@/components/NotFoundCard";
 
 export const Route = createFileRoute("/c/$slug")({
   loader: async ({ params }): Promise<PublicChain> => {
@@ -45,32 +46,13 @@ export const Route = createFileRoute("/c/$slug")({
     };
   },
   errorComponent: () => (
-    <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
-      <div>
-        <p className="font-display text-2xl font-black">Something went wrong loading this trail.</p>
-        <Link
-          to="/"
-          className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold"
-        >
-          Open Why?
-        </Link>
-      </div>
-    </main>
+    <NotFoundCard title="This trail didn't load" message="Please try again in a moment." />
   ),
   notFoundComponent: () => (
-    <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
-      <div>
-        <p className="font-display text-2xl font-black">
-          This trail isn't shared (or was removed).
-        </p>
-        <Link
-          to="/"
-          className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold"
-        >
-          Explore Why?
-        </Link>
-      </div>
-    </main>
+    <NotFoundCard
+      title="This trail isn't shared"
+      message="Its owner made it private, or removed it."
+    />
   ),
   component: PublicChainPage,
 });
@@ -150,15 +132,20 @@ function PublicChainPage() {
             ))}
           </ol>
 
+          {/* Start from the same first question, then dig your own way. */}
           <Link
             to="/"
+            search={chain.root_fact_code ? { fact: chain.root_fact_code } : {}}
             className="mt-6 flex items-center justify-center gap-2 rounded-full px-5 py-4 text-base font-black text-white"
             style={{ background: "var(--gradient-primary)" }}
           >
             <Sparkles className="h-5 w-5" />
-            Start your own curiosity journey
+            Start your own trail
             <ArrowRight className="h-5 w-5" />
           </Link>
+          <p className="mt-2 text-center text-xs text-white/55">
+            Begin at the same question, then ask “But… Why?” your own way.
+          </p>
         </motion.article>
       </div>
     </main>

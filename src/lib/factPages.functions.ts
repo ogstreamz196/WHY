@@ -71,3 +71,23 @@ export const searchFacts = createServerFn({ method: "GET" })
     }
     return rankFacts((rows ?? []) as PublicFact[], data.query, 8);
   });
+
+/** Every fact in one topic, newest first, for the /topic pages. */
+export const listTopicFacts = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) =>
+    z.object({ key: z.string().regex(/^[a-z]{2,20}$/) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<PublicFact[]> => {
+    const { data: rows, error } = await publicDb()
+      .from("facts")
+      .select(COLS)
+      .eq("category", data.key)
+      .not("code", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) {
+      console.warn("[topic]", error.message);
+      return [];
+    }
+    return (rows ?? []) as PublicFact[];
+  });

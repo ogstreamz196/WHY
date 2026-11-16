@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Share2, Sparkles } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
 import { WhyLogo } from "@/components/WhyLogo";
+import { NotFoundCard } from "@/components/NotFoundCard";
 import { getFactPage, type FactPage } from "@/lib/factPages.functions";
 import { CATEGORIES, emojiFor, gradientFor } from "@/lib/categories";
 import { asWhyQuestion } from "@/lib/whyQuestion";
@@ -76,19 +77,10 @@ export const Route = createFileRoute("/fact/$slug")({
     };
   },
   notFoundComponent: () => (
-    <main className="relative flex min-h-[100dvh] items-center justify-center px-6 text-center text-white">
-      <CosmicBackground />
-      <div className="glass-strong max-w-md rounded-4xl p-8">
-        <p className="font-display text-2xl font-black">We couldn't find that fact.</p>
-        <Link
-          to="/"
-          className="mt-5 inline-block rounded-full px-5 py-2.5 text-sm font-bold text-white"
-          style={{ background: "var(--gradient-primary)" }}
-        >
-          Explore more facts
-        </Link>
-      </div>
-    </main>
+    <NotFoundCard
+      title="We couldn't find that fact"
+      message="It may have moved. There are plenty more questions waiting."
+    />
   ),
   component: FactPageView,
 });
@@ -132,7 +124,18 @@ function FactPageView() {
           <Link to="/" className="hover:text-white">
             {SITE_NAME}
           </Link>{" "}
-          / <span>{categoryLabel(fact.category)}</span>
+          /{" "}
+          {CATEGORIES.some((c) => c.key === fact.category && c.key !== "all") ? (
+            <Link
+              to="/topic/$key"
+              params={{ key: fact.category! }}
+              className="underline-offset-2 hover:text-white hover:underline"
+            >
+              {categoryLabel(fact.category)}
+            </Link>
+          ) : (
+            <span>{categoryLabel(fact.category)}</span>
+          )}
         </nav>
 
         <motion.article
@@ -163,7 +166,7 @@ function FactPageView() {
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               to="/"
-              search={{ q: fact.question }}
+              search={{ fact: fact.code }}
               className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-black text-white"
               style={{ background: "var(--gradient-primary)" }}
             >
@@ -195,12 +198,25 @@ function FactPageView() {
                     params={{ slug: factSlug(r.question, r.code) }}
                     className="glass flex items-center justify-between gap-3 rounded-2xl p-4 text-sm font-bold text-white hover:bg-white/10"
                   >
-                    <span>{asWhyQuestion(r.question)}</span>
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden>{emojiFor(r.category)}</span>
+                      {asWhyQuestion(r.question)}
+                    </span>
                     <ArrowRight className="h-4 w-4 shrink-0 text-white/60" />
                   </Link>
                 </li>
               ))}
             </ul>
+            {CATEGORIES.some((c) => c.key === fact.category && c.key !== "all") && (
+              <Link
+                to="/topic/$key"
+                params={{ key: fact.category! }}
+                className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-white/80 hover:text-white"
+              >
+                See every {categoryLabel(fact.category).toLowerCase()} fact{" "}
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+            )}
           </section>
         )}
 

@@ -41,29 +41,10 @@ import {
 } from "../lib/site";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CosmicBackground } from "../components/CosmicBackground";
+import { NotFoundCard } from "../components/NotFoundCard";
 
 function NotFoundComponent() {
-  return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center px-4">
-      <CosmicBackground />
-      <div className="glass-strong max-w-md rounded-4xl p-8 text-center">
-        <h1 className="text-7xl font-black text-gradient font-display">404</h1>
-        <h2 className="mt-4 text-xl font-bold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This corner of the universe doesn't exist yet.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-bold text-white shadow-[var(--shadow-glow)]"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            Back to WHY?
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+  return <NotFoundCard />;
 }
 
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {

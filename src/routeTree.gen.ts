@@ -33,6 +33,7 @@ import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as ChainIdRouteImport } from './routes/chain.$id'
 import { Route as FactSlugRouteImport } from './routes/fact.$slug'
+import { Route as TopicKeyRouteImport } from './routes/topic.$key'
 import { Route as AuthenticatedQuizIndexRouteImport } from './routes/_authenticated/quiz.index'
 import { Route as AuthenticatedQuizSessionIdRouteImport } from './routes/_authenticated/quiz.$sessionId'
 import { Route as ApiPublicHooksSyncSheetRouteImport } from './routes/api/public/hooks/sync-sheet'
@@ -159,6 +160,11 @@ const FactSlugRoute = FactSlugRouteImport.update({
   path: '/fact/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TopicKeyRoute = TopicKeyRouteImport.update({
+  id: '/topic/$key',
+  path: '/topic/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedQuizIndexRoute = AuthenticatedQuizIndexRouteImport.update({
   id: '/quiz/',
   path: '/quiz/',
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/fact/$slug': typeof FactSlugRoute
+  '/topic/$key': typeof TopicKeyRoute
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/quiz/': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/fact/$slug': typeof FactSlugRoute
+  '/topic/$key': typeof TopicKeyRoute
   '/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/quiz': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/c/$slug': typeof CSlugRoute
   '/chain/$id': typeof ChainIdRoute
   '/fact/$slug': typeof FactSlugRoute
+  '/topic/$key': typeof TopicKeyRoute
   '/_authenticated/quiz/$sessionId': typeof AuthenticatedQuizSessionIdRoute
   '/_authenticated/quiz/': typeof AuthenticatedQuizIndexRoute
   '/api/public/hooks/sync-sheet': typeof ApiPublicHooksSyncSheetRoute
@@ -306,6 +315,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/chain/$id'
     | '/fact/$slug'
+    | '/topic/$key'
     | '/quiz/$sessionId'
     | '/quiz/'
     | '/api/public/hooks/sync-sheet'
@@ -336,6 +346,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/chain/$id'
     | '/fact/$slug'
+    | '/topic/$key'
     | '/quiz/$sessionId'
     | '/quiz'
     | '/api/public/hooks/sync-sheet'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/chain/$id'
     | '/fact/$slug'
+    | '/topic/$key'
     | '/_authenticated/quiz/$sessionId'
     | '/_authenticated/quiz/'
     | '/api/public/hooks/sync-sheet'
@@ -394,6 +406,7 @@ export interface RootRouteChildren {
   CSlugRoute: typeof CSlugRoute
   ChainIdRoute: typeof ChainIdRoute
   FactSlugRoute: typeof FactSlugRoute
+  TopicKeyRoute: typeof TopicKeyRoute
   ApiPublicHooksSyncSheetRoute: typeof ApiPublicHooksSyncSheetRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicRevenuecatWebhookRoute: typeof ApiPublicRevenuecatWebhookRoute
@@ -569,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FactSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/topic/$key': {
+      id: '/topic/$key'
+      path: '/topic/$key'
+      fullPath: '/topic/$key'
+      preLoaderRoute: typeof TopicKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/quiz/': {
       id: '/_authenticated/quiz/'
       path: '/quiz'
@@ -658,6 +678,7 @@ const rootRouteChildren: RootRouteChildren = {
   CSlugRoute: CSlugRoute,
   ChainIdRoute: ChainIdRoute,
   FactSlugRoute: FactSlugRoute,
+  TopicKeyRoute: TopicKeyRoute,
   ApiPublicHooksSyncSheetRoute: ApiPublicHooksSyncSheetRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicRevenuecatWebhookRoute: ApiPublicRevenuecatWebhookRoute,

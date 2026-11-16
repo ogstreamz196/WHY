@@ -58,7 +58,7 @@ import { useMyAvatar } from "@/hooks/useMyAvatar";
 import { AdultModeSwitch } from "@/components/AdultModeSwitch";
 import { useAdultStatus } from "@/hooks/useAdultStatus";
 import { WhyLogo } from "@/components/WhyLogo";
-import { searchFacts, type PublicFact } from "@/lib/factPages.functions";
+import { getFactPage, searchFacts, type PublicFact } from "@/lib/factPages.functions";
 import { SITE_URL, factPath } from "@/lib/site";
 import { CATEGORIES, emojiFor, gradientFor, type CategoryKey } from "@/lib/categories";
 import { CosmicBackground } from "@/components/CosmicBackground";
@@ -108,7 +108,7 @@ import mascotImg from "@/assets/mascot.png";
 import { DEFAULT_TITLE, seo } from "@/lib/site";
 import { confirmNickname, needsNickname } from "@/lib/nickname";
 
-export type HomeSearch = { welcome?: true; q?: string };
+export type HomeSearch = { welcome?: true; q?: string; fact?: string };
 
 type Reaction = "like" | "love" | null;
 
@@ -716,6 +716,25 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
       window.clearTimeout(t);
     };
   }, [search, searchOpen, findFacts]);
+
+  // Arriving with ?fact=CODE (from a fact or trail page): open that answer.
+  const getFact = useServerFn(getFactPage);
+  useEffect(() => {
+    const code = routeSearch.fact;
+    if (!code) return;
+    let cancelled = false;
+    getFact({ data: { code } })
+      .then((page) => {
+        if (cancelled || !page) return;
+        openFact(page.fact);
+        void navigate({ to: "/", search: {}, replace: true });
+      })
+      .catch((e) => console.warn(e));
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeSearch.fact]);
 
   // Arriving with ?q= (e.g. from Google): open search with that question.
   useEffect(() => {
