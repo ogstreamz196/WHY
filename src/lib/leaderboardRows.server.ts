@@ -5,7 +5,14 @@ import type { Outfit } from "./avatarItems";
 import type { LeaderboardEntry } from "./leaderboard.functions";
 
 export type BoardKind =
-  "global" | "age" | "category" | "window" | "rising" | "streaks" | "weekend" | "new";
+  | "global"
+  | "age"
+  | "category"
+  | "window"
+  | "rising"
+  | "streaks"
+  | "weekend"
+  | "new";
 
 export type LbRow = {
   user_id: string;
@@ -153,4 +160,10 @@ export function rankRows(rows: LbRow[], me: string | null, limit: number): Ranke
     nearby,
     points_to_next: pointsToNext,
   };
+}
+
+/** Where a guest with `score` on-device coins would rank on a board (1 = top). */
+export function guestRank(rows: Pick<LbRow, "score">[], score: number): number | null {
+  if (!(score > 0)) return null;
+  return rows.filter((r) => r.score > score).length + 1;
 }
