@@ -51,7 +51,8 @@ function PrivacyPage() {
             They stay there until you clear the browser's or app's data (or uninstall the app), and
             we can't see them. We don't ask for your name or email. If you type a question into
             search or tap "But… Why?", the text of that question is sent to our AI provider to write
-            an answer (see "Who we share data with").
+            an answer (see "Who we share data with"). On the Ranks page, your coin number (and
+            nothing else) is sent so we can show where you'd rank; it isn't saved.
           </p>
         </Section>
 
