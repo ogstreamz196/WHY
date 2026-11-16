@@ -603,7 +603,14 @@ export const decodeFactCode = createServerFn({ method: "POST" })
 // -------------------- "But… Why?" endless chain --------------------
 
 export type WhyLayerResult =
-  | { ok: true; question: string; answer: string; reward_id: string | null }
+  | {
+      ok: true;
+      question: string;
+      answer: string;
+      reward_id: string | null;
+      /** Up to 3 short follow-up questions that fit this answer. */
+      follow_ups: string[];
+    }
   | { ok: false; reason: "rate_limited" | "unavailable" };
 
 // Open to guests too: the home page shows "But… Why?" before anyone signs in.
@@ -643,11 +650,14 @@ Use THEIR question as the next layer's question (lightly reworded to be a clear,
 }
 
 Return STRICT JSON only, no prose, no markdown:
-{"question":"<a short 'but why…' style follow-up question, ending with ?>","answer":"<2-3 short sentences an 8-12 year old can understand>"}`;
+{"question":"<a short 'but why…' style follow-up question, ending with ?>","answer":"<2-3 short sentences an 8-12 year old can understand>","follow_ups":["<3 different short questions (max 8 words each, ending with ?) a curious kid might ask next about THIS answer>"]}`;
 
-    let res: { question: string; answer: string } | null = null;
+    let res: { question: string; answer: string; follow_ups?: unknown } | null = null;
     try {
-      res = await callJson<{ question: string; answer: string }>(apiKey, prompt);
+      res = await callJson<{ question: string; answer: string; follow_ups?: unknown }>(
+        apiKey,
+        prompt,
+      );
     } catch (e) {
       console.warn("[why?] but-why generation failed:", e);
       return { ok: false, reason: "unavailable" };
@@ -667,7 +677,18 @@ Return STRICT JSON only, no prose, no markdown:
       if (error) console.warn("[why?] couldn't issue chain reward:", error.message);
       else reward_id = row.id;
     }
-    return { ok: true, question: res.question.trim(), answer: res.answer.trim(), reward_id };
+    const follow_ups = (Array.isArray(res.follow_ups) ? res.follow_ups : [])
+      .filter((q): q is string => typeof q === "string")
+      .map((q) => q.trim())
+      .filter((q) => q.length >= 6 && q.length <= 80)
+      .slice(0, 3);
+    return {
+      ok: true,
+      question: res.question.trim(),
+      answer: res.answer.trim(),
+      reward_id,
+      follow_ups,
+    };
   });
 
 // -------------------- Daily featured fact --------------------
