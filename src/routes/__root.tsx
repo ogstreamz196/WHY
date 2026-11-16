@@ -42,6 +42,8 @@ import {
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CosmicBackground } from "../components/CosmicBackground";
 import { NotFoundCard } from "../components/NotFoundCard";
+import { MotionConfig } from "framer-motion";
+import { useDisplayPrefs } from "../lib/displayPrefs";
 
 function NotFoundComponent() {
   return <NotFoundCard />;
@@ -198,6 +200,7 @@ function RootComponent() {
   const router = useRouter();
   useBossTheme();
   useEquippedTheme();
+  const reduceMotion = useDisplayPrefs();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -231,7 +234,10 @@ function RootComponent() {
         <RecoveryEmailPrompt />
         <UnderAgeNotice />
         <div id="main" tabIndex={-1}>
-          <Outlet />
+          {/* "always" when the reader switched Reduce motion on; else follow the device. */}
+          <MotionConfig reducedMotion={reduceMotion ? "always" : "user"}>
+            <Outlet />
+          </MotionConfig>
         </div>
         <GlobalStreakMilestoneWatcher />
         <GoogleIdentitySync />

@@ -70,18 +70,29 @@ function migrateSessionToLocal() {
 migrateSessionToLocal();
 
 // ------- Settings -------
+export type TextSize = "normal" | "large" | "larger";
 export type Settings = {
   childMode: boolean;
   darkMode: boolean;
   sound: boolean;
+  /** Calm the page: no bouncing, wiggling or sliding. */
+  reduceMotion: boolean;
+  /** Bigger text for younger readers. */
+  textSize: TextSize;
 };
 export const defaultSettings: Settings = {
   childMode: true,
   darkMode: false,
   sound: true,
+  reduceMotion: false,
+  textSize: "normal",
 };
 export const getSettings = (): Settings => ({ ...defaultSettings, ...read(KEY_SETTINGS, {}) });
-export const setSettings = (s: Settings) => write(KEY_SETTINGS, s);
+export const setSettings = (s: Settings) => {
+  write(KEY_SETTINGS, s);
+  // Lets the page apply text size and motion straight away.
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("why:settings"));
+};
 
 // ------- Favorites -------
 export const getFavorites = (): Fact[] => read<Fact[]>(KEY_FAV, []);
