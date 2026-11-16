@@ -16,11 +16,13 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
         limit: z.number().int().min(1).max(200).default(50),
         // Only used to highlight the viewer's own row and position.
         userId: z.string().uuid().optional(),
+        // Guests: their on-device coins, to show where they'd rank if they joined.
+        guestScore: z.number().int().min(0).max(10_000_000).optional(),
       })
       .parse(input),
   )
   .handler(async ({ data }): Promise<LeaderboardResult> => {
-    const { getBoardRows, rankRows } = await import("./leaderboardRows.server");
+    const { getBoardRows, guestRank, rankRows } = await import("./leaderboardRows.server");
     const { rows, windowLabel } = await getBoardRows(data.kind, data.filter);
     const board = rankRows(rows, data.userId ?? null, data.limit);
 
@@ -41,6 +43,8 @@ export const getLeaderboardPublic = createServerFn({ method: "GET" })
       nearby: board.nearby,
       points_to_next: board.points_to_next,
       window_label: windowLabel,
+      guest_rank:
+        !data.userId && data.guestScore !== undefined ? guestRank(rows, data.guestScore) : null,
     };
   });
 

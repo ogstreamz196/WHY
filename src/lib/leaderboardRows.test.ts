@@ -52,3 +52,15 @@ describe("rankRows", () => {
     expect(rankRows(board(3), null, 50).my_rank).toBeNull();
   });
 });
+
+describe("guestRank", () => {
+  it("places a guest below everyone with more coins", async () => {
+    const { guestRank } = await import("./leaderboardRows.server");
+    const rows = [{ score: 90 }, { score: 50 }, { score: 50 }, { score: 10 }];
+    expect(guestRank(rows, 60)).toBe(2);
+    expect(guestRank(rows, 50)).toBe(2); // ties go after nobody: same coins, same place
+    expect(guestRank(rows, 100)).toBe(1);
+    expect(guestRank(rows, 5)).toBe(5);
+    expect(guestRank(rows, 0)).toBeNull();
+  });
+});

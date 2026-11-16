@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, Crown, Flame, Rocket, Sparkles, Star, Sun, Trophy, Users } from "lucide-react";
 import { CosmicBackground } from "@/components/CosmicBackground";
@@ -17,6 +17,7 @@ import { VipBadge } from "@/components/VipBadge";
 import { PlayerProfileModal } from "@/components/PlayerProfileModal";
 import { ChampionCrown } from "@/components/ChampionCrown";
 import { seo } from "@/lib/site";
+import { getPoints } from "@/lib/store";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () =>
@@ -41,7 +42,7 @@ const TABS: Tab[] = [
   { key: "alltime", label: "All Time", icon: Trophy },
   { key: "rising", label: "Rising", icon: Rocket },
   { key: "category", label: "Category", icon: Sparkles },
-  { key: "age", label: "Age", icon: Users },
+  { key: "age", label: "My age", icon: Users },
   { key: "streaks", label: "Streaks", icon: Flame },
   { key: "weekend", label: "Weekend", icon: Sun },
   { key: "new", label: "New", icon: Star },
@@ -131,6 +132,14 @@ function ArenaPage() {
   } | null>(null);
   const [confettiTick, setConfettiTick] = useState(0);
 
+  // Keep the chosen tab in view in the sideways-scrolling strip.
+  const activeTabRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [tab]);
+  const jumpToMe = () =>
+    document.getElementById("me-row")?.scrollIntoView({ behavior: "smooth", block: "center" });
+
   useEffect(() => {
     let alive = true;
     setLoading(true);
@@ -138,7 +147,14 @@ function ArenaPage() {
     setRankDelta(null);
     const q = resolveQuery(tab, filter);
     fetchBoard({
-      data: { kind: q.kind, filter: q.filter ?? undefined, limit: 50, userId: user?.id },
+      data: {
+        kind: q.kind,
+        filter: q.filter ?? undefined,
+        limit: 50,
+        userId: user?.id,
+        // Guests: where their device coins would put them on the all-time board.
+        ...(!user && q.kind === "global" ? { guestScore: getPoints() } : {}),
+      },
     })
       .then((r) => {
         if (!alive) return;
@@ -283,6 +299,7 @@ function ArenaPage() {
             return (
               <button
                 key={t.key}
+                ref={active ? activeTabRef : undefined}
                 type="button"
                 onClick={() => selectTab(t.key)}
                 className={`flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-[11px] font-black uppercase tracking-wider transition ${
@@ -392,7 +409,9 @@ function ArenaPage() {
             className="glass-strong mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 p-3"
           >
             <span className="text-sm font-bold text-white/85">
-              Create a free account to get your name on the board.
+              {result?.guest_rank
+                ? `With your ${getPoints().toLocaleString()} coins you'd be #${result.guest_rank.toLocaleString()}! Create a free account to get your name on the board.`
+                : "Create a free account to get your name on the board."}
             </span>
             <span
               className="shrink-0 rounded-full px-3 py-1.5 text-xs font-black text-white"
@@ -412,9 +431,7 @@ function ArenaPage() {
           </div>
         ) : loadFailed ? (
           <div className="glass-strong rounded-3xl p-8 text-center">
-            <p className="text-sm text-white/70">
-              Couldn't load this board. Check your connection.
-            </p>
+            <p className="text-sm text-white/70">The board didn't load. Try again in a moment.</p>
             <button
               type="button"
               onClick={() => setReloadTick((n) => n + 1)}
@@ -473,6 +490,7 @@ function ArenaPage() {
                     return (
                       <motion.li
                         key={r.user_id}
+                        id={me ? "me-row" : undefined}
                         layout
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -565,7 +583,7 @@ function ArenaPage() {
                   </p>
                   <ol className="space-y-1.5">
                     {result.nearby.map((r) => (
-                      <li key={r.user_id}>
+                      <li key={r.user_id} id={r.is_me ? "me-row" : undefined}>
                         <button
                           type="button"
                           onClick={() => setSelected({ userId: r.user_id, rank: r.rank })}
@@ -610,6 +628,17 @@ function ArenaPage() {
           </motion.div>
         )}
       </div>
+      {/* Down the list (or below it): a pill that scrolls to your row. */}
+      {result?.my_rank && result.my_rank > 3 && !loading && (
+        <button
+          type="button"
+          onClick={jumpToMe}
+          className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 rounded-full px-4 py-2 text-sm font-black text-white shadow-[var(--shadow-glow)] wide:bottom-6"
+          style={{ background: "var(--gradient-primary)" }}
+        >
+          You: #{result.my_rank.toLocaleString()} · Jump to me ↓
+        </button>
+      )}
       <BottomNav />
       <ConfettiBurst trigger={confettiTick} duration={2200} />
       <PlayerProfileModal

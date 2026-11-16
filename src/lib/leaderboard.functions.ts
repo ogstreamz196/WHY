@@ -6,7 +6,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Outfit } from "./avatarItems";
 
 export type LeaderboardKind =
-  "global" | "age" | "category" | "window" | "rising" | "streaks" | "weekend" | "new" | "quiz";
+  | "global"
+  | "age"
+  | "category"
+  | "window"
+  | "rising"
+  | "streaks"
+  | "weekend"
+  | "new"
+  | "quiz";
 
 export type LeaderboardEntry = {
   user_id: string;
@@ -34,6 +42,8 @@ export type LeaderboardResult = {
   /** Points the viewer needs to pass the player ranked just above them. */
   points_to_next?: number | null;
   window_label: string | null;
+  /** For guests: where their on-device coins would place them (all-time board). */
+  guest_rank?: number | null;
 };
 
 // -------------------- Personalised rankings for profile --------------------
