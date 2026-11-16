@@ -80,11 +80,11 @@ const BADGE_META: Record<string, { requirement: string; examples: string[] }> = 
   },
   explorer: {
     requirement: "Discover 25 facts.",
-    examples: ["Explore a new category", "Chain 3 whys in a row"],
+    examples: ["Explore a new category", "Go 3 whys deep in a row"],
   },
   scientist: {
     requirement: "Discover 100 facts.",
-    examples: ["Read facts across every category", "Build a chain of 5"],
+    examples: ["Read facts across every category", "Build a trail of 5"],
   },
   sage: {
     requirement: "Discover 250 facts.",
@@ -118,7 +118,7 @@ const BADGE_META: Record<string, { requirement: string; examples: string[] }> = 
   },
   points500: {
     requirement: "Earn 500 Y-Coins.",
-    examples: ["Play the Curiosity Arena", "Chain whys and win streaks"],
+    examples: ["Play the Curiosity Arena", "Dig deep trails and win streaks"],
   },
   points1k: {
     requirement: "Earn 1,000 Y-Coins.",

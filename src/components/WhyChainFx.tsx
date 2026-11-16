@@ -12,7 +12,7 @@ const DEPTH_TITLES = [
   "Deep thinker",
   "Brain on fire",
   "Almost at the core",
-  "Rabbit hole master",
+  "Trail master",
 ];
 
 /** Six dots that fill as the chain gets deeper, with a title for each level. */
@@ -23,7 +23,7 @@ export function DepthMeter({ depth }: { depth: number }) {
     <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2">
       <div className="min-w-0">
         <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
-          Rabbit hole depth
+          Trail depth
         </p>
         <AnimatePresence mode="wait" initial={false}>
           <motion.p
@@ -73,7 +73,7 @@ export function DepthMeter({ depth }: { depth: number }) {
 const THINKING_LINES = [
   "Asking the universe…",
   "Consulting the wise owls…",
-  "Following the rabbit…",
+  "Following the trail…",
   "Peeking under the surface…",
   "Connecting the dots…",
 ];

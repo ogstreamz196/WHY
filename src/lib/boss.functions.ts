@@ -387,6 +387,7 @@ const CATS = new Set([
   "technology",
   "ocean",
   "dinosaurs",
+  "nature",
 ]);
 
 async function fetchSheetRows(spreadsheetId: string, range: string): Promise<string[][]> {
@@ -629,7 +630,12 @@ export const bossRestoreBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { sheetId?: string }) =>
     z
-      .object({ sheetId: z.string().regex(/^[A-Za-z0-9_-]{10,100}$/).optional() })
+      .object({
+        sheetId: z
+          .string()
+          .regex(/^[A-Za-z0-9_-]{10,100}$/)
+          .optional(),
+      })
       .parse(d),
   )
   .handler(async ({ data, context }) => {

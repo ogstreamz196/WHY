@@ -36,7 +36,7 @@ import { seo } from "@/lib/site";
 import { chainTitle } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/chains")({
-  head: () => seo({ title: "Your “But why?” chains | Why?", noindex: true }),
+  head: () => seo({ title: "Favourites | Why?", noindex: true }),
   component: ChainsPage,
 });
 
@@ -292,7 +292,7 @@ function ChainRow({
                 if (navigator.share)
                   await navigator.share({
                     url: shareUrl,
-                    title: chainTitle(chain.title, "Why chain"),
+                    title: chainTitle(chain.title, "Why? trail"),
                   });
                 else {
                   await navigator.clipboard.writeText(shareUrl);

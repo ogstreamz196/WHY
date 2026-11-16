@@ -9,7 +9,7 @@ type Champion = Awaited<ReturnType<typeof getChampionTitle>>;
 
 export function ChampionCrown({
   titleKey = "longest_chain",
-  label = "Longest Chain Champion",
+  label = "Longest Trail Champion",
 }: {
   titleKey?: string;
   label?: string;

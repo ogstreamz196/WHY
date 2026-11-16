@@ -43,21 +43,21 @@ export function LinkedAccounts() {
   }
 
   return (
-    <section className="mb-6 rounded-3xl bg-white/90 p-5 shadow-md ring-1 ring-black/5">
-      <h2 className="mb-3 text-lg font-extrabold text-slate-900">🔗 Linked accounts</h2>
-      <p className="mb-4 text-xs text-slate-600">
+    <section className="mb-6 glass rounded-3xl border border-white/10 p-5">
+      <h2 className="mb-3 text-lg font-extrabold text-white">🔗 Linked accounts</h2>
+      <p className="mb-4 text-xs text-white/65">
         Link a sign-in method to your account. Your progress, coins, and favourites stay on the same
         profile.
       </p>
 
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-3">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-pink-500 text-white">
             <Link2 className="h-4 w-4" aria-hidden />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-900">Google</p>
-            <p className="text-xs text-slate-600">
+            <p className="text-sm font-bold text-white">Google</p>
+            <p className="text-xs text-white/65">
               {isLoading
                 ? "Checking…"
                 : hasGoogle
@@ -70,7 +70,7 @@ export function LinkedAccounts() {
         </div>
         {hasGoogle ? (
           <span
-            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-200"
             aria-label="Google is linked"
           >
             <CheckCircle2 className="h-3.5 w-3.5" /> Linked
@@ -80,14 +80,14 @@ export function LinkedAccounts() {
             type="button"
             onClick={linkGoogle}
             disabled={loading || isLoading}
-            className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-60"
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-black hover:opacity-90 disabled:opacity-60"
           >
             {loading ? "Linking…" : "Link Google"}
           </button>
         )}
       </div>
 
-      {error && <p className="mt-2 text-xs font-semibold text-rose-600">{error}</p>}
+      {error && <p className="mt-2 text-xs font-semibold text-rose-300">{error}</p>}
     </section>
   );
 }

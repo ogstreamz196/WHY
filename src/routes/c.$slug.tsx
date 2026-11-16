@@ -14,7 +14,7 @@ export const Route = createFileRoute("/c/$slug")({
     return chain;
   },
   head: ({ loaderData, params }) => {
-    const title = chainTitle(loaderData?.title, "A “But why?” chain");
+    const title = chainTitle(loaderData?.title, "A “But why?” trail");
     const firstQ = loaderData?.steps?.[0]?.question;
     const first = firstQ ? chainStepQuestion(firstQ, 0) : "Follow the curiosity trail";
     const base = seo({
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/c/$slug")({
   errorComponent: () => (
     <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
       <div>
-        <p className="font-display text-2xl font-black">Something went wrong loading this chain.</p>
+        <p className="font-display text-2xl font-black">Something went wrong loading this trail.</p>
         <Link
           to="/"
           className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-sm font-bold"
@@ -61,7 +61,7 @@ export const Route = createFileRoute("/c/$slug")({
     <main className="flex min-h-[100dvh] items-center justify-center px-6 text-center text-white/80">
       <div>
         <p className="font-display text-2xl font-black">
-          This chain isn't shared (or was removed).
+          This trail isn't shared (or was removed).
         </p>
         <Link
           to="/"
@@ -92,7 +92,7 @@ function PublicChainPage() {
             🤔 Why?
           </Link>
           <span className="text-[10px] font-black uppercase tracking-widest text-white/50">
-            Shared chain
+            Shared trail
           </span>
         </div>
 

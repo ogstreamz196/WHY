@@ -76,7 +76,7 @@ function PrivacyPage() {
             changed afterwards.
           </p>
           <p>
-            <b>Activity:</b> facts you've discovered, favourites, saved "But… Why?" chains, quiz
+            <b>Activity:</b> facts you've discovered, favourites, saved "But… Why?" trails, quiz
             answers and scores, daily missions, streaks, coins, achievements and store items.
           </p>
           <p>
@@ -99,7 +99,7 @@ function PrivacyPage() {
           <p>
             Your display name or username, dressed-up avatar and scores can appear on leaderboards
             and your public profile. You can turn this off in Settings with "Hide me from public
-            leaderboards" and "Hide profile from public pages". A "But… Why?" chain is only public
+            leaderboards" and "Hide profile from public pages". A "But… Why?" trail is only public
             if you choose to share it.
           </p>
         </Section>

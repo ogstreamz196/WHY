@@ -72,7 +72,7 @@ export function BottomNav() {
   // Guests keep hearted facts on this device (/favorites); signed-in users see
   // their synced hearts and saved trails on /chains.
   const homeTo = (to: string) => {
-    if (to === "/") return adultOn ? "/adult" : "/home";
+    if (to === "/") return adultOn ? "/adult" : "/";
     if (to === "/chains" && !user) return "/favorites";
     return to;
   };

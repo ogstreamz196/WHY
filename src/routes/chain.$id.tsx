@@ -23,7 +23,7 @@ import { seo } from "@/lib/site";
 import { chainStepQuestion, chainTitle } from "@/lib/whyQuestion";
 
 export const Route = createFileRoute("/chain/$id")({
-  head: () => seo({ title: "“But why?” chain | Why?", noindex: true }),
+  head: () => seo({ title: "“But why?” trail | Why?", noindex: true }),
   component: ChainDetailPage,
 });
 
@@ -114,7 +114,7 @@ function ChainDetailPage() {
     if (!shareUrl) return;
     if (navigator.share) {
       try {
-        await navigator.share({ title: chainTitle(c.title, "A Why chain"), url: shareUrl });
+        await navigator.share({ title: chainTitle(c.title, "A Why? trail"), url: shareUrl });
       } catch {
         /* user cancelled */
       }
@@ -140,7 +140,7 @@ function ChainDetailPage() {
           className="glass-strong mt-4 overflow-hidden rounded-4xl p-6"
         >
           <h1 className="font-display text-2xl font-black leading-tight text-white sm:text-3xl">
-            {chainTitle(c.title, "Untitled chain")}
+            {chainTitle(c.title, "Untitled trail")}
           </h1>
           <p className="mt-1 text-xs text-white/50">
             {c.steps.length} step{c.steps.length === 1 ? "" : "s"}

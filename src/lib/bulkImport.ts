@@ -15,6 +15,7 @@ export const CATEGORY_SET = new Set([
   "technology",
   "ocean",
   "dinosaurs",
+  "nature",
 ]);
 
 export type BulkImportCandidate = {

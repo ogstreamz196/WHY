@@ -531,7 +531,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
           showServerBalance(r.total_points);
           if (r.awarded) setChainEarned((m) => ({ ...m, [key]: r.points }));
           else if (r.reason === "daily_cap")
-            toast("🪙 You've earned all your chain coins for today — keep digging for fun!");
+            toast("🪙 You've earned all your trail coins for today — keep digging for fun!");
         })
         .catch((e) => console.warn(e));
     }, 3000);
@@ -581,7 +581,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         toast.success("🧠 Deep thinker! You're 3 whys deep.");
       } else if (depth === MAX_CHAIN_DEPTH) {
         setChainConfetti((n) => n + 1);
-        toast.success("🌌 Rabbit hole master! You reached the very bottom.");
+        toast.success("🌌 Trail master! You reached the very end.");
       }
       setSavedChainId(null); // dirty
       // Coins deferred to the 3s dwell timer (see effect above) so users
@@ -621,8 +621,8 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
         const prev = res.champion.previous_holder_name;
         toast.success(
           prev
-            ? `👑 You stole the Longest Chain crown from ${prev}! ${res.champion.value} whys.`
-            : `👑 You claimed the Longest Chain crown with ${res.champion.value} whys!`,
+            ? `👑 You stole the Longest Trail crown from ${prev}! ${res.champion.value} whys.`
+            : `👑 You claimed the Longest Trail crown with ${res.champion.value} whys!`,
           { duration: 6000 },
         );
       }
@@ -1115,7 +1115,7 @@ export function WhyApp({ routeSearch }: { routeSearch: HomeSearch }) {
                                     />
                                   )}
                                   {chain.length >= MAX_CHAIN_DEPTH ? (
-                                    "🌌 You've reached the bottom of the rabbit hole"
+                                    "🌌 You've reached the end of this trail"
                                   ) : chainLoading ? (
                                     "Diving deeper…"
                                   ) : (
@@ -2107,7 +2107,7 @@ export function WelcomeOverlay({
             <p className="relative mt-2 text-sm text-white/70">
               {needsName
                 ? "What should we call you on your Curiosity Passport?"
-                : "Your Curiosity Passport is ready. Every fact you discover, every chain you follow — it all belongs to you now."}
+                : "Your Curiosity Passport is ready. Every fact you discover, every trail you follow — it all belongs to you now."}
             </p>
 
             {needsName && (
