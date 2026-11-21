@@ -17,13 +17,28 @@ import {
   seo,
 } from "@/lib/site";
 
+/** Codes of duplicate facts that were merged, and the fact each one became. */
+const MERGED_FACT_CODES: Record<string, string> = {
+  "WHY-DE6C04": "WHY-4B0659",
+  "WHY-564698": "WHY-E87FEA",
+  "WHY-41B8AE": "WHY-CD7AB9",
+  "WHY-B57A60": "WHY-BC2A13",
+  "WHY-9FAD5C": "WHY-034CE7",
+  "WHY-7816C7": "WHY-BCD44A",
+  "WHY-E96EC9": "WHY-BCD44A",
+  "WHY-A8D8D5": "WHY-30D291",
+  "WHY-79855B": "WHY-8E0D05",
+};
+
 // A page for every fact, so each "why" question can be found on Google and
 // shared with a proper preview. Only kid-safe facts exist here.
 export const Route = createFileRoute("/fact/$slug")({
   loader: async ({ params }): Promise<FactPage> => {
     const code = codeFromFactSlug(params.slug);
     if (!code) throw notFound();
-    const page = await getFactPage({ data: { code } });
+    // Duplicate facts merged on 21 Nov 2026: their old pages lead to the kept one.
+    const merged = MERGED_FACT_CODES[code];
+    const page = await getFactPage({ data: { code: merged ?? code } });
     if (!page) throw notFound();
     // One address per fact: send old or mistyped slugs to the right one.
     const canonical = factSlug(page.fact.question, page.fact.code);
